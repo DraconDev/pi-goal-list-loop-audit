@@ -38,6 +38,10 @@ export interface UiStatus {
   blocker?: string;
   workflowIssue?: string;
   nextAction: string;
+  /** Durable queue depth, so the footer never drops waiting work (v0.35.61). */
+  queueDepth?: number;
+  /** Saved-recovery honesty note for unconfirmed retries (never an armed-timer claim). */
+  recoveryNote?: string;
 }
 
 export const UI_OBSERVATION_FRESH_MS = 30_000;
@@ -121,5 +125,12 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   const savedActivity = epoch(goal?.pendingCompletion?.lastActivityAt);
   if (validTime(savedActivity, now)) base.lastActivityAt = savedActivity;
   if (recoveryOwned && epoch(recovery?.retryAt) !== undefined) base.retryAt = recovery?.retryAt;
+  // v0.35.61: waiting work rides every footer — a queue beside an active
+  // goal is durable context, not a second card. v0.38.31: a saved retry
+  // names its recovery owner with the unconfirmed qualifier inline, so the
+  // status line never reads as an armed probe it cannot prove.
+  const queued = state.list?.length ?? 0;
+  if (queued > 0) base.queueDepth = queued;
+  if (providerWait) base.recoveryNote = 'main-model recovery — retry saved (unconfirmed)';
   return finish('unconfirmed', 'inspect', base.workflow === 'settling' ? '/glla status · settlement/archive owed' : '/glla status to inspect execution', providerWait ? 'Retry saved; execution unconfirmed' : undefined);
 }
