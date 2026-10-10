@@ -1971,16 +1971,16 @@ function countTotal(g: Goal): number {
 // Adapter boundary for the glance card: states with exact legacy pins
 // keep their dedicated renderers (disjoint from the projection card, so no
 // surface contradicts another). Everything else rides the shared card.
-function needsLegacyWidget(state: State, audit?: AuditDisplayProgress | null): boolean {
+function needsLegacyWidget(state: State, audit?: AuditDisplayProgress | null, compactAuditCard = true): boolean {
   const g = state.goal;
   // No goal: waiting-only queues, parked recoveries and held loops each
   // have their own exact renderer (v0.35.61, v0.28.17).
   if (!g) return true;
   // A stale-handle interrupt owns a banner + durable-feedback closer.
   if (g.interruptedAt) return true;
-  // A live audit object owns phase/recovery rows the glance rail embeds
-  // only in compact form — the full legacy card stays authoritative here.
-  if (g.status === "auditing" && audit) return true;
+  // A live audit object on the detailed card keeps the full legacy card.
+  // The compact glance embeds the same rows under the projection header.
+  if (g.status === "auditing" && audit && compactAuditCard === false) return true;
   // Parked no-verdict claims and durable disapproval tails are exact.
   if (g.status === "paused" && (isCompletionAuditNoVerdict(g) || latestAuditFeedback(g))) return true;
   return false;
@@ -1988,9 +1988,10 @@ function needsLegacyWidget(state: State, audit?: AuditDisplayProgress | null): b
 export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
   const background = backgroundWidget(state, theme, width);
   const shared = extras?.uiStatusContext ? projectUiStatus(state, { ...extras.uiStatusContext, now }) : undefined;
+  const compact = extras?.compactAuditCard !== false;
   const rawInner = background
-    ?? (shared && !needsLegacyWidget(state, audit)
-      ? buildUiStatusCard(state, shared, now, theme, width, extras?.compactAuditCard !== false, extras)
+    ?? (shared && !needsLegacyWidget(state, audit, compact)
+      ? buildUiStatusCard(state, shared, now, theme, width, compact, extras, audit)
       : buildWidgetLinesInner(state, audit, now, theme, width, extras));
   const view = stateWorkView(state, observedWorkActivity(extras, now));
   // The widget is activity-first; lifecycle/activity projection lives on the
