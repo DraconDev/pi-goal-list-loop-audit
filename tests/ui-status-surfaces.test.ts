@@ -20,7 +20,9 @@ test('compact and detailed production adapters agree with the footer', () => {
   for (const compactAuditCard of [true, false]) {
     const text = buildWidgetLines(state, undefined, NOW, undefined, 80, { uiStatusContext, compactAuditCard })!.join('\n');
     const footer = buildStatusText(state, undefined, NOW, undefined, { uiStatusContext, compactAuditCard })!;
-    assert.match(text, /RUNNING · goal working/);
+    assert.match(text, /GOAL · working · RUNNING/);
+    assert.match(text, /│  Verify the redesigned UI/);
+    assert.match(text, /└─ next:/);
     assert.match(footer, /RUNNING · goal working/);
     assert.doesNotMatch(text, /detached worker|SUPERVISING/);
   }
@@ -43,7 +45,7 @@ test('actual prerequisite precedes evidence and remains visible at narrow width'
   state.goal!.pauseReason = 'Version evidence missing'; state.goal!.pauseSuggestedAction = 'Paste AAV version';
   const lines = buildWidgetLines(state, undefined, NOW, undefined, 40, { uiStatusContext: context(state) })!;
   assert.match(lines[0]!, /BLOCKED/);
-  assert.match(lines[2]!, /Next: Paste AAV version/);
+  assert.match(lines[2]!, /├─ next: Paste AAV version/);
   assert.ok(lines.length <= 6);
   assert.ok(lines.every(line => line.length <= 40));
   assert.doesNotMatch(lines.join('\n'), /resume to continue|No action needed/);

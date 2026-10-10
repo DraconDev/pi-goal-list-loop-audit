@@ -1413,32 +1413,51 @@ function uiSafeText(value: string): string {
 export function buildUiStatusFooter(status: UiStatus, now: number, theme?: DisplayTheme, width?: number): string {
   const action = status.actionability === 'user' ? 'needs your action'
     : status.actionability === 'inspect' ? 'inspect execution' : status.actionability === 'automatic' ? 'automatic' : 'no action';
-  const text = `glla: ${UI_HEALTH_LABEL[status.execution]} · ${status.mode} ${uiSafeText(status.workflow)} · ${action}`;
+  const phase = status.workflow.toUpperCase() === UI_HEALTH_LABEL[status.execution] ? status.mode : `${status.mode} ${uiSafeText(status.workflow)}`;
+  const text = status.actionability === 'user'
+    ? `glla: ${uiSafeText(status.nextAction)} · ${UI_HEALTH_LABEL[status.execution]} · ${phase}`
+    : `glla: ${UI_HEALTH_LABEL[status.execution]} · ${phase} · ${action}`;
   return paint(theme, uiStatusTone(status), width ? truncateCells(text, width) : text);
 }
-export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true): string[] {
-  const line = (value: string): string => truncateCells(uiSafeText(value), Math.max(20, width - 2));
-  const rows = [paint(theme, uiStatusTone(status), line(`${UI_HEALTH_LABEL[status.execution]} · ${status.mode} ${status.workflow}`))];
-  if (status.objective) rows.push(line(status.objective));
-  // Actions precede diagnostics and historical counters, including on narrow terminals.
-  rows.push(line(`Next: ${status.nextAction}`));
-  if (status.blocker || status.workflowIssue) rows.push(line([status.blocker ? `Hold: ${status.blocker}` : '', status.workflowIssue ? `Workflow: ${status.workflowIssue}` : ''].filter(Boolean).join(' · ')));
-  const activity = status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago (${status.provenance})`
-    : status.execution === 'running' ? 'current-owner turn observed'
-    : status.execution === 'tool-wait' ? 'current-owner tool within budget'
-    : status.execution === 'queued' ? 'host queue observed; turn not started' : 'no worker activity confirmed';
-  const retry = status.retryKind === 'hourly' ? 'hourly timer observed'
-    : status.retryAt ? `${status.execution === 'retry-armed' ? 'timer observed' : 'schedule saved, unconfirmed'} · ${Date.parse(status.retryAt) > now ? `in ${fmtElapsed(Date.parse(status.retryAt) - now)}` : 'deadline due'}` : activity;
-  rows.push(line(`Evidence: ${retry}`));
+export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras): string[] {
+  const terminal = status.execution === 'complete' || status.execution === 'cancelled';
+  const tone = uiStatusTone(status);
+  const clipped = (value: string): string => truncateCells(value, Math.max(1, width));
+  const row = (prefix: string, value: string, color: DisplayColor = 'dim'): string =>
+    clipped(`${paint(theme, tone, prefix)}${paint(theme, color, uiSafeText(value))}`);
   const loop = status.mode === 'project' || status.mode === 'loop' ? state.loop : undefined;
   const coverage = loop?.builder ? respecCoverage(loop.builder) : undefined;
-  if (coverage) rows.push(line(`Requirements: ${coverage.verified}/${coverage.total} verified · ${coverage.blocked} blocked requirements`));
-  else if (state.goal?.taskList) rows.push(line(buildTaskProgressText(state.goal)));
-  if (!compact) {
-    rows.push(line(`Provenance: ${status.provenance} · owner ${status.ownerKey ?? 'none'}`));
-    if (state.goal?.pendingCompletion) rows.push(line(`Saved audit phase: ${state.goal.pendingCompletion.phase ?? 'legacy'} · attempt ${state.goal.pendingCompletion.attemptId ?? 'unrecorded'}`));
-    rows.push(line('Execution evidence is not continuation consent.'));
+  const progress = coverage ? `${coverage.verified}/${coverage.total} requirements verified${coverage.blocked ? ` · ${coverage.blocked} requirements blocked` : ''}`
+    : state.goal?.taskList ? buildTaskProgressText(state.goal) : loop ? `iteration ${loop.iteration}` : '';
+  const phase = status.workflow.toUpperCase() === UI_HEALTH_LABEL[status.execution] ? '' : `${status.workflow} · `;
+  const rows = [row(terminal ? '✓ ' : '● ', `${status.mode.toUpperCase()} · ${phase}${UI_HEALTH_LABEL[status.execution]}${progress && !terminal ? ` · ${progress}` : ''}`, tone)];
+  if (status.objective) rows.push(row('│  ', status.objective, 'accent'));
+  // The rail is one visual unit, not a dump of independent labeled lines.
+  // User prerequisites precede diagnostics; automatic-work actions close it.
+  if (status.actionability === 'user') rows.push(row('├─ ', `next: ${status.nextAction}`, tone));
+  if (status.blocker) rows.push(row('├─ ', status.blocker, 'warning'));
+  if (status.workflowIssue) rows.push(row('├─ ', `workflow: ${status.workflowIssue}`, 'warning'));
+  if (terminal && progress) rows.push(row('├─ ', progress));
+  if (!terminal && (!compact || rows.length < 5)) {
+    const activity = status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago · ${status.provenance}`
+      : status.execution === 'running' ? 'current-owner turn observed'
+      : status.execution === 'tool-wait' ? 'current-owner tool within budget'
+      : status.execution === 'queued' ? 'turn queued · execution not yet observed' : 'execution unconfirmed · saved work retained';
+    const retry = status.retryKind === 'hourly' ? 'hourly recovery probe armed'
+      : status.retryAt ? `${status.execution === 'retry-armed' ? 'recovery timer armed' : 'retry schedule saved, not confirmed'} · ${Date.parse(status.retryAt) > now ? `in ${fmtElapsed(Date.parse(status.retryAt) - now)}` : 'deadline due'}` : activity;
+    rows.push(row('├─ ', retry));
   }
+  const provenance = terminal ? [] : modelProvenanceLines(extras?.modelProvenance, width);
+  // Detailed status retains all model/owner facts. In the glance card these
+  // give way to actionable blockers, never the other way round.
+  const tail = status.actionability === 'user' ? 'details: /glla status' : `next: ${status.nextAction}`;
+  const modelBudget = compact ? Math.max(0, 5 - rows.length) : provenance.length;
+  provenance.slice(0, modelBudget).forEach(value => rows.push(row('├─ ', value)));
+  if (!compact) {
+    rows.push(row('├─ ', `provenance: ${status.provenance} · owner ${status.ownerKey ?? 'none'}`));
+    if (state.goal?.pendingCompletion) rows.push(row('├─ ', `saved audit phase: ${state.goal.pendingCompletion.phase ?? 'legacy'} · attempt ${state.goal.pendingCompletion.attemptId ?? 'unrecorded'}`));
+  }
+  rows.push(row('└─ ', tail, status.actionability === 'inspect' ? 'warning' : 'accent'));
   return rows;
 }
 function buildTaskProgressText(goal: Goal): string {
@@ -1880,7 +1899,7 @@ function countTotal(g: Goal): number {
 export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
   const background = backgroundWidget(state, theme, width);
   const shared = extras?.uiStatusContext ? projectUiStatus(state, { ...extras.uiStatusContext, now }) : undefined;
-  const rawInner = shared ? buildUiStatusCard(state, shared, now, theme, width, extras?.compactAuditCard !== false)
+  const rawInner = shared ? buildUiStatusCard(state, shared, now, theme, width, extras?.compactAuditCard !== false, extras)
     : background ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
   const view = stateWorkView(state, observedWorkActivity(extras, now));
   // The widget is activity-first; lifecycle/activity projection lives on the
