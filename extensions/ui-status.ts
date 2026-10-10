@@ -22,6 +22,8 @@ export interface UiStatusContext {
   /** Absent for fleet observations lacking an independently verified host. */
   generation?: number;
   evidence?: UiStatusEvidence;
+  /** Host admission remains distinct from detached worker liveness. */
+  compactionEvidence?: Pick<UiStatusEvidence, 'ownerKey' | 'generation' | 'session' | 'observedAt' | 'compaction'>;
   workflowIssue?: string;
   /** Observed persistence hold from the admitted host, never a dispatch gate here. */
   persistenceHold?: string;
@@ -82,7 +84,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   // is durable context, not a second card. Set before any finish() so all
   // executions carry it.
   if (ownerKey) {
-    const host = context.evidence;
+    const host = context.compactionEvidence ?? context.evidence;
     const sample = host?.compaction;
     const fresh = host && host.ownerKey === ownerKey && context.generation !== undefined
       && host.generation === context.generation && host.session === 'open'

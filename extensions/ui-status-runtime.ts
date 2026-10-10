@@ -31,6 +31,10 @@ export function uiStatusContextFromRuntime(state: State, now: number, generation
   const ownerKey = uiStatusOwnerKey(state);
   if (!ownerKey || !host || host.ownerKey !== ownerKey || host.generation !== generation) return context;
   const evidence: UiStatusEvidence = { ...host };
+  if (host.compaction) context.compactionEvidence = {
+    ownerKey: host.ownerKey, generation: host.generation, session: host.session,
+    observedAt: host.observedAt, compaction: host.compaction,
+  };
   const loopSelected = state.loop?.active || !state.goal;
   const claim = loopSelected ? state.loop?.builder?.audit : state.goal?.pendingCompletion;
   const auditing = loopSelected ? state.loop?.builder?.phase === 'auditing' : state.goal?.status === 'auditing';
