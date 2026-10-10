@@ -28,8 +28,9 @@ test('goal resume recovers the provider and reactivates the paused goal', async 
       await tick(120);
       const saved = readState(cwd);
       assert.equal(saved.goal?.status, 'active', 'the resumed goal must come back after recovery succeeds');
-      assert.match(pi.userMessages.join('\n'), /Resumed goal|resume/);
-      assert.doesNotMatch(pi.userMessages.join('\n'), /continue/i);
+      const notices = [...ctx.ui.matching('/resum/i'), ...ctx.ui.matching('/Resumed goal/i')];
+      assert.ok(notices.length > 0, JSON.stringify(ctx.ui.notifications ?? []));
+      assert.doesNotMatch(notices.join('\n'), /continue/i);
     } finally { pi.api.setModel = original; }
   });
 });
