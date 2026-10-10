@@ -36,6 +36,21 @@ test('configured roots remain read-only and saved audits never prove running or 
   } finally { f.cleanup(); }
 });
 
+test('fleet output never exposes saved prerequisites or private workflow text', async () => {
+  const f = setup();
+  try {
+    const value = { ...f.snapshot, goal: { ...f.snapshot.goal, status: 'paused', pauseKind: 'blocked',
+      pauseReason: 'Private case secret-case-123',
+      pauseSuggestedAction: 'Send customer alice@example.com secret-case-123 evidence' } };
+    const p = f.project('private', JSON.stringify({ type: 'state', at: '2026-01-01T00:00:00Z', value }));
+    const report = await inspectFleetHealth([p]);
+    const text = formatFleetHealth(report).join('\n');
+    assert.equal(report.projects[0]!.status!.execution, 'blocked');
+    assert.doesNotMatch(text, /Private objective|Private case|alice@example\.com|secret-case-123|Send customer/);
+    assert.match(text, /Open this project and use \/glla status/);
+  } finally { f.cleanup(); }
+});
+
 test('only explicit closure after the state observation establishes dormant', async () => {
   const f = setup();
   try {
