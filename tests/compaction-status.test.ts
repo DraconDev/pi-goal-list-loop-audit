@@ -5,6 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { projectCompactionStatus, readCompactionMetadata, type CompactionObservation } from '../extensions/compaction-status.js';
 import { projectUiStatus } from '../extensions/ui-status.js';
+import { uiStatusContextFromRuntime } from '../extensions/ui-status-runtime.js';
 import { buildWidgetLines, buildStatusText } from '../extensions/goal-loop-display.js';
 import type { State } from '../extensions/goal-loop-core.js';
 
@@ -56,7 +57,8 @@ test('metadata inspection is bounded, read-only and distinguishes spent budgets 
 
 function fixture(): State {
   return { goal: { id: 'current', objective: 'Observe compaction', status: 'active', policy: 'goal',
-    autoContinue: true, createdAt: new Date(NOW).toISOString(), updatedAt: new Date(NOW).toISOString() }, list: [] };
+    autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 1_000_000 },
+    createdAt: new Date(NOW).toISOString(), updatedAt: new Date(NOW).toISOString() }, list: [] };
 }
 
 test('only fresh current-owner host observations establish compaction eligibility', () => {
@@ -69,6 +71,18 @@ test('only fresh current-owner host observations establish compaction eligibilit
     assert.equal(projectUiStatus(state, { now: NOW, generation: 1, evidence: { ...host, ...patch } }).compaction?.reason, 'unconfirmed');
   }
   assert.equal(projectUiStatus(state, { now: NOW, generation: 1, evidence: host }).compaction?.reason, 'eligible');
+});
+
+test('fresh host admission can explain audit deferral without claiming stale worker liveness', () => {
+  const state = fixture(); state.goal!.status = 'auditing';
+  state.goal!.pendingCompletion = { phase: 'running', attemptId: 'audit', completionSummary: 'saved', at: new Date(NOW).toISOString() };
+  const context = uiStatusContextFromRuntime(state, NOW, 1, {
+    ownerKey: 'goal:current', generation: 1, observedAt: NOW, session: 'open',
+    compaction: projectCompactionStatus({ ...input, audit: true }),
+  }, { ownerKey: 'goal:current', generation: 1, attemptId: 'audit', observedAt: NOW - 60_000 });
+  const status = projectUiStatus(state, context);
+  assert.equal(status.execution, 'unconfirmed');
+  assert.equal(status.compaction?.reason, 'audit');
 });
 
 test('existing compact, detailed and footer surfaces share the same over-target deferral', () => {
