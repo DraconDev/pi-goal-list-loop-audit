@@ -36,6 +36,18 @@ Represent independent workflow rejection and provider recovery together. Require
 
 Four to six meaningful lines: actionability/workflow, objective/progress, runtime evidence, blocker, next action. Preserve the older cohesive rail (`●`, `│`, `├─`, `└─`), semantic color, primary/fallback model context and progress meter rather than flattening the card into independently labeled lines. Required actions precede historical diagnostics; automatic-work actions close the rail. Model/history detail yields to prerequisites when space is tight. Wide headers retain useful saved work-age, token and role facts without claiming active execution duration. Terminal outcomes omit unrelated worker uncertainty and duplicate terminal-phase labels. Glyph and color always have a text equivalent. `/glla status` retains details and provenance. Narrow painted rows use Pi's ANSI-aware width helper; uncertainty and actual action commands must survive clipping.
 
+## Color semantics
+
+Matches the established card/footer vocabulary — color emphasizes, never replaces, the text state:
+
+- `success` (green): live or terminal-ok — running activity, completed work, fresh evidence. Icon plus execution word only.
+- `warning` (amber): needs the user — blocked, dormant, unconfirmed; blocker/reason rows. Required-action rows ride `dim` (position carries the emphasis; only hard errors shout), exactly like legacy pause actions.
+- `accent` (primary highlight): informational in-flight progress — tool waits, queued starts, decision prompts, recommended options.
+- `dim` (grey): everything secondary — mode/phase words, saved metrics, evidence lines, model provenance, closers, automatic background waits (`retry-armed`, standby, scheduled waits) that need no action.
+- `error` (red): failures that will not fix themselves — reserved for error pauses and dead-worker states, never for ordinary blocks.
+
+Headers and footers are segmented: only the execution word (and, in the footer, the required user action) carries the tone. Painting a whole line in the tone washed every blocked card orange (field 2026-10-10). Objectives render as plain body text; closers stay `dim`.
+
 ## Fleet boundary
 
 `/glla fleet` explicitly invokes `extensions/fleet-health.ts`; there is no background scanner. Configure `fleetHealthRoots` in the normal global or project settings JSON, for example `{"fleetHealthRoots":["/home/dracon/Dev"]}`. Paths relative to the invoking project resolve from that project. Without this setting only the current project is inspected. Empty roots mean no scan. Only roots containing `.pi-glla/active.jsonl` in their project directories are discovered; sessionDir state roots outside these trees must be explicitly included, not inferred from conversations.
