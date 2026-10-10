@@ -531,7 +531,8 @@ function findingBullet(finding: string, chat: boolean): string[] {
   const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
   const { outcome, reason } = findingPresentation(finding, chat);
   if (semantic.technical && chat) return [];
-  return reason ? [`- **${outcome}**`, `  - ${reason}`] : [`- **${outcome}**`];
+  const lead = chat ? outcome : `**${outcome}**`;
+  return reason ? [`- ${lead}`, `  - ${reason}`] : [`- ${lead}`];
 }
 
 /**
@@ -897,7 +898,7 @@ export function buildRichTerminalParts(args: {
       // v0.39.19: same plain-heading rule as composeRichTerminalLines —
       // `#### n. Area` reached the terminal literally (field 2026-10-09).
       findingLines.push(args.chat
-        ? `${i + 1}. ${sanitizeDisplayText(group.title)}`
+        ? `**${i + 1}. ${sanitizeDisplayText(group.title)}**`
         : `#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));
@@ -918,8 +919,9 @@ export function buildRichTerminalParts(args: {
       return;
     }
     const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
-    // v0.38.102: gist bold on the bullet, evidence indented under it.
-    findingLines.push(`${i + 1}. **${normalized.outcome}**`);
+    // Chat reserves emphasis for hierarchy and explicit short labels;
+    // archive styling and evidence remain unchanged.
+    findingLines.push(args.chat ? `${i + 1}. ${normalized.outcome}` : `${i + 1}. **${normalized.outcome}**`);
     if (reason) findingLines.push(`   - ${reason}`);
     });
   }
@@ -1001,7 +1003,22 @@ export function buildRichTerminalParts(args: {
   // archive machine layer keeps the verbatim recap; only this human
   // projection pairs.
   const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.test(d));
-  const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d));
+  const remainingSentences = new Set(next.filter(d => /^\s*(?:Unresolved|Left out)\s*:/i.test(d))
+    .flatMap(d => leadBody(d).body.split(/(?<=[.!?])\s+/)).map(sentence => sentence.trim().toLowerCase()));
+  const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d)).flatMap(detail => {
+    if (!args.chat) return [detail];
+    const { lead, body } = leadBody(detail);
+    const sentences = body.split(/(?<=[.!?])\s+/);
+    // Remove only verbatim leading restatements. Never infer equivalence
+    // from shared words; preserve all distinct action clauses and archives.
+    let removed = false;
+    while (sentences.length && remainingSentences.has(sentences[0]!.trim().toLowerCase())) {
+      sentences.shift(); removed = true;
+    }
+    if (!removed) return [detail];
+    const action = sentences.join(' ').trim();
+    return action ? [`${lead}: ${action}`] : [];
+  });
   const problemWords = unresolvedDetails.map(pairingWords);
   const pairedByProblem = new Map<number, number[]>();
   const consumedActions = new Set<number>();
