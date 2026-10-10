@@ -40,7 +40,7 @@ import { Settings, globalSettingsPath, loadSettings, projectSettingsPath, saveSe
 import { resolveGllaStateDir } from "./glla-state-root.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { modelRef } from "./main-model-recovery.js";
-import { mainModelRecoveryRuntimeStatus } from './goal-recovery.js';
+import { mainModelRecoveryProbeSettled, mainModelRecoveryRuntimeStatus } from './goal-recovery.js';
 import { formatMainModelFallbacks, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { ReviewerConfig, normalizeObjective, resolveReviewerConfig, reviewerMenuOptions } from "./reviewer.js";
 import type { SettingsSectionId } from "./settings-menu.js";
