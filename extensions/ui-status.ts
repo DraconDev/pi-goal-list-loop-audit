@@ -21,6 +21,8 @@ export interface UiStatusContext {
   generation?: number;
   evidence?: UiStatusEvidence;
   workflowIssue?: string;
+  /** Observed persistence hold from the admitted host, never a dispatch gate here. */
+  persistenceHold?: string;
 }
 export interface UiStatus {
   mode: 'goal' | 'list' | 'loop' | 'project' | 'idle';
@@ -74,6 +76,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   if (goal?.status === 'complete' || loop?.builder?.phase === 'complete') return finish('complete', 'none', 'No action needed');
   if (goal?.status === 'aborted') return finish('cancelled', 'none', 'No action needed');
   if (!ownerKey) return base;
+  if (context.persistenceHold) return finish('blocked', 'user', 'Resolve persistence failure before continuing; /glla status for details', context.persistenceHold);
   if (typeof state.supervisorPausedAt === 'number') return finish('blocked', 'user', '/glla resume releases the supervisor hold', 'Supervisor paused');
   if (typeof state.loadHoldAt === 'number') return finish('blocked', 'user', '/glla resume grants continuation consent', 'Held on session restore');
   const recovery = state.mainModelRecovery;
@@ -85,7 +88,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   const legacyProviderPause = providerWait && goal?.pauseKind !== 'decision'
     && (goal?.pauseReason ?? '').startsWith('main model recovery');
   if (goal?.status === 'paused' && goal.pauseKind !== 'wait' && goal.pauseKind !== 'standby' && !legacyProviderPause) {
-    return finish('blocked', 'user', goal.pauseSuggestedAction ?? `${resume} when the prerequisite is resolved`, goal.pauseReason ?? 'Work paused');
+    return finish('blocked', 'user', goal.pauseSuggestedAction ?? (goal.pauseKind === 'decision' ? '/goal decide to resolve the pending choice' : `${resume} when the prerequisite is resolved`), goal.pauseReason ?? 'Work paused');
   }
   if (recoveryOwned && recovery?.manualResumeRequired) return finish('blocked', 'user', `${resume} after resolving the recovery prerequisite`, recovery.reason);
   if (loop && !loop.active && !providerWait && !loop.backgroundWait) return finish('blocked', 'user', `${resume} when ready`, loop.stopReason ?? 'Loop held');
