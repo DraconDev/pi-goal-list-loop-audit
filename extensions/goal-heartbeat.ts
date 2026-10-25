@@ -1751,7 +1751,25 @@ function heartbeatTick(): void {
   // Gate the filesystem liveness probe on the same grace as the recovery:
   // a healthy dispatch creates its job dir in milliseconds, so probing on
   // every 15s tick while activity is fresh would only tax healthy audits.
-  const strandedSilentMs = state.goal?.status === "auditing" ? strandedQuietMs() : 0;
+  //
+  // v0.39.52: "activity" here is the ATTEMPT's activity, not the session's.
+  // A detached completion audit produces no agent turn, so the session's
+  // real-activity clock keeps running while the auditor works. Measured
+  // against the session, a recovery audit dispatched after a quiet spell
+  // was reclaimed by the very next tick: the heartbeat claimed the parked
+  // claim, dispatched the audit, and then took it back because the worker
+  // had not written its job dir yet — leaving the goal parked and waiting
+  // for a MANUAL resume, which is the exact failure the automatic recovery
+  // exists to prevent. The attempt's own clock is the honest one: the claim
+  // is stranded only when THIS attempt has been silent for the whole
+  // window. A claim with no attempt timestamp (legacy) keeps the session
+  // clock.
+  const attemptEvidenceAt = Date.parse(strandedClaim?.lastActivityAt ?? strandedClaim?.startedAt ?? "");
+  const strandedSilentMs = state.goal?.status !== "auditing"
+    ? 0
+    : Number.isFinite(attemptEvidenceAt)
+      ? Date.now() - attemptEvidenceAt
+      : strandedQuietMs();
   const strandedWorkerlessInFlight = strandedSilentMs >= 90_000 && !!strandedClaim?.attemptId && flags.completionAuditInFlight
     && !auditorWorkerLiveForAttempt(ctx.cwd, strandedClaim.attemptId);
   if (
