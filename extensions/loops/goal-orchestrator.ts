@@ -1358,7 +1358,26 @@ export function archiveCurrentGoal(
   // publishing an intent so an unrelated/sentinel winner can never make the
   // startup reconciler terminalize this live goal.
   let archiveFence = false;
+  // v0.39.54 (field eve 2026-10-25): distinguish "another writer's archive"
+  // from "THIS goal's own terminal record left behind by a crash between
+  // archive publication and the state append". The name alone cannot tell them
+  // apart (the path is derived from the goal id), so inspect the CONTENT: only
+  // a record that names this goal as its File AND carries a terminal status is
+  // this goal's own finished archive. A sentinel or foreign file still fences.
+  //
+  // Without this the goal becomes permanently un-closable: /glla wipe re-fences
+  // on every attempt, the archive already claims `complete`, and the live item
+  // stays paused forever with no route out.
+  let archiveIsOurs = false;
   if (fs.existsSync(target)) {
+    try {
+      const existing = fs.readFileSync(target, "utf-8");
+      const namesThisGoal = existing.includes(`**File**: \`${goal.id}.md\``);
+      const terminalRecord = /^\*\*Status\*\*: (complete|aborted)\s*$/m.test(existing);
+      archiveIsOurs = namesThisGoal && terminalRecord;
+    } catch { archiveIsOurs = false; }
+  }
+  if (fs.existsSync(target) && !archiveIsOurs) {
     archiveFence = true;
     appendLedger(ctx.cwd, "faulty_objective_archive_fence", {
       goalId: goal.id,
@@ -1390,6 +1409,12 @@ export function archiveCurrentGoal(
     // Audit 2026-09-06: randomUUID instead of Math.random — temp names
     // must not be guessable by a sibling writer (the wx flag already
     // mitigates, this removes the predictability too).
+    // v0.39.54: this goal's own archive is already durable (the crash left the
+    // state append undone, not the file). Republishing it would either fail
+    // EEXIST or overwrite a finished record, so treat the existing file as the
+    // published half and continue to the state append below — that append is
+    // the only step the interrupted terminalization still owes.
+    if (archiveIsOurs) return true;
     const temp = `${target}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
     try {
       fs.writeFileSync(temp, richMd, { encoding: "utf-8", flag: "wx" });
