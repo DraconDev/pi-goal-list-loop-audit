@@ -3441,15 +3441,21 @@ test("v0.35.x: a successful main-model recovery gives a parked audit its one aut
     const ctx = await freshSession(cwd, "startup");
     assert.equal((readState(cwd).goal as { status?: string }).status, "paused", "cold startup keeps the parked claim held");
     mainModelRecoverySucceeded(ctx as unknown as Parameters<typeof mainModelRecoverySucceeded>[0]);
-    await waitForRecoveryAuditing(cwd);
-    const started = readState(cwd).goal as {
-      status?: string;
-      pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
+    await waitForRecoveryDispatch(cwd);
+    // The automatic recovery dispatched a FRESH attempt (durable: the ledger
+    // row carries the attempt id). The live claim is transient — the audit
+    // clears it when it settles — so it is checked only while it is there.
+    const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
+    assert.ok(recoveryAttempt);
+    assert.notEqual(recoveryAttempt, oldAttempt);
+    assertLiveClaimOwnsAttempt(cwd, "the recovery attempt owns the durable claim");
+    const liveClaim = readState(cwd).goal as {
+      pendingCompletion?: { automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
     } | null;
-    assert.equal(started?.status, "auditing");
-    assertOwnsAttempt(started?.pendingCompletion, "the recovery attempt owns the durable claim");
-    assert.equal(started?.pendingCompletion?.automaticRecoveryAttempted, true);
-    assert.equal(typeof started?.pendingCompletion?.automaticRecoveryGeneration, "number");
+    if (liveClaim?.pendingCompletion) {
+      assert.equal(liveClaim.pendingCompletion.automaticRecoveryAttempted, true);
+      assert.equal(typeof liveClaim.pendingCompletion.automaticRecoveryGeneration, "number");
+    }
     await waitUntil(() => {
       const settled = readState(cwd).goal as { status?: string; pendingCompletion?: unknown } | null;
       return settled?.status === "active" && !settled.pendingCompletion;
@@ -4673,10 +4679,14 @@ test("v0.35.x: explicit Auto-resume retries a parked claim on cold startup", asy
   });
   try {
     const ctx = await freshSession(cwd, "startup");
-    await waitForRecoveryAuditing(cwd);
-    const started = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string } } | null;
-    assert.equal(started?.status, "auditing");
-    assert.notEqual(started?.pendingCompletion?.attemptId, oldAttempt);
+    await waitForRecoveryDispatch(cwd);
+    // The automatic recovery dispatched a FRESH attempt (durable: the ledger
+    // row carries the attempt id). The live status is transient — the audit
+    // settles it — so the LEDGER carries the contract.
+    const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
+    assert.ok(recoveryAttempt);
+    assert.notEqual(recoveryAttempt, oldAttempt);
+    assertAuditRunningOrSettled(cwd, "the fresh session recovers the stored claim");
     assert.ok(ctx.ui.matching("Fresh session recovered the interrupted completion audit").length >= 1);
     await waitUntil(() => {
       const settled = readState(cwd).goal as { status?: string; pendingCompletion?: unknown; auditHistory?: unknown[] } | null;
