@@ -34,7 +34,7 @@
 ## Versions and shipped content
 
 [CHANGELOG.md](../CHANGELOG.md) records the full release history from
-v0.1.0-alpha.1 (2026-07-19) through v0.39.52 (2026-10-24), including a release gate that no longer reports a busy machine as a broken one, interrupted audits that never claim the operator aborted them, a version indicator that is a choice of one surface, declared Pi 1.x support, auditor liveness that survives an unavailable identity probe, one-surface card rendering, a readable task-amendment dialog and system-wide draft auto-accept, authenticated auditor verdicts, fail-closed crash recovery, session inheritance and ten-slot role fallbacks, clearer
+v0.1.0-alpha.1 (2026-07-19) through v0.39.53 (2026-10-25), including a `/glla` settings surface that keeps its promises — a reachable Version indicator row, and a postaudit editor that no longer forgets an option an earlier edit saved — a release gate that no longer reports a busy machine as a broken one, interrupted audits that never claim the operator aborted them, a version indicator that is a choice of one surface, declared Pi 1.x support, auditor liveness that survives an unavailable identity probe, one-surface card rendering, a readable task-amendment dialog and system-wide draft auto-accept, authenticated auditor verdicts, fail-closed crash recovery, session inheritance and ten-slot role fallbacks, clearer
 waiting/completion messages, deterministic final-audit persistence,
 provider-report preservation/privacy fixes and untagged v0.39.29 development
 changes; the npm registry remains the publication authority. `/glla version`
