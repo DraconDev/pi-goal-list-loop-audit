@@ -252,7 +252,11 @@ Additional checks:
   **reverted**; `git diff ad1ea932a -- extensions/` is empty, so the product
   tree matches the reviewed revision exactly. The negative control is
   evidence that the durable directions are implementable, not a change that
-  was kept.
+  was kept. As in the previous audit round
+  (`audit/note-md-display-settings-2026-10-23/README.md:120`), the daemon
+  auto-committed the injected control (`a29c6b997`) before it could be
+  reverted; it was corrected **forward** in `9324d7643` — no history
+  rewrite, per `AGENTS.md`.
 - `npm run check` (**typecheck**) — see `typecheck.log`.
 - `node scripts/generate-inventory.mjs --check` — see `inventory.log`.
 
