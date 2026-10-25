@@ -2349,13 +2349,13 @@ async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
   // scope with the patch applied — the same contract the toolOverrides editor
   // uses. Merging over the effective block (never over the defaults) is what
   // keeps an earlier edit alive when a later one is made.
-  const loadEffective = () => loadSettings(ctx.cwd).postaudit as Partial<ReviewerConfig> | undefined;
+  const loadEffective = () => loadSettings(ctx.cwd).reviewer as Partial<ReviewerConfig> | undefined; // NEGATIVE CONTROL: the legacy key
   const load = () => resolveReviewerConfig(loadEffective());
   const save = (patch: Partial<ReviewerConfig>) => {
     if (warnIfStaleAtEntry(ctx, "postaudit settings save")) {
       throw new Error("the session handle became stale during the edit");
     }
-    saveSettings("project", ctx.cwd, { postaudit: { ...loadEffective(), ...patch } as Record<string, unknown> });
+    saveSettings("project", ctx.cwd, { reviewer: { ...loadEffective(), ...patch } as Record<string, unknown> }); // NEGATIVE CONTROL: the legacy key
   };
   for (;;) {
     const cfg = load();
