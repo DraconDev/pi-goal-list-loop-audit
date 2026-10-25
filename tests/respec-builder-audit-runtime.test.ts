@@ -15,7 +15,7 @@ import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, clai
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { MockPi, tmpCwd, makeMockCtx } from "./harness/mock-pi.js";
-import { hangDeadlineMs, untilMs } from "./harness/host-budget.js";
+import { hangDeadlineMs, untilMs, waitFor } from "./harness/host-budget.js";
 
 const VERDICT_HELPER = path.join(path.dirname(new URL(import.meta.url).pathname), "harness", "fake-auditor-verdict.mjs");
 const worker = `
