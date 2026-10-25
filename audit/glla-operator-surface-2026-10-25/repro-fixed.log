@@ -1,0 +1,11 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+audit/glla-operator-surface-2026-10-25/repro.test.ts:
+(pass) every settings editor is reachable from a row in the /glla settings table [56.16ms]
+(pass) the documented 'Version indicator' row exists in the /glla settings table [2.02ms]
+(pass) the postaudit sub-menu shows the configuration the operator actually saved [2739.45ms]
+(pass) a postaudit edit must not discard the options an earlier edit saved [19.23ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 1 file. [10.43s]
