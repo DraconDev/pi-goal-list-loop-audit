@@ -265,3 +265,56 @@ reviewed tree, not external blockers and not permission to weaken the
 settings contract: the version indicator is a shipped, documented feature with
 no operator path, and the postaudit editor discards saved configuration. No
 live project, session or goal was changed, recovered or claimed.
+
+## Resolution — fixed in v0.39.53
+
+Both findings were repaired at the invariant, and the repairs ship with gates
+that fail the next omission.
+
+### Finding 1 — the row, and a completeness gate
+
+- `extensions/settings-menu.ts` — `versionDisplay` now has a **Version
+  indicator** row in the "Other" section, with provenance and the same three
+  choices the editor offers.
+- `tests/settings-editors.test.ts` — two new gates:
+  1. **every editor case in `handleSettingChoice` is reachable from a row id
+     in `buildSettingsRows`** — the gate that was missing, and the one that
+     would have caught `versionDisplay` on day one;
+  2. the documented "Version indicator" row exists and is labelled the way
+     `docs/SETTINGS.md` names it.
+
+### Finding 2 — the canonical key, and the round trip
+
+- `extensions/goal-commands.ts` — `cmdReviewerSettings` reads and writes the
+  canonical `postaudit` key only, and each edit is merged over the
+  **effective** block (global, then project) rather than over the defaults.
+  A legacy `reviewer` block is still honoured: load-migration surfaces it as
+  `postaudit` before the menu reads it. This is the same contract the
+  `toolOverrides` editor already used.
+- `docs/SETTINGS.md` — the postaudit editor's persistence contract is now
+  stated for operators hand-editing the JSON.
+- `tests/postaudit-editor-roundtrip.test.ts` (new) — drives the **real**
+  editor through the **real** `/glla postaudit` command and pins the round
+  trip that no test had ever exercised:
+  1. an edit does not discard the options an earlier edit saved (both land on
+     disk);
+  2. the sub-menu shows the configuration the operator saved;
+  3. a legacy `reviewer` block still reaches the menu through load-migration.
+
+### Evidence for the repair
+
+| Check | Result |
+| --- | --- |
+| `audit/glla-operator-surface-2026-10-25/repro.test.ts` on v0.39.52 | 0 pass / 4 fail (the defects, reproduced) |
+| the same reproducer on v0.39.53 | **4 pass / 0 fail** |
+| negative control — the legacy key re-introduced in `cmdReviewerSettings` | **3 fail / 0 pass** (the new regression test catches the defect) |
+| `tests/postaudit-editor-roundtrip.test.ts` | 3 pass / 0 fail |
+| `tests/settings-editors.test.ts` | 59 pass / 0 fail (2 new gates) |
+| the seven focused surface files | 155 pass / 0 fail |
+| `npm run check` | exit 0 |
+| `npm run check:inventory` | exit 0 |
+
+The negative control for this repair was applied and reverted in place, as
+the previous round did — the daemon auto-committed the injected control and it
+was corrected **forward** (no history rewrite, per `AGENTS.md`).
+
