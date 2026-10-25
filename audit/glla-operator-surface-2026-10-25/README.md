@@ -311,8 +311,10 @@ that fail the next omission.
 | `tests/postaudit-editor-roundtrip.test.ts` | 3 pass / 0 fail |
 | `tests/settings-editors.test.ts` | 59 pass / 0 fail (2 new gates) |
 | the seven focused surface files | 155 pass / 0 fail |
+| `npm run release:check` (full gate) | **4376 pass / 0 fail** across 470 files, `GATE_EXIT=0` |
 | `npm run check` | exit 0 |
 | `npm run check:inventory` | exit 0 |
+| published | v0.39.53 — GitHub Release published, npm `latest` = 0.39.53, verified by installing the published tarball and checking that it carries the new row and the canonical-key read |
 
 The negative control for this repair was applied and reverted in place, as
 the previous round did — the daemon auto-committed the injected control and it

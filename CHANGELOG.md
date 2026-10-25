@@ -68,6 +68,7 @@ surface an operator touches to change a setting.
 | negative control (legacy key re-introduced) | 3 fail / 0 pass — the new regression test catches it |
 | `tests/postaudit-editor-roundtrip.test.ts` (new) | 3 pass / 0 fail |
 | `tests/settings-editors.test.ts` (2 new gates) | 59 pass / 0 fail |
+| `npm run release:check` (full gate) | **4376 pass / 0 fail** across 470 files, `GATE_EXIT=0` |
 | `npm run check` | exit 0 |
 | `npm run check:inventory` | exit 0 |
 
