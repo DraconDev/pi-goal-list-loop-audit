@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## 0.39.54 — an interrupted terminalization no longer fences a goal forever (2026-10-25)
+
+### The field deadlock (eve)
+
+A list item was archived as `complete`, then the process died before the live
+state slot was cleared. Every later `/glla wipe` hit the same-id archive fence,
+so the item could never be closed: the archive said complete while the live
+objective stayed paused indefinitely, and the warning
+"an existing archive was preserved… Fix the project disk and retry" was
+misleading — nothing was wrong with the disk.
+
+- The fence now inspects the existing archive's CONTENT, not just its name.
+  The path is derived from the goal id, so a name can never distinguish
+  "another writer's winner" from "this goal's own record left behind by a crash
+  between archive publication and the state append".
+- A file that names this goal as its `File` and carries a terminal status IS
+  the goal's own finished archive. The archive is already durable, so the
+  missing half — the state append — is now completed instead of refused.
+- Anything else still fences, byte-for-byte: the sentinel/foreign-winner
+  contract is unchanged and its test still passes.
+- The interrupted terminalization is recorded as `archive_fence_recovered`
+  rather than being reported as a disk fault.
+
+## 0.39.53 —
 ## 0.39.53 — the `/glla` settings surface keeps its promises (2026-10-25)
 
 ### The defects
