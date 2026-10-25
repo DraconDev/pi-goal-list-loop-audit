@@ -1377,7 +1377,7 @@ export function archiveCurrentGoal(
       archiveIsOurs = namesThisGoal && terminalRecord;
     } catch { archiveIsOurs = false; }
   }
-  if (fs.existsSync(target)) {
+  if (fs.existsSync(target) && !archiveIsOurs) {
     archiveFence = true;
     appendLedger(ctx.cwd, "faulty_objective_archive_fence", {
       goalId: goal.id,
