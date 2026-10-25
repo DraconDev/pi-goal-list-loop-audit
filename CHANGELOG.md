@@ -117,11 +117,18 @@ have waited for a condition.**
   `tests/behavioral-orchestrator.test.ts` — pass together on a host at load
   50, where the same run failed before.
 
-### Unchanged
+### One product change, on purpose
 
-No product behaviour changed. The fix is entirely in the gate: the
-contention measurement, the runner's bounds and the tests that wait for an
-effect.
+Exactly one product behaviour changed: the stranded-audit gate in
+`extensions/goal-heartbeat.ts` now measures the attempt's silence instead of
+the session's (#5 above). Everything else is in the gate itself — the
+contention measurement, the runner's bounds, the tests that wait for an
+effect — plus the tests and the policy that pin them.
+
+No other product path was touched: no timeout, no retry budget, no verdict
+rule, no dispatch rule. The auditor still runs detached, still produces the
+same verdicts, and a genuinely stranded claim is still reclaimed and
+released to a manual `/goal resume`.
 
 ## 0.39.51 — republish with a current runtime inventory (2026-10-24)
 
