@@ -30,7 +30,7 @@ import { loadSettings, projectSettingsPath } from "../../extensions/goal-setting
 import { MockPi, makeMockCtx, tmpCwd } from "../../tests/harness/mock-pi.js";
 
 const pi = new MockPi();
-const { activate } = await import("../../extensions/loops/goal.js");
+const { default: activate } = await import("../../extensions/loops/goal.js");
 activate(pi.api);
 
 // ────────────────────────────────────────────────────────────────────
