@@ -23,3 +23,5 @@ tests/glla-stale-context.test.ts:
 [run-tests] progress: 30s elapsed · 11s since last output · 0 KiB of suite output
 [run-tests] progress: 60s elapsed · 41s since last output · 0 KiB of suite output
 [run-tests] progress: 90s elapsed · 71s since last output · 0 KiB of suite output
+[run-tests] progress: 120s elapsed · 102s since last output · 0 KiB of suite output
+[run-tests] progress: 150s elapsed · 132s since last output · 0 KiB of suite output
