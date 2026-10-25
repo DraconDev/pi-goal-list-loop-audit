@@ -318,3 +318,15 @@ The negative control for this repair was applied and reverted in place, as
 the previous round did — the daemon auto-committed the injected control and it
 was corrected **forward** (no history rewrite, per `AGENTS.md`).
 
+### One note for anyone reproducing the release
+
+The release gate that ships these fixes needed two **unrelated** busy-host
+repairs to go green on a shared host at load ~91: the runner-isolation
+self-test hard-coded a 30 s kill window for the nested process it spawns, and
+the respec stalled-worker test counted its two launches by filtering the live
+observations down to the ones where a worker had already reported activity —
+so a worker the watchdog killed before its first report made the test read one
+launch instead of two. Both are test-side timing bounds, neither touches
+product behaviour, and both are recorded in the v0.39.53 changelog. They were
+found while running the gate for this audit, not by it.
+
