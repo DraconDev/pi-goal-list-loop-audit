@@ -24,7 +24,7 @@ AssertionError: settings editors with no reachable row: versionDisplay — an ed
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:50:10
       at fn (node:test:215:18)
-(fail) every settings editor is reachable from a row in the /glla settings table [83.86ms]
+(fail) every settings editor is reachable from a row in the /glla settings table [166.14ms]
 59 |   // CHANGELOG.md v0.39.49: "with a **Version indicator** row in `/glla` settings".
 60 |   const doc = fs.readFileSync("docs/SETTINGS.md", "utf8");
 61 |   assert.match(doc, /Set it with \*\*Version indicator\*\* in `\/glla` settings/, "the documented promise is still in the reference");
@@ -41,7 +41,7 @@ AssertionError: the settings table has a Version indicator row
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:64:10
       at fn (node:test:215:18)
-(fail) the documented 'Version indicator' row exists in the /glla settings table [11.08ms]
+(fail) the documented 'Version indicator' row exists in the /glla settings table [11.01ms]
 89 | 
 90 |   await handleSettingChoice("postaudit", ctx);
 91 | 
@@ -58,7 +58,7 @@ AssertionError: after turning the post-completion audit OFF the menu must show i
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:94:10
       at processTicksAndRejections (native:7:39)
-(fail) the postaudit sub-menu shows the configuration the operator actually saved [5343.81ms]
+(fail) the postaudit sub-menu shows the configuration the operator actually saved [6711.87ms]
 112 |   await handleSettingChoice("postaudit", ctx);
 113 | 
 114 |   const saved = loadSettings(cwd).postaudit as { enabled?: boolean; mode?: string } | undefined;
@@ -78,8 +78,8 @@ true !== false
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:117:10
       at processTicksAndRejections (native:7:39)
-(fail) a postaudit edit must not discard the options an earlier edit saved [72.57ms]
+(fail) a postaudit edit must not discard the options an earlier edit saved [45.08ms]
 
  0 pass
  4 fail
-Ran 4 tests across 1 file. [9.82s]
+Ran 4 tests across 1 file. [13.38s]
