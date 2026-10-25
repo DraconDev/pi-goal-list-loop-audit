@@ -27,6 +27,12 @@ have waited for a condition.**
    framework timeout was shorter than its own internal wait is killed by the
    framework first — and bun's message is a bare `timed out after 51285ms`
    with no diagnosis, so a missing condition reads as a hang.
+4. **A test waited for a state the product had already left.** The
+   heartbeat-recovery test waited for the goal's `auditing` status — but
+   that status is *transient*. The detached auditor can finish, apply its
+   verdict and return the goal to `active` before the test observes it, and
+   on a starved host the observation lands after the verdict. The wait then
+   burned its whole 240s budget on a state that was never coming back.
 
 ### The fix
 
@@ -55,16 +61,37 @@ have waited for a condition.**
   at 241s by a frame sized at 1x on a host running at load 50. A new policy
   test fails the build if any test declares a frame shorter than the
   contention cap times the waits inside it.
+- **A test waits for durable evidence, never for a transient status.** The
+  ledger is the durable record of an audit: `audit_started` records every
+  dispatched attempt, `audit_recovery_started` records the automatic
+  session-recovery origin (a manual `/goal resume` writes `goal_resumed`
+  instead), and `audit_recovery_auto_retry_claimed` records the one-shot
+  automatic claim. Nine waits in `tests/behavioral-orchestrator.test.ts`
+  now wait for those rows and read the live status as one of its honest
+  outcomes — still auditing, or already settled with a verdict — instead of
+  waiting for it. The heartbeat-recovery test now states its contract in
+  durable facts: exactly one automatic claim, exactly one automatic
+  session-recovery dispatch, on a fresh attempt. A new policy test fails the
+  build if any test waits for the transient `auditing` status.
 
 ### Verification
 
-- `tests/host-contention.test.ts` — 15 pass, 0 fail. New coverage: the load
+- `tests/host-contention.test.ts` — 16 pass, 0 fail. New coverage: the load
   factor is bounded and never shrinks a budget; a hang bound is the worse of
   the two readings; `waitFor` returns when the condition holds and still fails
   with the caller's message when it never does; and the frame-vs-wait policy
   test catches the 0.39.5x inversion. Negative control: reverting the
   heartbeat test's frame to 15s makes the policy test fail, and restoring it
   makes the policy test pass.
+- The fourth defect was root-caused, not guessed. A diagnostic probe dumped
+  the goal when the wait expired: `status "active"`, one audit-history
+  entry, one automatic claim, one recovery dispatch — the heartbeat had
+  recovered the claim, the auditor had produced its verdict, and the wait
+  was still asking for a status the product had already left. The probe
+  reproduced the failure 5 times out of 6 under CPU starvation; the fix
+  makes the same run pass. Negative control for the new policy test:
+  reinstating one transient-status wait makes it fail, and removing it
+  makes it pass.
 - The three files that carried the flake —
   `tests/supervised-provider-exhaustion-runtime.test.ts`,
   `tests/resume-goal-tool.test.ts` and
