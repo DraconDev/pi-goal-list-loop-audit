@@ -8,7 +8,7 @@
 
 The gate that guards every npm publish reported healthy tests as failures on a
 loaded host. The 0.39.5x cycle hit it five times in one run, and the failing
-subset *moved* between runs — a symptom of timing, not of code. Three distinct
+subset *moved* between runs — a symptom of timing, not of code. Four distinct
 causes, all the same idea: **the gate guessed at wall time where it should
 have waited for a condition.**
 
