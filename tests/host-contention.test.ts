@@ -264,6 +264,79 @@ test("no test's frame expires before the waits inside it", () => {
   );
 });
 
+/**
+ * The argument text of a call, with strings and comments skipped so a
+ * parenthesis inside a message cannot end the scan early.
+ */
+function callArgument(source: string, openParen: number): string {
+  let depth = 0;
+  let quote: string | undefined;
+  for (let i = openParen; i < source.length; i++) {
+    const ch = source[i]!;
+    if (quote) {
+      if (ch === "\\") { i++; continue; }
+      if (ch === quote) quote = undefined;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
+    if (ch === "/" && source[i + 1] === "/") {
+      const end = source.indexOf("\n", i);
+      i = end < 0 ? source.length : end;
+      continue;
+    }
+    if (ch === "/" && source[i + 1] === "*") {
+      const end = source.indexOf("*/", i + 2);
+      i = end < 0 ? source.length : end + 1;
+      continue;
+    }
+    if (ch === "(") depth++;
+    else if (ch === ")") {
+      depth--;
+      if (depth === 0) return source.slice(openParen + 1, i);
+    }
+  }
+  return "";
+}
+
+test("no test waits for the transient goal status the product can legitimately leave", () => {
+  // The goal's "auditing" status is TRANSIENT: the detached auditor can
+  // finish, apply its verdict and return the goal to "active" before the
+  // test observes it. On a starved host the observation lands after the
+  // verdict, so a wait that asks for "auditing" burns its whole budget on a
+  // state that is never coming back — and the gate reports a healthy
+  // machine as broken.
+  //
+  // It did. The 0.39.52 release gate failed its own heartbeat-recovery
+  // test after 240s: the probe dump showed status "active", one audit
+  // history entry, one automatic claim and one recovery dispatch — the
+  // heartbeat had recovered the claim, the auditor had produced its
+  // verdict, and the wait was still asking for a status the product had
+  // already left.
+  //
+  // The durable evidence is the LEDGER: `audit_started` records every
+  // dispatched attempt, `audit_recovery_started` records the automatic
+  // session-recovery origin, `audit_recovery_auto_retry_claimed` records
+  // the one-shot automatic claim. A test may still READ the status and
+  // assert it while the audit is in flight — but it must not WAIT for it.
+  const WAIT = /\b(?:waitUntil|waitFor|waitForAuditDispatch|waitForRecoveryDispatch)\s*\(/g;
+  const offenders: string[] = [];
+  for (const file of walk(path.join(ROOT, "tests"))) {
+    if (!file.endsWith(".test.ts")) continue;
+    const source = fs.readFileSync(file, "utf8");
+    for (const match of source.matchAll(WAIT)) {
+      const open = (match.index ?? 0) + match[0].length - 1;
+      if (!callArgument(source, open).includes('"auditing"')) continue;
+      const line = source.slice(0, match.index ?? 0).split("\n").length;
+      offenders.push(`${path.relative(ROOT, file)}:${line}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these waits ask for the transient "auditing" status; wait for the durable ledger evidence instead (audit_started / audit_recovery_started)',
+  );
+});
+
 function walk(dir: string): string[] {
   const out: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
