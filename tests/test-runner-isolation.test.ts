@@ -39,9 +39,14 @@ test('runner isolates recovery factory wiring per file and aggregates failures',
       });
     `);
     fs.writeFileSync(failure, `import { test, expect } from 'bun:test'; test('intentional failure', () => expect(1).toBe(2));`);
+    // v0.39.53 (gate stability): the nested runner boots bun, loads the whole
+    // extension and runs a real session_start. A hard-coded 30 s kill window
+    // SIGTERMs it on a loaded host — the nested run then exits non-zero and the
+    // gate reports a healthy system as broken. Size the window with the repo's
+    // load-aware budget helper instead of a fixed guess.
     const run = (files: string[]) => spawnSync('node', [path.resolve('scripts/run-tests.mjs'), ...files], {
       env: { ...process.env, GLLA_GLOBAL_SETTINGS_PATH: path.join(directory, 'settings.json') },
-      encoding: 'utf8', timeout: 30000,
+      encoding: 'utf8', timeout: scaledBudgetMs(30_000),
     });
     const passing = run([rig, runtime]);
     assert.equal(passing.status, 0, passing.stdout + passing.stderr);
