@@ -175,6 +175,14 @@ This authority boundary applies before settings-value normalization.
 | `reviewer` | legacy | Deprecated alias for `postaudit`; migrated on load, `postaudit` wins. |
 | `fleetHealthRoots` | unset (current project) | Roots `/glla fleet` scans for project health (`["/home/dracon/Dev"]`). Relative paths resolve from the invoking project. Project-settable; not a menu row, so it is edited in the settings JSON. |
 
+The post-completion audit config is edited from the **Postaudit** row in
+`/glla` settings, or with `/glla postaudit` / `/glla reviewer` (both open the
+same menu). It is project-scoped and persists under the canonical `postaudit`
+key. A hand-written legacy `reviewer` block still reaches the menu, because
+load-migration consolidates `reviewer` into `postaudit` before it is read.
+Each edit is merged over the **effective** block (global, then project), so an
+option set in one edit is still in effect after the next one.
+
 ## Auditor backup selection
 
 Explicit quota, rate-limit and billing errors end the worker's internal retry
