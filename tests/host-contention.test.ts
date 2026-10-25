@@ -223,7 +223,7 @@ test("no test's frame expires before the waits inside it", () => {
   // 241s by a frame that had been sized at 1x on a host running at load 50.
   const FRAME = /test\(.*\{ timeout: (?:scaledBudgetMs|hangDeadlineMs)\((\d[\d_]*)\)/;
   const EXPLICIT_WAIT = /waitUntil\([^)]*?,\s*(\d[\d_]*)\s*\)|waitFor\([^)]*?timeoutMs:\s*(\d[\d_]*)/g;
-  const ANY_WAIT = /\bwaitUntil\(|\bwaitFor\(/g;
+  const ANY_WAIT = /\bwaitUntil\(|\bwaitFor\(|\bwaitForAuditDispatch\(|\bwaitForRecoveryDispatch\(/g;
   // A file may define its OWN wait helper with its own default budget, so
   // the default is read from the definition rather than assumed — otherwise
   // a local `waitFor(check, timeout = 30000)` would be measured against the
