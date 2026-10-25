@@ -756,3 +756,33 @@ test("v0.38.104: an unpersistable newObjective refuses the claim and never advan
     fs.rmSync(transaction, { recursive: true, force: true });
   }
 });
+
+test("v0.39.54 (field eve 2026-10-25): a crash-orphaned own archive does not fence the goal forever", async () => {
+  // The field deadlock: the goal was archived as `complete`, then the process
+  // died before the live state slot was cleared. Every later /glla wipe hit the
+  // same-id fence, so the item could never be closed — the archive said
+  // complete while the live objective stayed paused indefinitely.
+  //
+  // The name cannot distinguish this from a foreign winner (the path is derived
+  // from the goal id), so the CONTENT decides: a record naming this goal as its
+  // File with a terminal status IS this goal's own archive.
+  const cwd = tmpCwd();
+  const goal = seedGoal({ status: "paused", policy: "list" });
+  const archivePath = path.join(cwd, ".pi-glla", "archive", `${goal.id}.md`);
+  fs.mkdirSync(path.dirname(archivePath), { recursive: true });
+  // Exactly what archiveCurrentGoal writes before the state append.
+  fs.writeFileSync(archivePath, `# Goal\n\n**Status**: complete\n**Policy**: list\n**File**: \`${goal.id}.md\`\n`);
+  seedState(cwd, { goal });
+  __testOnlyLoadState(cwd);
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyRegisterAgentTools(pi.api);
+  await pi.command("goal", "cancel", ownerCtx(cwd));
+  const after = readState(cwd);
+  assert.equal(after.goal, null, "the orphaned slot is closed instead of fenced forever");
+  const ledger = readLedger(cwd).map((entry) => entry.type).join("\n");
+  assert.doesNotMatch(ledger, /faulty_objective_archive_fence/, "an own-archive recovery is not recorded as a fence failure");
+  assert.match(ledger, /goal_archived/, "the interrupted terminalization completed");
+  // The durable archive is not replaced by the recovery.
+  assert.match(fs.readFileSync(archivePath, "utf8"), /\*\*Status\*\*: complete/, "the finished record survives");
+});
