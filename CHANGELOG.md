@@ -43,6 +43,12 @@ have waited for a condition.**
    written its job dir yet, so the liveness probe read it as workerless.
    The goal was left parked awaiting a *manual* resume — the exact failure
    the automatic recovery exists to prevent.
+6. **A test waited for a side effect and then read the effect.** The
+   post-compaction settle owns a 2s timer. One test waited for the settle's
+   ledger row and then read the *send* count — two steps, and the send can
+   land after the row. A second test slept a fixed 2500ms and then read the
+   same count. Both report "no continuation was sent" when the settle was
+   merely scheduled late.
 
 ### The fix
 
@@ -80,6 +86,11 @@ have waited for a condition.**
   silent the whole time. A claim with no attempt timestamp (legacy) keeps
   the session clock. This is the one product behaviour change in this
   release, and it is the fix for #5 above.
+- **A wait asks for the effect it measures.** The post-compaction settle
+  tests wait for the continuation *send* — under a host-sized budget — and
+  then assert the count is exactly one, so a duplicate probe still fails
+  them. The settle's ledger row remains the evidence that the probe itself
+  happened exactly once.
 - **A test waits for durable evidence, never for a transient status.** The
   ledger is the durable record of an audit: `audit_started` records every
   dispatched attempt, `audit_recovery_started` records the automatic
