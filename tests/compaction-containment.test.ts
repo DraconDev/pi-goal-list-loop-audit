@@ -173,6 +173,16 @@ test("post-compact settle owns exactly one bounded probe (no duplicates)", async
 
   assert.equal(countLedger(cwd, "compaction_refire"), 1, "exactly one post-settle probe");
   assert.equal(countLedger(cwd, "compaction_grace_refire"), 0, "grace refire stays future");
+  // The probe row and the send it owns are two steps: the row lands first and
+  // the dispatch follows. Waiting for the row and then reading the send count
+  // is a race on a busy host — the settle's own timer callback can be
+  // scheduled past the window, so the send lands after the assert. Wait for
+  // the SEND the assertion measures; the "exactly one" contract still binds
+  // (a duplicate probe would send twice).
+  await waitFor(() => pi.sent.length - sentBefore >= 1, {
+    timeoutMs: 2500,
+    message: "the post-compact settle sent no continuation",
+  });
   assert.equal(pi.sent.length - sentBefore, 1, "exactly one continuation send after settle");
   assert.ok(!ledgerTypes(cwd).includes("send_rearm_escalated"), "settle probe is not a storm");
 });
