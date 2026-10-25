@@ -27,7 +27,7 @@ import * as path from "node:path";
 import { execSync } from "node:child_process";
 import activate, { __testOnlyDisplayActivityFor, __testOnlyLastConfirmDialog, __testOnlyLoadState, __testOnlyRememberCtx, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetStarvationGate, __testOnlyResetTerminalFlags, __testOnlyResetToolActivity, __testOnlyRunFanOutListAuditFindings, __testOnlySetContinuationRetryBackoff, __testOnlySetContinuationStartTimeout, __testOnlySetSessionReplacementUntil, runDetachedCompletionWithFallback } from "../extensions/loops/goal.js";
 import { __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry, __testOnlySetZombieRetryMaxAttempts } from "../extensions/loops/goal-activation.js";
-import { recentActions } from "../extensions/loops/goal-ui.js";
+import { recentActions, __testOnlySetLastRealActivityAt } from "../extensions/loops/goal-ui.js";
 import { __testOnlyHeartbeatTick, __testOnlySetZombieRunWindows, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes, __testOnlySubagentHangProbes, upsertSubagentHangProbe, endSubagentHangProbe } from "../extensions/goal-heartbeat.js";
 import { mainModelRecoverySucceeded } from "../extensions/goal-recovery.js";
 import { isProviderRetryPending } from "../extensions/quota-retry.js";
