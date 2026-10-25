@@ -4977,7 +4977,7 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
       const settled = readState(cwd).goal as { status?: string; pendingCompletion?: unknown; auditHistory?: unknown[] } | null;
       return settled?.status === "active" && !settled.pendingCompletion && (settled.auditHistory?.length ?? 0) >= 1;
     });
-    await pi.fire("session_shutdown", { reason: "quit", }, first);
+    await pi.fire("session_shutdown", { reason: "quit" }, first);
     await audit;
   } finally {
     pi.sendMessageError = null;
