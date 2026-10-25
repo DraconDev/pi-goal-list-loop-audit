@@ -25,9 +25,9 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
-import activate, { __testOnlyDisplayActivityFor, __testOnlyLastConfirmDialog, __testOnlyLoadState, __testOnlyRememberCtx, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetStarvationGate, __testOnlyResetTerminalFlags, __testOnlyResetToolActivity, __testOnlyRunFanOutListAuditFindings, __testOnlySetContinuationRetryBackoff, __testOnlySetContinuationStartTimeout, __testOnlySetSessionReplacementUntil, runDetachedCompletionWithFallback } from "../extensions/loops/goal.js";
+import activate, { __testOnlyDisplayActivityFor, __testOnlyLastConfirmDialog, __testOnlyLoadState, __testOnlyRememberCtx, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetStarvationGate, __testOnlyResetTerminalFlags, __testOnlyResetToolActivity, __testOnlyRunFanOutListAuditFindings, __testOnlySetContinuationRetryBackoff, __testOnlySetContinuationStartTimeout, __testOnlySetLastRealActivityAt, __testOnlySetSessionReplacementUntil, runDetachedCompletionWithFallback } from "../extensions/loops/goal.js";
 import { __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry, __testOnlySetZombieRetryMaxAttempts } from "../extensions/loops/goal-activation.js";
-import { recentActions, __testOnlySetLastRealActivityAt } from "../extensions/loops/goal-ui.js";
+import { recentActions } from "../extensions/loops/goal-ui.js";
 import { __testOnlyHeartbeatTick, __testOnlySetZombieRunWindows, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes, __testOnlySubagentHangProbes, upsertSubagentHangProbe, endSubagentHangProbe } from "../extensions/goal-heartbeat.js";
 import { mainModelRecoverySucceeded } from "../extensions/goal-recovery.js";
 import { isProviderRetryPending } from "../extensions/quota-retry.js";
@@ -5162,7 +5162,8 @@ test("v0.39.52: the heartbeat does not reclaim a completion audit it dispatched 
     const ctx = await freshSession(cwd, "startup");
     // The claim is seeded AFTER the session is up: a session_start that finds
     // a stored claim with no worker has its own no-verdict path, and this
-    // test is about the heartbeat's gate.
+    // test is about the heartbeat's gate. The runtime state is reloaded so
+    // the heartbeat reads the claim the way it reads a live one.
     seedState(cwd, {
       goal: seedGoal({
         status: "auditing",
@@ -5176,6 +5177,7 @@ test("v0.39.52: the heartbeat does not reclaim a completion audit it dispatched 
         },
       }),
     });
+    __testOnlyLoadState(cwd);
     // The session looks quiet: no real agent turn for five minutes, which is
     // what a detached audit always looks like from the heartbeat's side.
     __testOnlySetLastRealActivityAt(Date.now() - 300_000);
