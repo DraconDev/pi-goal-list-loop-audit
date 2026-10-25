@@ -97,3 +97,25 @@ tests/settings-menu-complete.test.ts:
 (pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.70ms]
 (pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [16.70ms]
 (pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [8.71ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [9229.80ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [95.85ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [53.34ms]
+(pass) settings table fits narrow terminals with details both hidden and visible [279.74ms]
+
+tests/footer-fold.test.ts:
+[run-tests] progress: 181s elapsed · 0s since last output · 8 KiB of suite output
+(pass) version tail lands on the card and is not lost with the strip [227.71ms]
+(pass) supervisor-paused marker moves onto the card closer [0.70ms]
+(pass) the card closer keeps its own text when folded facts are appended [202.08ms]
+(pass) an auditing card yields the duplicated strip, and buildStatusText still names the state [14.97ms]
+(pass) a waiting-only queue keeps its strip even though a card renders [2.27ms]
+(pass) a stale-handle interruption keeps its strip [2.91ms]
+(pass) negative control: the footer facts would be lost if the fold were removed [1.17ms]
+(pass) at 20 columns every folded fact is present whole, not clipped [2.17ms]
+(pass) at 32 columns every folded fact is present whole, not clipped [0.83ms]
+(pass) a wrapped fact keeps the tree structure honest (no early closer) [1.08ms]
+(pass) a head-only card folds the version onto the head instead of a dangling closer [1.20ms]
+(pass) a glyph-less card body gets a matching plain-indent version row, not a tree glyph [2.38ms]
+(pass) versionDisplay defaults to the card and never duplicates the surface [9128.31ms]
+
+tests/settings-editors.test.ts:
