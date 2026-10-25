@@ -109,14 +109,90 @@ async function waitUntil(predicate: () => boolean, timeoutMs = 30_000): Promise<
   }
 }
 
-/** The recovery ledger entry is appended BEFORE the goal state moves to
- * "auditing", so a wait that only watches the ledger races the state write:
- * on a loaded host the state can still read "paused" when the ledger is
- * already there. Wait for both facts — the dispatch is recorded AND the
- * state carries it — so the assertion that follows sees a settled goal. */
-async function waitForRecoveryAuditing(cwd: string): Promise<void> {
-  await waitUntil(() => readLedger(cwd).some((entry) => entry.type === "audit_recovery_started")
-    && (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
+/**
+ * The durable evidence of a dispatched completion audit.
+ *
+ * v0.39.52: the "auditing" STATUS is TRANSIENT. The detached auditor can
+ * finish, apply its verdict and return the goal to "active" before a test
+ * observes it — and on a starved host the observation lands AFTER the
+ * verdict. A wait that asks for "auditing" then burns its whole budget on a
+ * state that is never coming back, and the gate reports a healthy machine
+ * as broken. It did: the heartbeat-recovery test waited 240s for a status
+ * the product had already left, with the claim recovered, the audit
+ * dispatched and the verdict applied.
+ *
+ * The LEDGER is the durable evidence. `audit_started` records every
+ * dispatched attempt, `audit_recovery_started` records the automatic
+ * session-recovery origin (a manual /goal resume writes `goal_resumed`
+ * instead), and `audit_recovery_auto_retry_claimed` records the one-shot
+ * automatic claim. The state write lands BEFORE the ledger row, so a ledger
+ * row proves the attempt was dispatched — and the goal may already have
+ * settled by the time the row is read.
+ */
+function auditLedgerEvidence(cwd: string): {
+  started: Array<Record<string, unknown>>;
+  recoveries: Array<Record<string, unknown>>;
+  claims: Array<Record<string, unknown>>;
+} {
+  const ledger = readLedger(cwd);
+  const values = (type: string) => ledger.filter((entry) => entry.type === type).map((entry) => entry.value);
+  return {
+    started: values("audit_started"),
+    recoveries: values("audit_recovery_started"),
+    claims: values("audit_recovery_auto_retry_claimed"),
+  };
+}
+
+/**
+ * Wait until a completion audit attempt has been DISPATCHED.
+ *
+ * `attempts` is how many `audit_started` rows must exist; `recovery` also
+ * requires the automatic session-recovery dispatch. This waits for the
+ * LEDGER, never for the transient status — see auditLedgerEvidence.
+ */
+async function waitForAuditDispatch(cwd: string, options: { attempts?: number; recovery?: boolean; timeoutMs?: number } = {}): Promise<void> {
+  const attempts = options.attempts ?? 1;
+  await waitUntil(() => {
+    const evidence = auditLedgerEvidence(cwd);
+    return evidence.started.length >= attempts && (!options.recovery || evidence.recoveries.length >= 1);
+  }, options.timeoutMs ?? 20_000);
+}
+
+/**
+ * Wait until the automatic session-recovery dispatch is ledgered.
+ *
+ * That row is written ONLY for the automatic session-recovery origin, so it
+ * is the durable proof that the claim was recovered WITHOUT a user action:
+ * a manual /goal resume writes `goal_resumed` instead.
+ */
+async function waitForRecoveryDispatch(cwd: string): Promise<void> {
+  await waitForAuditDispatch(cwd, { recovery: true });
+}
+
+/**
+ * A completion audit is EITHER still running ("auditing") or already settled
+ * ("active" with an audit history). Both are honest outcomes of a working
+ * auditor; only a stranded claim — still parked with no verdict — fails.
+ */
+function assertAuditRunningOrSettled(cwd: string, message: string): void {
+  const goal = readState(cwd).goal as { status?: string; pendingCompletion?: unknown; auditHistory?: unknown[] } | null;
+  const running = goal?.status === "auditing";
+  const settled = goal?.status === "active" && !goal.pendingCompletion && (goal.auditHistory?.length ?? 0) >= 1;
+  assert.ok(running || settled, `${message} (status: ${goal?.status ?? "absent"}, audit history: ${goal?.auditHistory?.length ?? 0})`);
+}
+
+/**
+ * The attempt-owning phase of a live audit claim, checked while the audit
+ * is still running.
+ *
+ * The phase is transient — the claim is cleared when the audit settles — so
+ * this is a live check, never a wait. The durable proof that a fresh
+ * attempt owned the claim is the dispatched attempt id in the ledger.
+ */
+function assertLiveClaimOwnsAttempt(cwd: string, message: string): void {
+  const goal = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string } } | null;
+  if (goal?.status !== "auditing") return;
+  assert.ok(auditPhaseOwnsAttempt(goal.pendingCompletion?.phase), `${message} (phase: ${goal.pendingCompletion?.phase ?? "absent"})`);
 }
 
 function readLedger(cwd: string): Array<{ type: string; value: Record<string, unknown> }> {
@@ -503,7 +579,7 @@ test("v0.36.0: aborted detached audit can complete without audit only after arch
       completionSummary: "The without-audit escape path is covered.",
       verificationSummary: "The worker is deliberately aborted before a verdict.",
     }, ctx, controller.signal);
-    await waitUntil(() => (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
+    await waitForAuditDispatch(cwd);
     controller.abort();
     await queued;
     await waitUntil(() => readState(cwd).goal === null);
@@ -4537,9 +4613,8 @@ test("v0.35.x: validated session handoff auto-retries a parked completion audit"
       completionSummary: "The parked claim should recover on a valid handoff.",
       verificationSummary: "A fresh session must retry the stored claim without manual resume.",
     }, first);
-    await waitUntil(() => (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
-    const before = readState(cwd).goal as { pendingCompletion?: { attemptId?: string } };
-    const oldAttempt = before.pendingCompletion?.attemptId;
+    await waitForAuditDispatch(cwd);
+    const oldAttempt = auditLedgerEvidence(cwd).started.at(-1)?.attemptId as string | undefined;
     assert.ok(oldAttempt);
 
     // A non-quit lifecycle boundary writes a matching handoff sidecar. The
@@ -4547,12 +4622,16 @@ test("v0.35.x: validated session handoff auto-retries a parked completion audit"
     // this is different from merely contacting the successor with a tool.
     await pi.fire("session_shutdown", { reason: "reload" }, first);
     const replacement = await freshSession(cwd, "reload");
-    await waitForRecoveryAuditing(cwd);
+    await waitForRecoveryDispatch(cwd);
 
-    const afterStart = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string; phase?: string } } | null;
-    assert.equal(afterStart?.status, "auditing", "the fresh host continues the detached audit, not the main goal");
-    assert.notEqual(afterStart?.pendingCompletion?.attemptId, oldAttempt, "recovery dispatch owns a fresh attempt");
+    // The recovery dispatch owns a FRESH attempt, and the goal is either
+    // still auditing or has already settled with the verdict: the status is
+    // transient, so the LEDGER carries the contract.
+    const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
+    assert.ok(recoveryAttempt, "the fresh host dispatched a recovery attempt for the goal");
+    assert.notEqual(recoveryAttempt, oldAttempt, "recovery dispatch owns a fresh attempt");
     assert.equal(readLedger(cwd).filter((entry) => entry.type === "audit_recovery_started").length, 1, "one recovery dispatch is ledgered");
+    assertAuditRunningOrSettled(cwd, "the fresh host continues the detached audit, not the main goal");
     assert.ok(replacement.ui.matching("Fresh session recovered the interrupted completion audit").length >= 1);
 
     await waitUntil(() => {
