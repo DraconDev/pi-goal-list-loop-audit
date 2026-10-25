@@ -214,6 +214,12 @@ test("scheduleContinuation defers while in flight and the settle still sends onc
   assert.ok(ledgerTypes(cwd).includes("continuation_dispatch_deferred_compaction"), "deferral is ledgered");
 
   await pi.fire("session_compact", {}, ctx);
-  await tick(2500);
+  // The settle fires on a 2s timer. A fixed 2500ms sleep is a race on a
+  // busy host: the timer callback can be scheduled past that window and the
+  // send lands after the assert. Wait for the send the assertion measures.
+  await waitFor(() => pi.sent.length - sentBefore >= 1, {
+    timeoutMs: 2500,
+    message: "the post-compact settle sent no continuation",
+  });
   assert.equal(pi.sent.length - sentBefore, 1, "settle sends once — deferred dispatch is not doubled");
 });
