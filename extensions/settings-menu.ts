@@ -876,6 +876,18 @@ export function buildSettingsRows(
       description:
         "off: leave the transcript alone so the provider prefix-cache holds (default) · on: legacy per-turn splice of a bounded continuation checkpoint",
     },
+    {
+      // v0.39.53 (audit 2026-10-25, finding 1): the editor existed but this row
+      // did not, so the setting had no operator path — the headless list showed
+      // the value and the docs promised a row that was never rendered.
+      id: "versionDisplay",
+      section: "other",
+      label: "Version indicator",
+      valueText: show("versionDisplay", "card"),
+      sourceText: src("versionDisplay"),
+      description:
+        "where the running GLLA version shows: card: a row on the active card (default) · status: the bottom status line · off: hidden (/glla version still reports it)",
+    },
   );
 
   return rows.map((row) => ({ ...row, label: compactDisplayText(row.label), valueText: compactDisplayText(row.valueText), sourceText: compactDisplayText(row.sourceText), description: compactDisplayText(row.description) }));
