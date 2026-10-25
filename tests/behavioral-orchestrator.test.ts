@@ -5178,6 +5178,8 @@ test("v0.39.52: the heartbeat does not reclaim a completion audit it dispatched 
     __testOnlySetLastRealActivityAt(Date.now() - 300_000);
     __testOnlyHeartbeatTick();
     const goal = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string; phase?: string } };
+    console.error("[REG] goal:", JSON.stringify(goal));
+    console.error("[REG] ledger:", fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l).type).join(","));
     assert.equal(goal?.status, "auditing", "a freshly dispatched attempt is not reclaimed as stranded");
     assert.equal(goal?.pendingCompletion?.attemptId, attemptId, "the claim still owns its attempt");
     assert.doesNotMatch(
