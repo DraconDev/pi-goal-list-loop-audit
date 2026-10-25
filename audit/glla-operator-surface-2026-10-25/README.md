@@ -35,8 +35,8 @@ existing test suite before being kept or cleared as a finding.
 
 | Finding | Severity | Disposition | Evidence |
 | --- | --- | --- | --- |
-| 1 — the "Version indicator" editor is unreachable from the settings table | P2 | **Open** — the feature is live, documented and shipped; the operator path is missing | [repro](#finding-1--the-version-indicator-editor-is-unreachable) · `repro.log` |
-| 2 — the postaudit editor re-reads a key that load-migration deletes, so every edit discards the previous one | P1 | **Open** — a saved "off" silently reverts to the default "on" | [repro](#finding-2--the-postaudit-editor-discards-the-options-an-earlier-edit-saved) · `repro.log` |
+| 1 — the "Version indicator" editor is unreachable from the settings table | P2 | **Fixed in v0.39.53** — the row ships, and a completeness gate now fails the next omission | [repro](#finding-1--the-version-indicator-editor-is-unreachable) · `repro.log` |
+| 2 — the postaudit editor re-reads a key that load-migration deletes, so every edit discards the previous one | P1 | **Fixed in v0.39.53** — the editor reads and writes the canonical key, and the round trip is tested | [repro](#finding-2--the-postaudit-editor-discards-the-options-an-earlier-edit-saved) · `repro.log` |
 
 Two candidate classes were investigated and **cleared**, and are recorded here
 so a later audit does not re-open them:
