@@ -4729,12 +4729,11 @@ test("v0.35.x: manual /list resume retries a parked list completion claim direct
     // worker event proves `running`), so a sub-poll-interval audit settles
     // without ever publishing `running`. The contract here is "a fresh
     // attempt was launched and owns the claim", not one phase string.
-    await waitUntil(() => {
-      const resumed = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; attemptId?: string } } | null;
-      return resumed?.status === "auditing" && auditPhaseOwnsAttempt(resumed.pendingCompletion?.phase);
-    });
-    const started = readState(cwd).goal as { pendingCompletion?: { attemptId?: string } };
-    assert.notEqual(started.pendingCompletion?.attemptId, oldAttempt, "manual /list resume starts a fresh detached attempt");
+    await waitForAuditDispatch(cwd);
+    const startedAttempt = auditLedgerEvidence(cwd).started.at(-1)?.attemptId as string | undefined;
+    assert.ok(startedAttempt);
+    assert.notEqual(startedAttempt, oldAttempt, "manual /list resume starts a fresh detached attempt");
+    assertLiveClaimOwnsAttempt(cwd, "the fresh manual attempt owns the claim");
     const ledger = readLedger(cwd);
     assert.equal(ledger.filter((entry) => entry.type === "audit_recovery_started").length, 0, "manual resume is not mislabeled as automatic recovery");
     assert.equal(ledger.filter((entry) => entry.type === "audit_started").length, 1, "manual /list resume starts exactly one stored-claim audit");
