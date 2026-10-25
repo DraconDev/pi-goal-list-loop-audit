@@ -25,3 +25,8 @@ tests/glla-stale-context.test.ts:
 [run-tests] progress: 90s elapsed · 71s since last output · 0 KiB of suite output
 [run-tests] progress: 120s elapsed · 102s since last output · 0 KiB of suite output
 [run-tests] progress: 150s elapsed · 132s since last output · 0 KiB of suite output
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [145605.96ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [668.46ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [1046.40ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [1.77ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [189.44ms]
