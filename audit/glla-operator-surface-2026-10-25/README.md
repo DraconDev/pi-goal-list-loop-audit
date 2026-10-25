@@ -44,7 +44,9 @@ so a later audit does not re-open them:
 - **Settings deliberately edited together** — `auditorThinkingLevel`,
   `drafterThinkingLevel` and `designerThinkingLevel` have no standalone row
   because the thinking level is chosen *with* the model in one editor
-  transaction (`extensions/loops/goal-settings-ui.ts:1805`). Not a finding.
+  transaction (`extensions/loops/goal-settings-ui.ts:1793` and the "thinking is
+  chosen WITH the model" rule at `extensions/loops/goal-settings-ui.ts:1811`).
+  Not a finding.
 - **Settings documented as hidden legacy** — `auditorSameSessionSwap` is
   documented as "No longer shown in the menu" (`docs/SETTINGS.md:136`) and
   `reviewer` is a documented legacy alias (`docs/SETTINGS.md:175`). Not a
