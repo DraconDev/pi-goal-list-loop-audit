@@ -113,3 +113,6 @@ tests/settings-menu-complete.test.ts:
 (pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [8.24ms]
 (pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [96.92ms]
 (pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [24.96ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [10652.90ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [61.57ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [15.01ms]
