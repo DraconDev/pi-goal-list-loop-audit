@@ -2324,38 +2324,25 @@ function parseToolOverrideValue(s: string): unknown {
 
 /** v0.27.5: /glla reviewer | postaudit — the post-completion audit config menu
  * (project-scoped). Reads the dual-write settings (postaudit wins over the
- * legacy reviewer key).
- *
- * v0.39.53 (audit 2026-10-25, finding 2): the editor now reads AND writes the
- * canonical `postaudit` key only. It used to write back to whichever key it
- * read first — and the key it read first was the legacy `reviewer`, which
- * load-migration consolidates into `postaudit` and DELETES on every read. That
- * read was therefore always `undefined`, so every edit merged over the
- * DEFAULTS and silently discarded the options an earlier edit had saved (an
- * explicit "off" reverted to the default "on"). A legacy `reviewer` block is
- * still honoured: load-migration surfaces it as `postaudit` before we read it.
- */
+ * legacy reviewer key), and writes back to whichever key was read first —
+ * so we don't drift two parallel config blocks. Writes to the legacy key
+ * don't stick: load-migration consolidates them into postaudit on the
+ * next read (audit 2026-09-07, finding 395). */
 async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
   const settings = loadSettings(ctx.cwd);
   const block = (settings.postaudit ?? settings.reviewer) as Partial<ReviewerConfig> | undefined;
-  const settingsKey = "postaudit" as const;
+  const settingsKey: "postaudit" | "reviewer" = settings.postaudit !== undefined ? "postaudit" : "reviewer";
   if (!ctx.hasUI) {
     const cfg = resolveReviewerConfig(block);
     ctx.ui.notify(`${settingsKey} (project): ${JSON.stringify(cfg, null, 2)}`, "info");
     return;
   }
-  // The EFFECTIVE block (global + project), read raw: the menu renders the
-  // resolved config, and a save writes the effective block back at project
-  // scope with the patch applied — the same contract the toolOverrides editor
-  // uses. Merging over the effective block (never over the defaults) is what
-  // keeps an earlier edit alive when a later one is made.
-  const loadEffective = () => loadSettings(ctx.cwd).postaudit as Partial<ReviewerConfig> | undefined;
-  const load = () => resolveReviewerConfig(loadEffective());
+  const load = () => resolveReviewerConfig(loadSettings(ctx.cwd)[settingsKey] as Partial<ReviewerConfig> | undefined);
   const save = (patch: Partial<ReviewerConfig>) => {
     if (warnIfStaleAtEntry(ctx, "postaudit settings save")) {
       throw new Error("the session handle became stale during the edit");
     }
-    saveSettings("project", ctx.cwd, { postaudit: { ...loadEffective(), ...patch } as Record<string, unknown> });
+    saveSettings("project", ctx.cwd, { [settingsKey]: { ...load(), ...patch } as Record<string, unknown> });
   };
   for (;;) {
     const cfg = load();
