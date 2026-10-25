@@ -111,6 +111,18 @@ have waited for a condition.**
   makes the same run pass. Negative control for the new policy test:
   reinstating one transient-status wait makes it fail, and removing it
   makes it pass.
+- The fifth defect was caught by the rewritten contract, not by a guess: the
+  heartbeat-recovery test failed in 2.3s with `status "paused"` and no audit
+  history, and the failed run's own ledger named the path —
+  `completed_audit_recovery_rejected` with `gate: "no-job-dir"`, then
+  `stranded_audit_recovered` via `workerless-in-flight`. The heartbeat had
+  taken back the audit it had just dispatched.
+- `tests/behavioral-orchestrator.test.ts` — 159 pass, 0 fail, including a
+  new regression test that pins the product fix: a claim whose attempt is
+  seconds old is NOT reclaimed as stranded, even when the session has been
+  quiet for five minutes. Negative control: reverting the heartbeat gate to
+  the session clock makes that test fail (`paused` instead of `auditing`),
+  and restoring it makes it pass.
 - The three files that carried the flake —
   `tests/supervised-provider-exhaustion-runtime.test.ts`,
   `tests/resume-goal-tool.test.ts` and
