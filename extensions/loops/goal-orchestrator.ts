@@ -1362,6 +1362,7 @@ export function archiveCurrentGoal(
   // only be this goal's own record. Verify the basename rather than trusting
   // the derivation: a mis-derived path must still fence, never overwrite.
   const sameGoalArchive = path.basename(target).startsWith(`${goal.id}.md`);
+  let archiveRecovered = false;
   if (fs.existsSync(target)) {
     // v0.39.54 (field eve 2026-10-25): a same-id archive whose goal is STILL
     // live is not another writer's winner — it is THIS goal's own terminal
@@ -1375,6 +1376,7 @@ export function archiveCurrentGoal(
     // this goal. Finish the interrupted terminalization instead of refusing it:
     // the archive is already durable and the state append is the missing half.
     if (sameGoalArchive) {
+      archiveRecovered = true;
       appendLedger(ctx.cwd, "archive_fence_recovered", {
         goalId: goal.id,
         where: "archiveCurrentGoal",
@@ -1414,6 +1416,12 @@ export function archiveCurrentGoal(
     // Audit 2026-09-06: randomUUID instead of Math.random — temp names
     // must not be guessable by a sibling writer (the wx flag already
     // mitigates, this removes the predictability too).
+    // v0.39.54: when the preflight decided this target is OUR OWN interrupted
+    // archive, the destination is already present. Republishing it would
+    // either fail EEXIST or rewrite a durable record, so treat the existing
+    // file as the published half and continue to the state append below —
+    // that append is the only thing the crash left undone.
+    if (archiveRecovered) return true;
     const temp = `${target}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
     try {
       fs.writeFileSync(temp, richMd, { encoding: "utf-8", flag: "wx" });
