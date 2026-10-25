@@ -1,2 +1,5 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=377s heartbeat=30s
 [run-tests] host is 2.1x slower than an idle host — per-test budget raised to 251s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
