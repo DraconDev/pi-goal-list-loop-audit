@@ -192,7 +192,14 @@ test("escalation proceeds after settle — the gate is compaction-scoped, not a 
   currentCtx = ctx;
   await pi.fire("session_before_compact", {}, ctx);
   await pi.fire("session_compact", {}, ctx);
-  await tick(2500); // settle owns its probe; marker cleared
+  // The settle owns its probe on a 2s timer; wait for that probe to land
+  // instead of sleeping past it — on a busy host the timer callback is
+  // scheduled late, and the marker it clears is what the escalation below
+  // depends on.
+  await waitFor(() => countLedger(cwd, "compaction_refire") >= 1, {
+    timeoutMs: 2500,
+    message: "the post-compact settle never probed",
+  });
 
   backdateStormClocks(); // the wedge OUTLIVES the compaction this time
   accountSendRearm(ctx as never, "continuation");
