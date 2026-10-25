@@ -2,6 +2,77 @@
 
 ## Unreleased
 
+## 0.39.53 — the `/glla` settings surface keeps its promises (2026-10-25)
+
+### The defects
+
+An operator-surface audit of the `/glla` command
+(`audit/glla-operator-surface-2026-10-25/`) found two defects, both on the
+surface an operator touches to change a setting.
+
+1. **The "Version indicator" editor had no row.** `versionDisplay` shipped in
+   v0.39.49 with a complete three-way editor and a documented row:
+   `docs/SETTINGS.md` says "Set it with **Version indicator** in `/glla`
+   settings", the v0.39.49 changelog promises "a **Version indicator** row in
+   `/glla` settings", and the headless `/glla` list printed the value and then
+   told the operator to open an interactive session. But no row in the
+   interactive table carried that id, and the table's choice handler is the
+   only thing that can open an editor. The setting was live, documented and
+   unreachable — only a hand-edited global settings JSON could change it, and
+   the key is global-only, so a project-scope write is refused outright.
+
+   A mechanical sweep of all 60 editor cases against all 77 rows showed
+   `versionDisplay` was the **only** editor in the product with no reachable
+   row.
+
+2. **The postaudit editor forgot every option an earlier edit saved.**
+   `/glla postaudit` (and `/glla reviewer`, and the interactive **Postaudit**
+   row) read the legacy `reviewer` key and wrote back to whichever key it read
+   first. But `reviewer` is a legacy alias: load-migration consolidates it into
+   `postaudit` and **deletes** it on every read — the repository already pins
+   that as a contract ("legacy key does not survive load"). The read was
+   therefore always `undefined`, so every edit merged over the **built-in
+   defaults** instead of over the saved block.
+
+   The defaults are `enabled: true` and `mode: "on"`. So the two options an
+   operator is most likely to change deliberately — turning the
+   post-completion audit off, or silencing it — were exactly the two that
+   reverted. Disable the audit, change one more thing, and the audit silently
+   starts firing again. The sub-menu rendered the config it read, so it showed
+   "Enabled — ON" throughout and could not warn.
+
+### The fixes
+
+- **The missing row.** `versionDisplay` now has a **Version indicator** row in
+  the "Other" section, with its provenance and the same three choices the
+  editor offers.
+- **The canonical key.** The postaudit editor reads and writes the canonical
+  `postaudit` key only. A legacy `reviewer` block is still honoured —
+  load-migration surfaces it as `postaudit` before the menu reads it — and each
+  edit is merged over the **effective** block (global, then project), which is
+  the same contract the `toolOverrides` editor already used.
+- **Two gates so the class cannot come back.** A new completeness gate asserts
+  that every editor case in `handleSettingChoice` is reachable from a row id
+  in `buildSettingsRows`, mirroring the existing doc and headless gates; and a
+  second gate asserts that the documented "Version indicator" row exists and is
+  labelled the way the reference names it. The old gates *passed*
+  `versionDisplay`, because it genuinely was in the docs and in the headless
+  list — nothing checked the interactive table.
+
+### Evidence
+
+| Check | Result |
+| --- | --- |
+| `audit/glla-operator-surface-2026-10-25/repro.test.ts` on v0.39.52 | 0 pass / 4 fail (the defects, reproduced) |
+| the same reproducer with these fixes | 4 pass / 0 fail |
+| negative control (legacy key re-introduced) | 3 fail / 0 pass — the new regression test catches it |
+| `tests/postaudit-editor-roundtrip.test.ts` (new) | 3 pass / 0 fail |
+| `tests/settings-editors.test.ts` (2 new gates) | 59 pass / 0 fail |
+| `npm run check` | exit 0 |
+| `npm run check:inventory` | exit 0 |
+
+The audit and its evidence live in `audit/glla-operator-surface-2026-10-25/`.
+
 ## 0.39.52 — the release gate stops reporting a busy machine as a broken one (2026-10-24)
 
 ### The defect
