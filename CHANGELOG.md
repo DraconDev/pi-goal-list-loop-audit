@@ -73,6 +73,30 @@ surface an operator touches to change a setting.
 
 The audit and its evidence live in `audit/glla-operator-surface-2026-10-25/`.
 
+### Gate stability — two more busy-host races (no product change)
+
+Two more release-gate races surfaced on a host at load 91 — the same class
+v0.39.52 addressed, in two files that round did not reach:
+
+- `tests/test-runner-isolation.test.ts` — the self-test that spawns the real
+  runner in a temp directory hard-coded a **30 s** kill window for the nested
+  process. The nested run boots bun, loads the whole extension and fires a
+  real `session_start`; on a loaded host that takes longer than 30 s, so the
+  nested runner was SIGTERM'd and the gate reported a healthy system as
+  broken. The window now scales with the repo's load-aware budget helper
+  (`scaledBudgetMs`).
+- `tests/respec-builder-audit-runtime.test.ts` — the stalled-worker scenario
+  injected a fixed **50 ms** no-progress budget to make the stall fast, while
+  the worker has to *boot* before it can report anything. On a loaded host the
+  boot outlasted the budget, so the watchdog killed the second worker before
+  it reported and the assertion read one launch instead of two. The injected
+  budget is now sized for the host (`hangDeadlineMs` — the same helper the
+  fixture already used), and the assertion waits for the condition it checks
+  instead of sampling the observations once.
+
+Neither change touches product behaviour: the first sizes a test's kill
+window, the second sizes a test's injected stall budget.
+
 ## 0.39.52 — the release gate stops reporting a busy machine as a broken one (2026-10-24)
 
 ### The defect
