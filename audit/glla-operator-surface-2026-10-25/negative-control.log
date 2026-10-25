@@ -116,3 +116,22 @@ tests/settings-menu-complete.test.ts:
 (pass) settings provenance reports normalized effective values, not rejected raw junk [10652.90ms]
 (pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [61.57ms]
 (pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [15.01ms]
+(pass) settings table fits narrow terminals with details both hidden and visible [229.37ms]
+
+tests/footer-fold.test.ts:
+(pass) version tail lands on the card and is not lost with the strip [29.30ms]
+(pass) supervisor-paused marker moves onto the card closer [0.40ms]
+(pass) the card closer keeps its own text when folded facts are appended [36.36ms]
+(pass) an auditing card yields the duplicated strip, and buildStatusText still names the state [10.81ms]
+(pass) a waiting-only queue keeps its strip even though a card renders [0.53ms]
+(pass) a stale-handle interruption keeps its strip [0.25ms]
+(pass) negative control: the footer facts would be lost if the fold were removed [0.32ms]
+(pass) at 20 columns every folded fact is present whole, not clipped [4.88ms]
+(pass) at 32 columns every folded fact is present whole, not clipped [0.27ms]
+(pass) a wrapped fact keeps the tree structure honest (no early closer) [0.56ms]
+(pass) a head-only card folds the version onto the head instead of a dangling closer [0.34ms]
+(pass) a glyph-less card body gets a matching plain-indent version row, not a tree glyph [2.39ms]
+(pass) versionDisplay defaults to the card and never duplicates the surface [7401.35ms]
+
+tests/settings-editors.test.ts:
+[run-tests] progress: 210s elapsed · 3s since last output · 9 KiB of suite output
