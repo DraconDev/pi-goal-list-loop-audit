@@ -4847,7 +4847,7 @@ test("v0.35.x: stale host replacement session_start auto-recovers the parked aud
       completionSummary: "A dropped host must not require manual auditor resume.",
       verificationSummary: "The replacement session retries the durable claim.",
     }, first);
-    await waitUntil(() => (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
+    await waitForAuditDispatch(cwd);
 
     invalidateHostSession(pi, first);
     __testOnlyHeartbeatTick();
@@ -4869,10 +4869,15 @@ test("v0.35.x: stale host replacement session_start auto-recovers the parked aud
       },
     });
     await pi.fire("session_start", { reason: "startup" }, successor);
-    await waitForRecoveryAuditing(cwd);
-    const restarted = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string } } | null;
-    assert.equal(restarted?.status, "auditing");
-    assert.notEqual(restarted?.pendingCompletion?.attemptId, oldAttempt);
+    await waitForRecoveryDispatch(cwd);
+    // The replacement session dispatched a FRESH attempt (durable: the
+    // ledger row carries the attempt id) and the goal is either still
+    // auditing or has already settled with the verdict: the status is
+    // transient, so the LEDGER carries the contract.
+    const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
+    assert.ok(recoveryAttempt);
+    assert.notEqual(recoveryAttempt, oldAttempt);
+    assertAuditRunningOrSettled(cwd, "the replacement session recovers the parked claim");
     assert.ok(successor.ui.matching("Fresh session recovered the interrupted completion audit").length >= 1);
 
     await waitUntil(() => {
@@ -4894,8 +4899,24 @@ test("v0.35.x: stale host replacement session_start auto-recovers the parked aud
 // asked for 30s and 4s. The frame therefore expired BEFORE the waits could
 // report what never happened — bun killed the test with a bare "timed out
 // after 51285ms" and no diagnosis. The frame now covers the sum of the waits
-// it contains (30s + 20s + 30s + 30s), so the wait's own message is what a
-// failure reports, and the frame is only the backstop for a wedged run.
+// it contains, so the wait's own message is what a failure reports, and the
+// frame is only the backstop for a wedged run.
+//
+// v0.39.52 (gate flake, root-caused): this test also waited for the goal's
+// TRANSIENT "auditing" status. The detached auditor can finish, apply its
+// verdict and return the goal to "active" before the test observes it — and
+// on a starved host the observation lands after the verdict. The wait then
+// burned its whole 240s budget on a state that was never coming back, and
+// the gate reported a healthy machine as broken. The probe dump caught it
+// exactly: status "active", one audit history entry, one automatic claim,
+// one recovery dispatch — the heartbeat had done its job and the audit had
+// already settled.
+//
+// So the contract is now stated in DURABLE evidence: the one-shot automatic
+// claim, the automatic session-recovery dispatch (a row only that origin
+// writes — a manual /goal resume writes `goal_resumed` instead), and the
+// fresh attempt those two carry. The live status is read as one of its
+// honest outcomes, never waited for.
 test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume", { timeout: scaledBudgetMs(960_000) }, async () => {
   __testOnlyResetStaleFlag();
   __testOnlyResetOwnerSession();
@@ -4912,13 +4933,15 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
       completionSummary: "A stale heartbeat must not leave the completion claim idle.",
       verificationSummary: "A healthy same-session heartbeat retries the stored claim once.",
     }, first);
-    await waitUntil(() => (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
+    await waitForAuditDispatch(cwd);
 
     invalidateHostSession(pi, first);
     __testOnlyHeartbeatTick();
     const parked = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string } } | null;
     assert.equal(parked?.status, "paused", "the stale boundary parks the claim durably");
     assert.equal(parked?.pendingCompletion?.phase, "recovery-pending");
+    const parkedAttempt = parked?.pendingCompletion?.attemptId;
+    assert.ok(parkedAttempt);
 
     // Restore the same mock host without delivering session_start. Before the
     // heartbeat gate fix, the parked status returned before probing this
@@ -4929,36 +4952,32 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
     first.hasPendingMessages = () => false;
     await waitUntil(() => {
       __testOnlyHeartbeatTick();
-      return readLedger(cwd).some((entry) => entry.type === "audit_recovery_started");
+      return auditLedgerEvidence(cwd).recoveries.length >= 1;
     }, 20_000);
-    // The ledger records the dispatch BEFORE the state moves to "auditing",
-    // so the state can still read "paused" when the ledger is already there —
-    // on a loaded host, reliably. Wait for the state to catch up.
-    {
-      const __until = untilMs(30_000);
-      while ((readState(cwd).goal as { status?: string } | null)?.status !== "auditing") {
-        if (Date.now() > __until) {
-          const g = readState(cwd).goal as any;
-          console.error("[PROBE-TIMEOUT] goal:", JSON.stringify({ status: g?.status, phase: g?.pendingCompletion?.phase, auto: g?.pendingCompletion?.automaticRecoveryAttempted, attempt: g?.pendingCompletion?.attemptId, hist: g?.auditHistory?.length, claims: readLedger(cwd).filter((e) => e.type === "audit_recovery_auto_retry_claimed").length, started: readLedger(cwd).filter((e) => e.type === "audit_recovery_started").length, ledgerTail: readLedger(cwd).slice(-6).map((e) => e.type) }));
-          throw new Error("timed out waiting for detached-auditor state");
-        }
-        await new Promise((r) => setTimeout(r, 20));
-      }
-    }
-    const __diag = readState(cwd).goal as any;
-    console.error("[PROBE] goal after the auditing wait:", JSON.stringify({ status: __diag?.status, phase: __diag?.pendingCompletion?.phase, auto: __diag?.pendingCompletion?.automaticRecoveryAttempted, attempt: __diag?.pendingCompletion?.attemptId, hist: __diag?.auditHistory?.length, ledgerClaims: readLedger(cwd).filter((e) => e.type === "audit_recovery_auto_retry_claimed").length, ledgerStarted: readLedger(cwd).filter((e) => e.type === "audit_recovery_started").length }));
 
-    const retrying = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean } } | null;
-    assert.equal(retrying?.status, "auditing", "healthy heartbeat starts the bounded recovery audit");
-    assertOwnsAttempt(retrying?.pendingCompletion, "healthy heartbeat starts an attempt-owning claim");
-    assert.equal(retrying?.pendingCompletion?.automaticRecoveryAttempted, true);
-    assert.equal(readLedger(cwd).filter((entry) => entry.type === "audit_recovery_auto_retry_claimed").length, 1);
+    // The heartbeat recovered the claim on its own: exactly one automatic
+    // claim (the one-shot slot) and exactly one automatic session-recovery
+    // dispatch, on a FRESH attempt. No user action was involved — a manual
+    // /goal resume writes `goal_resumed`, not `audit_recovery_started`.
+    const evidence = auditLedgerEvidence(cwd);
+    assert.equal(evidence.claims.length, 1, "the healthy heartbeat claims the parked claim exactly once");
+    assert.equal(evidence.recoveries.length, 1, "the heartbeat dispatches exactly one automatic recovery audit");
+    assert.notEqual(
+      evidence.recoveries.at(-1)?.attemptId,
+      evidence.claims.at(-1)?.previousAttemptId,
+      "the recovery starts a fresh attempt instead of reusing the parked one",
+    );
+    assert.notEqual(evidence.recoveries.at(-1)?.attemptId, parkedAttempt, "the recovery attempt is not the parked one");
+    // The live claim is transient — the audit clears it when it settles — so
+    // it is checked only while the audit is still running.
+    assertLiveClaimOwnsAttempt(cwd, "healthy heartbeat starts an attempt-owning claim");
+    assertAuditRunningOrSettled(cwd, "healthy heartbeat starts the bounded recovery audit");
 
     await waitUntil(() => {
       const settled = readState(cwd).goal as { status?: string; pendingCompletion?: unknown; auditHistory?: unknown[] } | null;
       return settled?.status === "active" && !settled.pendingCompletion && (settled.auditHistory?.length ?? 0) >= 1;
     });
-    await pi.fire("session_shutdown", { reason: "quit" }, first);
+    await pi.fire("session_shutdown", { reason: "quit", }, first);
     await audit;
   } finally {
     pi.sendMessageError = null;
@@ -5129,7 +5148,7 @@ test("v0.35.x: stale host loss releases an in-flight completion audit without a 
       completionSummary: "The claim must survive a dead auditor host.",
       verificationSummary: "No semantic verdict is allowed when the host disappears.",
     }, first);
-    await waitUntil(() => (readState(cwd).goal as { status?: string } | null)?.status === "auditing");
+    await waitForAuditDispatch(cwd);
 
     invalidateHostSession(pi, first);
     __testOnlyHeartbeatTick();
