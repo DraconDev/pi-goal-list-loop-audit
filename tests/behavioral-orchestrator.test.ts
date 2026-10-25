@@ -5158,28 +5158,29 @@ test("v0.39.52: the heartbeat does not reclaim a completion audit it dispatched 
   const cwd = tmpCwd();
   const attemptId = "audit-freshly-dispatched";
   const startedAt = new Date().toISOString();
-  seedState(cwd, {
-    goal: seedGoal({
-      status: "auditing",
-      pendingCompletion: {
-        completionSummary: "A detached audit is running.",
-        verificationSummary: "The heartbeat must not take it back.",
-        at: startedAt,
-        phase: "starting",
-        attemptId,
-        startedAt,
-      },
-    }),
-  });
   try {
     const ctx = await freshSession(cwd, "startup");
+    // The claim is seeded AFTER the session is up: a session_start that finds
+    // a stored claim with no worker has its own no-verdict path, and this
+    // test is about the heartbeat's gate.
+    seedState(cwd, {
+      goal: seedGoal({
+        status: "auditing",
+        pendingCompletion: {
+          completionSummary: "A detached audit is running.",
+          verificationSummary: "The heartbeat must not take it back.",
+          at: startedAt,
+          phase: "starting",
+          attemptId,
+          startedAt,
+        },
+      }),
+    });
     // The session looks quiet: no real agent turn for five minutes, which is
     // what a detached audit always looks like from the heartbeat's side.
     __testOnlySetLastRealActivityAt(Date.now() - 300_000);
     __testOnlyHeartbeatTick();
     const goal = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string; phase?: string } };
-    console.error("[REG] goal:", JSON.stringify(goal));
-    console.error("[REG] ledger:", fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l).type).join(","));
     assert.equal(goal?.status, "auditing", "a freshly dispatched attempt is not reclaimed as stranded");
     assert.equal(goal?.pendingCompletion?.attemptId, attemptId, "the claim still owns its attempt");
     assert.doesNotMatch(
