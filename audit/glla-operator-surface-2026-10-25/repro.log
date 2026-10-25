@@ -1,0 +1,85 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+audit/glla-operator-surface-2026-10-25/repro.test.ts:
+45 |   const rowIds = buildSettingsRows({} as never, {}).map((r) => r.id);
+46 |   // A settings editor the operator cannot reach is dead code dressed as a
+47 |   // feature: the headless list shows the value, the docs promise a row, and
+48 |   // only a hand-edited settings JSON can change it.
+49 |   const unreachable = editorIds.filter((id) => !rowIds.includes(id));
+50 |   assert.deepEqual(
+              ^
+AssertionError: settings editors with no reachable row: versionDisplay — an editor the operator cannot open is not a feature
++ actual - expected
+
++ [
++   'versionDisplay'
++ ]
+- []
+
+ generatedMessage: false,
+     actual: [ "versionDisplay" ],
+   expected: [],
+   operator: "deepStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:50:10
+      at fn (node:test:215:18)
+(fail) every settings editor is reachable from a row in the /glla settings table [83.86ms]
+59 |   // CHANGELOG.md v0.39.49: "with a **Version indicator** row in `/glla` settings".
+60 |   const doc = fs.readFileSync("docs/SETTINGS.md", "utf8");
+61 |   assert.match(doc, /Set it with \*\*Version indicator\*\* in `\/glla` settings/, "the documented promise is still in the reference");
+62 |   const rows = buildSettingsRows({} as never, {});
+63 |   const row = rows.find((r) => r.id === "versionDisplay");
+64 |   assert.ok(row, "the settings table has a Version indicator row");
+              ^
+AssertionError: the settings table has a Version indicator row
+ generatedMessage: false,
+     actual: undefined,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:64:10
+      at fn (node:test:215:18)
+(fail) the documented 'Version indicator' row exists in the /glla settings table [11.08ms]
+89 | 
+90 |   await handleSettingChoice("postaudit", ctx);
+91 | 
+92 |   assert.ok(seen.length >= 2, "the sub-menu was shown at least twice");
+93 |   const afterToggle = seen[1]!.options.find((o) => o.startsWith("Enabled"));
+94 |   assert.match(
+              ^
+AssertionError: after turning the post-completion audit OFF the menu must show it OFF, not the default ON
+ generatedMessage: false,
+     actual: "Enabled — ON",
+   expected: /Enabled \u2014 OFF/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:94:10
+      at processTicksAndRejections (native:7:39)
+(fail) the postaudit sub-menu shows the configuration the operator actually saved [5343.81ms]
+112 |   await handleSettingChoice("postaudit", ctx);
+113 | 
+114 |   const saved = loadSettings(cwd).postaudit as { enabled?: boolean; mode?: string } | undefined;
+115 |   assert.ok(saved, "the postaudit block was saved");
+116 |   assert.equal(saved.mode, "auto", "the Mode edit was applied");
+117 |   assert.equal(
+               ^
+AssertionError: the earlier Enabled edit survived — a later edit must merge over the SAVED block, not over the defaults
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/audit/glla-operator-surface-2026-10-25/repro.test.ts:117:10
+      at processTicksAndRejections (native:7:39)
+(fail) a postaudit edit must not discard the options an earlier edit saved [72.57ms]
+
+ 0 pass
+ 4 fail
+Ran 4 tests across 1 file. [9.82s]
