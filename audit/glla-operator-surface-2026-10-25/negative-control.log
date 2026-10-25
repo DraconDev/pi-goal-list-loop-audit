@@ -22,3 +22,4 @@ tests/glla-stale-context.test.ts:
 (pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [400.20ms]
 [run-tests] progress: 30s elapsed · 11s since last output · 0 KiB of suite output
 [run-tests] progress: 60s elapsed · 41s since last output · 0 KiB of suite output
+[run-tests] progress: 90s elapsed · 71s since last output · 0 KiB of suite output
