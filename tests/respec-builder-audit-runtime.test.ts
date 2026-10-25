@@ -757,7 +757,13 @@ test("real stalled detached workers automatically journal a paced timeout episod
     const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
     // The process adapter deliberately removes owned no-result scratch on
     // cancellation. Distinct worker-confirmed attempt clocks prove two launches.
-    assert.equal(new Set(f.observations.filter(p => p.workerPhase === "running" && p.lastActivityAt !== undefined).map(p => p.attemptStartedAt)).size, 2);
+    // Wait for the condition instead of sampling it once: the runtime spawns
+    // the second worker, the worker writes its progress file and the parent
+    // has to poll for it — on a loaded host that has not happened yet when the
+    // audit call returns, and the gate then reports a healthy system as broken.
+    const attemptClocks = () => new Set(f.observations.filter(p => p.workerPhase === "running" && p.lastActivityAt !== undefined).map(p => p.attemptStartedAt));
+    await waitFor(() => attemptClocks().size >= 2, { timeoutMs: 20_000, message: "the second worker launch was never observed as running" });
+    assert.equal(attemptClocks().size, 2, "two launches: distinct worker-confirmed attempt clocks");
     assert.equal(fs.readdirSync(jobs).length, 0, "cancelled no-verdict jobs are cleaned, not retained as approvals");
   } finally { restore(); replaceState(f.original); }
 });
