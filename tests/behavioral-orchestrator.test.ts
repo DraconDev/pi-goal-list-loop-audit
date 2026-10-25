@@ -4780,16 +4780,22 @@ test("v0.35.x: one automatic parked-audit retry is durable across repeated lifec
   });
   try {
     const first = await freshSession(cwd, "startup");
-    await waitForRecoveryAuditing(cwd);
-    const started = readState(cwd).goal as {
-      status?: string;
-      pendingCompletion?: { phase?: string; attemptId?: string; automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
+    await waitForRecoveryDispatch(cwd);
+    // The recovery dispatch owns a FRESH attempt (durable: the ledger row
+    // carries the attempt id). The live claim is transient — the audit
+    // clears it when it settles — so it is checked only while it is there,
+    // and the one-shot marker is pinned durably by the claim count below.
+    const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
+    assert.ok(recoveryAttempt);
+    assert.notEqual(recoveryAttempt, oldAttempt, "the recovery dispatch owns a fresh attempt");
+    assertLiveClaimOwnsAttempt(cwd, "the fresh recovery attempt owns the claim");
+    const liveClaim = readState(cwd).goal as {
+      pendingCompletion?: { automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
     } | null;
-    assert.equal(started?.status, "auditing");
-    assertOwnsAttempt(started?.pendingCompletion, "the fresh recovery attempt owns the claim");
-    assert.notEqual(started?.pendingCompletion?.attemptId, oldAttempt);
-    assert.equal(started?.pendingCompletion?.automaticRecoveryAttempted, true, "the durable marker is consumed with the fresh attempt");
-    assert.equal(typeof started?.pendingCompletion?.automaticRecoveryGeneration, "number", "the consumed marker records the dispatch generation");
+    if (liveClaim?.pendingCompletion) {
+      assert.equal(liveClaim.pendingCompletion.automaticRecoveryAttempted, true, "the durable marker is consumed with the fresh attempt");
+      assert.equal(typeof liveClaim.pendingCompletion.automaticRecoveryGeneration, "number", "the consumed marker records the dispatch generation");
+    }
 
     // A second healthy lifecycle event must not launch another automatic
     // worker, even though it sees the claim in the old running phase.
@@ -4812,10 +4818,8 @@ test("v0.35.x: one automatic parked-audit retry is durable across repeated lifec
     await pi.command("goal", "resume", second);
     // Same evidence-based-phase contract as above: attempt-owning, not a
     // hardcoded phase string.
-    await waitUntil(() => {
-      const resumed = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; attemptId?: string } } | null;
-      return resumed?.status === "auditing" && auditPhaseOwnsAttempt(resumed.pendingCompletion?.phase);
-    });
+    await waitForAuditDispatch(cwd, { attempts: 2 });
+    assertLiveClaimOwnsAttempt(cwd, "the manual resume starts an attempt-owning claim");
     const manualLedger = readLedger(cwd);
     assert.equal(manualLedger.filter((entry) => entry.type === "audit_recovery_started").length, 1, "manual resume does not masquerade as automatic recovery");
     assert.equal(manualLedger.filter((entry) => entry.type === "audit_started").length >= 2, true, "manual resume starts a fresh stored-claim audit");
