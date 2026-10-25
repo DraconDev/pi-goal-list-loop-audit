@@ -87,12 +87,14 @@ v0.39.52 addressed, in two files that round did not reach:
   (`scaledBudgetMs`).
 - `tests/respec-builder-audit-runtime.test.ts` — the stalled-worker scenario
   injected a fixed **50 ms** no-progress budget to make the stall fast, while
-  the worker has to *boot* before it can report anything. On a loaded host the
-  boot outlasted the budget, so the watchdog killed the second worker before
-  it reported and the assertion read one launch instead of two. The injected
-  budget is now sized for the host (`hangDeadlineMs` — the same helper the
-  fixture already used), and the assertion waits for the condition it checks
-  instead of sampling the observations once.
+  the worker has to *boot* before it can report anything; and it counted the
+  two launches by filtering the live observations down to the ones where a
+  worker had already confirmed activity, so a worker the watchdog killed
+  before its first progress report made the test read one launch instead of
+  two. The injected budget is now sized for the host (`hangDeadlineMs` — the
+  same helper the fixture already used), the launch count comes from the
+  attempt clock the parent publishes at every launch, and the worker's own
+  confirmation is asserted separately.
 
 Neither change touches product behaviour: the first sizes a test's kill
 window, the second sizes a test's injected stall budget.
