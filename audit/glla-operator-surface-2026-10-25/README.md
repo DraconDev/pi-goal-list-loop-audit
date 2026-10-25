@@ -305,8 +305,8 @@ that fail the next omission.
 
 | Check | Result |
 | --- | --- |
-| `audit/glla-operator-surface-2026-10-25/repro.test.ts` on v0.39.52 | 0 pass / 4 fail (the defects, reproduced) |
-| the same reproducer on v0.39.53 | **4 pass / 0 fail** |
+| `audit/glla-operator-surface-2026-10-25/repro.test.ts` on v0.39.52 | 0 pass / 4 fail (the defects, reproduced) — `repro.log` |
+| the same reproducer on v0.39.53 | **4 pass / 0 fail** — `repro-fixed.log` |
 | negative control — the legacy key re-introduced in `cmdReviewerSettings` | **3 fail / 0 pass** (the new regression test catches the defect) |
 | `tests/postaudit-editor-roundtrip.test.ts` | 3 pass / 0 fail |
 | `tests/settings-editors.test.ts` | 59 pass / 0 fail (2 new gates) |
