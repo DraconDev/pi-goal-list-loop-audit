@@ -1358,41 +1358,15 @@ export function archiveCurrentGoal(
   // publishing an intent so an unrelated/sentinel winner can never make the
   // startup reconciler terminalize this live goal.
   let archiveFence = false;
-  // The archive path is derived from the goal id, so a file at `target` can
-  // only be this goal's own record. Verify the basename rather than trusting
-  // the derivation: a mis-derived path must still fence, never overwrite.
-  const sameGoalArchive = path.basename(target).startsWith(`${goal.id}.md`);
-  let archiveRecovered = false;
   if (fs.existsSync(target)) {
-    // v0.39.54 (field eve 2026-10-25): a same-id archive whose goal is STILL
-    // live is not another writer's winner — it is THIS goal's own terminal
-    // archive left behind by a crash between archive publication and the state
-    // append (the pair the intent journal exists to recover). Treating it as a
-    // fence made the goal permanently un-closable: /glla wipe re-fenced on
-    // every attempt, the archive already claimed `complete`, and the live item
-    // stayed paused forever with no route out.
-    //
-    // The archive file name IS the goal id, so a same-id file can only ever be
-    // this goal. Finish the interrupted terminalization instead of refusing it:
-    // the archive is already durable and the state append is the missing half.
-    if (sameGoalArchive) {
-      archiveRecovered = true;
-      appendLedger(ctx.cwd, "archive_fence_recovered", {
-        goalId: goal.id,
-        where: "archiveCurrentGoal",
-        archive: target,
-        reason: "same-id archive with a live goal — resuming the interrupted terminalization",
-      });
-    } else {
-      archiveFence = true;
-      appendLedger(ctx.cwd, "faulty_objective_archive_fence", {
-        goalId: goal.id,
-        where: "archiveCurrentGoal",
-        archive: target,
-      });
-      ctx.ui.notify(`Could not archive ${goal.policy === "list" ? "the list item" : "the goal"} — an existing archive was preserved and the live objective was kept open; no terminal state was recorded. Fix the project disk and retry.`, "warning");
-      return false;
-    }
+    archiveFence = true;
+    appendLedger(ctx.cwd, "faulty_objective_archive_fence", {
+      goalId: goal.id,
+      where: "archiveCurrentGoal",
+      archive: target,
+    });
+    ctx.ui.notify(`Could not archive ${goal.policy === "list" ? "the list item" : "the goal"} — an existing archive was preserved and the live objective was kept open; no terminal state was recorded. Fix the project disk and retry.`, "warning");
+    return false;
   }
   // v0.36.1: journal the terminal projection BEFORE either file can be
   // published. A fresh lifecycle boundary can now finish the operation after
@@ -1416,12 +1390,6 @@ export function archiveCurrentGoal(
     // Audit 2026-09-06: randomUUID instead of Math.random — temp names
     // must not be guessable by a sibling writer (the wx flag already
     // mitigates, this removes the predictability too).
-    // v0.39.54: when the preflight decided this target is OUR OWN interrupted
-    // archive, the destination is already present. Republishing it would
-    // either fail EEXIST or rewrite a durable record, so treat the existing
-    // file as the published half and continue to the state append below —
-    // that append is the only thing the crash left undone.
-    if (archiveRecovered) return true;
     const temp = `${target}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
     try {
       fs.writeFileSync(temp, richMd, { encoding: "utf-8", flag: "wx" });
