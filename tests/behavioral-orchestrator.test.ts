@@ -3447,7 +3447,7 @@ test("v0.35.x: a successful main-model recovery gives a parked audit its one aut
     // clears it when it settles — so it is checked only while it is there.
     const recoveryAttempt = auditLedgerEvidence(cwd).recoveries.at(-1)?.attemptId as string | undefined;
     assert.ok(recoveryAttempt);
-    assert.notEqual(recoveryAttempt, oldAttempt);
+    assert.notEqual(recoveryAttempt, "parked-before-main-recovery");
     assertLiveClaimOwnsAttempt(cwd, "the recovery attempt owns the durable claim");
     const liveClaim = readState(cwd).goal as {
       pendingCompletion?: { automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
@@ -4947,7 +4947,7 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
 
     invalidateHostSession(pi, first);
     __testOnlyHeartbeatTick();
-    const parked = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string } } | null;
+    const parked = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; attemptId?: string } } | null;
     assert.equal(parked?.status, "paused", "the stale boundary parks the claim durably");
     assert.equal(parked?.pendingCompletion?.phase, "recovery-pending");
     const parkedAttempt = parked?.pendingCompletion?.attemptId;
