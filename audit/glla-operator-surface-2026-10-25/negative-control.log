@@ -1,0 +1,23 @@
+=== NEGATIVE CONTROL — candidate repairs applied to the reviewed revision ===
+--- reproducer ---
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+audit/glla-operator-surface-2026-10-25/repro.test.ts:
+(pass) every settings editor is reachable from a row in the /glla settings table [443.32ms]
+(pass) the documented 'Version indicator' row exists in the /glla settings table [18.59ms]
+(pass) the postaudit sub-menu shows the configuration the operator actually saved [3960.50ms]
+(pass) a postaudit edit must not discard the options an earlier edit saved [17.86ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 1 file. [13.74s]
+REPRO_EXIT=0
+--- focused existing suite ---
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [12014.60ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [400.20ms]
+[run-tests] progress: 30s elapsed · 11s since last output · 0 KiB of suite output
