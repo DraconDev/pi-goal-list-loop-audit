@@ -26,7 +26,7 @@ import {
   scheduleContinuation,
 } from "../extensions/goal-continuation.js";
 import { clearMainModelRecoveryTimer } from "../extensions/goal-recovery.js";
-import { untilMs } from "./harness/host-budget.js";
+import { untilMs, waitFor } from "./harness/host-budget.js";
 import activate, {
   __testOnlyLoadState,
   __testOnlyResetOwnerSession,
