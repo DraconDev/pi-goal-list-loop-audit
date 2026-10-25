@@ -33,6 +33,16 @@ have waited for a condition.**
    verdict and return the goal to `active` before the test observes it, and
    on a starved host the observation lands after the verdict. The wait then
    burned its whole 240s budget on a state that was never coming back.
+5. **The heartbeat could reclaim the audit it had just dispatched.** Chasing
+   #4 down found a product defect behind it: the stranded-audit gate
+   measured the *session's* silence, not the attempt's. A detached
+   completion audit produces no agent turn, so the session's real-activity
+   clock keeps running while the auditor works — that is the normal state,
+   not a stranded one. A recovery audit dispatched after a quiet spell was
+   therefore taken back by the very next heartbeat tick: the worker had not
+   written its job dir yet, so the liveness probe read it as workerless.
+   The goal was left parked awaiting a *manual* resume — the exact failure
+   the automatic recovery exists to prevent.
 
 ### The fix
 
@@ -61,6 +71,15 @@ have waited for a condition.**
   at 241s by a frame sized at 1x on a host running at load 50. A new policy
   test fails the build if any test declares a frame shorter than the
   contention cap times the waits inside it.
+- **The stranded-audit gate is measured against the attempt, not the
+  session.** `extensions/goal-heartbeat.ts` now reads the attempt's own
+  clock — its last worker event, or the moment it started — so a claim is
+  reclaimed only when *that attempt* has been silent for the whole 90s
+  window. A fresh dispatch is never taken back, however quiet the session
+  is; a genuinely stranded claim still is, because its own attempt has been
+  silent the whole time. A claim with no attempt timestamp (legacy) keeps
+  the session clock. This is the one product behaviour change in this
+  release, and it is the fix for #5 above.
 - **A test waits for durable evidence, never for a transient status.** The
   ledger is the durable record of an audit: `audit_started` records every
   dispatched attempt, `audit_recovery_started` records the automatic
