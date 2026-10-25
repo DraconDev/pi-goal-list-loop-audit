@@ -1765,11 +1765,7 @@ function heartbeatTick(): void {
   // window. A claim with no attempt timestamp (legacy) keeps the session
   // clock.
   const attemptEvidenceAt = Date.parse(strandedClaim?.lastActivityAt ?? strandedClaim?.startedAt ?? "");
-  const strandedSilentMs = state.goal?.status !== "auditing"
-    ? 0
-    : Number.isFinite(attemptEvidenceAt)
-      ? Date.now() - attemptEvidenceAt
-      : strandedQuietMs();
+  const strandedSilentMs = state.goal?.status === "auditing" ? strandedQuietMs() : 0;
   const strandedWorkerlessInFlight = strandedSilentMs >= 90_000 && !!strandedClaim?.attemptId && flags.completionAuditInFlight
     && !auditorWorkerLiveForAttempt(ctx.cwd, strandedClaim.attemptId);
   if (
