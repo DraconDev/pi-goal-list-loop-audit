@@ -762,6 +762,7 @@ test("real stalled detached workers automatically journal a paced timeout episod
     // has to poll for it — on a loaded host that has not happened yet when the
     // audit call returns, and the gate then reports a healthy system as broken.
     const attemptClocks = () => new Set(f.observations.filter(p => p.workerPhase === "running" && p.lastActivityAt !== undefined).map(p => p.attemptStartedAt));
+    console.log("DIAG_OBSERVATIONS", JSON.stringify(f.observations.map(p => ({ phase: p.phase, workerPhase: p.workerPhase, hasAct: p.lastActivityAt !== undefined, attemptStartedAt: p.attemptStartedAt }))));
     await waitFor(() => attemptClocks().size >= 2, { timeoutMs: 20_000, message: "the second worker launch was never observed as running" });
     assert.equal(attemptClocks().size, 2, "two launches: distinct worker-confirmed attempt clocks");
     assert.equal(fs.readdirSync(jobs).length, 0, "cancelled no-verdict jobs are cleaned, not retained as approvals");
