@@ -2331,13 +2331,13 @@ function parseToolOverrideValue(s: string): unknown {
 async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
   const settings = loadSettings(ctx.cwd);
   const block = (settings.postaudit ?? settings.reviewer) as Partial<ReviewerConfig> | undefined;
-  const settingsKey: "postaudit" | "reviewer" = settings.postaudit !== undefined ? "postaudit" : "reviewer";
+  const settingsKey = "postaudit" as const;
   if (!ctx.hasUI) {
     const cfg = resolveReviewerConfig(block);
     ctx.ui.notify(`${settingsKey} (project): ${JSON.stringify(cfg, null, 2)}`, "info");
     return;
   }
-  const load = () => resolveReviewerConfig(loadSettings(ctx.cwd)[settingsKey] as Partial<ReviewerConfig> | undefined);
+  const load = () => resolveReviewerConfig(loadSettings(ctx.cwd).postaudit as Partial<ReviewerConfig> | undefined);
   const save = (patch: Partial<ReviewerConfig>) => {
     if (warnIfStaleAtEntry(ctx, "postaudit settings save")) {
       throw new Error("the session handle became stale during the edit");
