@@ -5141,6 +5141,57 @@ test("bounded recovery: initial aggressive completion preserves its horizon and 
   }
 });
 
+// v0.39.52: the stranded-audit gate measured the SESSION's silence, not the
+// attempt's. A detached completion audit produces no agent turn, so the
+// session's real-activity clock keeps running while the auditor works — that
+// is the NORMAL state, not a stranded one. A recovery audit dispatched after
+// a quiet spell was therefore reclaimed by the very next heartbeat tick: the
+// worker had not written its job dir yet, so the probe read it as workerless
+// and the heartbeat took back the claim it had just dispatched. The goal was
+// left parked awaiting a MANUAL resume — the exact failure the automatic
+// recovery exists to prevent.
+//
+// The attempt's own clock owns the gate now: the claim is stranded only when
+// THIS attempt has been silent for the whole window.
+test("v0.39.52: the heartbeat does not reclaim a completion audit it dispatched moments ago", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const attemptId = "audit-freshly-dispatched";
+  const startedAt = new Date().toISOString();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "auditing",
+      pendingCompletion: {
+        completionSummary: "A detached audit is running.",
+        verificationSummary: "The heartbeat must not take it back.",
+        at: startedAt,
+        phase: "starting",
+        attemptId,
+        startedAt,
+      },
+    }),
+  });
+  try {
+    const ctx = await freshSession(cwd, "startup");
+    // The session looks quiet: no real agent turn for five minutes, which is
+    // what a detached audit always looks like from the heartbeat's side.
+    __testOnlySetLastRealActivityAt(Date.now() - 300_000);
+    __testOnlyHeartbeatTick();
+    const goal = readState(cwd).goal as { status?: string; pendingCompletion?: { attemptId?: string; phase?: string } };
+    assert.equal(goal?.status, "auditing", "a freshly dispatched attempt is not reclaimed as stranded");
+    assert.equal(goal?.pendingCompletion?.attemptId, attemptId, "the claim still owns its attempt");
+    assert.doesNotMatch(
+      fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8"),
+      /"stranded_audit_recovered"/,
+      "no stranded-audit recovery is ledgered for a fresh attempt",
+    );
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  } finally {
+    __testOnlySetLastRealActivityAt(Date.now());
+    __testOnlyResetStaleFlag();
+  }
+});
+
 // v0.39.52: the frame was scaledBudgetMs(30_000) while the three waits
 // inside it each ask for 30s. The frame expired before the last wait could
 // report what never happened. It now covers their sum.
