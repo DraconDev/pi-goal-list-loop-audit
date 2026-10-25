@@ -1000,6 +1000,39 @@ test("audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry
   assert.deepEqual(missing, [], `headless drift: ${missing.join(", ")}`);
 });
 
+test("audit 2026-10-25: every settings editor is reachable from a row in the interactive table", () => {
+  // The 2026-10-25 /glla operator-surface audit found `versionDisplay` shipped
+  // with a complete editor and a documented "Version indicator" row that the
+  // table never rendered: the headless list showed the value and then pointed
+  // the operator at an interactive session that could not reach it, so only a
+  // hand-edited settings JSON could change it. The doc gate and the headless
+  // gate both PASSED — nothing checked the INTERACTIVE table, and the per-key
+  // row checks are written one key at a time. This gate fails on the next
+  // omission instead of the next field report.
+  const src = fs.readFileSync("extensions/loops/goal-settings-ui.ts", "utf-8");
+  const body = src.slice(src.indexOf("export async function handleSettingChoice"));
+  assert.ok(body.length > 1000, "the editor dispatcher anchors the review");
+  const editorIds = [...body.matchAll(/case "([^"]+)":/g)].map((m) => m[1]!);
+  const rowIds = buildSettingsRows({} as never, {} as never).map((r: { id: string }) => r.id);
+  const unreachable = editorIds.filter((id) => !rowIds.includes(id));
+  assert.deepEqual(
+    unreachable,
+    [],
+    `settings editors with no reachable row: ${unreachable.join(", ")} — an editor the operator cannot open is not a feature`,
+  );
+});
+
+test("audit 2026-10-25: the documented 'Version indicator' row exists in the settings table", () => {
+  // docs/SETTINGS.md: "Set it with **Version indicator** in `/glla` settings."
+  // CHANGELOG.md v0.39.49 promised the same row.
+  const doc = fs.readFileSync(path.join(import.meta.dirname, "..", "docs", "SETTINGS.md"), "utf-8");
+  assert.match(doc, /Set it with \*\*Version indicator\*\* in `\/glla` settings/, "the reference still promises the row");
+  const rows = buildSettingsRows({} as never, {} as never);
+  const row = rows.find((r: { id: string }) => r.id === "versionDisplay");
+  assert.ok(row, "the settings table has a Version indicator row");
+  assert.match(String(row.label), /version indicator/i, "the row is labelled the way the reference names it");
+});
+
 test("v0.38.104: the audit-dir retention row renders a legal 0 instead of the unknown-value '?'", async () => {
   const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
   const rows = buildSettingsRows({ auditJobRetentionMs: 0 } as never, {} as never);
