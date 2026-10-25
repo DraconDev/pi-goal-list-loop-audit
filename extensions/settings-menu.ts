@@ -876,15 +876,6 @@ export function buildSettingsRows(
       description:
         "off: leave the transcript alone so the provider prefix-cache holds (default) · on: legacy per-turn splice of a bounded continuation checkpoint",
     },
-    {
-      id: "versionDisplay",
-      section: "other",
-      label: "Version indicator",
-      valueText: show("versionDisplay", "card"),
-      sourceText: src("versionDisplay"),
-      description:
-        "where the running GLLA version shows: card (default, a row on the active card) · status (the bottom status line) · off (hidden; /glla version still reports it)",
-    },
   );
 
   return rows.map((row) => ({ ...row, label: compactDisplayText(row.label), valueText: compactDisplayText(row.valueText), sourceText: compactDisplayText(row.sourceText), description: compactDisplayText(row.description) }));
