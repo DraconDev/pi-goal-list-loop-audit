@@ -738,8 +738,15 @@ test("exhausted finite worker chain resets only at the next due admitted episode
 
 test("real stalled detached workers automatically journal a paced timeout episode", async () => {
   const f = fixture({ RESULT_DELAY: "10000" });
+  // v0.39.53 (gate stability): the injected no-progress budget was a fixed 50 ms
+  // while the worker has to BOOT before it can report anything. On a loaded host
+  // the boot takes longer than the budget, so the watchdog killed the second
+  // worker before it ever reported and the assertion below read one launch
+  // instead of two — the gate reporting a healthy system as broken. The budget
+  // is now sized for the host, exactly like the fixture's own stall budget
+  // (hangDeadlineMs), so it still means "a stall" and not "a slow boot".
   const restore = __testOnlyRespecAuditorRuntime({ auditRuntime: { command: process.execPath, workerPath: f.file, homeDir: f.cwd,
-    pollIntervalMs: 10, heartbeatNoProgressMs: 50, firstEventTimeoutMs: 5000, env: { RESULT_DELAY: "10000" } } });
+    pollIntervalMs: 10, heartbeatNoProgressMs: hangDeadlineMs(50), firstEventTimeoutMs: hangDeadlineMs(5000), env: { RESULT_DELAY: "10000" } } });
   try {
     await runRespecBuilderAudit(f.ctx);
     const loop = readState(f.cwd).loop!;
@@ -762,7 +769,6 @@ test("real stalled detached workers automatically journal a paced timeout episod
     // has to poll for it — on a loaded host that has not happened yet when the
     // audit call returns, and the gate then reports a healthy system as broken.
     const attemptClocks = () => new Set(f.observations.filter(p => p.workerPhase === "running" && p.lastActivityAt !== undefined).map(p => p.attemptStartedAt));
-    console.log("DIAG_OBSERVATIONS", JSON.stringify(f.observations.map(p => ({ phase: p.phase, workerPhase: p.workerPhase, hasAct: p.lastActivityAt !== undefined, attemptStartedAt: p.attemptStartedAt }))));
     await waitFor(() => attemptClocks().size >= 2, { timeoutMs: 20_000, message: "the second worker launch was never observed as running" });
     assert.equal(attemptClocks().size, 2, "two launches: distinct worker-confirmed attempt clocks");
     assert.equal(fs.readdirSync(jobs).length, 0, "cancelled no-verdict jobs are cleaned, not retained as approvals");
