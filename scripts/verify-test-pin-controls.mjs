@@ -71,7 +71,7 @@ function stripComments(text) {
   return result;
 }
 try {
-  for (const name of ["extensions", "tests", "prompts", "scripts", "schemas", ".github", "docs", "skills", "examples", "package.json", "bunfig.toml", "README.md", "INSTALL.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "PLAN.md", "note.md", "LICENSE"]) fs.cpSync(path.join(root, name), path.join(scratch, name), { recursive: true });
+  for (const name of ["extensions", "tests", "prompts", "scripts", "schemas", ".github", "docs", "skills", "examples", "package.json", "bunfig.toml", "README.md", "INSTALL.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "PLAN.md", "LICENSE"]) fs.cpSync(path.join(root, name), path.join(scratch, name), { recursive: true });
   fs.symlinkSync(path.join(root, "node_modules"), path.join(scratch, "node_modules"), "dir");
   fs.mkdirSync(path.join(scratch, "audit"));
   // The shipped docs link into audit/; the doc-index link test resolves those
@@ -162,5 +162,5 @@ try {
   console.log(JSON.stringify({ scratch, results, scope: "disposable GLLA copies only; no live workflows or external projects changed" }, null, 2));
 } finally {
   // Preserve bounded logs and result artifacts for inspection, not the source copy.
-  for (const name of ["extensions", "tests", "prompts", "scripts", ".github", "docs", "skills", "examples", "audit", "node_modules", "README.md", "INSTALL.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "PLAN.md", "note.md", "LICENSE"]) fs.rmSync(path.join(scratch, name), { recursive: true, force: true });
+  for (const name of ["extensions", "tests", "prompts", "scripts", ".github", "docs", "skills", "examples", "audit", "node_modules", "README.md", "INSTALL.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "PLAN.md", "LICENSE"]) fs.rmSync(path.join(scratch, name), { recursive: true, force: true });
 }
