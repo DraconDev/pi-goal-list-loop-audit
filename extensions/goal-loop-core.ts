@@ -128,6 +128,29 @@ export function workCommand(mode: Policy | "loop" | undefined, command: string):
   return `${workCommandRoot(mode)} ${command}`;
 }
 
+/** Matches a tweak-command reference for the goal/list surfaces. Shared
+ * with the pause-card framing in action-reminder.ts — the two must agree on
+ * what counts as tweak intent or a truncated tweak renders as prose in one
+ * layer and a command in the other. */
+export const TWEAK_COMMAND = /\/(?:goal|list)\s+tweak\b/i;
+
+/** A tweak suggestion whose quoted replacement never closes is truncated
+upstream (agent-composed preview cut mid-word — field 2026-10-27: darkwave
+cut to "darkw"). It must never be presented or promoted as a typeable
+command: the missing text cannot be restored by rendering or extraction. */
+export function tweakSuggestionTruncated(action: string): boolean {
+  const trimmed = action.trim();
+  if (!TWEAK_COMMAND.test(trimmed)) return false;
+  const at = trimmed.search(/\/(?:goal|list)\s+tweak\b/i);
+  const tail = trimmed.slice(at);
+  let quote: string | null = null;
+  for (const c of tail) {
+    if (quote) { if (c === quote) quote = null; }
+    else if (c === '"' || c === "'") quote = c;
+  }
+  return quote !== null;
+}
+
 /** v0.39.30 (note.md #later Screenshot_20261011_175739 — "can have an
  * option to accept suggestion"): extract the first actionable GLLA command
  * (`/goal`, `/list`, `/loop`, `/glla` + verb + arguments) from free-form
