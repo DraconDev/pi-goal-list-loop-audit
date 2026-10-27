@@ -12,7 +12,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
 
-import { readState } from "../extensions/goal-loop-core.js";
+import { readState, GLLA_TOOL_NAMES, missingGllaTools } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
 
@@ -103,4 +103,28 @@ test("propose_tweak: defaults to the active goal policy, refuses without a goal"
   await pi.runTool("propose_tweak", { replacement: "new goal objective — done when pinned" }, ctx);
   ctx.ui.confirmImpl = undefined;
   assert.equal(readState(cwd).goal?.objective, "new goal objective — done when pinned", "default mode followed the active goal");
+});
+
+// v0.39.55 (audit 2026-10-27): the approval path only works while the tool
+// is active. An external tool allowlist (modlist profile) can strip agent
+// tools at session_start, and the self-heal only restores the names GLLA
+// tracks — a new tool that is not tracked silently disappears, leaving the
+// affirmative reply with no executable path again.
+test("propose_tweak: the approval tool survives an external tool allowlist", () => {
+  assert.ok(
+    (GLLA_TOOL_NAMES as readonly string[]).includes("propose_tweak"),
+    "the tool is tracked so the session_start self-heal restores it",
+  );
+  assert.ok(
+    missingGllaTools(["complete_goal", "pause_goal", "propose_tweak"]).includes("propose_tweak"),
+    "a present tool is not reported missing",
+  );
+  assert.ok(
+    !missingGllaTools(["complete_goal", "pause_goal", "propose_tweak"]).includes("propose_tweak"),
+    "the self-heal does not duplicate an already-active tool",
+  );
+  assert.ok(
+    missingGllaTools(["complete_goal"]).includes("propose_tweak"),
+    "an allowlist that dropped it is healed",
+  );
 });
