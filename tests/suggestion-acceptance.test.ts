@@ -293,6 +293,36 @@ test("pause_goal: truncated tweak suggestion becomes an editor decision, not raw
   }
 });
 
+test("pause_goal: kind=decision with a tweak carries selectable options, not just commands", async () => {
+  // The field case never reached the picker: the pause was blocked-prose with
+  // a broken command and no options. A decision pause must carry real options
+  // so the card and the /goal decide picker have something to offer besides
+  // hand-typed text.
+  const cwd = tmpCwd();
+  setSettings({});
+  const { pi, ctx } = await activeBoot(cwd);
+  try {
+    await pi.runTool("pause_goal", {
+      reason: "Scope text disagrees with the approved mix.",
+      suggestedAction: 'Run /goal tweak "Fix the genre line."',
+      kind: "decision",
+      options: ["Apply the tweak", "Keep current text", "Cancel the goal"],
+      recommended: 1,
+    }, ctx);
+    const g = readState(cwd).goal as GoalView;
+    assert.equal(g.status, "paused");
+    assert.equal(g.pauseKind, "decision");
+    assert.deepEqual(g.pauseOptions, ["Apply the tweak", "Keep current text", "Cancel the goal"]);
+    assert.equal(g.pauseRecommended, 1);
+    const { buildWidgetLines } = await import("../extensions/goal-loop-display.js");
+    const card = (buildWidgetLines(readState(cwd) as never, null, Date.now(), undefined, 120) ?? []).join("\n");
+    assert.match(card, /Apply the tweak/, "the card shows the options, not only a command to type");
+    assert.match(card, /\/goal decide/, "the card points at the picker for the pending choice");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("pause_goal: blocked pause with a concrete command lands as an Accept-first decision", async () => {
   const cwd = tmpCwd();
   setSettings({});
