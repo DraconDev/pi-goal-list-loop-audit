@@ -43,7 +43,32 @@ const TWEAK_COMMAND = /\/(?:goal|list)\s+tweak\b/i;
 export function frameTweakSuggestion(action: string): string | undefined {
   const trimmed = action.trim();
   if (!TWEAK_COMMAND.test(trimmed)) return undefined;
+  if (tweakSuggestionTruncated(trimmed)) {
+    // Field 2026-10-27 (darkwave cut to "darkw"): the proposed replacement
+    // arrived truncated, so no complete command exists to preserve verbatim.
+    // Presenting the fragment as a command would ask the user to type a
+    // broken edit. Route to the interactive flow instead: bare tweak
+    // pre-fills the current text and the Confirm gate still applies.
+    const root = /\/list\s+tweak\b/i.test(trimmed) ? "/list tweak" : "/goal tweak";
+    return `Question: should this tweak be applied? The proposed edit text arrived truncated — run ${root} with no arguments to review and edit it interactively.`;
+  }
   return `Question: should this tweak be applied? ${trimmed} — or reply with what you'd prefer instead.`;
+}
+
+/** A tweak suggestion whose quoted replacement never closes is truncated
+upstream (agent-composed preview cut mid-word). It must never be presented
+as a typeable command: the missing text cannot be restored by rendering. */
+export function tweakSuggestionTruncated(action: string): boolean {
+  const trimmed = action.trim();
+  if (!TWEAK_COMMAND.test(trimmed)) return false;
+  const at = trimmed.search(/\/(?:goal|list)\s+tweak\b/i);
+  const tail = trimmed.slice(at);
+  let quote: string | null = null;
+  for (const c of tail) {
+    if (quote) { if (c === quote) quote = null; }
+    else if (c === '"' || c === "'") quote = c;
+  }
+  return quote !== null;
 }
 
 export interface ActionReminderCopy {
