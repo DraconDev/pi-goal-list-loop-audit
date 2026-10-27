@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import { buildAbortedAssistantNotice, buildActionReminder, frameTweakSuggestion, registerActionReminderRenderer, type ActionReminderCopy } from "../extensions/action-reminder.js";
+import { buildAbortedAssistantNotice, buildActionReminder, frameTweakSuggestion, registerActionReminderRenderer, tweakSuggestionTruncated, type ActionReminderCopy } from "../extensions/action-reminder.js";
 import { humanCheckTime } from "../extensions/human-handoff.js";
 import { MockPi } from "./harness/mock-pi.js";
 
@@ -131,6 +131,34 @@ test("reminders fit narrow widths and strip unsafe terminal sequences", () => {
   for (const expanded of [false, true]) for (const width of [0, 1, 20, 40, 80]) {
     assert.doesNotMatch(render(reminder, expanded, width), /\x1b\[2J|\x9b/);
   }
+});
+
+// v0.39.55 (field 2026-10-27): the card told the user to type a tweak whose
+// replacement was cut off mid-word ("darkwave" -> "darkw"). A truncated quote
+// cannot be completed by rendering — the missing text is gone — so the card
+// must not present the fragment as a typeable command.
+test("a truncated tweak proposal is never presented as a command to type", () => {
+  const fieldAction = `Run /goal tweak replacing this objective line "- Lane 1 Vera Vantel: genre darksynth, 15 tracks (~42 min)." with "- Lane 1 Vera Vantel: genres darksynth + darkw`;
+  assert.equal(tweakSuggestionTruncated(fieldAction), true, "the field shape detects as truncated");
+  assert.equal(tweakSuggestionTruncated(`Run '/goal tweak "Fix X."'`), false, "a balanced quote is complete");
+  assert.equal(tweakSuggestionTruncated("/goal resume"), false, "non-tweak prose is not tweak-truncated");
+  assert.equal(tweakSuggestionTruncated("tweak the thing"), false, "quoteless prose has no quote to unbalance");
+  const framed = frameTweakSuggestion(fieldAction)!;
+  assert.match(framed, /Question: should this tweak be applied\?/, "still a question, not an order");
+  assert.doesNotMatch(framed, /darkw/, "the broken fragment is not offered for copy-paste");
+  assert.doesNotMatch(framed, /Run \/goal tweak replacing/, "the untypeable command is not presented");
+  assert.match(framed, /run \/goal tweak with no arguments/, "directs to the interactive flow instead");
+  const reminder = buildActionReminder({ kind: "blocked", reason: "Scope text disagrees with the approved mix.", action: fieldAction, resumeCommand: "/goal resume" });
+  const rendered = render(reminder);
+  assert.doesNotMatch(rendered, /darkw/, "the card never shows the fragment");
+  assert.match(rendered, /no arguments to review and edit it interactively/, "the card shows the fallback");
+});
+
+test("a complete tweak proposal keeps its exact command verbatim", () => {
+  const action = `Run /goal tweak replacing this objective line "- Lane 1." with "- Lane 1: genres darksynth + darkwave."`;
+  assert.equal(tweakSuggestionTruncated(action), false);
+  const framed = frameTweakSuggestion(action)!;
+  assert.ok(framed.includes(action), "the whole command is preserved for copy-paste");
 });
 
 test("tweak proposals remain questions and retain the exact command for consent", () => {
