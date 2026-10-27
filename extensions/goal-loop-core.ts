@@ -137,18 +137,21 @@ export const TWEAK_COMMAND = /\/(?:goal|list)\s+tweak\b/i;
 /** A tweak suggestion whose quoted replacement never closes is truncated
 upstream (agent-composed preview cut mid-word — field 2026-10-27: darkwave
 cut to "darkw"). It must never be presented or promoted as a typeable
-command: the missing text cannot be restored by rendering or extraction. */
+command: the missing text cannot be restored by rendering or extraction.
+Quote tracking mirrors extractSuggestedCommand (an inner quote of the other
+kind never toggles the outer span), and at least one CLOSED span is required
+so a lone apostrophe ("tweak the user's objective") is vague prose, not a
+truncated quote — it keeps today's plain-pause behavior. */
 export function tweakSuggestionTruncated(action: string): boolean {
   const trimmed = action.trim();
   if (!TWEAK_COMMAND.test(trimmed)) return false;
-  const at = trimmed.search(/\/(?:goal|list)\s+tweak\b/i);
-  const tail = trimmed.slice(at);
   let quote: string | null = null;
-  for (const c of tail) {
-    if (quote) { if (c === quote) quote = null; }
+  let closedSpan = false;
+  for (const c of trimmed) {
+    if (quote) { if (c === quote) { quote = null; closedSpan = true; } }
     else if (c === '"' || c === "'") quote = c;
   }
-  return quote !== null;
+  return quote !== null && closedSpan;
 }
 
 /** v0.39.30 (note.md #later Screenshot_20261011_175739 — "can have an
