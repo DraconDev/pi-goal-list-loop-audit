@@ -240,6 +240,57 @@ test("suggestionAcceptancePromotion: accept-first options use policy-correct ver
 
 // ---- tool-level behavior ----
 
+// v0.39.55 (field 2026-10-27): the card told the user to type a tweak whose
+// replacement was cut off mid-word. A truncated quote can never extract, so
+// the old path left it as raw text to hand-type. The promotion now offers the
+// interactive editor instead — never the broken fragment.
+const FIELD_TRUNCATED_TWEAK = `Run /goal tweak replacing this objective line "- Lane 1 Vera Vantel: genre darksynth, 15 tracks (~42 min)." with "- Lane 1 Vera Vantel: genres darksynth + darkw`;
+
+test("suggestionAcceptancePromotion: a truncated tweak promotes to the interactive editor, not the fragment", () => {
+  const goal = suggestionAcceptancePromotion(FIELD_TRUNCATED_TWEAK, "goal")!;
+  assert.equal(goal.options.length, 3);
+  assert.match(goal.options[0]!, /^Review the tweak in the interactive editor \(\/goal tweak\)\s*$/, "Accept opens the editor, never runs the fragment");
+  assert.match(goal.options[1]!, /\/goal resume/);
+  assert.match(goal.options[2]!, /\/goal cancel/);
+  assert.equal(goal.recommended, 1);
+  assert.equal(goal.unattendedDefault, 2, "unattended auto-default declines, never adopts");
+  const list = suggestionAcceptancePromotion(FIELD_TRUNCATED_TWEAK.replace("/goal tweak", "/list tweak"), "list")!;
+  assert.match(list.options[0]!, /^Review the tweak in the interactive editor \(\/list tweak\)\s*$/, "list policy uses the list editor");
+  // A balanced prose-shaped tweak is NOT truncated — but it is also not an
+  // extractable command, so it stays a plain pause (never an Accept of text
+  // the user did not explicitly confirm line-by-line).
+  assert.equal(
+    suggestionAcceptancePromotion(`Run /goal tweak replacing this objective line "- A." with "- B."`, "goal"),
+    undefined,
+    "balanced prose is shown verbatim, never promoted",
+  );
+});
+
+test("pause_goal: truncated tweak suggestion becomes an editor decision, not raw text to type", async () => {
+  const cwd = tmpCwd();
+  setSettings({});
+  const { pi, ctx } = await activeBoot(cwd);
+  try {
+    await pi.runTool("pause_goal", {
+      reason: "Scope text disagrees with the approved mix.",
+      suggestedAction: FIELD_TRUNCATED_TWEAK,
+      kind: "blocked",
+    }, ctx);
+    const g = readState(cwd).goal as GoalView;
+    assert.equal(g.status, "paused");
+    assert.equal(g.pauseKind, "decision", "the untypeable text becomes a decision, not a typing chore");
+    assert.equal(g.pauseOptions?.length, 3);
+    assert.match(g.pauseOptions![0]!, /interactive editor \(\/goal tweak\)/);
+    assert.equal(g.pauseRecommended, 1);
+    assert.equal(g.midRunDecisionCount, 1, "the promotion counts against the mid-run budget");
+    assert.match(g.pauseSuggestedAction!, /interactive editor/, "the card no longer carries the broken command");
+    assert.doesNotMatch(g.pauseSuggestedAction!, /darkw/, "the fragment is gone from the card");
+    assert.ok(ledgerTypes(cwd).includes("pause_suggestion_promoted_to_decision"), "the promotion is ledgered");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("pause_goal: blocked pause with a concrete command lands as an Accept-first decision", async () => {
   const cwd = tmpCwd();
   setSettings({});
