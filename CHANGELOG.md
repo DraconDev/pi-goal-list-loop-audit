@@ -8,14 +8,25 @@
   is no longer presented as a command to type. The pause card detects the
   unclosed quote and routes to the interactive tweak flow instead, and such a
   pause promotes to a decision whose picker offers the tweak editor — never
-  the broken fragment.
+  the broken fragment. An unclosed double quote is truncation on its own, so
+  the canonical `/goal tweak "<new text>"` form — a single quoted span, with
+  no earlier span to close — is caught too; an unclosed apostrophe in prose
+  ("tweak the user's objective") still stays a plain pause.
+- The live TUI widget card no longer prints a truncated tweak's broken
+  fragment next to the new options. It shows the same interactive route as
+  the transcript card. A complete tweak keeps its verbatim, typeable command.
 - New `propose_tweak` agent tool: an explicit user approval ("yes, do it")
   opens the tweak Confirm gate showing the exact old→new text; Confirm
   applies through the same adoption path as a typed tweak, Cancel changes
   nothing. Covers goal and list tweaks. There was previously no executable
   path for approved free-text, so approval died and the objective stayed stale.
+  The tool is tracked by the session-start self-heal, so an external tool
+  allowlist cannot silently remove the only approval path.
 - A kind=decision pause with a tweak carries its selectable options on the
   card and in the picker, not only commands to type.
+- The goal continuation prompt tells the agent to apply an approved tweak
+  through `propose_tweak` (the Confirm gate) before resuming, so approving
+  in free text no longer resumes past the stale objective.
 
 
 ## 0.39.54 — an interrupted terminalization no longer fences a goal forever (2026-10-25)
