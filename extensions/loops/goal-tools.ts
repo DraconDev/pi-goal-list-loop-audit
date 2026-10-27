@@ -4616,6 +4616,39 @@ function registerAgentTools(pi: any): void {
   }));
 }
 
+// v0.39.55 (field 2026-10-27): approving a tweak in free text ("we can do
+// it") had no executable path — the agent could not apply it, and the
+// objective stayed stale while the turn resumed. This tool closes that loop:
+// it funnels the approved text through the same cmdTweak adoption path as a
+// typed /goal tweak (resolution, Confirm gate with exact old/new text, race
+// rechecks). The Confirm dialog is the consent record — Cancel changes
+// nothing — so call this ONLY after the user has explicitly approved the
+// specific new text, never speculatively and never to bypass consent.
+pi.registerTool(defineTool({
+  name: "propose_tweak",
+  label: "Propose objective tweak",
+  description: "Open the tweak Confirm gate for an EXPLICITLY user-approved objective change. Call ONLY after the user has approved the specific new text (a free-text 'yes, do it' counts — the Confirm dialog re-shows the exact old→new text before anything changes). Never call speculatively, never to bypass consent, and never with text the user has not seen; the Confirm dialog is the consent record and Cancel changes nothing. Covers goal and list items (list tweaks require a paused list item).",
+  parameters: Type.Object({
+    replacement: Type.String({ description: "Full replacement objective text (goal mode) or list-item text (list mode), exactly as the user approved it." }),
+    mode: Type.Optional(Type.Union([Type.Literal("goal"), Type.Literal("list")], { description: "Which surface to tweak. Defaults to the active goal's policy." })),
+  }),
+  async execute(_id, params, _signal, _onUpdate, execCtx) {
+    const foreign = foreignToolGuard(execCtx);
+    if (foreign) return { content: [{ type: "text", text: foreign }], details: {} };
+    const liveCtx = currentToolContext(execCtx);
+    if (!liveCtx) return staleToolResult();
+    const p = params as { replacement?: string; mode?: "goal" | "list" };
+    const mode = p.mode ?? (state.goal?.policy === "list" ? "list" : "goal");
+    const applied = await cmdTweak(p.replacement?.trim() ?? "", liveCtx, mode);
+    return {
+      content: [{ type: "text", text: applied
+        ? "Tweak applied — the objective was updated through the Confirm gate."
+        : "Tweak not applied — the Confirm was declined, the text resolved to nothing new, or the goal state no longer accepts a tweak. Nothing changed." }],
+      details: {},
+    };
+  },
+}));
+
 // =================================================================
 // Settings (auditor model, thinking level)
 // =================================================================
