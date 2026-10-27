@@ -283,8 +283,10 @@ test("pause_goal: truncated tweak suggestion becomes an editor decision, not raw
     assert.match(g.pauseOptions![0]!, /interactive editor \(\/goal tweak\)/);
     assert.equal(g.pauseRecommended, 1);
     assert.equal(g.midRunDecisionCount, 1, "the promotion counts against the mid-run budget");
-    assert.match(g.pauseSuggestedAction!, /interactive editor/, "the card no longer carries the broken command");
-    assert.doesNotMatch(g.pauseSuggestedAction!, /darkw/, "the fragment is gone from the card");
+    // Storage stays verbatim for forensics (same as complete commands); the
+    // presentation layer renders the safe fallback instead — pinned in
+    // action-reminder.test.ts against the same field string.
+    assert.ok(g.pauseSuggestedAction!.includes("darkw"), "the stored action keeps the verbatim evidence");
     assert.ok(ledgerTypes(cwd).includes("pause_suggestion_promoted_to_decision"), "the promotion is ledgered");
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
