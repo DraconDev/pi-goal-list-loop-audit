@@ -1693,6 +1693,38 @@ test("v0.38.71: decision card renders the action before the options (field UI-SU
   assert.ok(w.some((l) => l.includes("7. extra") || l.includes("and 1 more")), `late options present:\n${text}`);
 });
 
+// v0.39.55 (field 2026-10-27, audit 2026-10-27): the widget card printed the
+// raw suggested action, so a tweak proposal cut off mid-word still showed
+// its broken fragment ("...+ darkw") right next to the new options. The
+// widget is a decision surface: it must show the interactive route, never a
+// command the user cannot type.
+test("v0.39.55: the widget card never prints a truncated tweak's broken fragment", () => {
+  const g = goalOf({
+    status: "paused",
+    pauseKind: "decision",
+    pauseReason: "Scope text disagrees with the approved mix.",
+    pauseOptions: ["Review the tweak in the interactive editor (/goal tweak)", "Continue without it (/goal resume)", "Cancel (/goal cancel)"],
+    pauseRecommended: 1,
+    pauseSuggestedAction: `Run /goal tweak "Replace the objective with the full darkwave preset text for lane one`,
+  });
+  const state = { goal: g, list: [], loop: null };
+  const w = buildWidgetLines(state as never, null, NOW, undefined, 190)!;
+  const text = w.join("\n");
+  assert.doesNotMatch(text, /darkwave preset text for lane one/, `the cut command is not shown:\n${text}`);
+  assert.match(text, /no arguments to review and edit it interactively/, `the interactive route is shown:\n${text}`);
+  // A COMPLETE tweak keeps its verbatim command — it is whole and typeable.
+  const complete = goalOf({
+    status: "paused",
+    pauseKind: "decision",
+    pauseReason: "Scope text disagrees with the approved mix.",
+    pauseOptions: ["Review the tweak in the interactive editor (/goal tweak)"],
+    pauseRecommended: 1,
+    pauseSuggestedAction: `Run /goal tweak "Replace the objective with the full darkwave preset text for lane one."`,
+  });
+  const cw = buildWidgetLines({ goal: complete, list: [], loop: null } as never, null, NOW, undefined, 190)!;
+  assert.match(cw.join("\n"), /full darkwave preset text for lane one/, "a whole command stays copy-pasteable");
+});
+
 test("error pause: ACTION NEEDED banner, action line popped (widget + status)", () => {
   const g = goalOf({
     status: "paused",
