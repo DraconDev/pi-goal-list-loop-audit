@@ -293,6 +293,44 @@ test("pause_goal: truncated tweak suggestion becomes an editor decision, not raw
   }
 });
 
+// v0.39.55 (audit 2026-10-27): the truncation guard needed a closed span
+// before it called a quote unclosed, so the canonical single-span form
+// (`/goal tweak "<new text>"` — the only shape the prompt vocabulary
+// mandates) escaped it: the pause stayed `blocked` with no options and the
+// card asked the user to type a command cut mid-word. This is the exact
+// shape the auditor reproduced.
+const CANONICAL_SINGLE_SPAN_TWEAK = `Run /goal tweak "Replace the objective with the full darkwave preset text for lane one`;
+
+test("suggestionAcceptancePromotion: the canonical single-span tweak form promotes to the editor decision", () => {
+  const goal = suggestionAcceptancePromotion(CANONICAL_SINGLE_SPAN_TWEAK, "goal")!;
+  assert.match(goal.options[0]!, /^Review the tweak in the interactive editor \(\/goal tweak\)\s*$/, "Accept opens the editor, never the cut command");
+  assert.match(goal.options[1]!, /\/goal resume/);
+  assert.match(goal.options[2]!, /\/goal cancel/);
+  assert.equal(goal.recommended, 1);
+  assert.equal(goal.unattendedDefault, 2, "unattended auto-default declines, never adopts");
+});
+
+test("pause_goal: the canonical single-span tweak becomes a decision with the editor option", async () => {
+  const cwd = tmpCwd();
+  setSettings({});
+  const { pi, ctx } = await activeBoot(cwd);
+  try {
+    await pi.runTool("pause_goal", {
+      reason: "Scope text disagrees with the approved mix.",
+      suggestedAction: CANONICAL_SINGLE_SPAN_TWEAK,
+      kind: "blocked",
+    }, ctx);
+    const g = readState(cwd).goal as GoalView;
+    assert.equal(g.status, "paused");
+    assert.equal(g.pauseKind, "decision", "the untypeable text becomes a decision, not a typing chore");
+    assert.equal(g.pauseOptions?.length, 3);
+    assert.match(g.pauseOptions![0]!, /interactive editor \(\/goal tweak\)/);
+    assert.equal(g.pauseRecommended, 1);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("pause_goal: kind=decision with a tweak carries selectable options, not just commands", async () => {
   // The field case never reached the picker: the pause was blocked-prose with
   // a broken command and no options. A decision pause must carry real options
