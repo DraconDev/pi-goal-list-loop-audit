@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { visibleWidth } from "@earendil-works/pi-tui";
-import { buildAbortedAssistantNotice, buildActionReminder, frameTweakSuggestion, registerActionReminderRenderer, tweakSuggestionTruncated, type ActionReminderCopy } from "../extensions/action-reminder.js";
+import { buildAbortedAssistantNotice, buildActionReminder, frameTweakSuggestion, registerActionReminderRenderer, type ActionReminderCopy } from "../extensions/action-reminder.js";
+import { tweakSuggestionTruncated } from "../extensions/goal-loop-core.js";
 import { humanCheckTime } from "../extensions/human-handoff.js";
 import { MockPi } from "./harness/mock-pi.js";
 
