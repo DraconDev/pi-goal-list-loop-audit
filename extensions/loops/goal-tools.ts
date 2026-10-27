@@ -4615,8 +4615,6 @@ function registerAgentTools(pi: any): void {
       };
     },
   }));
-}
-
 // v0.39.55 (field 2026-10-27): approving a tweak in free text ("we can do
 // it") had no executable path — the agent could not apply it, and the
 // objective stayed stale while the turn resumed. This tool closes that loop:
@@ -4649,6 +4647,9 @@ pi.registerTool(defineTool({
     };
   },
 }));
+
+
+}
 
 // =================================================================
 // Settings (auditor model, thinking level)
