@@ -370,17 +370,40 @@ export function contractAmendmentPromotion(
 
 export function suggestionAcceptancePromotion(suggestedAction: string | undefined, policy: Policy | undefined): SuggestionPromotion | undefined {
   const command = extractSuggestedCommand(suggestedAction);
-  if (!command) return undefined;
-  return {
-    command,
-    options: [
-      `Request agent to run ${command}`,
-      `Continue without it (${modeCommand(policy, "resume")})`,
-      `Cancel (${workCommand(policy, "cancel")})`,
-    ],
-    recommended: 1,
-    unattendedDefault: 2,
-  };
+  if (command) {
+    return {
+      command,
+      options: [
+        `Request agent to run ${command}`,
+        `Continue without it (${modeCommand(policy, "resume")})`,
+        `Cancel (${workCommand(policy, "cancel")})`,
+      ],
+      recommended: 1,
+      unattendedDefault: 2,
+    };
+  }
+  // v0.39.55 (field 2026-10-27): a tweak proposal that cannot be extracted —
+  // truncated mid-quote or prose-shaped — must not stay raw text the user has
+  // to hand-type. Promote it to a decision whose Accept path is the
+  // interactive tweak flow (bare tweak pre-fills the current text; the
+  // Confirm gate still applies), never a run of the broken fragment. The
+  // decline paths mirror the extractable shape so unattended auto-default
+  // keeps declining instead of adopting.
+  if (suggestedAction && tweakSuggestionTruncated(suggestedAction)) {
+    const root = workCommandRoot(policy);
+    const editor = `${root} tweak`;
+    return {
+      command: editor,
+      options: [
+        `Review the tweak in the interactive editor (${editor})`,
+        `Continue without it (${modeCommand(policy, "resume")})`,
+        `Cancel (${workCommand(policy, "cancel")})`,
+      ],
+      recommended: 1,
+      unattendedDefault: 2,
+    };
+  }
+  return undefined;
 }
 
 export interface TaskDeferral {

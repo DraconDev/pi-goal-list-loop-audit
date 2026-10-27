@@ -54,8 +54,6 @@ export function frameTweakSuggestion(action: string): string | undefined {
   return `Question: should this tweak be applied? ${trimmed} — or reply with what you'd prefer instead.`;
 }
 
-
-
 export interface ActionReminderCopy {
   content: string;
   details: ActionReminderDetails;
