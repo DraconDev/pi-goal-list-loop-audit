@@ -986,6 +986,11 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
     const cmdMatch = label.match(/\(\/(goal|list|loop) ([a-z]+)\)\s*$/);
     if (cmdMatch && !label.includes("…") && !label.includes("<")) {
       const [, group, verb] = cmdMatch;
+      // v0.39.55: the interactive tweak editor is executable from the picker —
+      // bare tweak pre-fills the current text and its own Confirm gate applies.
+      // This is the recovery path for truncated proposals: the picker offers
+      // it instead of a broken copy-paste command.
+      if ((group === "goal" || group === "list") && verb === "tweak") { await cmdTweak("", ctx, group === "list" ? "list" : "goal"); return true; }
       if (group === "goal" && verb === "resume") await cmdResume(ctx);
       else if (group === "goal" && verb === "cancel") await cmdCancel(ctx);
       else if (group === "goal" && verb === "accept") await cmdAcceptWithFollowups(ctx);
