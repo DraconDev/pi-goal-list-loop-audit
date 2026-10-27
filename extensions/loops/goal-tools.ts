@@ -425,6 +425,7 @@ import {
   autoNotifyCmd,
   hydrateListQueueFromDisk,
   cmdGoal,
+  cmdTweak,
   cmdList,
   cmdReview,
   updateWholeObjectiveFromConflict,
