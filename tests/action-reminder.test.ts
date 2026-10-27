@@ -151,8 +151,9 @@ test("a truncated tweak proposal is never presented as a command to type", () =>
   assert.match(framed, /run \/goal tweak with no arguments/, "directs to the interactive flow instead");
   const reminder = buildActionReminder({ kind: "blocked", reason: "Scope text disagrees with the approved mix.", action: fieldAction, resumeCommand: "/goal resume" });
   const rendered = render(reminder);
-  assert.doesNotMatch(rendered, /darkw/, "the card never shows the fragment");
-  assert.match(rendered, /no arguments to review and edit it interactively/, "the card shows the fallback");
+  const flat = rendered.replace(/\s+/g, " ");
+  assert.doesNotMatch(flat, /darkw/, "the card never shows the fragment");
+  assert.match(flat, /no arguments to review and edit it interactively/, "the card shows the fallback");
 });
 
 test("a complete tweak proposal keeps its exact command verbatim", () => {
