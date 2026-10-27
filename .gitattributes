@@ -52,6 +52,9 @@
 *.sqlite -filter
 *.db -filter
 affiliate/.env.credentials.md filter=dracon diff=dracon merge=dracon
+apis/services/auth-api/.env.dev filter=dracon diff=dracon merge=dracon
+apis/services/billing-api/.env.dev filter=dracon diff=dracon merge=dracon
+apis/services/email-api/.env.dev filter=dracon diff=dracon merge=dracon
 config/creds.json filter=dracon diff=dracon merge=dracon
 config/licenses.json filter=dracon diff=dracon merge=dracon
 config/licenses.test.json filter=dracon diff=dracon merge=dracon
