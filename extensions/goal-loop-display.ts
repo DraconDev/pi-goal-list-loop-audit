@@ -15,9 +15,10 @@ import { respecAuditObservation, respecAuditStatus, respecBlockerHeadline, type 
  */
 
 import { truncateToWidth as tuiTruncateToWidth, visibleWidth as tuiVisibleWidth, sliceByColumn as tuiSliceByColumn } from "@earendil-works/pi-tui";
+import { frameTweakSuggestion } from "./action-reminder.js";
 
 import type { DurableDeferRecommendationInput, Goal, MainModelRecovery, PendingCompletion, State } from "./goal-loop-core.js";
-import { auditVerdictLabel, auditLifecycleLine, auditLifecycleProjection, auditPhaseOwnsAttempt, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, isSettlingClaim, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, type LifesignRow } from "./goal-loop-core.js";
+import { auditVerdictLabel, auditLifecycleLine, auditLifecycleProjection, auditPhaseOwnsAttempt, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, isSettlingClaim, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, tweakSuggestionTruncated, type LifesignRow } from "./goal-loop-core.js";
 
 export { isMonitorGoal };
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
@@ -3380,7 +3381,17 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       ? `saved — ${spent.join(" · ")} · resumes exactly here`
       : `awaiting first turn — resumes exactly here`;
     const optionsFollow = decisionOptions !== undefined;
-    const pauseAction = isCompactionRecoveryHold(g) ? compactionResumeAction(g.policy) : g.pauseSuggestedAction;
+    const rawPauseAction = isCompactionRecoveryHold(g) ? compactionResumeAction(g.policy) : g.pauseSuggestedAction;
+    // v0.39.55 (field 2026-10-27, audit 2026-10-27): the widget card printed
+    // the raw suggested action, so a tweak proposal cut off mid-word still
+    // showed its broken fragment ("...+ darkw") right next to the new
+    // options. A truncated proposal has no typeable command — route it to
+    // the same interactive flow the transcript card uses, so both surfaces
+    // agree. A COMPLETE tweak keeps its verbatim command (it is whole and
+    // typeable), so nothing else on this card changes.
+    const pauseAction = rawPauseAction && tweakSuggestionTruncated(rawPauseAction)
+      ? frameTweakSuggestion(rawPauseAction) ?? rawPauseAction
+      : rawPauseAction;
     if (pauseAction) {
       lines.push(`├─ ${paint(theme, "dim", truncate(savedLine, budget))}`);
       const wrapped = wrap(sanitizeProviderDisplayText(pauseAction), budget, 3);
