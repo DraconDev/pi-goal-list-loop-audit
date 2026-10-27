@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Consent-by-typing gap: decisions are questions with options, approval applies through the Confirm gate
+
+- A truncated tweak proposal (field 2026-10-24: a genre edit cut off mid-word)
+  is no longer presented as a command to type. The pause card detects the
+  unclosed quote and routes to the interactive tweak flow instead, and such a
+  pause promotes to a decision whose picker offers the tweak editor — never
+  the broken fragment.
+- New `propose_tweak` agent tool: an explicit user approval ("yes, do it")
+  opens the tweak Confirm gate showing the exact old→new text; Confirm
+  applies through the same adoption path as a typed tweak, Cancel changes
+  nothing. Covers goal and list tweaks. There was previously no executable
+  path for approved free-text, so approval died and the objective stayed stale.
+- A kind=decision pause with a tweak carries its selectable options on the
+  card and in the picker, not only commands to type.
+
+
 ## 0.39.54 — an interrupted terminalization no longer fences a goal forever (2026-10-25)
 
 ### The field deadlock (eve)
