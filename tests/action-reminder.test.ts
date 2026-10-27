@@ -163,6 +163,31 @@ test("a complete tweak proposal keeps its exact command verbatim", () => {
   assert.ok(framed.includes(action), "the whole command is preserved for copy-paste");
 });
 
+// v0.39.55 (audit 2026-10-27): the guard only reported truncation when a
+// quoted span had closed EARLIER, so the canonical single-span form the
+// project's own vocabulary mandates (`/goal tweak "<new text>"`) was missed
+// entirely — the pause stayed blocked with no options and the card asked the
+// user to type a command cut mid-word. An unclosed DOUBLE quote is
+// truncation on its own; only an unclosed apostrophe still needs a closed
+// span, so ordinary prose stays a plain pause.
+test("the canonical single-span tweak form is detected as truncated", () => {
+  const singleSpan = `Run /goal tweak "Replace the objective with the full darkwave preset text for lane one`;
+  assert.equal(tweakSuggestionTruncated(singleSpan), true, "one unclosed double quote is truncation on its own");
+  assert.equal(
+    tweakSuggestionTruncated("Run /goal tweak to fix the user's objective"),
+    false,
+    "an unclosed apostrophe in prose is not a truncated quote",
+  );
+  const framed = frameTweakSuggestion(singleSpan)!;
+  assert.match(framed, /Question: should this tweak be applied\?/, "still a question, not an order");
+  assert.doesNotMatch(framed, /darkwave preset text for lane one/, "the untypeable command is not offered");
+  assert.match(framed, /run \/goal tweak with no arguments/, "directs to the interactive flow instead");
+  const reminder = buildActionReminder({ kind: "blocked", reason: "Scope text disagrees with the approved mix.", action: singleSpan, resumeCommand: "/goal resume" });
+  const flat = render(reminder).replace(/\s+/g, " ");
+  assert.doesNotMatch(flat, /darkwave preset text for lane one/, "the card never shows the cut command");
+  assert.match(flat, /no arguments to review and edit it interactively/, "the card shows the fallback");
+});
+
 test("tweak proposals remain questions and retain the exact command for consent", () => {
   const action = `Run '/goal tweak "5. update the contract"'`;
   const reminder = buildActionReminder({ kind: "blocked", reason: "The contract conflicts with the verifier.", action, resumeCommand: "/list resume" });
