@@ -139,9 +139,16 @@ upstream (agent-composed preview cut mid-word — field 2026-10-27: darkwave
 cut to "darkw"). It must never be presented or promoted as a typeable
 command: the missing text cannot be restored by rendering or extraction.
 Quote tracking mirrors extractSuggestedCommand (an inner quote of the other
-kind never toggles the outer span), and at least one CLOSED span is required
-so a lone apostrophe ("tweak the user's objective") is vague prose, not a
-truncated quote — it keeps today's plain-pause behavior. */
+kind never toggles the outer span).
+
+An UNCLOSED DOUBLE quote is truncation on its own: the canonical
+`/goal tweak "<new text>"` form carries exactly one quoted span, so a cut
+inside it leaves no closed span at all and the earlier "at least one closed
+span" rule missed it (audit 2026-10-27: `Run /goal tweak "Replace the
+objective with the full darkwave preset text for lane one` stayed a
+command-to-type with no options). An unclosed APOSTROPHE still needs a
+closed span, so prose like "tweak the user's objective" stays a plain
+pause instead of becoming a false truncation. */
 export function tweakSuggestionTruncated(action: string): boolean {
   const trimmed = action.trim();
   if (!TWEAK_COMMAND.test(trimmed)) return false;
@@ -151,7 +158,9 @@ export function tweakSuggestionTruncated(action: string): boolean {
     if (quote) { if (c === quote) { quote = null; closedSpan = true; } }
     else if (c === '"' || c === "'") quote = c;
   }
-  return quote !== null && closedSpan;
+  if (quote === null) return false;
+  if (quote === '"') return true;
+  return closedSpan;
 }
 
 /** v0.39.30 (note.md #later Screenshot_20261011_175739 — "can have an
