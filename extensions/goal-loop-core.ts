@@ -4612,6 +4612,7 @@ export const GLLA_TOOL_NAMES = [
   "list_activate",
   "list_status",
   "propose_task_list",
+  "propose_tweak",
 ] as const;
 
 export type GllaToolName = (typeof GLLA_TOOL_NAMES)[number];
