@@ -304,6 +304,7 @@ test("pause_goal: kind=decision with a tweak carries selectable options, not jus
   try {
     await pi.runTool("pause_goal", {
       reason: "Scope text disagrees with the approved mix.",
+      interruption: { reason: "missing-input", evidence: "The operator must pick the objective wording." },
       suggestedAction: 'Run /goal tweak "Fix the genre line."',
       kind: "decision",
       options: ["Apply the tweak", "Keep current text", "Cancel the goal"],
