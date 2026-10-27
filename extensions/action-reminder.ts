@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { compactDisplayText } from "./goal-loop-core.js";
+import { compactDisplayText, TWEAK_COMMAND, tweakSuggestionTruncated } from "./goal-loop-core.js";
 import { Box, Text, truncateToWidth } from "@earendil-works/pi-tui";
 import { humanCheckTime, humanTextPreview } from "./human-handoff.js";
 
@@ -39,7 +39,6 @@ a question for the operator — never an imperative decree. Field 2026-10-14
 suggested action rendered verbatim as `Next: Run ...`, reading as an order
 to rewrite the contract. Frame it as a question while preserving the exact
 command verbatim for copy-paste. Returns undefined for non-tweak actions. */
-const TWEAK_COMMAND = /\/(?:goal|list)\s+tweak\b/i;
 export function frameTweakSuggestion(action: string): string | undefined {
   const trimmed = action.trim();
   if (!TWEAK_COMMAND.test(trimmed)) return undefined;
@@ -55,21 +54,7 @@ export function frameTweakSuggestion(action: string): string | undefined {
   return `Question: should this tweak be applied? ${trimmed} — or reply with what you'd prefer instead.`;
 }
 
-/** A tweak suggestion whose quoted replacement never closes is truncated
-upstream (agent-composed preview cut mid-word). It must never be presented
-as a typeable command: the missing text cannot be restored by rendering. */
-export function tweakSuggestionTruncated(action: string): boolean {
-  const trimmed = action.trim();
-  if (!TWEAK_COMMAND.test(trimmed)) return false;
-  const at = trimmed.search(/\/(?:goal|list)\s+tweak\b/i);
-  const tail = trimmed.slice(at);
-  let quote: string | null = null;
-  for (const c of tail) {
-    if (quote) { if (c === quote) quote = null; }
-    else if (c === '"' || c === "'") quote = c;
-  }
-  return quote !== null;
-}
+
 
 export interface ActionReminderCopy {
   content: string;
