@@ -189,10 +189,16 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // Baseline 09be4350 already emitted 31547 (the prior policy added 1896
   // bytes without refreshing this fixture). Human-handoff guidance adds
   // another 788. Baseline/current logs are retained in the handoff audit.
+  // v0.39.55 (2026-10-27): tweak-approval guidance in the continuation
+  // template — +362 serialized bytes on the one retained payload
+  // (32335 → 32697). Cardinality (messageCount 4, one checkpoint,
+  // removed == count - 1) and the flat-growth invariant are unchanged;
+  // only the per-payload constant moved. Measured with
+  // scripts/measure-context-growth.mjs.
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 32335, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 32335, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 32335, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;
