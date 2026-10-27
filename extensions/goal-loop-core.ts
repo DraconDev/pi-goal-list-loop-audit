@@ -158,7 +158,9 @@ export function tweakSuggestionTruncated(action: string): boolean {
     if (quote) { if (c === quote) { quote = null; closedSpan = true; } }
     else if (c === '"' || c === "'") quote = c;
   }
-  return quote !== null && closedSpan;
+  if (quote === null) return false;
+  if (quote === '"') return true;
+  return closedSpan;
 }
 
 /** v0.39.30 (note.md #later Screenshot_20261011_175739 — "can have an
