@@ -116,12 +116,8 @@ test("propose_tweak: the approval tool survives an external tool allowlist", () 
     "the tool is tracked so the session_start self-heal restores it",
   );
   assert.ok(
-    missingGllaTools(["complete_goal", "pause_goal", "propose_tweak"]).includes("propose_tweak"),
-    "a present tool is not reported missing",
-  );
-  assert.ok(
     !missingGllaTools(["complete_goal", "pause_goal", "propose_tweak"]).includes("propose_tweak"),
-    "the self-heal does not duplicate an already-active tool",
+    "an already-active tool is not reported missing",
   );
   assert.ok(
     missingGllaTools(["complete_goal"]).includes("propose_tweak"),
