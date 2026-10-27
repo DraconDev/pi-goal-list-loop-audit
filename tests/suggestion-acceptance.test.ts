@@ -324,6 +324,38 @@ test("pause_goal: kind=decision with a tweak carries selectable options, not jus
   }
 });
 
+test("decide picker: the bare-tweak editor option opens the interactive tweak flow", async () => {
+  // v0.39.55: the promotion fallback offers the interactive editor as a real
+  // picker option for untypeable (truncated) tweaks — not the broken fragment.
+  // Picking it must launch cmdTweak's input + Confirm path, not resume past it.
+  const cwd = tmpCwd();
+  setSettings({});
+  const { pi, ctx } = await activeBoot(cwd);
+  try {
+    await pi.runTool("pause_goal", {
+      reason: "Scope text disagrees with the approved mix.",
+      interruption: { reason: "missing-input", evidence: "The operator must pick the objective wording." },
+      suggestedAction: `Run /goal tweak replacing this objective line "- A." with "- B-trunc`,
+      kind: "blocked",
+    }, ctx);
+    const ui = ctx.ui as unknown as {
+      selectImpl?: (t: string, o: string[]) => Promise<string | undefined>;
+      inputImpl?: (t: string, p?: string) => Promise<string | undefined>;
+      confirmImpl?: (t: string, b: string) => Promise<boolean>;
+    };
+    ui.selectImpl = async (_t, options) => options.find((o) => o.includes("interactive editor"));
+    ui.inputImpl = async (_t, prefill) => `${prefill} plus darkwave`;
+    let confirmedBody = "";
+    ui.confirmImpl = async (_t, body) => { confirmedBody = body; return true; };
+    await pi.command("goal", "decide", ctx);
+    await tick();
+    assert.match(confirmedBody, /plus darkwave/, "the Confirm gate showed the edited text");
+    assert.match(readState(cwd).goal?.objective ?? "", /plus darkwave/, "picking the editor option applied the tweak");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("pause_goal: blocked pause with a concrete command lands as an Accept-first decision", async () => {
   const cwd = tmpCwd();
   setSettings({});
