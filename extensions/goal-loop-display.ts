@@ -1236,6 +1236,7 @@ function durablePhaseOverride(
   now: number,
 ): string | undefined {
   const phase = claim?.phase;
+  if (claim?.preAuditCompaction === true) return 'waiting for safe compaction boundary';
   if (phase === "settling") return "settling";
   if (!audit) return durablePhaseLabel(claim, now);
   if (phase === "starting" && audit.phase === "complete") return durablePhaseLabel(claim, now);
@@ -1248,6 +1249,7 @@ function durablePhaseOverride(
  * evidence, and mislabeling it hid a real settlement window behind a worker
  * that no longer exists. */
 function durablePhaseLabel(claim: PendingCompletion | undefined, now: number): string | undefined {
+  if (claim?.preAuditCompaction === true) return 'waiting for safe compaction boundary';
   const phase = claim?.phase;
   if (phase === "settling") return "settling";
   if (phase === "starting" && claim) {
