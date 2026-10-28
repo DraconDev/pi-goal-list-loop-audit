@@ -1,0 +1,45 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/boundary-compaction-marker.test.ts:
+(pass) atomic marker replacement records success without leaving partial/temp files [216.76ms]
+(pass) failed atomic replacement preserves the live destination and cleans its temporary file [6.82ms]
+(pass) malformed evidence reconciles only later durable success and agrees with status [0.64ms]
+(pass) untrusted oversize marker cannot authorize a compaction retry [0.24ms]
+(pass) untrusted directory marker cannot authorize a compaction retry [0.13ms]
+(pass) untrusted symlink marker cannot authorize a compaction retry [0.14ms]
+
+tests/pre-audit-compaction.test.ts:
+(pass) busy complete_goal stages admission, then success launches exactly one stored audit [743.80ms]
+(pass) busy complete_goal stages admission, then failure launches exactly one stored audit [345.40ms]
+(pass) busy complete_goal stages admission, then unavailable launches exactly one stored audit [290.83ms]
+(pass) a staged claim cannot bypass decision [231.37ms]
+(pass) a staged claim cannot bypass cold-load [112.45ms]
+(pass) a staged claim cannot bypass cancel [191.86ms]
+(pass) a staged claim cannot bypass revision [316.62ms]
+(pass) late compaction callbacks cannot dispatch across revision change [97.39ms]
+(pass) late compaction callbacks cannot dispatch across cancel change [175.98ms]
+(pass) late compaction callbacks cannot dispatch across session change [190.33ms]
+(pass) late compaction callbacks cannot dispatch across owner change [73.80ms]
+
+tests/amendment-confirmation-fence.test.ts:
+(pass) confirmed amendment survives identical rehydration (task key reorder=false) [86.65ms]
+(pass) confirmed amendment survives identical rehydration (task key reorder=true) [27.73ms]
+(pass) confirmed amendment rejects real id change without durable amendment [4.72ms]
+(pass) confirmed amendment rejects real revision change without durable amendment [1.40ms]
+(pass) confirmed amendment rejects real contract change without durable amendment [1.58ms]
+(pass) confirmed amendment rejects real objective change without durable amendment [1.31ms]
+(pass) confirmed amendment rejects real status change without durable amendment [2.73ms]
+(pass) confirmed amendment rejects real policy change without durable amendment [1.28ms]
+(pass) confirmed amendment rejects real task edit in place change without durable amendment [2.59ms]
+(pass) confirmed amendment rejects real competing claim change without durable amendment [3.09ms]
+(pass) confirmation cannot cross a real session boundary [5.80ms]
+(pass) confirmation cannot cross a real owner boundary [1.73ms]
+(pass) confirmation cannot cross a real cancel boundary [1.11ms]
+(pass) identical rehydration is not a substitute for explicit amendment consent [5.00ms]
+
+ 31 pass
+ 0 fail
+Ran 31 tests across 3 files. [4.77s]
+[run-tests] finished in 5s (exit 0)
