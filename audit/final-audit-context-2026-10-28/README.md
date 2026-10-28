@@ -116,7 +116,35 @@ audit blocking it.
   including semantic consent, atomic/malformed marker recovery, admission
   success/failure/unavailable cases, late revision/cancel/session/owner races,
   audit recovery, list approved-completion handoff and decision/cold-load holds.
-- Focused seven-suite run: 73 passed, zero failed. TypeScript and regenerated
-  inventory checks passed.
-- Isolated negative controls, fresh-context review and the full release gate
-  are pending; no completion or published-release claim is made here.
+- Focused seven-suite run: 73 passed, zero failed; later final focused gate
+  (`verification/final-focused.log`): 31 passed, zero failed across the three
+  new suites. TypeScript and regenerated inventory checks passed.
+- Three isolated-copy negative controls (`verification/*-negative.log`,
+  `negative-controls.json`) remove exactly one guard each and fail for the
+  intended behavioral reason: object-identity rejection returns,
+  malformed-marker success reconciliation is lost, and pre-audit admission
+  debt is never persisted. Exit 1 in every case; live sources were restored.
+- Fresh-context reviewer `116ba0a2-9aee-47bc-b236-0b84545e6d90` raised an
+  undeclared-global blocker; resumed reviewer `b60f88bc-f960-4aa9-8a29-6628f2db2271`
+  verified the intentional runtime-global bridge and the 31/0 focused log,
+  withdrew the blocker, and reported no remaining issue. No source change was
+  made merely to satisfy the false positive.
+- Final `npm run release:check`: **exit 0**, retained in
+  `verification/release-check.exit` and `verification/release-check.log`:
+  **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered
+  across 474 files**, runner exit 0 in 1,244 seconds. Jiti identity regression,
+  auditor-extension fences, inventory check, pack dry-run and installed
+  packed-worker/skill probes all succeeded afterward. This is local packed
+  evidence, not a published-release claim or a claim about either source
+  project's deliverable.
+
+## Boundaries of this result
+
+Neither source project was resumed, cancelled, amended or completed. The
+deathrun contract placeholder still needs its own explicit correction and
+confirmation; the high-context project still has no audit verdict and its one
+queued item remains queued. Historical marker-truncation cause and exact
+per-contact host idleness are not reconstructed. Provider token accounting is
+retained as reported evidence, not a wire capture. The configured target stays
+preventive rather than an unconditional ceiling, and no in-flight audit is
+interrupted or compacted across.
