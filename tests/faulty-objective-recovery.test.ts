@@ -415,6 +415,23 @@ test("persisted active report heads pause without repair multiplication or false
   assert.doesNotMatch(ledger(cwd), /"faulty_objective_repair_queued"|"goal_archived"/);
 });
 
+test("a genuine decision on a persisted fragment stays authoritative across auto-resume reload", async () => {
+  const cwd = tmpCwd(); setGlobalAutoResume(true);
+  const original = seedGoal({ status: "paused", policy: "list", objective: SHOPPING_ROW,
+    pauseKind: "decision", pauseReason: "Choose whether this row should become a build request",
+    pauseOptions: ["Cancel (/goal cancel)", "Edit (/list tweak)"], pauseRecommended: 1 });
+  const queued = { id: String(seedGoal().id), objective: "Implement the queued safe feature", addedAt: new Date().toISOString() };
+  seedState(cwd, { goal: original, list: [queued] });
+  const pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const saved = readState(cwd);
+  assert.equal(saved.goal?.status, "paused");
+  assert.equal(saved.goal?.pauseKind, "decision");
+  assert.deepEqual(saved.goal?.pauseOptions, original.pauseOptions);
+  assert.equal(saved.goal?.objective, SHOPPING_ROW);
+  assert.equal(saved.list?.[0]?.id, queued.id);
+  assert.equal(pi.sent.length, 0, "neither the head nor later work bypasses a real decision");
+});
+
 test("structured objectives with an explicit contract remain valid, unlike bare evidence", () => {
   assert.ok(assessSuspiciousObjective(SHOPPING_ROW).reasons.includes("report-fragment"));
   assert.equal(assessSuspiciousObjective("| Feature | Owner |", "Implement the popup quick actions and pass the interaction tests").suspicious, false);
