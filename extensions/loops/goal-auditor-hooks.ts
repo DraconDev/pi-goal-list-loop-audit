@@ -298,6 +298,7 @@ import {
   type HeartbeatDeps,
   type HeartbeatFlags,
 } from "../goal-heartbeat.js"; // decomposition step 4 (v0.34.112)
+import { boundaryCompactionPending, maybeCompactTranscriptAtBoundary, preventiveCompactionDue } from '../goal-compactor.js';
 import {
   clearMainModelRecoveryTimer,
   createGoalRecovery,
@@ -730,6 +731,7 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     // `lastActivityAt` is written here: the first worker event is the first
     // evidence of an attempt actually running.
     phase: "starting",
+    preAuditCompaction: undefined,
     attemptId: newCompletionAuditAttemptId(),
     startedAt: new Date(startedMs).toISOString(),
     lastActivityAt: undefined,
@@ -1384,9 +1386,35 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       return;
     }
   }
+  // All stored-claim dispatch paths share the same admission fence. A
+  // queued claim is durable work, not an in-flight independent audit.
+  if (guardedGoal.pendingCompletion.preAuditCompaction === true || preventiveCompactionDue(initialCtx)) {
+    if (guardedGoal.pendingCompletion.preAuditCompaction !== true) {
+      if (!updateGoal({ pendingCompletion: { ...guardedGoal.pendingCompletion, preAuditCompaction: true } }, initialCtx)) return;
+    }
+    if ((state.goal?.status !== 'auditing' && origin !== 'manual' && origin !== 'agent')
+        || abortedStandDown || mainModelRecoveryActive() || supervisorPaused(state)
+        || compactionInFlightSince !== null || boundaryCompactionPending(initialCtx)) return;
+    try { if (!initialCtx.isIdle() || initialCtx.hasPendingMessages()) return; } catch { return; }
+    const retryAfterCompaction = () => {
+      const current = freshCtxForGeneration(generation);
+      if (!current || state.goal?.id !== goalId || !state.goal.pendingCompletion?.preAuditCompaction) return;
+      void retryStoredCompletionAudit(origin);
+    };
+    if (maybeCompactTranscriptAtBoundary(initialCtx, {
+      supervising: true, auditInFlight: false, paused: false, rearmImmediately: true,
+    }, retryAfterCompaction, retryAfterCompaction)) {
+      clearContinuationTimer(); clearLoopTimer();
+      appendLedger(initialCtx.cwd, 'audit_compaction_admission_started', { goalId });
+      return;
+    }
+    // Optional compaction unavailable, already spent, or failed: preserve
+    // the claim and admit its independent audit on this safe boundary.
+    // This preventive target is not an unconditional hard ceiling.
+  }
   completionAuditRecoveryArmed = true;
   let liveCtx: ExtensionContext = initialCtx;
-  const claim = beginCompletionAudit(liveCtx, guardedGoal.pendingCompletion, origin);
+  const claim = beginCompletionAudit(liveCtx, state.goal?.pendingCompletion ?? guardedGoal.pendingCompletion, origin);
   if (!claim) {
     liveCtx.ui.notify("Stored completion claim was not persisted for auditor recovery; no auditor was launched. Fix .pi-glla storage and retry explicitly.", "warning");
     appendLedger(liveCtx.cwd, "audit_dispatch_persistence_failed", { goalId, origin });
