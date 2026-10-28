@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Completion amendments and safe pre-audit compaction
+
+- Confirmed completion amendments survive unchanged state rehydration and
+  harmless task-object key ordering. Real scope, revision, task, competing
+  claim, session and owner changes still invalidate stale confirmation.
+- Above-target completion claims now wait for an owned idle compaction
+  admission boundary before starting the detached auditor. Success and
+  bounded optional-compaction failure resume the stored audit once, not a
+  second main-agent turn; live audits and genuine holds remain authoritative.
+- Truncated preventive-compaction markers can reconcile later durable success
+  without borrowing older success for a newer failed attempt. Marker updates
+  are atomic; unknown failed attempts remain bounded across reloads.
+
 ### Report evidence no longer becomes follow-up list work
 
 - Reviewer extraction now recognizes line-numbered table rows and source
