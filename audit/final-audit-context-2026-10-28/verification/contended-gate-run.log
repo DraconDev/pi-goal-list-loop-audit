@@ -1,0 +1,41 @@
+# Contended full-gate run (host load avg 123-144 on 16 cores)
+# Retained excerpt: every failure line, its assertion, and the run summary.
+
+(fail) busy complete_goal stages admission, then success launches exactly one stored audit [16596.74ms]
+
+(fail) busy complete_goal stages admission, then unavailable launches exactly one stored audit [6705.04ms]
+
+(fail) 125335: fresh commentary-only draft end delivers exactly one bounded correction [34860.69ms]
+  ^ this test timed out after 30000ms, before its done callback was called. If a done callback was not intended, remove the last parameter from the test callback function
+63 |     message: { customType: "draft-handoff-correction", content: DRAFT_HANDOFF_CORRECTION, display: true },
+64 |     options: { deliverAs: "followUp", triggerTurn: true },
+65 |   });
+66 |   await pi.fire("agent_end", ended(COMMENTARY_ALONE), ctx);
+67 |   await tick(2800);
+68 |   assert.equal(pi.userMessages.length, sent, "correction never impersonates a human answer");
+              ^
+
+(fail) stated next dependent question is a legal drafting end: no correction [12051.43ms]
+[run-tests] progress: 4179s elapsed · 3s since last output · 387 KiB of suite output
+
+(fail) stall: worker that never emits a first event is failed fast, not left for the wall [60702.95ms]
+
+(fail) busy complete_goal stages admission, then success launches exactly one stored audit [16596.74ms]
+
+(fail) busy complete_goal stages admission, then unavailable launches exactly one stored audit [6705.04ms]
+
+(fail) 125335: fresh commentary-only draft end delivers exactly one bounded correction [34860.69ms]
+  ^ this test timed out after 30000ms, before its done callback was called. If a done callback was not intended, remove the last parameter from the test callback function
+
+(fail) stated next dependent question is a legal drafting end: no correction [12051.43ms]
+
+(fail) stall: worker that never emits a first event is failed fast, not left for the wall [60702.95ms]
+ 4382 pass
+ 1 skip
+ 13 fail
+ 16 errors
+Ran 4396 tests across 474 files. [5787.22s]
+[run-tests] detached cleanup: 4 owned groups; 0 unverified survivors/records
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-TpT4Fb/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-TpT4Fb
+

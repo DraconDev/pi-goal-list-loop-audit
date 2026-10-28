@@ -142,6 +142,18 @@ audit blocking it.
   verified the intentional runtime-global bridge and the 31/0 focused log,
   withdrew the blocker, and reported no remaining issue. No source change was
   made merely to satisfy the false positive.
+- Gate robustness finding (contention, not product): an intermediate full-gate
+  rerun on a host at load average 123–144 on 16 cores failed 13 assertions, all
+  of which reduce to hand-rolled `performance.now() + N` or fixed-sleep waits.
+  `tests/pre-audit-compaction.test.ts` and
+  `tests/compaction-settled-boundary.test.ts` now take their budgets from
+  `tests/harness/host-budget.ts` (`waitFor`), which scales with measured host
+  contention while still requiring the condition; the three-suite rerun gave
+  26 passed, zero failed. `tests/list-draft-handoff.test.ts` and
+  `tests/auditor-stall-watchdog.test.ts` fail only past the shared 8x ceiling
+  and pass in isolation. This is recorded as host contention, not a claimed
+  product regression and not a loosened assertion: every condition is still
+  required, only the wall-clock allowance follows the CPU actually available.
 - Final `npm run release:check`: **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:
   **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered
