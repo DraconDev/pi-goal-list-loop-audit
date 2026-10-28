@@ -42,8 +42,8 @@ and enter independent audit; tests use an inert worker, not provider approval.
 
 ## Second report: large real input-side usage, not proven audit deadlock
 
-Screenshot_20261028_122841.png shows 903644 / 200000 token target while an audit
-has recent tool activity. Source journal audit dispatch: 12:11:42Z; shutdown:
+Screenshot_20261028_122841.png shows `903844 / 200000 token target` while an
+audit has recent tool activity. Source journal audit dispatch: 12:11:42Z; shutdown:
 12:29:37Z with `audit_recovery_pending: session_shutdown:quit` and
 `audit_worker_cancelled: quit`. Latest state is paused/no verdict with one
 queued item. No final approval or independently established deadlock is shown.
@@ -54,9 +54,18 @@ At line 2475, the completion request records input 215 + cacheRead 902272 =
 **902487 input-side tokens including cache**, output 1273, total 903760.
 At line 2081 it was already input 237 + cacheRead 777600 = 777837. These are
 provider-reported usage fields, not an independently captured wire payload or
-903k uncached input. Journal line 928 separately records host context estimate
-903844. The screenshot's exact 200-token estimate delta is unestablished.
-There are no compaction entries in that parent session.
+903k uncached input. Journal line 928 (`context_usage_sample`, 12:11:43.467Z,
+one second after audit dispatch) records the same request with provider usage
+`inputTokens` 215 / `cacheReadTokens` 902272 / `totalTokens` 903760 **and** a
+host `contextUsage.tokens` estimate of **903844**, window 1048000 (86.24%).
+
+The screenshot's `903844` is therefore the host/displayed context estimate at
+the dispatch sample, not a provider-reported token count; the 84-token gap
+between that estimate and the sample's own provider `totalTokens` is exactly
+the estimate-versus-accounting difference this report keeps distinct. No
+separate or larger estimate delta is claimed, and the displayed figure is not
+presented as 903k of uncached input. There are no compaction entries in that
+parent session.
 
 ### GLLA-owned suppression mechanism
 
