@@ -47,6 +47,35 @@ test("markdown table rows are skipped", () => {
   assert.equal(classifyFindingText("  | Mode | Architectural | Clean |"), undefined);
 });
 
+test("numbered evidence from the shopping report never becomes reviewer work", () => {
+  const evidence = [
+    "28:| 3 | Popup + contextMenu quick-actions | V9 | Enhancement layer, not a standalone focus |",
+    "29:| 4 | Single-retailer price tracker (Amazon) | V8 | Deferred: Amazon TOS gray area + data-asset cost |",
+    "30:| 5 | Multi-retailer price history | V5 | Deferred to Phase 6 |",
+    "Item: Doc includes an Excluded / already shipped section so no duplicate is proposed",
+    "82:## 6. Excluded / already shipped (do not duplicate)",
+    "94:**Next build (follow-up goal, not this one):**",
+    "33:| 8 | Page-content rewrite on navigation | Rejected |",
+  ];
+  for (const line of evidence) {
+    for (const prefix of ["", "- ", "> "]) assert.equal(classifyFindingText(prefix + line), undefined, line);
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-shopping-fragments-"));
+  try {
+    const enqueued: string[] = [], proposed: string[] = [];
+    const out = runReviewer(resolveReviewerConfig({ cascade: ["convert-findings-to-list", "propose-goal"] }),
+      { kind: "goal", goalId: "shopping", objective: "Produce a shopping recommendation", terminal: "goal-complete" }, {
+        cwd: dir, nowMs: Date.now(), ledgerEntries: [],
+        sources: [{ name: "audit", text: [...evidence, "TODO: fix the broken queue journal write"].join("\n") }],
+        enqueueListItems: (items) => { enqueued.push(...items); return items.length; },
+        proposeGoal: (item) => { proposed.push(item); return true; }, notify: () => {}, ledger: () => {},
+      });
+    assert.equal(out.fired, true);
+    assert.deepEqual(enqueued, ["TODO: fix the broken queue journal write"], "real actionable findings still reach the queue");
+    assert.deepEqual(proposed, [], "architectural words in evidence do not create proposals");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("reviewer-report vocabulary is skipped (self-match prevention)", () => {
   assert.equal(classifyFindingText("Architectural-class findings are proposed as /goal, Confirm required"), undefined);
   assert.equal(classifyFindingText("the reviewer found 3 architectural-class finding(s)"), undefined);
