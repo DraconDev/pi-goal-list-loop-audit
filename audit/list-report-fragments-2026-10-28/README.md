@@ -84,6 +84,23 @@ explicit correction/removal rather than silently completing or inventing work.
 - That repeat hit the runner's stalled-suite watchdog in compaction-survival
   after 959 silent seconds under host load around 84; exit 1, not a pass.
   The unchanged compaction-survival file immediately passed alone: 2 passed,
-  zero failed in 3 seconds. A fresh quiet full gate is being run; its receipt
-  and final output will be recorded before completion.
+  zero failed in 3 seconds. Both outputs are retained as
+  `verification/stalled-repeat.log` and `verification/compaction-isolated.log`.
+- Final quiet `npm run release:check`: **exit 0**, durably captured in
+  `verification/release-check.exit`; full output in
+  `verification/release-check.log`. **4,398 passed, one existing skip, zero
+  failed; 4,399 discovered across 471 files**, runner exit 0 in 2,194 seconds.
+  Jiti identity regression, auditor-extension fence, inventory check, pack
+  dry-run and installed packed-worker/skill probes all succeeded afterward.
+  This is local packed-artifact evidence, not a new published-release claim.
+
+## Result and remaining boundary
+
+The GLLA-owned intake defect is fixed and legacy structural fragments stop
+safely with explicit recovery commands. Completed-item handoff and genuine
+holds retain their existing behavior. No source-project row was completed,
+rewritten, removed or implicitly authorized by this work. Historical research
+acceptance is not retroactively converted to auditor approval, and the earlier
+prose-tweak leftover remains outside this goal's scope.
+
 
