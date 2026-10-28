@@ -64,8 +64,12 @@ the dispatch sample, not a provider-reported token count; the 84-token gap
 between that estimate and the sample's own provider `totalTokens` is exactly
 the estimate-versus-accounting difference this report keeps distinct. No
 separate or larger estimate delta is claimed, and the displayed figure is not
-presented as 903k of uncached input. There are no compaction entries in that
-parent session.
+presented as 903k of uncached input. The `200000` in the same line is GLLA's
+configured *preventive* target, not the model window (the sample records
+1048000), so the display reports a session 4.5x past the preventive target while
+still inside the hard window — exactly why the objective treats the target as
+preventive rather than an unconditional ceiling. There are no compaction entries
+in that parent session.
 
 ### GLLA-owned suppression mechanism
 
