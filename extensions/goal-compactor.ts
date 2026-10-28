@@ -102,7 +102,7 @@ export function shouldCompactBetweenTasks(input: {
 }
 
 type BoundaryOwnerContext = { cwd: string; sessionManager?: object };
-type BoundaryAttempt = { fail(error: string, resume: boolean): void };
+type BoundaryAttempt = { fail(error: string, resume: boolean): void; active(): boolean };
 // Public failure events and compact callbacks may arrive in either order.
 // Keep the settled attempt until the next real turn so both contacts share
 // ownership and cannot send twice or fall through to the blocking handler.
@@ -120,6 +120,18 @@ export function settleBoundaryCompactionFailure(ctx: BoundaryOwnerContext, error
 
 export function clearBoundaryCompactionAttempt(ctx: BoundaryOwnerContext): void {
   boundaryAttempts.delete(boundaryOwner(ctx));
+}
+
+export function boundaryCompactionPending(ctx: BoundaryOwnerContext): boolean {
+  return boundaryAttempts.get(boundaryOwner(ctx))?.active() === true;
+}
+
+/** Observation only: a busy contact stages admission, never compacts here. */
+export function preventiveCompactionDue(ctx: Pick<ExtensionContext, 'getContextUsage'>): boolean {
+  try {
+    return shouldCompactBetweenTasks({ tokens: ctx.getContextUsage?.()?.tokens,
+      threshold: loadGlobalSettings().compactionTokenThreshold }).compact;
+  } catch { return false; }
 }
 
 /** v0.38.105 (field 2026-09-29: 600-900k-token sessions never compacted):
@@ -141,8 +153,9 @@ export function clearBoundaryCompactionAttempt(ctx: BoundaryOwnerContext): void 
  * host has no compact trigger). */
 export function maybeCompactTranscriptAtBoundary(
   ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean; sessionManager?: object },
-  flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
+  flags: { supervising: boolean; auditInFlight: boolean; paused: boolean; rearmImmediately?: boolean },
   onFailure?: () => void,
+  onComplete?: () => void,
 ): boolean {
   if (!flags.supervising || flags.auditInFlight || flags.paused || pressureExcluded(ctx)) return false;
   if (respecBuilderAuditInFlight(ctx.cwd)) return false;
@@ -185,7 +198,9 @@ export function maybeCompactTranscriptAtBoundary(
         // Re-arm is best effort.
       }
     }
-    return false;
+    // Pre-audit admission already owns a settled boundary and need not
+    // launch another model turn just to revisit a proven-success rearm.
+    if (!flags.rearmImmediately || fs.existsSync(markerPath)) return false;
   }
   const decision = shouldCompactBetweenTasks({ tokens, threshold, alreadyFired: false });
   if (!decision.compact) return false;
@@ -230,6 +245,7 @@ export function maybeCompactTranscriptAtBoundary(
   }
   let settled = false;
   const attempt: BoundaryAttempt = {
+    active: () => !settled,
     fail(detail, resume) {
       if (settled) return;
       settled = true;
@@ -260,6 +276,7 @@ export function maybeCompactTranscriptAtBoundary(
         if (boundaryAttempts.get(boundaryOwner(ctx)) === attempt) clearBoundaryCompactionAttempt(ctx);
         try { appendLedger(ctx.cwd, "compactor_transcript_done", {}); }
         catch { /* ledger best effort */ }
+        setTimeout(() => onComplete?.(), 0);
       },
       onError: (error) => attempt.fail(error instanceof Error ? error.message : String(error), true),
     });
