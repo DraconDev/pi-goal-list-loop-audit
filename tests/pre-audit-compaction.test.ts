@@ -5,6 +5,8 @@ import path from 'node:path';
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
 import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from '../extensions/goal-compactor.js';
 import { readState } from '../extensions/goal-loop-core.js';
+import { currentUiStatusContext } from '../extensions/loops/goal-ui.js';
+import { buildWidgetLines } from '../extensions/goal-loop-display.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
 
 const originalBinary = process.env.GLLA_PI_BINARY;
@@ -53,6 +55,8 @@ for (const outcome of ['success', 'failure', 'unavailable'] as const) {
       const staged = readState(h.cwd).goal!;
       assert.equal(staged.status, 'auditing');
       assert.equal(staged.pendingCompletion?.preAuditCompaction, true);
+      assert.notEqual(currentUiStatusContext(h.ctx).compaction?.reason, 'audit', 'an unlaunched claim must not pretend a live audit blocks compaction');
+      assert.match(buildWidgetLines(readState(h.cwd), null)?.join('\n') ?? '', /waiting for safe compaction boundary/);
       assert.equal(h.callbacks.length, 0, 'a busy tool callback never compacts');
       assert.equal(fs.existsSync(h.started), false, 'no worker before owned idle admission');
       await h.pi.fire('agent_settled', {}, h.ctx);
