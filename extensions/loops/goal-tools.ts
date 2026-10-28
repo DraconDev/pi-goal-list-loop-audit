@@ -26,6 +26,7 @@ import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestra
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 import { sendTerminalCompletionNotice } from "../goal-continuation.js";
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -877,7 +878,9 @@ function registerAgentTools(pi: any): void {
         const amendmentGoal = state.goal;
         const amendmentId = amendmentGoal.id;
         const amendmentStatus = amendmentGoal.status;
-        const amendmentTasks = JSON.stringify(amendmentGoal.taskList);
+        const amendmentTasks = structuredClone(amendmentGoal.taskList);
+        const amendmentPolicy = amendmentGoal.policy;
+        const amendmentPending = structuredClone(amendmentGoal.pendingCompletion);
         const amendmentRevision = amendmentGoal.revision ?? 0;
         const amendmentContract = amendmentGoal.verificationContract;
         const proposedContract = verificationContract || amendmentContract;
@@ -889,8 +892,13 @@ function registerAgentTools(pi: any): void {
           } catch {
             // Unavailable/stale UI cannot grant scope authority.
           }
-          if (auditGeneration !== sessionGeneration || state.goal !== amendmentGoal ||
-              state.goal.id !== amendmentId || state.goal.status !== amendmentStatus || JSON.stringify(state.goal.taskList) !== amendmentTasks || (state.goal.revision ?? 0) !== amendmentRevision ||
+          // Persistence/rehydration may replace the JS object while the
+          // confirmed target stays identical. Fence semantic authority, not
+          // allocation identity; keep independent owner/session checks below.
+          if (auditGeneration !== sessionGeneration || !state.goal ||
+              state.goal.id !== amendmentId || state.goal.status !== amendmentStatus ||
+              state.goal.policy !== amendmentPolicy || !isDeepStrictEqual(state.goal.pendingCompletion, amendmentPending) ||
+              !isDeepStrictEqual(state.goal.taskList, amendmentTasks) || (state.goal.revision ?? 0) !== amendmentRevision ||
               state.goal.objective !== oldObjective || state.goal.verificationContract !== amendmentContract ||
               foreignToolGuard(ctx)) {
             return { content: [{ type: "text", text: "The target changed during scope confirmation; no amendment or completion claim was applied." }], details: {}, isError: true };
