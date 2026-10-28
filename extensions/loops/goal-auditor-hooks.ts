@@ -298,7 +298,7 @@ import {
   type HeartbeatDeps,
   type HeartbeatFlags,
 } from "../goal-heartbeat.js"; // decomposition step 4 (v0.34.112)
-import { boundaryCompactionPending, maybeCompactTranscriptAtBoundary, preventiveCompactionDue } from '../goal-compactor.js';
+import { boundaryCompactionPending, maybeCompactTranscriptAtBoundary } from '../goal-compactor.js';
 import {
   clearMainModelRecoveryTimer,
   createGoalRecovery,
@@ -1387,9 +1387,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       return;
     }
   }
-  // All stored-claim dispatch paths share the same admission fence. A
-  // queued claim is durable work, not an in-flight independent audit.
-  if (guardedGoal.pendingCompletion.preAuditCompaction === true || preventiveCompactionDue(initialCtx)) {
+  // Every recovery path honors explicit pre-launch admission debt. Do not
+  // retrofit debt onto legacy running/starting audits: absence of this
+  // process's in-flight flag does not prove an older worker never launched.
+  if (guardedGoal.pendingCompletion.preAuditCompaction === true) {
     const scopeMoved = guardedGoal.pendingCompletion.preAuditCompaction === true
       && guardedGoal.pendingCompletion.preAuditCompactionRevision !== (guardedGoal.revision ?? 0);
     if (scopeMoved && origin !== 'manual') {
@@ -1399,7 +1400,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       }, initialCtx);
       return;
     }
-    if (guardedGoal.pendingCompletion.preAuditCompaction !== true || scopeMoved) {
+    if (scopeMoved) {
       if (!updateGoal({ pendingCompletion: { ...guardedGoal.pendingCompletion, preAuditCompaction: true,
         preAuditCompactionRevision: guardedGoal.revision ?? 0 } }, initialCtx)) return;
     }
