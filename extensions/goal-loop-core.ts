@@ -3373,6 +3373,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorThinkingLevel: _auditorThinkingLevel,
     timeoutEscalation: _timeoutEscalation,
     showVerification: _showVerification,
+    preAuditCompaction: _preAuditCompaction,
+    preAuditCompactionRevision: _preAuditCompactionRevision,
     ...canonicalOrUnknown
   } = raw;
   const phase = _phase === "quota-waiting" ? "retry-waiting" : _phase;
@@ -3458,6 +3460,9 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const showVerification = _showVerification === true ? true : undefined;
   return {
     ...canonicalOrUnknown,
+    ...(_preAuditCompaction === true ? { preAuditCompaction: true } : {}),
+    ...(typeof _preAuditCompactionRevision === 'number' && Number.isSafeInteger(_preAuditCompactionRevision)
+      && _preAuditCompactionRevision >= 0 ? { preAuditCompactionRevision: _preAuditCompactionRevision } : {}),
     ...(auditorCandidateRefs !== undefined ? { auditorCandidateRefs } : {}),
     ...(auditorCandidateRef ? { auditorCandidateRef } : {}),
     ...(auditorRetryCandidateRef ? { auditorRetryCandidateRef } : {}),
