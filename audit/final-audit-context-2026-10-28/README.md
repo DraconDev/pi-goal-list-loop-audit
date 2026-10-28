@@ -1,70 +1,122 @@
-# Final-audit refusal and high-context screenshots — verification
+# Final-audit refusal and high-context list session — 2026-10-28
 
-## Scope
+## Scope and evidence boundary
 
-Read both screenshots natively. Inspect source projects read-only; no objective,
-contract, goal state, approval or source-project artifact was changed. This is
-verification, not an implemented fix or approval of either project's work.
+Both screenshots were inspected natively. Deathrun and capture-anime-girls
+remain strictly read-only: no source-project code, goal state, contracts,
+approvals or artifacts were changed. Fixes and synthetic reproductions are in
+GLLA only. This does not approve either project's deliverable or repair Pi,
+providers or external plugins.
 
-## First report: confirmed current GLLA defect, plus a real contract problem
+## First report: current amendment defect confirmed and repaired
 
-Screenshot_20261028_122546.png identifies the deathrun project and claims that
-`complete_goal(newObjective)` rejects amendments on object identity.
-
-Current `extensions/loops/goal-tools.ts:892` still compares
-`state.goal !== amendmentGoal` after awaiting Confirm, even though it also checks
-id, status, tasks, revision, objective and verification contract. A semantically
-identical state rehydration therefore rejects explicit confirmation. Diagnostic
-`repro.test.ts` reproduces exactly this on current code: deep-equal goal clone,
-different object identity, confirmed UI, rejection, unchanged durable contract.
-The existing real replacement-target refusal test still passes. The diagnostic
-asserts the observed defect, not desired production behavior, and is not a fix.
-
-Command (bounded):
-`PATH=/home/dracon/.local/share/bun-toolchains/bun-1.3.14:$PATH timeout 120 node scripts/run-tests.mjs audit/final-audit-context-2026-10-28/repro.test.ts tests/durable-solution-authority.test.ts`
-Result: 9 pass / 0 fail. Original default-Bun attempt started no tests because
-Bun 1.3.3 lacks the runner flags; the supported installed toolchain was selected
-explicitly for the diagnostic.
-
-Deathrun's latest durable state remains paused/blocked with the reported
-amendment objection. Its retained mechanical disapproval rejects literal
-`git diff --stat <pre-goal sha>..HEAD` as unsafe syntax, exit 126. Importantly,
-the retained report says the mechanical parser rejected it; it does NOT prove
+Screenshot_20261028_122546.png identifies deathrun and reports rejected
+`complete_goal(newObjective)` confirmations. Its latest durable state remains
+paused/blocked with that complaint. Its retained deterministic disapproval
+rejects `git diff --stat <pre-goal sha>..HEAD` as unsafe mechanical syntax,
+exit 126. This proves a real contract placeholder problem; it does NOT prove
 the screenshot's more specific claim that bash actually executed a redirect.
-Replacing placeholders and changing any pinned count still requires explicit
-contract confirmation, not inferred permission from this investigation. We did
-not independently verify deathrun's claimed 42→45 count or its deliverable.
+The claimed 42-to-45 check count and the project's work were not independently
+verified here. Contract correction still needs explicit confirmation.
 
-The screenshot cannot establish every claimed historical cause of identity
-replacement. The isolated test establishes the current rejection mechanism,
-not that an auditor or compactor caused each reported historical refusal.
+Current GLLA did compare `state.goal !== amendmentGoal` after awaiting Confirm,
+in addition to semantic fields. A deep-equal goal clone reproduced rejection
+with unchanged durable contract. Original diagnostic source is retained as
+`repro-before-fix.ts.txt` (inert historical evidence, not a desired-behavior test).
+The original bounded reproduction plus existing authority tests passed 9/0 by
+asserting the observed defect, before implementation.
 
-## Second report: observed over-target context, root cause not yet established
+The fence now checks semantic target, revision, status, objective, contract,
+policy, task content and competing pending claim, plus existing session and
+owner authority. It no longer treats JS allocation or task-object key order
+as consent changes. Tasks/claims are snapshotted before awaiting Confirm so
+in-place edits also invalidate consent. Cancellation and declined confirmation
+remain non-mutating and cannot submit a claim.
 
-Screenshot_20261028_122841.png shows capture-anime-girls while auditing:
-903644 / 200000 token target, `deferred during audit`, audit age 16m56s and a
-recent action. That is a real displayed overshoot, not proof of a hung auditor
-or proof that 903644 was the model's actual request input size.
+`tests/amendment-confirmation-fence.test.ts` verifies successful unchanged
+rehydration and harmless task-key reordering; rejection covers id, revision,
+contract, objective, status, policy, in-place task edits, competing claims,
+session generation, owner and cancellation. It also proves a declined Confirm
+still cannot amend scope. Successful amendments advance the durable revision
+and enter independent audit; tests use an inert worker, not provider approval.
 
-Current `extensions/compaction-status.ts` explicitly gives audit deferral
-precedence over the threshold. The threshold is preventive admission, not a
-hard cap. This explains the status label, but does not establish why usage
-first crossed the target or how the host derived that usage measurement.
+## Second report: large real input-side usage, not proven audit deadlock
 
-The source journal records audit dispatch at 12:11:42Z, then at 12:29:37Z
-`audit_recovery_pending` with `session_shutdown:quit` and
-`audit_worker_cancelled` with reason `quit`. Latest state is paused/blocked,
-`completion audit blocked — no verdict: session_shutdown:quit`, with one queued
-item. No terminal approval is established. The screenshot shows activity before
-shutdown, not an independently established audit deadlock. Tracing pre-audit
-compaction admission and actual session usage is still needed before prescribing
-a fix; simply compacting across an in-flight audit would risk lifecycle races.
+Screenshot_20261028_122841.png shows 903644 / 200000 token target while an audit
+has recent tool activity. Source journal audit dispatch: 12:11:42Z; shutdown:
+12:29:37Z with `audit_recovery_pending: session_shutdown:quit` and
+`audit_worker_cancelled: quit`. Latest state is paused/no verdict with one
+queued item. No final approval or independently established deadlock is shown.
 
-## Recommended implementation boundary
+Read-only parent session:
+`/home/dracon/.pi/agent/sessions/--home-dracon-Dev-dracon-platform-web-games-wip-capture-anime-girls--/2026-10-27T11-43-42-232Z_01a17d2c-5e98-7796-bef5-49b00ffc0c0b.jsonl`.
+At line 2475, the completion request records input 215 + cacheRead 902272 =
+**902487 input-side tokens including cache**, output 1273, total 903760.
+At line 2081 it was already input 237 + cacheRead 777600 = 777837. These are
+provider-reported usage fields, not an independently captured wire payload or
+903k uncached input. Journal line 928 separately records host context estimate
+903844. The screenshot's exact 200-token estimate delta is unestablished.
+There are no compaction entries in that parent session.
 
-First fix the Confirm fence using semantic target/revision authority rather
-than incidental JS identity; retain rejection for real replacement, contract,
-revision, task, status, owner and session changes. Do not waive consent or
-weaken the project's verification contract. Separately investigate context
-admission before audit launch using real session evidence; do not repair Pi
-core or silently resume/cancel either source project.
+### GLLA-owned suppression mechanism
+
+The source project's `compactor-boundary.json` is zero bytes, with mtime
+2026-10-26T18:06:12.362Z. Read-only retained journal segment
+`segment-1793115587023-1554229-c18d1v1y.jsonl`, lines 143/151, records compaction
+firing at 18:06:12.363Z and completion at 18:06:56.678Z. Durable
+lastCompactionAt records that later success. Previously, parsing the empty
+marker failed before success reconciliation, suppressing preventive compaction
+indefinitely while tokens stayed above half the target, including new sessions.
+This is a reproduced mechanism, not proof of every historical contact's idle
+state or of which writer truncated the file. Historical loaded-source identity
+is not established by the displayed package version alone.
+
+Marker reads and UI now share bounded no-follow regular-file evidence.
+Malformed metadata can reconcile a proven durable success later than its own
+write timestamp, after recovery grace. Older/future success cannot release a
+newer failed attempt; unknown failures stay one-shot across reload. Oversize,
+nonregular and symlink metadata never authorizes blind retry. Marker creation
+and success updates use same-directory atomic replacement rather than
+truncating the live file; failed replacement cleans temporary data and leaves
+the original intact. Failure to persist a claim cannot launch repeated
+unrecorded optional compactions.
+
+### Safe pre-audit admission
+
+The old complete_goal path persisted a claim and immediately launched the
+auditor. By the actual settled boundary the audit exclusion was already active.
+Existing ordinary dispatch/agent_settled compaction checks were present, but
+could not recover the malformed marker and did not stage this transition.
+
+Now an above-target completion stores explicit revision-bound pre-audit
+admission debt and returns without compacting a busy tool callback or launching
+a worker. Owned settled contacts admit it. If safely eligible, one optional
+compaction owns the boundary; success/failure callbacks and session_compact
+rebind through current session/owner authority. Only afterward does the stored
+claim launch exactly one independent audit, without another main-agent turn.
+A proven-success marker can rearm directly at this already-safe audit boundary.
+
+The target remains preventive, not an unconditional hard ceiling: unavailable
+or already-spent/failed optional compaction admits the retained completion
+claim's independent audit once safe. It does not strand the goal waiting for
+an unavailable summarizer or silently erase work. New revision mismatches hold
+the retained claim and offer explicit `/goal verify` after scope review.
+Decision pauses, load holds, cancellation, foreign owners and stale generations
+cannot dispatch. Existing live/legacy audit attempts are not retroactively
+assigned compaction debt; absence of this process's in-flight flag does not
+prove an older worker never started. Truly in-flight audits remain excluded.
+
+The widget explicitly describes waiting for the safe compaction boundary;
+compaction eligibility no longer falsely says an unlaunched claim is a live
+audit blocking it.
+
+## Verification progress
+
+- `verification/affected-suites.log`: 365 passed, zero failed across 18 files,
+  including semantic consent, atomic/malformed marker recovery, admission
+  success/failure/unavailable cases, late revision/cancel/session/owner races,
+  audit recovery, list approved-completion handoff and decision/cold-load holds.
+- Focused seven-suite run: 73 passed, zero failed. TypeScript and regenerated
+  inventory checks passed.
+- Isolated negative controls, fresh-context review and the full release gate
+  are pending; no completion or published-release claim is made here.
