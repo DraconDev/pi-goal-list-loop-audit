@@ -1158,7 +1158,7 @@ function registerAgentTools(pi: any): void {
       // debt now; the owned settled boundary, not this callback, may compact
       // and launch the auditor. No independent audit is in flight yet.
       if (preventiveCompactionDue(ctx)) {
-        if (!updateGoal({ pendingCompletion: { ...completionClaim, preAuditCompaction: true } }, ctx)) {
+        if (!updateGoal({ pendingCompletion: { ...completionClaim, preAuditCompaction: true, preAuditCompactionRevision: state.goal?.revision ?? 0 } }, ctx)) {
           return { content: [{ type: 'text', text: 'FAILED — pre-audit admission was not persisted; no auditor was launched. Fix .pi-glla storage and retry.' }], details: {}, isError: true };
         }
         appendLedger(ctx.cwd, 'audit_compaction_admission_pending', { goalId: state.goal?.id, attemptId: completionClaim.attemptId });

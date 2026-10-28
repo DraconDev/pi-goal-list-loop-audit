@@ -838,6 +838,9 @@ export interface PendingCompletion {
   /** Durable admission debt, before any detached auditor starts. Cleared
    * only when an owned safe boundary admits the stored claim. */
   preAuditCompaction?: boolean;
+  /** Scope authority of the admission debt; automatic contacts cannot
+   * transfer a stored completion assertion to another contract revision. */
+  preAuditCompactionRevision?: number;
   /** Current audit lifecycle. Missing = legacy claim, treated as recovery-pending. */
   phase?: CompletionAuditPhase;
   /** v0.38.99: freshest durable evidence that the attempt is alive (first
