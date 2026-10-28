@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Report evidence no longer becomes follow-up list work
+
+- Reviewer extraction now recognizes line-numbered table rows and source
+  headings, plus contract-item labels, as evidence rather than new tasks.
+  Trigger words such as “Deferred”, “enhancement” and “rewrite” inside the
+  shopping report cannot silently create list work or goal proposals.
+- Legacy bare table rows and source headings remain preserved when selected:
+  activation explains how to correct or remove them instead of dispatching
+  a worker or inventing recursive repair tasks. Persisted active heads stop
+  safely with the same correction path; deliberate structured objectives
+  with a concrete contract remain supported.
+- Genuine decision pauses, user cancellation, and cold-load queue holds keep
+  their existing consent semantics. The incident was reviewer-created junk
+  work, not a reason to bypass those holds.
+
 ### Consent-by-typing gap: decisions are questions with options, approval applies through the Confirm gate
 
 - A truncated tweak proposal (field 2026-10-24: a genre edit cut off mid-word)
