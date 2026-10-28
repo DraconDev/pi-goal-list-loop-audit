@@ -1396,9 +1396,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         || abortedStandDown || mainModelRecoveryActive() || supervisorPaused(state)
         || compactionInFlightSince !== null || boundaryCompactionPending(initialCtx)) return;
     try { if (!initialCtx.isIdle() || initialCtx.hasPendingMessages()) return; } catch { return; }
+    const admissionAttempt = state.goal?.pendingCompletion?.attemptId;
     const retryAfterCompaction = () => {
       const current = freshCtxForGeneration(generation);
-      if (!current || state.goal?.id !== goalId || !state.goal.pendingCompletion?.preAuditCompaction) return;
+      if (!current || state.goal?.id !== goalId || !state.goal.pendingCompletion?.preAuditCompaction
+          || state.goal.pendingCompletion.attemptId !== admissionAttempt || completionAuditInFlight) return;
+      noteCompactionSettled();
       void retryStoredCompletionAudit(origin);
     };
     if (maybeCompactTranscriptAtBoundary(initialCtx, {

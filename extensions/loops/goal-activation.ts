@@ -1664,6 +1664,12 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // gate. The agent_end yield path will resume deferring on the next
     // near-full length stop, and the heartbeat can refire again.
     onCompactionLanded();
+    if (state.goal?.status === 'auditing' && state.goal.pendingCompletion?.preAuditCompaction === true) {
+      // This compact settles admission of a stored completion claim, not
+      // another main-agent turn. The audit path owns the next dispatch.
+      void retryStoredCompletionAudit('session-recovery');
+      return;
+    }
     // v0.32.1: arm the resume debt + the resync block (the settle probes
     // below stay as the fast path; the heartbeat now retries the debt on
     // EVERY post-grace tick until agent_start discharges it).
@@ -3230,6 +3236,10 @@ async function handleHotLengthExhaustion(
       return;
     }
     if (!state.goal) return;
+    if (state.goal.status === 'auditing' && state.goal.pendingCompletion?.preAuditCompaction === true) {
+      void retryStoredCompletionAudit('session-recovery');
+      return;
+    }
     if (state.goal.status !== "active") return;
     clearContinuationTimer();
     // v0.38.6: feed the sticky refuse gate + compact-first nudge with the
@@ -3532,6 +3542,10 @@ async function handleHotLengthExhaustion(
     if (tryAbsorbHostSuccessor(ctx, "agent_settled")) return;
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     replayApprovalSummariesOnContact(ctx);
+    if (state.goal?.status === 'auditing' && state.goal.pendingCompletion?.preAuditCompaction === true) {
+      void retryStoredCompletionAudit('session-recovery');
+      return;
+    }
     if (!abortedStandDown && !supervisorPaused(state) && pressureAttemptPending(ctx)) {
       clearContinuationTimer(); clearLoopTimer();
       if (flushPressureAttempt(ctx, { compactionInFlight: compactionInFlightSince !== null })) return;
