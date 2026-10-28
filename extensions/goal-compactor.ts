@@ -32,6 +32,7 @@ import { loadGlobalSettings, type Settings } from "./goal-settings.js";
 import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js";
 import { pressureBudgetClaimed, pressureExcluded } from './context-pressure-attempt.js';
 import { respecBuilderAuditInFlight } from "./respec-builder-runtime.js";
+import { readBoundaryCompactionEvidence, writeBoundaryCompactionMarker } from './boundary-compaction-marker.js';
 
 /** Hard cap on the persisted brief: a handoff, not a transcript. */
 export const COMPACTOR_BRIEF_MAX_CHARS = 2000;
@@ -171,23 +172,9 @@ export function maybeCompactTranscriptAtBoundary(
   if (tokens === undefined) return false;
   const threshold = loadGlobalSettings().compactionTokenThreshold ?? GOAL_COMPACT_TOKEN_THRESHOLD;
   const markerPath = compactorBoundaryMarkerPath(ctx.cwd);
-  let alreadyFired = false;
-  try {
-    alreadyFired = fs.existsSync(markerPath);
-  } catch {
-    alreadyFired = false;
-  }
-  if (alreadyFired) {
-    let completedAt: number | undefined;
-    try {
-      const marker = JSON.parse(fs.readFileSync(markerPath, "utf8"));
-      const firedAt = Date.parse(marker.at);
-      const recorded = typeof marker.completedAt === "number" ? marker.completedAt : readState(ctx.cwd).lastCompactionAt;
-      // The durable session_compact stamp also recovers legacy success
-      // markers. Older compactions cannot release a newer failed attempt.
-      if (Number.isFinite(firedAt) && typeof recorded === "number" && Number.isFinite(recorded)
-        && recorded >= firedAt && recorded <= Date.now()) completedAt = recorded;
-    } catch { /* Unknown outcomes retain the conservative episode guard. */ }
+  const evidence = readBoundaryCompactionEvidence(markerPath, Date.now(), work.lastCompactionAt);
+  if (evidence.exists) {
+    const completedAt = evidence.completedAt;
     // Successful summaries need not fall below half the target, and the
     // host may not expose its smaller usage before work grows again.
     // Keep failures one-shot; release proven success after recovery grace.
@@ -212,11 +199,13 @@ export function maybeCompactTranscriptAtBoundary(
   }
   const markerAt = new Date().toISOString();
   try {
-    fs.mkdirSync(piGlaDir(ctx.cwd), { recursive: true });
-    fs.writeFileSync(markerPath, JSON.stringify({ at: markerAt, tokens: Math.round(tokens) }) + "\n");
+    writeBoundaryCompactionMarker(markerPath, { at: markerAt, tokens: Math.round(tokens) });
   } catch {
-    // Marker write is best effort; without it this boundary still fires
-    // once (a repeat next boundary is the only cost).
+    // Do not launch an unrecorded optional attempt every turn when storage
+    // fails. Existing work remains usable; later safe contacts can retry
+    // persistence without spawning duplicate summaries.
+    try { appendLedger(ctx.cwd, 'compactor_transcript_marker_unavailable', {}); } catch { /* storage failure */ }
+    return false;
   }
   // Brief first, best effort — unawaited (the worker runs up to 3 minutes;
   // the marker claim inside already ran synchronously). The real trigger
@@ -266,7 +255,7 @@ export function maybeCompactTranscriptAtBoundary(
         settled = true;
         try {
           const marker = JSON.parse(fs.readFileSync(markerPath, "utf8"));
-          if (marker.at === markerAt) fs.writeFileSync(markerPath, JSON.stringify({ ...marker, completedAt: Date.now() }) + "\n");
+          if (marker.at === markerAt) writeBoundaryCompactionMarker(markerPath, { at: markerAt, tokens: Math.round(tokens!), completedAt: Date.now() });
         } catch { /* Durable session_compact state remains the fallback. */ }
         if (boundaryAttempts.get(boundaryOwner(ctx)) === attempt) clearBoundaryCompactionAttempt(ctx);
         try { appendLedger(ctx.cwd, "compactor_transcript_done", {}); }
