@@ -59,6 +59,7 @@ test("numbered evidence from the shopping report never becomes reviewer work", (
   ];
   for (const line of evidence) {
     for (const prefix of ["", "- ", "> "]) assert.equal(classifyFindingText(prefix + line), undefined, line);
+    if (/^\d+:\|/.test(line)) assert.equal(classifyFindingText(line.replace(/^\d+:/, "")), undefined, "raw table rows are evidence too");
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-shopping-fragments-"));
   try {

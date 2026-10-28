@@ -1,0 +1,28 @@
+1 | import assert from 'node:assert/strict';
+2 | import { extractFindings } from './glla-reviewer-negative.ts';
+3 | const findings = extractFindings([{name: 'audit', text: '28:| 3 | Popup + contextMenu quick-actions | V9 | Enhancement layer, not a standalone focus |'}], 20);
+4 | assert.deepEqual(findings, [], 'line-numbered report evidence must not become executable findings');
+           ^
+AssertionError: line-numbered report evidence must not become executable findings
++ actual - expected
+
++ [
++   {
++     class: 'refactor',
++     source: 'audit',
++     text: '28:| 3 | Popup + contextMenu quick-actions | V9 | Enhancement layer, not a standalone focus |'
++   }
++ ]
+- []
+
+ generatedMessage: false,
+     actual: [
+  [Object ...]
+],
+   expected: [],
+   operator: "deepStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-fragment-negative.ts:4:8
+
+Bun v1.3.14 (Linux x64)
