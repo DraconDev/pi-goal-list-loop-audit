@@ -290,3 +290,40 @@ test("legacy successful markers rearm from durable completion, while failed atte
     assert.ok(!ledgerTypes(failure).includes("compactor_transcript_done"));
   } finally { Date.now = originalNow; await settleBrief(); fs.rmSync(success, { recursive: true, force: true }); fs.rmSync(failure, { recursive: true, force: true }); }
 });
+
+for (const content of ['', '{"at":', '{"at":"invalid","completedAt":1}']) {
+  test(`malformed boundary marker reconciles proven later durable success (${JSON.stringify(content)})`, async () => {
+    const cwd = mkBoundaryCwd();
+    try {
+      __testOnlySetSpawnWorker(async () => ({ ok: true, brief: 'Continue safely.' }));
+      const marker = compactorBoundaryMarkerPath(cwd);
+      fs.mkdirSync(path.dirname(marker), { recursive: true }); fs.writeFileSync(marker, content);
+      const old = Date.now() - 240000;
+      fs.utimesSync(marker, old / 1000, old / 1000);
+      seedState(cwd, { goal: null, lastCompactionAt: old + 1000 });
+      const next = boundaryCtx(cwd, { tokens: 903644 });
+      assert.equal(maybeCompactTranscriptAtBoundary(next.ctx, LIVE_FLAGS), false, 'reconciliation yields one boundary');
+      assert.equal(fs.existsSync(marker), false, 'proven success releases even empty metadata');
+      assert.equal(maybeCompactTranscriptAtBoundary(next.ctx, LIVE_FLAGS), true, 'next eligible opportunity is not suppressed forever');
+      assert.equal(next.compacts.length, 1);
+      assert.equal(maybeCompactTranscriptAtBoundary(next.ctx, LIVE_FLAGS), false, 'the new episode is bounded');
+    } finally { await settleBrief(); fs.rmSync(cwd, { recursive: true, force: true }); }
+  });
+}
+
+test('an unknown or later failed malformed attempt cannot borrow older success or refire across reload', async () => {
+  const cwd = mkBoundaryCwd();
+  try {
+    const marker = compactorBoundaryMarkerPath(cwd);
+    fs.mkdirSync(path.dirname(marker), { recursive: true }); fs.writeFileSync(marker, '');
+    const writtenAt = fs.statSync(marker).mtimeMs;
+    seedState(cwd, { goal: null, lastCompactionAt: writtenAt - 1000 });
+    for (let retry = 0; retry < 4; retry++) {
+      __testOnlyResetCompactor();
+      const next = boundaryCtx(cwd, { tokens: 903644 });
+      assert.equal(maybeCompactTranscriptAtBoundary(next.ctx, LIVE_FLAGS), false);
+      assert.equal(next.compacts.length, 0);
+      assert.equal(fs.readFileSync(marker, 'utf8'), '', 'unknown failed intent retained');
+    }
+  } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+});
