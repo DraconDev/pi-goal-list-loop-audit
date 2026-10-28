@@ -373,6 +373,65 @@ test("manual resume blocks a suspicious paused objective before dispatch", async
   assert.doesNotMatch(ledger(cwd), /"goal_continuation_sent"/);
 });
 
+const SHOPPING_ROW = "28:| 3 | Popup + contextMenu quick-actions | V9 | Enhancement layer, not a standalone focus |";
+
+test("persisted report rows stay queued across retries and reload without invented repairs", async () => {
+  const cwd = tmpCwd();
+  const item = { id: String(seedGoal().id), objective: SHOPPING_ROW, addedAt: new Date().toISOString() };
+  seedState(cwd, { goal: null, list: [item] });
+  const pi = new MockPi(); activate(pi.api);
+  let ctx = await boot(pi, cwd);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await pi.command("list", "next", ctx);
+    const res = await pi.runTool("list_activate", { n: 1 }, ctx);
+    assert.match(res.content[0]?.text ?? "", /report fragment.*remains queued unchanged/);
+    assert.equal(readState(cwd).goal, null);
+    assert.deepEqual(readState(cwd).list?.map(i => i.objective), [SHOPPING_ROW]);
+    assert.equal(pi.sent.length, 0, "no worker or guessed replan is dispatched");
+    assert.ok(ctx.ui.notifies.some(n => /\/list remove 1/.test(n.message)), "explicit removal/correction is actionable");
+    await pi.fire("session_shutdown", { reason: "reload" }, ctx);
+    ctx = await boot(pi, cwd);
+  }
+  assert.doesNotMatch(ledger(cwd), /"faulty_objective_repair_promoted"|"goal_archived"/);
+});
+
+test("persisted active report heads pause without repair multiplication or false completion", async () => {
+  const cwd = tmpCwd(); setGlobalAutoResume(true);
+  seedState(cwd, { goal: seedGoal({ policy: "list", objective: SHOPPING_ROW, status: "active", createdVia: "list-cascade" }), list: [] });
+  const pi = new MockPi(); activate(pi.api);
+  let ctx = await boot(pi, cwd);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await pi.command("list", "resume", ctx);
+    await tick(80);
+    const saved = readState(cwd);
+    assert.equal(saved.goal?.objective, SHOPPING_ROW);
+    assert.equal(saved.goal?.status, "paused");
+    assert.match(saved.goal?.pauseSuggestedAction ?? "", /\/list tweak.*Done when:.*\/goal cancel/);
+    assert.equal(saved.list?.length ?? 0, 0);
+    assert.equal(pi.sent.length, 0);
+    await pi.fire("session_shutdown", { reason: "reload" }, ctx);
+    ctx = await boot(pi, cwd);
+  }
+  assert.doesNotMatch(ledger(cwd), /"faulty_objective_repair_queued"|"goal_archived"/);
+});
+
+test("structured objectives with an explicit contract remain valid, unlike bare evidence", () => {
+  assert.ok(assessSuspiciousObjective(SHOPPING_ROW).reasons.includes("report-fragment"));
+  assert.equal(assessSuspiciousObjective("| Feature | Owner |", "Implement the popup quick actions and pass the interaction tests").suspicious, false);
+  assert.equal(assessSuspiciousObjective("Implement a table renderer accepting | Feature | Owner | cells").suspicious, false);
+});
+
+test("a deliberately structured queued objective with a contract activates unchanged", async () => {
+  const cwd = tmpCwd();
+  const objective = "| Feature | Owner |";
+  const verificationContract = "Implement the popup quick actions and pass the interaction tests";
+  seedState(cwd, { goal: null, list: [{ id: String(seedGoal().id), objective, verificationContract, addedAt: new Date().toISOString() }] });
+  const pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  await pi.command("list", "next", ctx);
+  assert.equal(readState(cwd).goal?.objective, objective);
+  assert.equal(readState(cwd).goal?.verificationContract, verificationContract);
+});
+
 test("list activation blocks a suspicious queued objective and leaves its repair task actionable", async () => {
   // v0.38.105 (field 2026-09-29, dracon-system "list doesnt auto progress"):
   // the safe repair auto-activates on the SAME /list next instead of idling
