@@ -1,0 +1,12 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [1863.12ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [511.88ms]
+
+ 2 pass
+ 0 fail
+Ran 2 tests across 1 file. [3.36s]
+[run-tests] finished in 3s (exit 0)
