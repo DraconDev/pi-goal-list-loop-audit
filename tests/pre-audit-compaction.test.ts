@@ -28,7 +28,13 @@ async function setup() {
   ctx.isIdle = () => idle; ctx.hasPendingMessages = () => false;
   ctx.getContextUsage = () => ({ tokens, contextWindow: 1048000, percent: tokens / 10480 });
   const callbacks: { onComplete?(): void; onError?(error: Error): void }[] = [];
-  ctx.compact = options => { callbacks.push(options ?? {}); idle = false; };
+  ctx.compact = options => {
+    callbacks.push({
+      onComplete: () => options?.onComplete?.({ summary: 'Preserved completion claim', firstKeptEntryId: 'kept', tokensBefore: tokens }),
+      onError: error => options?.onError?.(error),
+    });
+    idle = false;
+  };
   return { cwd, pi, ctx, started, callbacks, setIdle: (v: boolean) => { idle = v; }, setTokens: (v: number) => { tokens = v; } };
 }
 async function waitForStart(file: string) {
