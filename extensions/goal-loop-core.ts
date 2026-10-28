@@ -835,6 +835,9 @@ export interface PendingCompletion {
   verificationSummary?: string;
   /** When the completion claim was first persisted. */
   at: string;
+  /** Durable admission debt, before any detached auditor starts. Cleared
+   * only when an owned safe boundary admits the stored claim. */
+  preAuditCompaction?: boolean;
   /** Current audit lifecycle. Missing = legacy claim, treated as recovery-pending. */
   phase?: CompletionAuditPhase;
   /** v0.38.99: freshest durable evidence that the attempt is alive (first

@@ -27,6 +27,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { isDeepStrictEqual } from "node:util";
+import { preventiveCompactionDue } from '../goal-compactor.js';
 
 import { sendTerminalCompletionNotice } from "../goal-continuation.js";
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -1152,6 +1153,18 @@ function registerAgentTools(pi: any): void {
           details: {},
           isError: true,
         };
+      }
+      // A tool callback still owns a busy model turn. Persist admission
+      // debt now; the owned settled boundary, not this callback, may compact
+      // and launch the auditor. No independent audit is in flight yet.
+      if (preventiveCompactionDue(ctx)) {
+        if (!updateGoal({ pendingCompletion: { ...completionClaim, preAuditCompaction: true } }, ctx)) {
+          return { content: [{ type: 'text', text: 'FAILED — pre-audit admission was not persisted; no auditor was launched. Fix .pi-glla storage and retry.' }], details: {}, isError: true };
+        }
+        appendLedger(ctx.cwd, 'audit_compaction_admission_pending', { goalId: state.goal?.id, attemptId: completionClaim.attemptId });
+        latestAuditProgress = { label: 'waiting for safe compaction boundary', lastEventAt: Date.now() };
+        refreshUI(ctx, true);
+        return { content: [{ type: 'text', text: 'AUDIT PENDING — nonterminal. The completion claim is stored. Before the detached audit starts, GLLA will check preventive compaction at an owned idle boundary. End this turn; do not poll or submit another claim.' }], details: {} };
       }
       const auditGoal = state.goal;
       if (!auditGoal) return staleToolResult();
