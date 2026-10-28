@@ -732,6 +732,7 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     // evidence of an attempt actually running.
     phase: "starting",
     preAuditCompaction: undefined,
+    preAuditCompactionRevision: undefined,
     attemptId: newCompletionAuditAttemptId(),
     startedAt: new Date(startedMs).toISOString(),
     lastActivityAt: undefined,
@@ -1389,8 +1390,18 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // All stored-claim dispatch paths share the same admission fence. A
   // queued claim is durable work, not an in-flight independent audit.
   if (guardedGoal.pendingCompletion.preAuditCompaction === true || preventiveCompactionDue(initialCtx)) {
-    if (guardedGoal.pendingCompletion.preAuditCompaction !== true) {
-      if (!updateGoal({ pendingCompletion: { ...guardedGoal.pendingCompletion, preAuditCompaction: true } }, initialCtx)) return;
+    const scopeMoved = guardedGoal.pendingCompletion.preAuditCompaction === true
+      && guardedGoal.pendingCompletion.preAuditCompactionRevision !== (guardedGoal.revision ?? 0);
+    if (scopeMoved && origin !== 'manual') {
+      updateGoal({ status: 'paused', pauseKind: 'blocked',
+        pauseReason: 'Completion scope changed while waiting for pre-audit compaction; the original claim is retained without dispatch.',
+        pauseSuggestedAction: 'Review the current objective and contract, then use /goal verify to explicitly request a fresh independent audit of that scope.',
+      }, initialCtx);
+      return;
+    }
+    if (guardedGoal.pendingCompletion.preAuditCompaction !== true || scopeMoved) {
+      if (!updateGoal({ pendingCompletion: { ...guardedGoal.pendingCompletion, preAuditCompaction: true,
+        preAuditCompactionRevision: guardedGoal.revision ?? 0 } }, initialCtx)) return;
     }
     if ((state.goal?.status !== 'auditing' && origin !== 'manual' && origin !== 'agent')
         || abortedStandDown || mainModelRecoveryActive() || supervisorPaused(state)
