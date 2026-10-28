@@ -59,6 +59,7 @@ const mutations: [string, (g: Goal) => void][] = [
   ['status', g => { g.status = 'paused'; }],
   ['policy', g => { g.policy = 'list'; }],
   ['task edit in place', g => { g.taskList!.tasks[0]!.title = 'Different task'; }],
+  ['competing claim', g => { g.pendingCompletion = { at: new Date().toISOString(), attemptId: 'competing-attempt', phase: 'running' }; }],
 ];
 for (const [label, mutate] of mutations) {
   test(`confirmed amendment rejects real ${label} change without durable amendment`, async () => {
@@ -67,7 +68,36 @@ for (const [label, mutate] of mutations) {
     const result = await pi.runTool('complete_goal', claim, ctx);
     assert.match(result.content[0]!.text, /target changed during scope confirmation/i);
     assert.deepEqual(readState(cwd).goal, before);
-    assert.equal(state.goal?.pendingCompletion, undefined);
+    if (label !== 'competing claim') assert.equal(state.goal?.pendingCompletion, undefined);
+    else assert.equal(state.goal?.pendingCompletion?.attemptId, 'competing-attempt');
     assert.doesNotMatch(fs.readFileSync(path.join(cwd, '.pi-glla/active.jsonl'), 'utf8'), /"goal_tweaked"/);
   });
 }
+
+for (const boundary of ['session', 'owner', 'cancel'] as const) {
+  test(`confirmation cannot cross a real ${boundary} boundary`, async () => {
+    const { cwd, pi, ctx } = harness(); const before = readState(cwd).goal;
+    const generation = sessionGeneration; const owner = ownerSession;
+    ctx.ui.confirmImpl = async () => {
+      if (boundary === 'session') sessionGeneration++;
+      if (boundary === 'owner') ownerSession = makeMockCtx(cwd).sessionManager;
+      if (boundary === 'cancel') state.goal = null;
+      return true;
+    };
+    try {
+      const result = await pi.runTool('complete_goal', claim, ctx);
+      assert.match(result.content[0]!.text, /target changed during scope confirmation/i);
+      assert.deepEqual(readState(cwd).goal, before);
+      assert.equal(state.goal?.pendingCompletion, undefined);
+    } finally { sessionGeneration = generation; ownerSession = owner; }
+  });
+}
+
+test('identical rehydration is not a substitute for explicit amendment consent', async () => {
+  const { cwd, pi, ctx } = harness(); const before = readState(cwd).goal;
+  ctx.ui.confirmImpl = async () => { state.goal = structuredClone(state.goal); return false; };
+  const result = await pi.runTool('complete_goal', claim, ctx);
+  assert.match(result.content[0]!.text, /not confirmed/i);
+  assert.deepEqual(readState(cwd).goal, before);
+  assert.equal(state.goal?.pendingCompletion, undefined);
+});
