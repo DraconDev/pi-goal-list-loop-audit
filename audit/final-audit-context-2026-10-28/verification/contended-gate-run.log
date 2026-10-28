@@ -1,5 +1,16 @@
 # Contended full-gate run (host load avg 123-144 on 16 cores)
 # Retained excerpt: every failure line, its assertion, and the run summary.
+#
+# Distinct failing tests (each is printed twice by the runner's own failure
+# diagnostics; the 13 "fail" total also counts the duplicate blocks):
+#   1. pre-audit-compaction "success launches exactly one stored audit"
+#   2. pre-audit-compaction "unavailable launches exactly one stored audit"
+#   3. list-draft-handoff "125335: fresh commentary-only draft end ..."
+#   4. list-draft-handoff "stated next dependent question is a legal ..."
+#   5. auditor-stall-watchdog "worker that never emits a first event ..."
+# The 16 "error" lines are bun's own `EEXIST ... epoll_ctl` and
+# "Cannot call test()/afterEach() after the test run has completed" noise from
+# the same starvation, not test assertions.
 
 (fail) busy complete_goal stages admission, then success launches exactly one stored audit [16596.74ms]
 
