@@ -116,7 +116,10 @@ export function assessSuspiciousObjective(objective: unknown, verificationContra
   // A deliberate structured objective may carry its own actionable contract.
   // Bare report records have no such intent and must never spawn repair work
   // that guesses what a table cell was supposed to ask for.
-  if (!contract && typeof objective === "string" && reportFragmentKind(objective)) reasons.push("report-fragment");
+  const fragment = typeof objective === "string" ? reportFragmentKind(objective) : undefined;
+  // Item: labels already have a contract-aware durable repair path; keep
+  // that behavior. Only structural rows/headings lack recoverable task text.
+  if (!contract && fragment && fragment !== "contract-label") reasons.push("report-fragment");
   if (archiveMetadata(text)) reasons.push("archive-metadata");
   // A real imperative can legitimately mention the auditor, verification,
   // or regression machinery it is meant to repair. Treat evaluator
