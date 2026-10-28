@@ -94,6 +94,26 @@ explicit correction/removal rather than silently completing or inventing work.
   dry-run and installed packed-worker/skill probes all succeeded afterward.
   This is local packed-artifact evidence, not a new published-release claim.
 
+## Independent mechanical audit environment correction
+
+The first completion attempt was rejected before running tests: the host Pi
+process inherits Bun 1.3.3, which lacks the runner's required `--parallel` and
+`--path-ignore-patterns` flags. This was an external toolchain mismatch, not a
+fragment-fix failure. The executor's earlier full gate explicitly selected the
+already-installed Bun 1.3.14.
+
+The existing `mechanicalCheckEnv` public behavior in `goal-loop-shield.ts`
+prepends the project's `node_modules/.bin`. A local, ignored symlink there now
+points to `/home/dracon/.local/share/bun-toolchains/bun-1.3.14/bun`. No system
+installation, external plugin, contract, test requirement or tracked source was
+changed. `npm exec -- bun --version` now returns 1.3.14; the runner capability
+probe succeeds through `npm run test -- --help`. The two affected suites via
+the project-local PATH pass: 61 passed, zero failed, exit 0 (retained in
+`verification/local-toolchain.log`). The link is machine-local preparation,
+not a portable shipped fix; reinstalling node_modules may require reselecting
+the documented supported Bun toolchain. Independent pre-audit still must run
+the exact original full gate.
+
 ## Result and remaining boundary
 
 The GLLA-owned intake defect is fixed and legacy structural fragments stop
