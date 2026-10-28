@@ -955,6 +955,12 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
         queueItemId: candidate.id,
         reasons: assessment.reasons,
       });
+      if (assessment.reasons.includes("report-fragment")) {
+        // No recoverable task is encoded in a bare evidence row. Retain it
+        // verbatim, without consuming it or generating a recursive replan.
+        ctx.ui.notify(`List item #${n} is a report fragment, not an executable task. It remains queued unchanged. Use /list remove ${n} to discard it, or /list add with a concrete objective and Done when: contract; /list next <n> selects other work.`, "warning");
+        return false;
+      }
       if (!queueRepairAheadOfListItem(ctx, candidate, assessment)) return false;
       // v0.38.105 (field 2026-09-29, dracon-system): the promoted repair is
       // safe and actionable BY CONSTRUCTION (fixed imperative text) —
