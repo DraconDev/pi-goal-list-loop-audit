@@ -16,6 +16,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { piGlaDir, stateRootPending } from "./goal-loop-core.js";
+import { reportFragmentKind } from "./report-fragment.js";
 
 export type ReviewerMode = "off" | "on" | "auto" | "aggressive";
 
@@ -111,7 +112,7 @@ export function classifyFindingText(line: string): FindingClass | undefined {
   // callers/tests pass raw report lines like "- ℹ todo 0").
   const t = line.trim().replace(/^[-*>\s\[\]x]+/, "");
   if (t.length < 8) return undefined;
-  if (SKIP_LINE.test(t) || REVIEWER_VOCAB.test(t)) return undefined;
+  if (reportFragmentKind(t) || SKIP_LINE.test(t) || REVIEWER_VOCAB.test(t)) return undefined;
   for (const { class: cls, re } of CLASS_PATTERNS) {
     if (re.test(t)) return cls;
   }

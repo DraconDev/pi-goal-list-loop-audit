@@ -7,6 +7,7 @@
  */
 
 import type { Goal, ObjectiveRepairRecord } from "./goal-loop-core.js";
+import { reportFragmentKind } from "./report-fragment.js";
 
 /** Prefix written by the dispatch guard when it parks a goal/list item
  * whose objective prose tripped the fragment heuristics. Exported so the
@@ -29,6 +30,7 @@ export function isSuspiciousObjectivePause(
 
 export type SuspiciousObjectiveReason =
   | "empty"
+  | "report-fragment"
   | "archive-metadata"
   | "verification-fragment"
   | "reviewer-fragment"
@@ -111,6 +113,10 @@ export function assessSuspiciousObjective(objective: unknown, verificationContra
   const reasons: SuspiciousObjectiveReason[] = [];
 
   if (!text) reasons.push("empty");
+  // A deliberate structured objective may carry its own actionable contract.
+  // Bare report records have no such intent and must never spawn repair work
+  // that guesses what a table cell was supposed to ask for.
+  if (!contract && typeof objective === "string" && reportFragmentKind(objective)) reasons.push("report-fragment");
   if (archiveMetadata(text)) reasons.push("archive-metadata");
   // A real imperative can legitimately mention the auditor, verification,
   // or regression machinery it is meant to repair. Treat evaluator
