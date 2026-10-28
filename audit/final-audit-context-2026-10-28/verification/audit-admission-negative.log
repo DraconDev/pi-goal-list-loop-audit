@@ -3,27 +3,33 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/pre-audit-compaction.test.ts:
-628 |   const currentRef = modelRef(sessionModel);
-629 |   const tryRef = (trimmed: string): { model?: any; reason?: string } => {
-630 |     const slash = trimmed.indexOf("/");
-631 |     if (slash > 0) {
-632 |       const provider = trimmed.slice(0, slash);
-633 |       const model = ctx.modelRegistry.find(provider, trimmed.slice(slash + 1));
-                              ^
-TypeError: undefined is not an object (evaluating 'ctx.modelRegistry.find')
-      at tryRef (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:633:25)
-      at resolve (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:681:29)
-      at selectNextValid (/tmp/glla-audit-context-negative-nbojukq9/extensions/model-selector.ts:139:31)
-      at resolveAuditorModel (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:720:31)
-      at execute (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-tools.ts:1190:79)
-      at runTool (/tmp/glla-audit-context-negative-nbojukq9/tests/harness/mock-pi.ts:154:22)
-      at <anonymous> (/tmp/glla-audit-context-negative-nbojukq9/tests/pre-audit-compaction.test.ts:54:33)
-(fail) busy complete_goal stages admission, then success launches exactly one stored audit [87.36ms]
+56 |       if (outcome === 'unavailable') Reflect.deleteProperty(h.ctx, 'compact');
+57 |       const result = await h.pi.runTool('complete_goal', { completionSummary: 'Outcome: feature verified. Changed: intended feature. Evidence: checks. Tests: focused pass. Unresolved: none. Next: none.' }, h.ctx);
+58 |       assert.match(result.content[0]!.text, /AUDIT PENDING/);
+59 |       const staged = readState(h.cwd).goal!;
+60 |       assert.equal(staged.status, 'auditing');
+61 |       assert.equal(staged.pendingCompletion?.preAuditCompaction, true);
+                  ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- true
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-audit-context-negative-54mivi2p/tests/pre-audit-compaction.test.ts:61:14
+      at processTicksAndRejections (native:7:39)
+(fail) busy complete_goal stages admission, then success launches exactly one stored audit [509.20ms]
 
  0 pass
  10 filtered out
  1 fail
-Ran 1 test across 1 file. [657.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-O7b38F/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-O7b38F
+Ran 1 test across 1 file. [1195.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-tyKUWe/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-tyKUWe
 [run-tests] finished in 1s (exit 1)

@@ -3,18 +3,18 @@
     "case": "identity",
     "exitCode": 1,
     "expectedFailure": true,
-    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+    "isolatedCopy": "/tmp/glla-audit-context-negative-54mivi2p"
   },
   {
     "case": "malformed-marker",
     "exitCode": 1,
     "expectedFailure": true,
-    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+    "isolatedCopy": "/tmp/glla-audit-context-negative-54mivi2p"
   },
   {
     "case": "audit-admission",
     "exitCode": 1,
     "expectedFailure": true,
-    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+    "isolatedCopy": "/tmp/glla-audit-context-negative-54mivi2p"
   }
 ]

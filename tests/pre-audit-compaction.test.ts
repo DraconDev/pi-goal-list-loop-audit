@@ -19,6 +19,9 @@ async function setup() {
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `pre-audit-${Math.random()}` } });
+  // Keep both direct and recovery dispatch paths independent of configured
+  // provider registries; only the inert session-model worker is available.
+  Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
   seedState(cwd, { goal: seedGoal({ status: 'active', policy: 'list', objective: 'Verify the intended feature', verificationContract: 'Inspect the feature behavior' }), list: [] });
   __testOnlyLoadState(cwd); pi.sent.length = 0;

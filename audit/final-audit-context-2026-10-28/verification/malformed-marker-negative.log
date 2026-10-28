@@ -20,9 +20,9 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-audit-context-negative-nbojukq9/tests/between-tasks-compaction.test.ts:306:14
+      at /tmp/glla-audit-context-negative-54mivi2p/tests/between-tasks-compaction.test.ts:306:14
       at fn (node:test:215:18)
-(fail) malformed boundary marker reconciles proven later durable success ("") [112.53ms]
+(fail) malformed boundary marker reconciles proven later durable success ("") [108.30ms]
 301 |       const old = Date.now() - 240000;
 302 |       fs.utimesSync(marker, old / 1000, old / 1000);
 303 |       seedState(cwd, { goal: null, lastCompactionAt: old + 1000 });
@@ -40,12 +40,12 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-audit-context-negative-nbojukq9/tests/between-tasks-compaction.test.ts:306:14
+      at /tmp/glla-audit-context-negative-54mivi2p/tests/between-tasks-compaction.test.ts:306:14
       at fn (node:test:215:18)
       at done (unknown:1:1)
       at endTest (node:test:209:13)
       at processTicksAndRejections (native:7:39)
-(fail) malformed boundary marker reconciles proven later durable success ("{\"at\":") [103.91ms]
+(fail) malformed boundary marker reconciles proven later durable success ("{\"at\":") [102.25ms]
 301 |       const old = Date.now() - 240000;
 302 |       fs.utimesSync(marker, old / 1000, old / 1000);
 303 |       seedState(cwd, { goal: null, lastCompactionAt: old + 1000 });
@@ -63,17 +63,17 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-audit-context-negative-nbojukq9/tests/between-tasks-compaction.test.ts:306:14
+      at /tmp/glla-audit-context-negative-54mivi2p/tests/between-tasks-compaction.test.ts:306:14
       at fn (node:test:215:18)
       at done (unknown:1:1)
       at endTest (node:test:209:13)
       at processTicksAndRejections (native:7:39)
-(fail) malformed boundary marker reconciles proven later durable success ("{\"at\":\"invalid\",\"completedAt\":1}") [102.23ms]
+(fail) malformed boundary marker reconciles proven later durable success ("{\"at\":\"invalid\",\"completedAt\":1}") [102.08ms]
 
  0 pass
  15 filtered out
  3 fail
-Ran 3 tests across 1 file. [539.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-bvsqjQ/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-bvsqjQ
+Ran 3 tests across 1 file. [477.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ufwVdt/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ufwVdt
 [run-tests] finished in 1s (exit 1)
