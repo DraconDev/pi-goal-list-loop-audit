@@ -1,0 +1,29 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/pre-audit-compaction.test.ts:
+628 |   const currentRef = modelRef(sessionModel);
+629 |   const tryRef = (trimmed: string): { model?: any; reason?: string } => {
+630 |     const slash = trimmed.indexOf("/");
+631 |     if (slash > 0) {
+632 |       const provider = trimmed.slice(0, slash);
+633 |       const model = ctx.modelRegistry.find(provider, trimmed.slice(slash + 1));
+                              ^
+TypeError: undefined is not an object (evaluating 'ctx.modelRegistry.find')
+      at tryRef (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:633:25)
+      at resolve (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:681:29)
+      at selectNextValid (/tmp/glla-audit-context-negative-nbojukq9/extensions/model-selector.ts:139:31)
+      at resolveAuditorModel (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-settings-ui.ts:720:31)
+      at execute (/tmp/glla-audit-context-negative-nbojukq9/extensions/loops/goal-tools.ts:1190:79)
+      at runTool (/tmp/glla-audit-context-negative-nbojukq9/tests/harness/mock-pi.ts:154:22)
+      at <anonymous> (/tmp/glla-audit-context-negative-nbojukq9/tests/pre-audit-compaction.test.ts:54:33)
+(fail) busy complete_goal stages admission, then success launches exactly one stored audit [87.36ms]
+
+ 0 pass
+ 10 filtered out
+ 1 fail
+Ran 1 test across 1 file. [657.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-O7b38F/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-O7b38F
+[run-tests] finished in 1s (exit 1)

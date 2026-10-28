@@ -1,0 +1,20 @@
+[
+  {
+    "case": "identity",
+    "exitCode": 1,
+    "expectedFailure": true,
+    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+  },
+  {
+    "case": "malformed-marker",
+    "exitCode": 1,
+    "expectedFailure": true,
+    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+  },
+  {
+    "case": "audit-admission",
+    "exitCode": 1,
+    "expectedFailure": true,
+    "isolatedCopy": "/tmp/glla-audit-context-negative-nbojukq9"
+  }
+]

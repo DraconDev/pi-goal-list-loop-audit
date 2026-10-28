@@ -1,0 +1,53 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/amendment-confirmation-fence.test.ts:
+36 |       assert.notEqual(state.goal, original);
+37 |       return true;
+38 |     };
+39 |     try {
+40 |       const result = await pi.runTool('complete_goal', claim, ctx);
+41 |       assert.doesNotMatch(result.content[0]!.text, /target changed during scope confirmation/i);
+                  ^
+AssertionError: The input was expected to not match the regular expression /target changed during scope confirmation/i. Input:
+
+'The target changed during scope confirmation; no amendment or completion claim was applied.'
+
+ generatedMessage: true,
+     actual: "The target changed during scope confirmation; no amendment or completion claim was applied.",
+   expected: /target changed during scope confirmation/i,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-audit-context-negative-nbojukq9/tests/amendment-confirmation-fence.test.ts:41:14
+      at processTicksAndRejections (native:7:39)
+(fail) confirmed amendment survives identical rehydration (task key reorder=false) [81.82ms]
+36 |       assert.notEqual(state.goal, original);
+37 |       return true;
+38 |     };
+39 |     try {
+40 |       const result = await pi.runTool('complete_goal', claim, ctx);
+41 |       assert.doesNotMatch(result.content[0]!.text, /target changed during scope confirmation/i);
+                  ^
+AssertionError: The input was expected to not match the regular expression /target changed during scope confirmation/i. Input:
+
+'The target changed during scope confirmation; no amendment or completion claim was applied.'
+
+ generatedMessage: true,
+     actual: "The target changed during scope confirmation; no amendment or completion claim was applied.",
+   expected: /target changed during scope confirmation/i,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-audit-context-negative-nbojukq9/tests/amendment-confirmation-fence.test.ts:41:14
+      at processTicksAndRejections (native:7:39)
+(fail) confirmed amendment survives identical rehydration (task key reorder=true) [3.58ms]
+
+ 0 pass
+ 12 filtered out
+ 2 fail
+Ran 2 tests across 1 file. [1141.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZGRb4s/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZGRb4s
+[run-tests] finished in 1s (exit 1)
