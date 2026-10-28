@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { readBoundaryCompactionEvidence } from './boundary-compaction-marker.js';
 
 export type CompactionReason = 'unconfirmed' | 'unknown-usage' | 'below-target' | 'eligible'
   | 'unsupervised' | 'audit' | 'paused' | 'recovery' | 'busy' | 'pending'
@@ -79,15 +80,15 @@ export function readCompactionMetadata(markerPath: string, budgetPath: string, w
     }
   };
   const budget = read(budgetPath);
-  const marker = read(markerPath);
+  const marker = readBoundaryCompactionEvidence(markerPath, now, lastCompactionAt);
   const pressureBudget = budget.value?.key === workKey;
-  if (budget.invalid || marker.invalid) return { marker: 'unknown', pressureBudget };
-  if (marker.missing) return { marker: 'absent', pressureBudget };
-  const at = typeof marker.value?.at === 'string' ? Date.parse(marker.value.at) : NaN;
-  const completed = typeof marker.value?.completedAt === 'number' ? marker.value.completedAt : lastCompactionAt;
-  const success = Number.isFinite(at) && typeof completed === 'number' && Number.isFinite(completed) && completed >= at && completed <= now;
-  return { marker: (typeof tokens === 'number' && tokens < threshold / 2) || (success && now - completed! >= 180_000)
-    ? 'rearming' : 'suppressed', pressureBudget };
+  if (budget.invalid) return { marker: 'unknown', pressureBudget };
+  if (!marker.exists) return { marker: 'absent', pressureBudget };
+  if ((typeof tokens === 'number' && tokens < threshold / 2)
+      || (marker.completedAt !== undefined && now - marker.completedAt >= 180_000)) {
+    return { marker: 'rearming', pressureBudget };
+  }
+  return { marker: marker.unknown ? 'unknown' : 'suppressed', pressureBudget };
 }
 
 export function compactionStatusText(status: CompactionStatus): string {
