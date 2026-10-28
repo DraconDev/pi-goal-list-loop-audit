@@ -63,7 +63,7 @@ test("numbered evidence from the shopping report never becomes reviewer work", (
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-shopping-fragments-"));
   try {
     const enqueued: string[] = [], proposed: string[] = [];
-    const out = runReviewer(resolveReviewerConfig({ cascade: ["convert-findings-to-list", "propose-goal"] }),
+    const out = runReviewer(resolveReviewerConfig({ cascade: ["convert-findings-to-list", "queue-leftovers"] }),
       { kind: "goal", goalId: "shopping", objective: "Produce a shopping recommendation", terminal: "goal-complete" }, {
         cwd: dir, nowMs: Date.now(), ledgerEntries: [],
         sources: [{ name: "audit", text: [...evidence, "TODO: fix the broken queue journal write"].join("\n") }],
