@@ -107,3 +107,31 @@ for (const guard of ['decision', 'cold-load', 'cancel', 'revision'] as const) {
     } finally { await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx); }
   });
 }
+
+for (const race of ['revision', 'cancel', 'session', 'owner'] as const) {
+  test(`late compaction callbacks cannot dispatch across ${race} change`, async () => {
+    const h = await setup(); const generation = sessionGeneration, owner = ownerSession;
+    try {
+      await h.pi.runTool('complete_goal', {}, h.ctx);
+      h.setIdle(true); await h.pi.fire('agent_settled', {}, h.ctx);
+      assert.equal(h.callbacks.length, 1);
+      const saved = readState(h.cwd);
+      if (race === 'revision') saved.goal = { ...saved.goal!, revision: (saved.goal!.revision ?? 0) + 1 };
+      if (race === 'cancel') saved.goal = null;
+      if (race === 'revision' || race === 'cancel') { seedState(h.cwd, saved); __testOnlyLoadState(h.cwd); }
+      if (race === 'session') sessionGeneration++;
+      if (race === 'owner') ownerSession = makeMockCtx(h.cwd).sessionManager;
+      h.setIdle(true); h.callbacks[0]!.onError?.(new Error('late summarizer failure'));
+      await tick(40);
+      assert.equal(fs.existsSync(h.started), false);
+      if (race === 'revision') {
+        assert.equal(readState(h.cwd).goal?.status, 'paused');
+        assert.match(readState(h.cwd).goal?.pauseSuggestedAction ?? '', /\/goal verify/);
+        assert.equal(readState(h.cwd).goal?.pendingCompletion?.preAuditCompaction, true);
+      }
+    } finally {
+      sessionGeneration = generation; ownerSession = owner;
+      await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx);
+    }
+  });
+}

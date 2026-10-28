@@ -1327,7 +1327,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // Delayed audit recovery has no safe fallback: if the current generation
   // cannot be proven live, the fresh session must rehydrate the durable claim.
   const initialCtx = freshCtxForGeneration(generation);
-  if (!initialCtx) return;
+  if (!initialCtx || isForeignCtx(initialCtx)) return;
   // v0.39.31 (incident Screenshot_20261012_110844/111046): a settling
   // claim is owed an archive, not a new audit. The settlement driver
   // (settleApprovedCompletion via resumeSettlingCompletionAudit) is the
