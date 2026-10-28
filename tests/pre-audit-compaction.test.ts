@@ -9,6 +9,7 @@ import { readState } from '../extensions/goal-loop-core.js';
 import { currentUiStatusContext } from '../extensions/loops/goal-ui.js';
 import { buildWidgetLines } from '../extensions/goal-loop-display.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
+import { waitFor } from './harness/host-budget.js';
 
 const originalBinary = process.env.GLLA_PI_BINARY;
 afterEach(() => {
@@ -44,9 +45,16 @@ async function setup() {
   return { cwd, pi, ctx, started, callbacks, setIdle: (v: boolean) => { idle = v; }, setTokens: (v: number) => { tokens = v; } };
 }
 async function waitForStart(file: string) {
-  const until = performance.now() + 6000;
-  while (!fs.existsSync(file) && performance.now() < until) await tick(10);
-  assert.equal(fs.existsSync(file), true, 'the admitted stored claim launches its auditor');
+  // The admitted claim boots a child process. On a loaded host that boot is
+  // slower than on an idle one, so the budget comes from the shared
+  // host-scaled helper instead of a hand-rolled wall clock: the condition is
+  // still required (a claim that never dispatches fails), it just gets the
+  // CPU time the wait assumes.
+  await waitFor(() => fs.existsSync(file), {
+    timeoutMs: 6000,
+    intervalMs: 10,
+    message: 'the admitted stored claim launches its auditor',
+  });
 }
 
 for (const outcome of ['success', 'failure', 'unavailable'] as const) {

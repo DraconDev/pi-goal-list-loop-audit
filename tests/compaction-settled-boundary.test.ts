@@ -6,6 +6,7 @@ import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from "../extension
 import { sendContinuation } from "../extensions/goal-continuation.js";
 import { scheduleLoopTick, clearLoopTimer } from "../extensions/goal-loop.js";
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from "./harness/mock-pi.js";
+import { waitFor } from "./harness/host-budget.js";
 
 afterEach(() => { __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
@@ -35,8 +36,15 @@ for (const { fail, timerLag } of [{ fail: false, timerLag: 0 }, { fail: true, ti
       // nested dispatch/failure/re-arm timers. Keep the original exact-count
       // assertions and a finite deadline: a genuinely lost resume still fails.
       const turns = () => pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length;
-      const deadline = performance.now() + 2000;
-      while ((compacts === 0 || (fail && turns() === 0)) && performance.now() < deadline) await tick(10);
+      // Behavior is asserted by the counts below; the wait only decides how
+      // long to keep asking, and it is sized for the host's CPU so a busy
+      // machine cannot report a healthy loop as broken. A lost resume still
+      // fails, because the predicate never becomes true.
+      await waitFor(() => compacts > 0 && (!fail || turns() > 0), {
+        timeoutMs: 2000,
+        intervalMs: 10,
+        message: "the loop turn reached compaction/dispatch",
+      });
       await tick(20); // Also observe duplicate/repeated dispatch after settlement.
       assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
       assert.equal(turns(), fail ? 1 : 0,
