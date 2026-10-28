@@ -142,18 +142,26 @@ audit blocking it.
   verified the intentional runtime-global bridge and the 31/0 focused log,
   withdrew the blocker, and reported no remaining issue. No source change was
   made merely to satisfy the false positive.
-- Gate robustness finding (contention, not product): an intermediate full-gate
-  rerun on a host at load average 123–144 on 16 cores failed 13 assertions, all
-  of which reduce to hand-rolled `performance.now() + N` or fixed-sleep waits.
+- Gate robustness finding (host contention, not product): two intermediate full
+  gate runs on this host failed under extreme load. The first, at load average
+  123–144 on 16 cores, failed 13 assertions (`verification/contended-gate-run.log`);
+  the second, at 80–107, failed 5 in the detached-auditor/compactor boot paths.
+  Every failing assertion reduces to a wall-clock allowance rather than a
+  behavioral condition: hand-rolled `performance.now() + N` deadline loops, a
+  fixed `tick(2800)` settlement, a 30 s framework frame, and audit boot windows
+  that expire before a starved child process can publish progress. Two of those
+  waits were mine and are now fixed at the root:
   `tests/pre-audit-compaction.test.ts` and
-  `tests/compaction-settled-boundary.test.ts` now take their budgets from
+  `tests/compaction-settled-boundary.test.ts` take their budgets from
   `tests/harness/host-budget.ts` (`waitFor`), which scales with measured host
-  contention while still requiring the condition; the three-suite rerun gave
-  26 passed, zero failed. `tests/list-draft-handoff.test.ts` and
-  `tests/auditor-stall-watchdog.test.ts` fail only past the shared 8x ceiling
-  and pass in isolation. This is recorded as host contention, not a claimed
-  product regression and not a loosened assertion: every condition is still
-  required, only the wall-clock allowance follows the CPU actually available.
+  contention while still REQUIRING the condition — the three-suite rerun gave
+  26 passed, zero failed. The remaining five (`respec-builder-audit-runtime`,
+  `compactor-worker-lifecycle`, `list-draft-handoff`,
+  `auditor-stall-watchdog`) already use the shared helper and pass on rerun
+  once load fell (38 passed, zero failed) and in isolation. This is recorded as
+  host contention, not a claimed product regression, and no assertion was
+  loosened: every condition is still required, only the wall-clock allowance
+  follows the CPU actually available.
 - Final `npm run release:check`: **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:
   **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered

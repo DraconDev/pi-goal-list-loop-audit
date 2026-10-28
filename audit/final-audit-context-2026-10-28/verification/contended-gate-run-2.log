@@ -1,0 +1,33 @@
+# Contended full-gate run #2 (host load avg 80-107 on 16 cores)
+# Retained excerpt: distinct failing tests and the run summary.
+
+(fail) real detached protocol approval archives the intended project before terminal handoff [24367.93ms]
+[run-tests] progress: 270s elapsed · 8s since last output · 19 KiB of suite output
+138 | test("real detached disapproval carries findings into a durable unfinished next cycle", async () => {
+139 |   const f = fixture({ NEEDS_WORK: "1" });
+140 |   try {
+141 |     await runRespecBuilderAudit(f.ctx);
+
+(fail) real detached disapproval carries findings into a durable unfinished next cycle [23084.42ms]
+[run-tests] progress: 300s elapsed · 15s since last output · 21 KiB of suite output
+150 | 
+151 | test("a semantic approval rejected by the regression shield reports needs work", async () => {
+152 |   const f = fixture({ INCOMPLETE_EVIDENCE: "1" });
+153 |   try {
+
+(fail) a semantic approval rejected by the regression shield reports needs work [29541.82ms]
+
+(fail) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [30000.27ms]
+  ^ this test timed out after 30000ms, before its done callback was called. If a done callback was not intended, remove the last parameter from the test callback function
+63 |         worker!.once("error", error => { clearTimeout(timer); reject(error); });
+64 |         worker!.once("close", code => { clearTimeout(timer); resolve(code); });
+65 |       });
+66 |       const deadline = untilMs(10_000);
+
+(fail) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [3950.26ms]
+
+ 4428 pass
+ 1 skip
+Ran 4434 tests across 474 files. [5427.59s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-HyIPpL/failure.json
+[run-tests] finished in 5434s (exit 1)
