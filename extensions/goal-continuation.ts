@@ -1370,6 +1370,25 @@ export function guardGoalBeforeContinuation(
     return true;
   }
 
+  if (assessment.reasons.includes("report-fragment")) {
+    // Legacy persisted heads must stop before a worker receives report
+    // evidence as scope. Do not turn an unknowable table row into a repair
+    // goal or silently infer a replacement from unrelated report prose.
+    const action = `Use ${activeGoalSurfaceCommand("tweak")} with a concrete objective and Done when: contract, or /goal cancel to archive this fragment without completing it.`;
+    if (!updateGoal({
+      status: "paused", pauseKind: "blocked",
+      pauseReason: `${SUSPICIOUS_PAUSE_PREFIX}report-fragment). Original text is preserved; no executable intent can be inferred.`,
+      pauseSuggestedAction: action,
+      pauseResumeAt: undefined,
+    }, ctx)) {
+      ctx.ui.notify("Report-fragment hold could not persist; dispatch remains stopped. Fix .pi-glla storage and retry.", "warning");
+      return false;
+    }
+    appendLedger(ctx.cwd, "report_fragment_dispatch_held", { goalId: goal.id, where, reasons: assessment.reasons });
+    ctx.ui.notify(action, "warning");
+    return false;
+  }
+
   const proposal = deriveObjectiveRepair(goal, assessment);
   if (proposal) {
     // v0.39.x audit: repair through the goal-state transaction so a failed

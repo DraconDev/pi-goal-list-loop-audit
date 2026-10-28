@@ -4360,6 +4360,9 @@ function registerAgentTools(pi: any): void {
         // a suspicious pick queues its repair instead, with the current
         // objective preserved (mirrors the queue's own activation guard).
         const preAssessment = assessSuspiciousObjective(targetItem.objective, targetItem.verificationContract);
+        if (preAssessment.reasons.includes("report-fragment")) {
+          return { content: [{ type: "text", text: `Item #${position.label} is a report fragment and remains queued unchanged. Use /list remove ${position.label} to discard it, or /list add with a concrete objective and Done when: contract. No repair task or replacement was created.` }], details: {} };
+        }
         if (preAssessment.suspicious) {
           queueRepairAheadOfListItem(liveCtx, targetItem, preAssessment);
           return {
