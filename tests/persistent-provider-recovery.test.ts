@@ -5,7 +5,7 @@ import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
-import { ownsPersistentProviderWait } from '../extensions/persistent-provider-recovery.js';
+import { ownsPersistentProviderWait, recoveryWaitIsDue } from '../extensions/persistent-provider-recovery.js';
 import { mainModelRecoveryRuntimeStatus } from '../extensions/goal-recovery.js';
 import { auditorRetryPlan } from '../extensions/loops/goal-auditor-hooks.js';
 import { classifyCompactionFailure } from '../extensions/compaction-failure.js';
@@ -159,8 +159,34 @@ for (const [label, mutate] of [
     assert.equal(ownsPersistentProviderWait(saved), true);
     mutate(saved);
     assert.equal(ownsPersistentProviderWait(saved), false);
+    // The reload exemption is the gate that actually overrides the cold-load
+    // hold, so it must refuse the same state even with its due time long past —
+    // otherwise an overdue wait would launder a genuine pause into a retry.
+    // The cold-load hold is the one deliberate exception: it is automation
+    // gating, not a human decision, and lifting it for an overdue recovery wait
+    // is exactly this fix. That case is proven positively below.
+    if (label !== 'unrelated cold-load hold') {
+      const overdue = { ...saved, goal: saved.goal ? { ...saved.goal } : saved.goal,
+        mainModelRecovery: saved.mainModelRecovery ? { ...saved.mainModelRecovery } : undefined };
+      if (overdue.goal) overdue.goal.pauseResumeAt = '2020-01-01T00:00:00.000Z';
+      if (overdue.mainModelRecovery) overdue.mainModelRecovery.retryAt = '2020-01-01T00:00:00.000Z';
+      assert.equal(recoveryWaitIsDue(overdue), false, 'an overdue wait never launders a genuine hold');
+    }
   });
 }
+
+test('a pre-existing cold-load hold does not freeze an overdue recovery-owned wait', () => {
+  // The hold a previous session engaged is automation gating, not consent the
+  // operator withheld: an overdue recovery wait must still get its retry.
+  const saved = providerWait();
+  saved.loadHoldAt = Date.now();
+  saved.goal!.pauseResumeAt = '2020-01-01T00:00:00.000Z';
+  saved.mainModelRecovery!.retryAt = '2020-01-01T00:00:00.000Z';
+  assert.equal(ownsPersistentProviderWait(saved), false, 'a hold still blocks the live-consent path');
+  assert.equal(recoveryWaitIsDue(saved), true, 'but an overdue wait keeps its own continuation authority');
+  saved.supervisorPausedAt = Date.now();
+  assert.equal(recoveryWaitIsDue(saved), false, 'an explicit supervisor pause still outranks it');
+});
 
 for (const phase of ['retry-waiting', 'recovery-pending'] as const) for (const overdue of [false, true]) {
   test(`auditor ${phase} restores ${overdue ? 'one overdue attempt beyond legacy horizons' : 'the original future due time without an early launch'}`, async () => {
