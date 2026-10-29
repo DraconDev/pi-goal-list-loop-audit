@@ -2656,10 +2656,13 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // parked as recovery-pending is the durable form produced by a stale
     // host/session boundary; it must receive the same policy on the first
     // genuinely fresh session instead of requiring a second manual command.
-    const completedAuditRecovered = resumeCompletedCompletionAudit(ctx, {
+    // An overdue provider wait may already have launched a fresh attempt in
+    // lifecycle stage 9 above. Stage 12 must not mistake that same-generation
+    // worker for the interrupted audit this restore is trying to recover.
+    const completedAuditRecovered = completionAuditInFlight ? false : resumeCompletedCompletionAudit(ctx, {
       continueWork: explicitRecovery || autoResume || sameProcessContinuityResume,
     });
-    const storedCompletionGoal = completedAuditRecovered ? null : state.goal;
+    const storedCompletionGoal = completedAuditRecovered || completionAuditInFlight ? null : state.goal;
     const storedCompletionClaim = storedCompletionGoal?.pendingCompletion;
     // v0.38.99: an interrupted SETTLEMENT is the one stored-claim state a
     // restart can finish without re-running the auditor — the approval is
