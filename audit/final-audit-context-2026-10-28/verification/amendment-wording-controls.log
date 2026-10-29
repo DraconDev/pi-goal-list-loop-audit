@@ -1,0 +1,82 @@
+# Isolated controls: amendment tests must assert durable state, not response wording
+#
+# Requirement under test (verification contract): "explicitly confirmed
+# semantically identical rehydration succeeds, while real target/revision/
+# contract/task/status/session/ownership changes reject stale consent without
+# mutation or an audit claim" — and isolated controls must demonstrate
+# detection of the MEANINGFUL regressions "without relying on incidental
+# object identity, wording or test totals".
+#
+# The previous tests asserted three response strings:
+#   /target changed during scope confirmation/i
+#   /not confirmed/i
+#   /AUDIT PENDING/
+# Those pin human-facing English, so a diagnostic-only rewording failed the
+# suite while the protected behavior was intact. They were replaced with
+# durable assertions: persisted goal revision, deep-equal unchanged goal and
+# no stored pendingCompletion on rejection, and a stored pendingCompletion
+# attemptId on success.
+#
+# Control surface: disposable copy /tmp/glla-w1 (since removed), carrying
+# extensions/, scripts/, tests/, package.json, tsconfig.json, a symlinked
+# node_modules, and bunfig.toml.
+#
+# SETUP CORRECTION (recorded because it initially produced a FALSE failure):
+# the first copy omitted bunfig.toml, whose [test] preload
+# (./tests/harness/setup.ts) provides the hermetic global-settings redirect.
+# Without it the UNMODIFIED copy failed 2/14 on
+# "ctx.modelRegistry.find" inside resolveAuditorModel — an environment defect
+# of the control, not a product or test finding. After adding bunfig.toml the
+# unmodified copy passed 14/14, which is the required baseline before a
+# control proves anything.
+#
+# ---------------------------------------------------------------------------
+# BASELINE (unmodified copy, bunfig.toml present):
+#    14 pass
+#     0 fail
+#
+# ---------------------------------------------------------------------------
+# CONTROL 1 — diagnostic-only rewording must PASS (behavior untouched).
+# Rewrote all three messages in extensions/loops/goal-tools.ts:
+#   "The target changed during scope confirmation; ..."
+#     -> "Consent no longer matches the current goal target, so nothing was
+#         amended or claimed."
+#   "Scope amendment not confirmed. ..."
+#     -> "Amendment declined. Objective, contract and completion claim are all
+#         unchanged."
+#   "AUDIT PENDING — nonterminal. ..."
+#     -> "Detached audit queued — not yet terminal. Claim persisted; compaction
+#         check happens at the next owned idle boundary. Stop here."
+#
+#    14 pass
+#     0 fail
+#   control-1-exit=0
+#
+# RESULT: correctly PASSES. The suite no longer depends on response wording;
+# an agent may reword a diagnostic explanation without failing the gate. Under
+# the previous wording assertions this same edit failed.
+#
+# ---------------------------------------------------------------------------
+# CONTROL 2 — the real regression must FAIL on the DURABLE assertion.
+# Restored the ORIGINAL object-identity fence in place of the semantic-authority
+# fence:
+#   if (auditGeneration !== sessionGeneration || state.goal !== amendmentGoal)
+# Rehydration still satisfies every semantic check but replaces the JS object,
+# so this is the exact false rejection the objective asks to repair.
+#
+#   44 |  assert.equal(durable?.revision, 2, "the confirmed amendment advanced
+#       |                              ^ the audited revision on disk");
+#   AssertionError: the confirmed amendment advanced the audited revision on disk
+#   (fail) confirmed amendment survives identical rehydration (task key reorder=false)
+#   (fail) confirmed amendment survives identical rehydration (task key reorder=true)
+#   ...
+#   control-2-exit=1
+#
+# RESULT: correctly FAILS, and it fails on the DURABLE revision assertion
+# (test line 44), not on message text — proving the replacement assertions
+# still detect the meaningful regression the contract protects.
+#
+# ---------------------------------------------------------------------------
+# Live repository source (unmodified): tests/amendment-confirmation-fence.test.ts
+# runs 14 passed / 0 failed, and a grep for the three former wording patterns
+# in that file returns no matches.
