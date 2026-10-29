@@ -1629,7 +1629,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           resumed: auditorResume.resume,
           ...(auditorResume.reason ? { reason: auditorResume.reason } : {}),
           ...(auditorResume.sessionPath ? { sessionPath: auditorResume.sessionPath } : {}),
-          fromModel: modelRef(candidate.model),
+          resumedOntoModel: modelRef(candidate.model),
           tier: tierDecision.tier,
           revision: state.goal?.revision,
           priorFailureClass: claim.auditorFailureClass,
