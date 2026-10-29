@@ -305,20 +305,22 @@ test('the incident journal end-state retries after a stock reopen without consen
   sessions.push({ pi, ctx });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
 
-  const restored = readState(cwd);
-  assert.equal(restored.goal?.pauseKind, 'wait', 'the migration converts the blocked pause into a timed wait');
-  assert.equal(restored.mainModelRecovery?.attempts, undefined, 'attempt 1001 proves there is no attempt-count cutoff');
-
-  // The retry must actually run. The provider in this fixture is still
-  // unavailable, so the probe is the observable dispatch: it fires without any
-  // consent command, and only a failed probe may re-park the work.
-  await waitFor(() => fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').includes('main_model_probe'), 5000);
-  const entries = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
+  // The retry must actually run. The fixture's provider is still unavailable,
+  // so the observable dispatch is the probe: it fires with no consent command,
+  // and only its own failure may re-park the work.
+  const ledger = () => fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
     .split('\n').filter(Boolean).map((line) => JSON.parse(line) as { type: string; value?: any });
+  await waitFor(() => ledger().some((entry) => entry.type === 'main_model_probe'), 5000);
+  const entries = ledger();
   const probeAt = entries.findIndex((entry) => entry.type === 'main_model_probe');
   assert.ok(probeAt >= 0, 'the overdue recovery dispatches its retry after a stock reopen');
-  assert.ok(entries.slice(0, probeAt).some((entry) => entry.type === 'provider_compaction_recovery_restored'),
-    'the migration precedes the retry');
+  const migrated = entries.findIndex((entry) => entry.type === 'provider_compaction_recovery_restored');
+  assert.ok(migrated >= 0 && migrated < probeAt, 'the migration precedes the retry');
+  const restoredWait = entries.findIndex((entry, index) => index > migrated && index < probeAt
+    && entry.type === 'state' && entry.value?.goal?.pauseKind === 'wait');
+  assert.ok(restoredWait >= 0, 'the blocked pause becomes a timed wait before the retry');
+  assert.equal(entries[restoredWait]?.value?.mainModelRecovery?.attempts, undefined,
+    'attempt 1001 proves there is no attempt-count cutoff');
   assert.ok(!entries.slice(0, probeAt).some((entry) => entry.type === 'load_hold_engaged'),
     'the incident state is never re-held as "Held on session restore" before its retry runs');
   // Nothing asked the operator for permission: no resume command ran.
