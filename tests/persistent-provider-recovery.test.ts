@@ -100,8 +100,8 @@ for (const [label, mutate] of [
   });
 }
 
-for (const overdue of [false, true]) {
-  test(`auditor provider wait restores ${overdue ? 'one overdue attempt beyond legacy horizons' : 'the original future due time without an early launch'}`, async () => {
+for (const phase of ['retry-waiting', 'recovery-pending'] as const) for (const overdue of [false, true]) {
+  test(`auditor ${phase} restores ${overdue ? 'one overdue attempt beyond legacy horizons' : 'the original future due time without an early launch'}`, async () => {
     const cwd = tmpCwd();
     const marker = path.join(cwd, 'worker-starts');
     const worker = path.join(cwd, 'inert-provider.mjs');
@@ -112,7 +112,8 @@ for (const overdue of [false, true]) {
     const due = new Date(Date.now() + (overdue ? -1000 : PERSISTENT_PROVIDER_RETRY_MS)).toISOString();
     seedState(cwd, { goal: seedGoal({ status: 'paused', pauseSource: 'system', pauseKind: 'wait', pauseResumeAt: due,
       pauseReason: 'auditor retry: provider error', pendingCompletion: {
-        at: '2020-01-01T00:00:00.000Z', phase: 'retry-waiting', attemptId: 'old-provider-attempt',
+        at: '2020-01-01T00:00:00.000Z', phase, attemptId: 'old-provider-attempt',
+        ...(phase === 'recovery-pending' ? { recoveryRetryAt: due } : {}),
         recoveryEpisodeKey: 'quota-fixture', providerErrorDiagnostic: quotaError,
         retryAttempts: 10000, retryUntil: '2020-01-02T00:00:00.000Z', automaticRecoveryUntil: '2020-01-02T00:00:00.000Z',
         completionSummary: 'Stored provider recovery claim',
@@ -131,7 +132,7 @@ for (const overdue of [false, true]) {
       assert.equal(readState(cwd).goal?.pendingCompletion?.completionSummary, 'Stored provider recovery claim');
     } else {
       assert.equal(readState(cwd).goal?.pauseResumeAt, due);
-      assert.equal(readState(cwd).goal?.pendingCompletion?.phase, 'retry-waiting');
+      assert.equal(readState(cwd).goal?.pendingCompletion?.phase, phase);
       assert.equal(fs.existsSync(marker), false);
     }
     assert.equal(readState(cwd).loadHoldAt, undefined, 'owned provider recovery survives cold startup');
