@@ -104,8 +104,9 @@ export type MainModelFailureKind = "rate-limit" | "quota" | "billing" | "auth" |
 export function isRecoverableProviderError(raw: string | undefined): boolean {
   if (!raw?.trim()) return false;
   const failure = classifyMainModelFailure(raw);
-  return !isDeterministicProviderError(raw)
-    && ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind);
+  return failure.kind !== 'non-recoverable' && failure.kind !== 'context-overflow'
+    && !isDeterministicProviderError(raw)
+    && (quotaSignal(raw) !== undefined || ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind));
 }
 
 export interface MainModelFailure {
