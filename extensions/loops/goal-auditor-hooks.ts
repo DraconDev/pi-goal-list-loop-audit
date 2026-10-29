@@ -1614,7 +1614,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           claim,
           currentAttemptId: claim.attemptId!,
           currentTier: tierDecision.tier,
-          priorTier: claim.auditTier,
+          // Tier is not persisted on the claim, so a tier change cannot be
+          // detected here; tierDecision governs this dispatch either way.
           cwd: liveCtx.cwd,
         });
         return runDetachedGoalCompletionAuditor({
