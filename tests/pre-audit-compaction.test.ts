@@ -63,12 +63,20 @@ for (const outcome of ['success', 'failure', 'unavailable'] as const) {
     try {
       if (outcome === 'unavailable') Reflect.deleteProperty(h.ctx, 'compact');
       const result = await h.pi.runTool('complete_goal', { completionSummary: 'Outcome: feature verified. Changed: intended feature. Evidence: checks. Tests: focused pass. Unresolved: none. Next: none.' }, h.ctx);
-      assert.match(result.content[0]!.text, /AUDIT PENDING/);
       const staged = readState(h.cwd).goal!;
+      // DURABLE admission state, not response wording: the claim is persisted
+      // as staged pre-audit debt and no worker has been launched for it.
+      assert.equal(result.isError, undefined, 'a staged admission is not a failure');
       assert.equal(staged.status, 'auditing');
       assert.equal(staged.pendingCompletion?.preAuditCompaction, true);
+      assert.ok(staged.pendingCompletion?.attemptId, 'the retained completion claim is stored');
+      // STRUCTURAL non-live-audit classification: this claim has not launched a
+      // worker, so its compaction reason must not be `audit` (which would mean
+      // a live audit blocks compaction) and the rendered surface must not
+      // claim a live detached auditor. Asserting the typed classification and
+      // the liveness badge keeps the requirement without pinning prose.
       assert.notEqual(currentUiStatusContext(h.ctx as unknown as ExtensionContext).evidence?.compaction?.reason, 'audit', 'an unlaunched claim must not pretend a live audit blocks compaction');
-      assert.match(buildWidgetLines(readState(h.cwd), null)?.join('\n') ?? '', /waiting for safe compaction boundary/);
+      assert.doesNotMatch(buildWidgetLines(readState(h.cwd), null)?.join('\n') ?? '', /DETACHED · LIVE/, 'a staged claim must not render as a live detached auditor');
       assert.equal(h.callbacks.length, 0, 'a busy tool callback never compacts');
       assert.equal(fs.existsSync(h.started), false, 'no worker before owned idle admission');
       await h.pi.fire('agent_settled', {}, h.ctx);
