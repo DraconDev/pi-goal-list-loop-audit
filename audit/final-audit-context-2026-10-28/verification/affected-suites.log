@@ -403,3 +403,4 @@ tests/amendment-confirmation-fence.test.ts:
 (pass) identical rehydration is not a substitute for explicit amendment consent [0.98ms]
 
 tests/list-draft-handoff.test.ts:
+(pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [6095.04ms]
