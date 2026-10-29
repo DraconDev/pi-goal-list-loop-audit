@@ -74,6 +74,36 @@ test('quota compaction failure retains a five-minute durable recovery and duplic
   assert.equal(replacement.sent.length, 0, 'a future retry is not dispatched early after restore');
 });
 
+for (const userHeld of [false, true]) {
+  test(`legacy quota-compaction block ${userHeld ? 'preserves a genuine user hold' : 'migrates only its matching system recovery owner'}`, async () => {
+    const cwd = tmpCwd();
+    fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [] }));
+    const id = `legacy-${userHeld}`;
+    seedState(cwd, { goal: seedGoal({ id, status: 'paused', pauseKind: 'blocked', pauseSource: userHeld ? 'user' : 'system',
+      pauseReason: `compaction failure: ${quotaError}` }), mainModelRecovery: {
+      primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], owner: { kind: 'goal', id },
+      kind: 'goal', attempts: 1000, reason: 'provider error', providerErrorDiagnostic: quotaError,
+    } });
+    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+    const pi = new MockPi(); activate(pi.api);
+    const ctx = makeMockCtx(cwd);
+    sessions.push({ pi, ctx });
+    const start = Date.now();
+    await pi.fire('session_start', { reason: 'startup' }, ctx);
+    const restored = readState(cwd);
+    if (userHeld) {
+      assert.equal(restored.goal?.pauseKind, 'blocked');
+      assert.equal(restored.mainModelRecovery?.retryAt, undefined, 'an explicit user hold gains no recovery timer debt');
+    } else {
+      assert.equal(restored.goal?.pauseKind, 'wait');
+      assert.equal(restored.loadHoldAt, undefined);
+      assert.ok(Date.parse(restored.mainModelRecovery!.retryAt!) >= start + PERSISTENT_PROVIDER_RETRY_MS);
+      assert.equal(restored.goal?.pauseResumeAt, restored.mainModelRecovery?.retryAt);
+    }
+    assert.equal(pi.sent.length, 0);
+  });
+}
+
 function providerWait(): State {
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ status: 'paused', pauseKind: 'wait', pauseSource: 'system', pauseReason: 'main model recovery — retrying', pauseResumeAt: '2030-01-01T00:05:00.000Z' }) });
