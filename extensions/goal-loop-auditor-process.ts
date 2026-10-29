@@ -1881,6 +1881,60 @@ function hasResumableAuditorSession(jobDir: string, inspection: boolean | undefi
   try { return statSync(auditorSessionPath(jobDir)).size > 0; } catch { return false; }
 }
 
+/** Failure classes where continuing the SAME transcript is sound: the session
+ * was healthy and merely cut off. A `timeout` restart is deliberate — a stalled
+ * audit that burned its watchdog budget is not obviously resumable, and a
+ * `no-verdict` attempt (worker exited without an atomic result) tells us
+ * nothing about the transcript's health, so both restart cold rather than
+ * gamble the retry budget on a session that may reproduce the same wall. */
+const RESUMABLE_AUDITOR_FAILURES = new Set<AuditorInfrastructureClass>(["provider", "transport"]);
+
+export interface AuditorResumeDecision {
+  resume: boolean;
+  /** Why not, for the ledger — a refusal must be explainable, not silent. */
+  reason?: "inspection-off" | "no-prior-attempt" | "failure-class" | "revision-moved"
+    | "claim-replaced" | "tier-changed" | "cancelled" | "no-session";
+}
+
+/** Decide whether a retry continues the prior attempt's transcript.
+ *
+ * Resume is a narrow exception, so every disqualifier is checked explicitly
+ * and a refusal names itself. `context-exhausted`-style failures never reach
+ * here as resumable: they surface as a non-`provider`/`transport` class. */
+export function decideAuditorResume(input: {
+  inspection: boolean | undefined;
+  priorAttemptId?: string;
+  priorFailureClass?: AuditorInfrastructureClass;
+  priorRevision?: number;
+  currentRevision?: number;
+  priorClaimAttemptId?: string;
+  currentClaimAttemptId?: string;
+  priorTier?: string;
+  currentTier?: string;
+  cancelled?: boolean;
+  sessionExists?: boolean;
+}): AuditorResumeDecision {
+  if (!input.inspection) return { resume: false, reason: "inspection-off" };
+  if (!input.priorAttemptId) return { resume: false, reason: "no-prior-attempt" };
+  if (input.cancelled) return { resume: false, reason: "cancelled" };
+  if (!input.priorFailureClass || !RESUMABLE_AUDITOR_FAILURES.has(input.priorFailureClass)) {
+    return { resume: false, reason: "failure-class" };
+  }
+  if (input.priorRevision !== undefined && input.currentRevision !== undefined
+    && input.priorRevision !== input.currentRevision) {
+    return { resume: false, reason: "revision-moved" };
+  }
+  if (input.priorClaimAttemptId && input.currentClaimAttemptId
+    && input.priorClaimAttemptId !== input.currentClaimAttemptId) {
+    return { resume: false, reason: "claim-replaced" };
+  }
+  if (input.priorTier && input.currentTier && input.priorTier !== input.currentTier) {
+    return { resume: false, reason: "tier-changed" };
+  }
+  if (input.sessionExists === false) return { resume: false, reason: "no-session" };
+  return { resume: true };
+}
+
 async function removeAuditJobDirectory(jobDir: string): Promise<void> {
   await fs.rm(jobDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 10 }).catch(() => {});
 }
