@@ -53,5 +53,16 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "legacy-migration-cadence-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/persistent-provider-recovery.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   }
 ]

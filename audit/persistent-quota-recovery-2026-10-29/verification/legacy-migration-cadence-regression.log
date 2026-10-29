@@ -20,3 +20,54 @@ tests/persistent-provider-recovery.test.ts:
 (pass) provider recovery restore cannot bypass replaced target [0.30ms]
 (pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
 (pass) auditor retry-waiting restores the original future due time without an early launch [8.46ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [180.10ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [6.26ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1075.65ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.22ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [12.79ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [6.28ms]
+264 |     if (quotaClass) {
+265 |       assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
+266 |         `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
+267 |     } else {
+268 |       // The migration must not force the quota cadence onto a non-quota wall.
+269 |       assert.ok(Math.abs(delay - PERSISTENT_PROVIDER_RETRY_MS) > 60_000,
+                   ^
+AssertionError: a non-quota failure does not inherit the five-minute quota cadence: 300002ms
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-tal9vmy3/tests/persistent-provider-recovery.test.ts:269:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy compaction migration keeps the live cadence for a billing wall [5.70ms]
+264 |     if (quotaClass) {
+265 |       assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
+266 |         `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
+267 |     } else {
+268 |       // The migration must not force the quota cadence onto a non-quota wall.
+269 |       assert.ok(Math.abs(delay - PERSISTENT_PROVIDER_RETRY_MS) > 60_000,
+                   ^
+AssertionError: a non-quota failure does not inherit the five-minute quota cadence: 300002ms
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-tal9vmy3/tests/persistent-provider-recovery.test.ts:269:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy compaction migration keeps the live cadence for a transient failure [5.87ms]
+
+2 tests failed:
+(fail) legacy compaction migration keeps the live cadence for a billing wall [5.70ms]
+(fail) legacy compaction migration keeps the live cadence for a transient failure [5.87ms]
+
+ 24 pass
+ 2 fail
+Ran 26 tests across 1 file. [1.74s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-kqc88I/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-kqc88I
+[run-tests] finished in 2s (exit 1)
