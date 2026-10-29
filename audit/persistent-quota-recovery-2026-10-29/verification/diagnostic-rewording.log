@@ -1,31 +1,31 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [0.48ms]
-(pass) provider compaction error preserves willRetry ownership [0.12ms]
-(pass) provider compaction error preserves aborted ownership [0.03ms]
-(pass) provider compaction error preserves fromExtension ownership [0.02ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [10.32ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [76.85ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [17.93ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [35.35ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.76ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.41ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [1.69ms]
-(pass) provider recovery restore cannot bypass user pause [0.39ms]
-(pass) provider recovery restore cannot bypass decision [2.60ms]
-(pass) provider recovery restore cannot bypass cancel [3.44ms]
-(pass) provider recovery restore cannot bypass replaced target [0.45ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [1.18ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [16.39ms]
-(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [339.15ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [24.79ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1249.76ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.37ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [0.90ms]
+(pass) provider compaction error preserves willRetry ownership [0.08ms]
+(pass) provider compaction error preserves aborted ownership [0.02ms]
+(pass) provider compaction error preserves fromExtension ownership [0.01ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.72ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [49.32ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [13.65ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [7.02ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [6.15ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.74ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.32ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.32ms]
+(pass) provider recovery restore cannot bypass user pause [0.29ms]
+(pass) provider recovery restore cannot bypass decision [0.27ms]
+(pass) provider recovery restore cannot bypass cancel [0.27ms]
+(pass) provider recovery restore cannot bypass replaced target [0.35ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.32ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [8.17ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [183.53ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [7.45ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1090.37ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.28ms]
 
- 21 pass
+ 22 pass
  0 fail
-Ran 21 tests across 1 file. [2.35s]
+Ran 22 tests across 1 file. [1.78s]
 [run-tests] finished in 2s (exit 0)

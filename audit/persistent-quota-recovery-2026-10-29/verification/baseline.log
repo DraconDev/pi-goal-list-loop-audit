@@ -1,31 +1,31 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [0.39ms]
-(pass) provider compaction error preserves willRetry ownership [4.87ms]
-(pass) provider compaction error preserves aborted ownership [0.04ms]
-(pass) provider compaction error preserves fromExtension ownership [0.03ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [1.02ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [190.62ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [13.92ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [13.48ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.69ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.45ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.90ms]
-(pass) provider recovery restore cannot bypass user pause [0.45ms]
-(pass) provider recovery restore cannot bypass decision [0.36ms]
-(pass) provider recovery restore cannot bypass cancel [0.37ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [1.20ms]
+(pass) provider compaction error preserves willRetry ownership [0.14ms]
+(pass) provider compaction error preserves aborted ownership [0.03ms]
+(pass) provider compaction error preserves fromExtension ownership [0.01ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [1.20ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [64.47ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [23.62ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [9.04ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [7.20ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.81ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.42ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.44ms]
+(pass) provider recovery restore cannot bypass user pause [0.46ms]
+(pass) provider recovery restore cannot bypass decision [0.50ms]
+(pass) provider recovery restore cannot bypass cancel [0.39ms]
 (pass) provider recovery restore cannot bypass replaced target [0.36ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.51ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [33.37ms]
-(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [328.32ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [10.85ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1134.70ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.57ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.37ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [10.71ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [183.87ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [10.89ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1102.97ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [1.30ms]
 
- 21 pass
+ 22 pass
  0 fail
-Ran 21 tests across 1 file. [4.11s]
-[run-tests] finished in 4s (exit 0)
+Ran 22 tests across 1 file. [1.82s]
+[run-tests] finished in 2s (exit 0)

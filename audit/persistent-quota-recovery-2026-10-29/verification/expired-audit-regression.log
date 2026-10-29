@@ -1,43 +1,22 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [6.30ms]
-(pass) provider compaction error preserves willRetry ownership [0.13ms]
-(pass) provider compaction error preserves aborted ownership [0.03ms]
-(pass) provider compaction error preserves fromExtension ownership [0.02ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [6.75ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [141.42ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [9.14ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [18.10ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [1.02ms]
+(pass) provider compaction error preserves willRetry ownership [0.09ms]
+(pass) provider compaction error preserves aborted ownership [0.02ms]
+(pass) provider compaction error preserves fromExtension ownership [0.01ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.88ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [54.23ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [15.14ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [6.49ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [4.66ms]
 (pass) provider recovery restore cannot bypass supervisor pause [0.59ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [1.26ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.58ms]
-(pass) provider recovery restore cannot bypass user pause [0.51ms]
-(pass) provider recovery restore cannot bypass decision [0.43ms]
-(pass) provider recovery restore cannot bypass cancel [0.41ms]
-(pass) provider recovery restore cannot bypass replaced target [0.40ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.60ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [13.71ms]
-88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
-89 | ): Promise<void> {
-90 | 	const intervalMs = options.intervalMs ?? 20;
-91 | 	const deadline = untilMs(options.timeoutMs);
-92 | 	while (!predicate()) {
-93 | 		if (Date.now() > deadline) throw new Error(options.message);
-                                            ^
-error: overdue provider claim launches despite legacy expiry
-      at waitFor (/tmp/glla-persistent-control-lj1mzveh/tests/harness/host-budget.ts:93:40)
-      at async <anonymous> (/tmp/glla-persistent-control-lj1mzveh/tests/persistent-provider-recovery.test.ts:162:13)
-(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [12023.41ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [47.30ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1146.57ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.34ms]
-
- 20 pass
- 1 fail
-Ran 21 tests across 1 file. [14.00s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-AoP2a5/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-AoP2a5
-[run-tests] finished in 14s (exit 1)
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.26ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.25ms]
+(pass) provider recovery restore cannot bypass user pause [0.29ms]
+(pass) provider recovery restore cannot bypass decision [0.37ms]
+(pass) provider recovery restore cannot bypass cancel [0.26ms]
+(pass) provider recovery restore cannot bypass replaced target [0.27ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [8.91ms]
