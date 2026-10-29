@@ -7,6 +7,15 @@ import { loadGlobalSettings } from "../extensions/goal-settings.js";
 import { MockPi, makeMockCtx, tick, tmpCwd } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
+/** The requirement these tests protect is "this editor wrote NOTHING", which
+ * the persisted key's absence states directly. Reading the effective setting
+ * would conflate that with whatever the current default happens to be. */
+function rawHasAuditorInspection(): boolean {
+  try {
+    const raw = JSON.parse(fs.readFileSync(GLOBAL_SETTINGS_PATH, "utf8")) as Record<string, unknown>;
+    return "auditorInspection" in raw;
+  } catch { return false; }
+}
 async function boot(pi: MockPi, cwd: string) {
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `settings-stale-save-${Math.random()}` } });
@@ -26,7 +35,7 @@ test("C9: stale-probe refusal fails the save loudly — no false saved claim", a
   try {
     await assert.rejects(handleSettingChoice("auditorInspection", ctx as unknown as ExtensionContext), /went stale during the edit/);
     assert.equal(ctx.ui.matching("Auditor inspection ON").length, 0, "the branch success notify never ran");
-    assert.equal(loadGlobalSettings().auditorInspection, false, "nothing was written");
+    assert.equal(rawHasAuditorInspection(), false, "nothing was written");
   } finally {
     Object.defineProperty(globalThis, "warnIfStaleAtEntry", prior);
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
@@ -64,7 +73,7 @@ test("settings save validates its own session after an overlapping editor", asyn
     await handleSettingChoice("auditorInspection", fresh as unknown as ExtensionContext);
     answer("on — persist inspection");
     await assert.rejects(staleEdit, /went stale during the edit/);
-    assert.equal(loadGlobalSettings().auditorInspection, false, "stale editor wrote nothing");
+    assert.equal(rawHasAuditorInspection(), false, "stale editor wrote nothing");
     assert.equal(ctx.ui.matching("Auditor inspection ON").length, 0);
   } finally {
     Object.defineProperty(globalThis, "warnIfStaleAtEntry", prior);
