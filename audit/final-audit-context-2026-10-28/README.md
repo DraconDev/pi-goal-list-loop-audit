@@ -182,14 +182,24 @@ audit blocking it.
   enough to install its own SIGTERM handler and write a marker file. On a
   saturated host the watchdog fires before that, the signal hits the default
   disposition, the child dies correctly — and no marker appears, so a healthy
-  watchdog was reported as broken. The assertion now accepts either observable
-  consequence of cancellation (handler ran, OR the process is gone and its
-  job scratch was reaped) and still fails a worker that survives. Control
-  `verification/stall-marker-negative.log` removes both the signal and the
-  scratch reaping in a disposable copy and the test correctly fails with
-  "the detached silent worker was cancelled". The repaired suite runs 27
-  passed / zero failed, and the two tests dropped from ~32s to ~10s because
-  they no longer wait out a handler that was never installed.
+  watchdog was reported as broken.
+  The first repair over-corrected: it also accepted a *reaped job-scratch
+  directory* as evidence. That is unsound, because production reaps the
+  directory after its bounded termination waits regardless of whether the child
+  actually died — a surviving worker also leaves no directory. The assertion
+  now requires the PARENT'S OWN observation of that exact child's exit
+  (`exitCode`/`signalCode` non-null on the captured ChildProcess, cross-checked
+  with a `kill(pid, 0)` probe). That accepts both legitimate outcomes — the
+  worker's handler ran and exited 0, or the default SIGTERM disposition killed
+  it before it booted — and a worker that survives still fails.
+  Controls in `verification/stall-marker-negative.log`: the auditor-requested
+  shape disables signaling while leaving scratch cleanup INTACT, and the test
+  correctly fails with "the detached silent worker was cancelled (parent
+  observed its exit)" even though the directory was removed. The coarser
+  earlier control (signaling and cleanup both disabled) also fails. The
+  repaired suite runs 27 passed / zero failed, and the two tests dropped from
+  ~32s to ~6s because they no longer wait out a handler that was never
+  installed.
 - Final `npm run release:check` on the finished tree, run at a low-load window
   (load ~29 falling to ~15): **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:

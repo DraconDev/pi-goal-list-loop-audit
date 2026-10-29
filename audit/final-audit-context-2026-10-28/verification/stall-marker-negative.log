@@ -1,14 +1,32 @@
-# Isolated negative control: auditor-stall-watchdog torn-down assertion
+# Isolated negative controls: auditor-stall-watchdog worker-teardown assertion
 #
-# Purpose: prove the repaired assertion still detects a worker that is NOT
-# cancelled, and that it no longer depends on the child having booted far
-# enough to install its own SIGTERM handler.
+# Requirement under test: a cancelled detached worker must be observed GONE by
+# the parent. The assertion must (a) accept the default SIGTERM disposition
+# when the watchdog fires before the child installs its handler, and (b) NOT
+# accept a reaped job-scratch directory as proof, because production reaps that
+# directory after its bounded termination waits whether or not the child died.
 #
-# Disposable copy (/tmp/glla-stall-control, since removed). Two guard removals:
-#   1. signalWorkerTree() is never called (no SIGTERM, no SIGKILL escalation)
-#   2. removeAuditJobDirectory() is never called (incomplete scratch left behind)
+# ---------------------------------------------------------------------------
+# CONTROL A (auditor-requested shape): signaling DISABLED, scratch cleanup
+# INTACT. This is the case the previous control missed.
 #
-# RESULT -- correctly FAILS, for the intended behavioral reason:
+# Disposable copy /tmp/glla-ctl (since removed) modified ONLY terminateWorker
+# to never call signalWorkerTree (no SIGTERM, no SIGKILL escalation), leaving
+# removeAuditJobDirectory() fully intact at line 2925.
+#
+#   error: timed out waiting for: the detached silent worker was cancelled
+#          (parent observed its exit)
+#   (fail) stall: worker that never emits a first event is failed fast, not
+#          left for the wall [16953.49ms]
+#    0 pass
+#    1 fail
+#
+# RESULT: correctly FAILS. The job directory WAS removed by the intact cleanup,
+# yet the test still fails, proving directory absence is no longer sufficient
+# evidence of teardown.
+#
+# ---------------------------------------------------------------------------
+# CONTROL B (earlier, coarser): signaling AND scratch cleanup both disabled.
 #
 #   error: timed out waiting for: the detached silent worker was cancelled
 #          (handler ran, or the job was reaped)
@@ -17,6 +35,11 @@
 #    0 pass
 #    1 fail
 #
-# Live source in the repository passes the same test (see final gate logs), and
-# the unmodified suite still asserts cancellation -- only the host-dependent
-# marker is no longer the sole accepted symptom.
+# RESULT: also fails, as expected. CONTROL A is the stronger case because the
+# directory really is gone and only real process liveness distinguishes the
+# outcomes.
+#
+# ---------------------------------------------------------------------------
+# Live source in the repository passes the same tests (11 passed, 0 failed),
+# and the two tests dropped from ~32s to ~6s because they no longer wait out a
+# handler that was never installed.
