@@ -1057,6 +1057,42 @@ export function persistClaimWorkerActivity(
  * rendering — quote it so spaces/metacharacters can't break (or
  * weaponize) the copy-paste command; an empty-after-sanitize path omits
  * the command instead of rendering a bare `pi --session`. */
+/** Turn the durable claim into a resume decision for THIS dispatch.
+ *
+ * The prior attempt's transcript lives in its own job directory, which only
+ * exists while retention keeps it. A missing directory or an unreadable
+ * session is a cold start, never an error: the audit must still run. */
+export function resolveAuditorResumeForDispatch(input: {
+  inspection: boolean;
+  claim: PendingCompletion;
+  currentAttemptId: string;
+  currentTier: string;
+  cwd: string;
+  revision?: number;
+}): { resume: boolean; sessionPath?: string; reason?: string } {
+  const priorAttempt = input.claim.priorAttemptId;
+  if (!priorAttempt) return { resume: false, reason: "no-prior-attempt" };
+  const sessionPath = path.join(piGlaDir(input.cwd), "audit-jobs", priorAttempt, "session.jsonl");
+  let sessionExists = false;
+  try { sessionExists = statSync(sessionPath).size > 0; } catch { sessionExists = false; }
+  const decision = decideAuditorResume({
+    inspection: input.inspection,
+    priorAttemptId: priorAttempt,
+    priorFailureClass: input.claim.auditorFailureClass,
+    priorRevision: input.claim.priorRevision,
+    currentRevision: input.revision,
+    priorClaimAttemptId: input.claim.priorAttemptId,
+    currentClaimAttemptId: input.currentAttemptId,
+    priorTier: input.claim.auditorTier,
+    currentTier: input.currentTier,
+    cancelled: input.claim.auditorCancelled === true,
+    sessionExists,
+  });
+  return decision.resume
+    ? { resume: true, sessionPath }
+    : { resume: false, reason: decision.reason };
+}
+
 export function inspectionSessionExtras(inspectionSessionPath: string | undefined): string[] {
   const clean = inspectionSessionPath ? sanitizeDisplayText(inspectionSessionPath).trim() : "";
   if (!clean) return [];
@@ -1568,6 +1604,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         // own per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
         const { toolTimeoutMs, stallMs } = dispatchTimeouts;
+        const auditorResume = resolveAuditorResumeForDispatch({
+          inspection: settings.auditorInspection === true,
+          claim,
+          currentAttemptId: claim.attemptId!,
+          currentTier: tierDecision.tier,
+          cwd: liveCtx.cwd,
+        });
         return runDetachedGoalCompletionAuditor({
           cwd: liveCtx.cwd,
           goal: auditGoal,
@@ -1600,6 +1643,14 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           // v0.38.3: opt-in live inspection — persist the auditor's pi as a
           // resumable session pinned inside the job dir (off = --no-session).
           inspection: settings.auditorInspection === true,
+          // A retry continues the PRIOR attempt's transcript instead of
+          // restarting the whole audit. The decision is explicit and durable so
+          // a refusal is explainable; every disqualifier (moved revision,
+          // replaced claim, changed tier, cancel, non-provider failure) falls
+          // back to a cold audit, which is the safe direction.
+          ...(auditorResume.resume && auditorResume.sessionPath
+            ? { resumeSessionPath: auditorResume.sessionPath }
+            : {}),
           runtime: {
             attemptId: () => newDetachedAuditJobAttemptId(claim.attemptId!),
             logicalAttemptId: claim.attemptId!,
