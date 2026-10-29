@@ -1,0 +1,33 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/quota-horizon-exemption.test.ts:
+(pass) quota wait survives the horizon instead of parking [3.48ms]
+121 |       assert.equal(setMainModelRecoveryPause(r.ctx, episode, 30 * 60_000), true);
+122 |       assert.equal(state.mainModelRecovery?.manualResumeRequired, undefined);
+123 |       assert.equal(state.mainModelRecovery?.autoRetryUntil, undefined);
+124 |       assert.equal(state.mainModelRecovery?.firstFailureAt, episode.firstFailureAt);
+125 |       assert.equal(state.mainModelRecovery?.attempts, 40);
+126 |       assert.ok(Date.parse(state.mainModelRecovery?.retryAt ?? '') >= Date.now() + 29 * 60_000);
+                   ^
+AssertionError: false == true
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-7prpbi90/tests/quota-horizon-exemption.test.ts:126:14
+      at fn (node:test:215:18)
+(fail) billing and non-quota failures retain paced retries beyond legacy expiry without granting purchases [0.84ms]
+(pass) deterministic classifier: 400 markers hold, everything else passes through [0.05ms]
+(pass) deterministic 400 holds even aggressive and fresh — identical retries cannot succeed [0.37ms]
+(pass) deterministic hold names the fix directions [0.28ms]
+(pass) transient wall still schedules under aggressive (control) [0.36ms]
+
+ 5 pass
+ 1 fail
+Ran 6 tests across 1 file. [378.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-TgyoYn/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-TgyoYn
+[run-tests] finished in 0s (exit 1)

@@ -32,3 +32,15 @@ error: overdue provider claim launches despite legacy expiry
       at async <anonymous> (/tmp/glla-persistent-control-8_ph7ixl/tests/persistent-provider-recovery.test.ts:189:13)
 (fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6012.09ms]
 (pass) auditor recovery-pending restores the original future due time without an early launch [22.21ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1096.62ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.22ms]
+
+1 tests failed:
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6012.09ms]
+
+ 21 pass
+ 1 fail
+Ran 22 tests across 1 file. [7.71s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-mHgbyF/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-mHgbyF
+[run-tests] finished in 8s (exit 1)

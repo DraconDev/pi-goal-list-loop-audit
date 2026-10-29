@@ -42,5 +42,16 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "blanket-cadence-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/quota-horizon-exemption.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   }
 ]
