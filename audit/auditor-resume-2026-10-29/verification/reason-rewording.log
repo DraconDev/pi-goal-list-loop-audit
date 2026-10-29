@@ -3,26 +3,26 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [217.84ms]
-(pass) a failed attempt keeps the session a retry can resume [183.69ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [180.52ms]
-(pass) auditorInspection=false restores the original --no-session spawn [209.15ms]
-(pass) a retained session directory is still reapable by the retention sweep [3.34ms]
-(pass) a provider failure resumes the prior transcript [0.16ms]
-(pass) a transport failure resumes the prior transcript [1.00ms]
+(pass) the default dispatch asks for a durable auditor session, not --no-session [435.06ms]
+(pass) a failed attempt keeps the session a retry can resume [251.88ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [444.09ms]
+(pass) auditorInspection=false restores the original --no-session spawn [407.45ms]
+(pass) a retained session directory is still reapable by the retention sweep [4.72ms]
+(pass) a provider failure resumes the prior transcript [0.11ms]
+(pass) a transport failure resumes the prior transcript [0.02ms]
 (pass) a timeout restarts cold the prior transcript [0.01ms]
 (pass) a no-verdict attempt restarts cold the prior transcript
-(pass) a moved goal revision still restarts the audit cold [0.08ms]
-(pass) a replaced claim still restarts the audit cold [0.01ms]
+(pass) a moved goal revision still restarts the audit cold [0.05ms]
+(pass) a replaced claim still restarts the audit cold [0.02ms]
 (pass) a changed audit tier still restarts the audit cold
 (pass) an explicit cancel still restarts the audit cold
 (pass) a vanished transcript still restarts the audit cold
-(pass) durability turned off still restarts the audit cold [0.01ms]
-(pass) a resumed dispatch spawns against the prior attempt transcript [237.09ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [181.42ms]
-(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.28ms]
+(pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [254.45ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [330.18ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.24ms]
 
  18 pass
  0 fail
-Ran 18 tests across 1 file. [1.84s]
-[run-tests] finished in 2s (exit 0)
+Ran 18 tests across 1 file. [3.23s]
+[run-tests] finished in 3s (exit 0)

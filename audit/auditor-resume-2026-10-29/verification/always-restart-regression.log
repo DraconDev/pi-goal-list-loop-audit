@@ -1,13 +1,13 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=434s heartbeat=30s
+[run-tests] host is 2.4x slower than an idle host — per-test budget raised to 289s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [199.76ms]
-(pass) a failed attempt keeps the session a retry can resume [168.39ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [168.57ms]
-(pass) auditorInspection=false restores the original --no-session spawn [198.57ms]
-(pass) a retained session directory is still reapable by the retention sweep [2.70ms]
+(pass) the default dispatch asks for a durable auditor session, not --no-session [389.40ms]
+(pass) a failed attempt keeps the session a retry can resume [361.68ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [372.97ms]
+(pass) auditorInspection=false restores the original --no-session spawn [343.66ms]
+(pass) a retained session directory is still reapable by the retention sweep [9.18ms]
 184 |       priorRevision: 3, currentRevision: 3,
 185 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
 186 |       priorTier: 'full', currentTier: 'full',
@@ -25,9 +25,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:189:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:189:12
       at fn (node:test:215:18)
-(fail) a provider failure resumes the prior transcript [1.21ms]
+(fail) a provider failure resumes the prior transcript [1.14ms]
 184 |       priorRevision: 3, currentRevision: 3,
 185 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
 186 |       priorTier: 'full', currentTier: 'full',
@@ -45,10 +45,10 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:189:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:189:12
       at fn (node:test:215:18)
-(fail) a transport failure resumes the prior transcript [0.11ms]
-(pass) a timeout restarts cold the prior transcript
+(fail) a transport failure resumes the prior transcript [0.29ms]
+(pass) a timeout restarts cold the prior transcript [0.02ms]
 (pass) a no-verdict attempt restarts cold the prior transcript
 211 |         sessionExists: true,
 212 |       },
@@ -69,9 +69,9 @@ AssertionError: a moved goal revision names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:216:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:216:12
       at fn (node:test:215:18)
-(fail) a moved goal revision still restarts the audit cold [1.14ms]
+(fail) a moved goal revision still restarts the audit cold [1.37ms]
 211 |         sessionExists: true,
 212 |       },
 213 |       ...overrides,
@@ -91,9 +91,9 @@ AssertionError: a replaced claim names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:216:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:216:12
       at fn (node:test:215:18)
-(fail) a replaced claim still restarts the audit cold [0.09ms]
+(fail) a replaced claim still restarts the audit cold [1.88ms]
 211 |         sessionExists: true,
 212 |       },
 213 |       ...overrides,
@@ -113,9 +113,9 @@ AssertionError: a changed audit tier names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:216:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:216:12
       at fn (node:test:215:18)
-(fail) a changed audit tier still restarts the audit cold [0.05ms]
+(fail) a changed audit tier still restarts the audit cold [0.09ms]
 (pass) an explicit cancel still restarts the audit cold [0.02ms]
 211 |         sessionExists: true,
 212 |       },
@@ -136,12 +136,12 @@ AssertionError: a vanished transcript names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:216:12
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:216:12
       at fn (node:test:215:18)
-(fail) a vanished transcript still restarts the audit cold [0.06ms]
+(fail) a vanished transcript still restarts the audit cold [0.07ms]
 (pass) durability turned off still restarts the audit cold [0.01ms]
-(pass) a resumed dispatch spawns against the prior attempt transcript [255.70ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [310.36ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [349.01ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [373.73ms]
 283 |     inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
 284 |     priorRevision: 3, currentRevision: 3,
 285 |     priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
@@ -159,13 +159,13 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-waanq2h9/tests/auditor-resume.test.ts:288:10
+      at /tmp/glla-auditor-resume-control-brq_f25k/tests/auditor-resume.test.ts:288:10
       at fn (node:test:215:18)
-(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.54ms]
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.55ms]
 
  11 pass
  7 fail
-Ran 18 tests across 1 file. [2.16s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-z1zA3j/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-z1zA3j
-[run-tests] finished in 2s (exit 1)
+Ran 18 tests across 1 file. [3.59s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-FiXpFE/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-FiXpFE
+[run-tests] finished in 4s (exit 1)
