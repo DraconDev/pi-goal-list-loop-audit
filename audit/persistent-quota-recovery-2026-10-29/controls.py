@@ -62,6 +62,7 @@ SUITES = {
     'expired-audit-regression': ['tests/persistent-provider-recovery.test.ts'],
     'blanket-cadence-regression': ['tests/quota-horizon-exemption.test.ts'],
     'legacy-migration-cadence-regression': ['tests/persistent-provider-recovery.test.ts'],
+    'overdue-reload-hold-regression': ['tests/persistent-provider-recovery.test.ts'],
 }
 results = []
 for case, mutation in CASES.items():
@@ -73,11 +74,15 @@ for case, mutation in CASES.items():
             shutil.copy2(ROOT / name, copy / name)
         (copy / 'node_modules').symlink_to(ROOT / 'node_modules', target_is_directory=True)
         if mutation:
-            name, before, after = mutation
+            name, *pairs = mutation
             source = copy / name
             text = source.read_text()
-            assert text.count(before) == 1, (case, text.count(before))
-            source.write_text(text.replace(before, after, 1))
+            # A case may carry several (before, after) pairs when one behavior
+            # needs more than one call site reverted to reproduce the defect.
+            for before, after in zip(pairs[0::2], pairs[1::2]):
+                assert text.count(before) == 1, (case, before, text.count(before))
+                text = text.replace(before, after, 1)
+            source.write_text(text)
         env = dict(os.environ)
         toolchain = Path.home() / '.local/share/bun-toolchains/bun-1.3.14'
         if toolchain.is_dir():
