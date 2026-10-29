@@ -7,6 +7,10 @@
 
 import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError, quotaSignal } from "./quota-retry.js";
 
+/** Recovery retries the configured chain promptly, then makes one paced
+ * attempt every five minutes for as long as the owning work remains eligible.
+ * A provider's quota/reset estimate is diagnostic, not a recovery deadline. */
+export const PERSISTENT_PROVIDER_RETRY_MS = 5 * 60_000;
 export const MAIN_MODEL_MAX_RETRY_DELAY_MS = 5 * 60 * 60_000;
 export const MAIN_MODEL_AUTO_RETRY_HORIZON_MS = 24 * 60 * 60_000;
 export const DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES = 15;

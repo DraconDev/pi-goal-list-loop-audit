@@ -29,6 +29,7 @@ import { stateRootPending } from './glla-state-root.js';
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
 import {
   classifyMainModelFailure,
+  PERSISTENT_PROVIDER_RETRY_MS,
   isContextOverflowError,
   isMainModelFailbackAuto,
   isMainModelFallbackFailure,
@@ -675,7 +676,10 @@ export function nextMainModelFallback(ctx: ExtensionContext, recovery = state.ma
     && !isForbiddenModel(ref, settings.forbiddenModels));
 }
 export function mainModelSameModelRetryActive(ctx: ExtensionContext, recovery: MainModelRecovery | undefined, budget: number): boolean {
-  return sameModelRetryPhaseActive(recovery, budget, !!nextMainModelFallback(ctx, recovery));
+  // An untried configured alternative gets the next attempt, rather than
+  // spending a same-model retry budget against an already failing provider.
+  return !nextMainModelFallback(ctx, recovery)
+    && sameModelRetryPhaseActive(recovery, budget, false);
 }
 function boundedSameModelDelay(ctx: ExtensionContext, recovery: MainModelRecovery, delayMs: number): number {
   if (!nextMainModelFallback(ctx, recovery)) return delayMs;
@@ -1046,7 +1050,9 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
     holdMainModelRecovery(ctx, normalized, "the provider refused the request itself (deterministic client error — e.g. too many images for this model). Switch model or trim the request, then resume");
     return false;
   }
-  const requestedDelayMs = Math.max(1_000, boundedSameModelDelay(ctx, normalized, delayMs));
+  // This durable due time owns every retry entry point. Exhausting the
+  // configured chain changes cadence, never permission to keep recovering.
+  const requestedDelayMs = Math.max(1_000, boundedSameModelDelay(ctx, normalized, PERSISTENT_PROVIDER_RETRY_MS));
   if (normalized.manualResumeRequired) {
     holdMainModelRecovery(ctx, normalized, "an explicit recovery hold requires manual action");
     return false;
@@ -1130,7 +1136,7 @@ export function scheduleMainModelRecoveryTimer(ctx: ExtensionContext, delayMs: n
       delayMs = bounded;
     }
     const durableAt = Date.parse(state.mainModelRecovery?.retryAt ?? '');
-    if (Number.isFinite(durableAt)) delayMs = Math.min(delayMs, Math.max(1000, durableAt - Date.now()));
+    if (Number.isFinite(durableAt)) delayMs = Math.max(1000, durableAt - Date.now());
   }
   const timer = scheduleSessionTimeout(() => {
     // A dequeued callback no longer owns the slot after a replacement arms.
