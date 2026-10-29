@@ -2320,6 +2320,7 @@ function applyCompletedCompletionAudit(args: {
       providerErrorDiagnostic: failureCopy.diagnostic,
       recoveryEpisodeKey,
       recoveryNoticeKeys: pending.recoveryNoticeKeys,
+      pauseSource: 'system',
       pauseKind: "wait",
       pauseResumeAt: new Date(Date.now() + plan.retryAfterSec * 1000).toISOString(),
       pauseReason: `auditor retry: ${exhaustedNotice}${failureCopy.display}`,
