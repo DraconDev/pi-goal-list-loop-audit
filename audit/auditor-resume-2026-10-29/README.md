@@ -1,8 +1,8 @@
-# Auditor restart vs resume — field report 2026-10-29
+# Auditor resume, not restart — field report 2026-10-29
 
-Status: investigation only. No code changed. This records why the last
-completion claim never received a verdict, so the follow-up is not re-derived
-from scratch.
+This records why the last completion claim never received a verdict and the
+decision taken to fix it: resume the auditor's own pi session across a
+provider failure instead of restarting the audit cold.
 
 ## The reported symptom
 
@@ -81,15 +81,49 @@ part of the fix: the defect is that GLLA responds to an external failure by
 discarding its own completed work. No Pi core, provider or external plugin
 change is required.
 
-## Proposed follow-up (not implemented here)
+## Decision: resume the session, and when to refuse
 
-Make the auditor session durable and resume it across a retry of the same goal
-revision and claim lineage, while keeping restart mandatory for: a changed goal
-revision, a replaced or cancelled claim, a changed audit tier, and an explicit
-user cancel. Verdict authentication, attempt gating, the falsification round
-and in-flight isolation must be unchanged.
+Chosen: spawn auditors with a durable `--session <jobDir>/session.jsonl` by
+default and, on retry, resume that same session with a short continuation
+brief. The auditor keeps its own real transcript — the files it read, the
+commands it ran, the objections it had already formed — so a model switch no
+longer restarts 64 tool calls of reasoning. The alternative (start fresh and
+seed a summary of prior findings) was rejected: a summary is lossy and the
+retry would have to trust evidence it did not gather itself.
 
-## Related, separately reported (from the same `note.md` pass)
+Resume is deliberately **not** universal. It applies only to `provider`,
+`transport` and `rate-limit` failures, where the session is healthy and was
+merely cut off. A `context-exhausted` or compaction-failed audit restarts cold:
+its transcript is already over budget, so resuming reproduces the same failure
+and spends the retry budget to arrive at the same wall.
+
+Resume is refused, and the audit restarts cold, when anything that defines the
+audit has changed: the goal revision, the claim identity (replaced or
+cancelled), the audit tier, or an explicit user cancel. Resuming across any of
+those would judge a different question with the old work.
+
+### A resume that cannot survive cleanup is not a resume
+
+The session file lives in the attempt's job directory, and a failed attempt is
+currently deleted whenever it produced no result — explicitly so kill-and-
+restart loops do not accumulate empty dirs
+(`extensions/goal-loop-auditor-process.ts:2920-2926`). Enabling durable
+sessions alone would therefore persist a file that the very next failure path
+removes, leaving nothing to resume. The retained session must survive that
+cleanup for an attempt that is still resumable, while resultless directories
+must still not accumulate.
+
+### Verdict integrity is unchanged
+
+A resumed audit is still one logical attempt and is judged normally. Verdicts
+remain attempt-gated and revision-validated, a stale or mismatched attempt can
+never apply its result, full-tier falsification still runs, and in-flight
+isolation is preserved. What changes is only that the work is not thrown away.
+Resume lineage (priorAttemptId, from/to model, resume count, revision, tier) is
+recorded in the ledger and in verdict provenance, so an operator can tell a
+resumed audit from a first-pass one without the verdict itself weakening.
+
+## Related, separately reported — OUT OF SCOPE for this goal
 
 - Tweak-confirm "wall of text": `extensions/goal-commands.ts:1206` interpolates
   the full `CURRENT:` and `NEW:` objective unformatted and untruncated, so a
