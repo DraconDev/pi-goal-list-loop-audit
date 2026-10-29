@@ -27,6 +27,22 @@ CASES = {
         'const expired = !isRecoverableProviderError(pending.providerErrorDiagnostic) && deadlines.some((value) => {',
         'const expired = deadlines.some((value) => {',
     ),
+    # The narrowed policy must stay narrow: reinstating the over-broad
+    # five-minute cadence for EVERY recoverable failure (billing, auth, 503)
+    # overrides each family's separately configured pacing and must fail.
+    'blanket-cadence-regression': (
+        'extensions/goal-recovery.ts',
+        'const steadyDelayMs = isQuotaHorizonExempt(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;',
+        'const steadyDelayMs = isRecoverableProviderError(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;',
+    ),
+}
+# Which suites prove each case's protected contract.
+SUITES = {
+    'baseline': ['tests/persistent-provider-recovery.test.ts'],
+    'diagnostic-rewording': ['tests/persistent-provider-recovery.test.ts'],
+    'terminal-compaction-regression': ['tests/persistent-provider-recovery.test.ts'],
+    'expired-audit-regression': ['tests/persistent-provider-recovery.test.ts'],
+    'blanket-cadence-regression': ['tests/quota-horizon-exemption.test.ts'],
 }
 results = []
 for case, mutation in CASES.items():
@@ -47,7 +63,7 @@ for case, mutation in CASES.items():
         toolchain = Path.home() / '.local/share/bun-toolchains/bun-1.3.14'
         if toolchain.is_dir():
             env['PATH'] = str(toolchain) + os.pathsep + env['PATH']
-        command = ['node', 'scripts/run-tests.mjs', 'tests/persistent-provider-recovery.test.ts']
+        command = ['node', 'scripts/run-tests.mjs', *SUITES[case]]
         with (OUT / f'{case}.log').open('w') as output:
             run = subprocess.run(command, cwd=copy, env=env, stdout=output, stderr=subprocess.STDOUT, timeout=300)
         expected_failure = case.endswith('-regression')
