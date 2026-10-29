@@ -265,3 +265,8 @@ Switched to branch 'main'
 (pass) /goal status + /goal pause: no goal id in user-facing text (v0.28.24) [167.79ms]
 (pass) goal-start notify has no (id: …) suffix (v0.28.24 source pin) [6.38ms]
 (pass) v0.34.21 lifecycle: completion audit from a replaced generation leaves the stored claim intact [170.29ms]
+(pass) v0.34.119: impossible completion counts reach the durable auditor claim before the worker starts [717.61ms]
+(pass) v0.34.22: complete_goal returns while a detached auditor finishes and archives approval [439.18ms]
+(pass) v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated [424.64ms]
+(pass) v0.35.x: /glla audits full sanitizes active and global reports [5.77ms]
+(pass) v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining diagnostics [314.60ms]
