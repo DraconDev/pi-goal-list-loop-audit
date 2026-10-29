@@ -22,3 +22,14 @@ tests/persistent-provider-recovery.test.ts:
 (pass) auditor retry-waiting restores the original future due time without an early launch [8.18ms]
 (pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [171.10ms]
 (pass) auditor recovery-pending restores the original future due time without an early launch [6.51ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1090.31ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.26ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [15.56ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [7.43ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [5.91ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [6.58ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 1 file. [1.78s]
+[run-tests] finished in 2s (exit 0)

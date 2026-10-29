@@ -2,11 +2,11 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [0.91ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [0.80ms]
 (pass) provider compaction error preserves willRetry ownership [0.08ms]
 (pass) provider compaction error preserves aborted ownership [0.02ms]
-(pass) provider compaction error preserves fromExtension ownership [0.02ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.70ms]
+(pass) provider compaction error preserves fromExtension ownership [0.01ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.65ms]
 49 |   const before = Date.now();
 50 |   const sends = pi.sent.length;
 51 |   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
@@ -24,32 +24,20 @@ AssertionError: quota recovery does not become a manual blocked pause
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-persistent-control-oxkm7hqz/tests/persistent-provider-recovery.test.ts:54:10
+      at /tmp/glla-persistent-control-89gz5u_f/tests/persistent-provider-recovery.test.ts:54:10
       at processTicksAndRejections (native:7:39)
-(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [46.36ms]
-(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [15.81ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [7.05ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [5.10ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.63ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.31ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.30ms]
+(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [52.61ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [16.39ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [6.57ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [5.80ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.65ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.37ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.31ms]
 (pass) provider recovery restore cannot bypass user pause [0.29ms]
-(pass) provider recovery restore cannot bypass decision [0.29ms]
-(pass) provider recovery restore cannot bypass cancel [0.26ms]
-(pass) provider recovery restore cannot bypass replaced target [0.24ms]
+(pass) provider recovery restore cannot bypass decision [0.33ms]
+(pass) provider recovery restore cannot bypass cancel [0.29ms]
+(pass) provider recovery restore cannot bypass replaced target [0.25ms]
 (pass) provider recovery restore cannot bypass explicit recovery stop [0.27ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [8.49ms]
-(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [167.33ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [6.84ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1079.27ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.21ms]
-
-1 tests failed:
-(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [46.36ms]
-
- 21 pass
- 1 fail
-Ran 22 tests across 1 file. [1.69s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-oERkBp/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-oERkBp
-[run-tests] finished in 2s (exit 1)
+(pass) auditor retry-waiting restores the original future due time without an early launch [9.14ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [160.50ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [8.08ms]
