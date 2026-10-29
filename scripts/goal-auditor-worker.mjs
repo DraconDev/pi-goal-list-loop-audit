@@ -1219,7 +1219,20 @@ async function main() {
     // remains eligible while it emits real RPC/tool/report progress; the
     // confirmed-silence and per-tool watchdogs below are the safety bounds.
     await progress("starting");
-    await startRound(request.prompt, "running");
+    // A resumed attempt continues its OWN transcript: the session already holds
+// the full audit brief and every command it ran before the provider cut it
+// off. Sending the whole brief again would spend the context budget re-stating
+// what the auditor already knows, so the continuation names only what remains.
+const resuming = typeof request.resumeSessionPath === "string" && request.resumeSessionPath === sessionPath;
+const firstRoundPrompt = resuming
+  ? [
+    "You are resuming the SAME audit you had already begun; your previous transcript is above.",
+    "Do not restart from scratch and do not re-run checks whose results you already established.",
+    "Continue from where you stopped, close the remaining verification-contract items, and finish with your verdict.",
+    "If a prior check was interrupted mid-flight, redo only that check.",
+  ].join(" ")
+  : request.prompt;
+await startRound(firstRoundPrompt, "running");
   } catch (error) {
     await finish(false, error instanceof Error ? error.message : String(error));
   }

@@ -7,7 +7,7 @@ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from 
 import { readState } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
-import { inspectAuditJobHealth, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
+import { decideAuditorResume, inspectAuditJobHealth, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
 
 const sessions: Array<{ pi: MockPi }> = [];
 const binaries: Array<string | undefined> = [];
@@ -169,3 +169,48 @@ test('a retained session directory is still reapable by the retention sweep', as
   assert.equal(health.entries[0]?.status, 'dead', 'a retained session is a reapable artifact, not an ambiguous one');
   assert.ok(health.cleanupCandidates > 0, 'the retention sweep can still take it, so sessions do not accumulate unbounded');
 });
+
+for (const [label, priorClass, expected] of [
+  ['a provider failure resumes', 'provider', true],
+  ['a transport failure resumes', 'transport', true],
+  ['a timeout restarts cold', 'timeout', false],
+  ['a no-verdict attempt restarts cold', 'no-verdict', false],
+] as const) {
+  test(`${label} the prior transcript`, () => {
+    const decision = decideAuditorResume({
+      inspection: true,
+      priorAttemptId: 'prior-attempt',
+      priorFailureClass: priorClass,
+      priorRevision: 3, currentRevision: 3,
+      priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+      priorTier: 'full', currentTier: 'full',
+      sessionExists: true,
+    });
+    assert.equal(decision.resume, expected, `${label}: ${JSON.stringify(decision)}`);
+    if (!expected) assert.equal(decision.reason, 'failure-class');
+  });
+}
+
+for (const [label, overrides, reason] of [
+  ['a moved goal revision', { priorRevision: 2, currentRevision: 3 }, 'revision-moved'],
+  ['a replaced claim', { priorClaimAttemptId: 'old-claim', currentClaimAttemptId: 'new-claim' }, 'claim-replaced'],
+  ['a changed audit tier', { priorTier: 'light', currentTier: 'full' }, 'tier-changed'],
+  ['an explicit cancel', { cancelled: true }, 'cancelled'],
+  ['a vanished transcript', { sessionExists: false }, 'no-session'],
+  ['durability turned off', { inspection: false }, 'inspection-off'],
+] as const) {
+  test(`${label} still restarts the audit cold`, () => {
+    const decision = decideAuditorResume({
+      inspection: true,
+      priorAttemptId: 'prior-attempt',
+      priorFailureClass: 'provider',
+      priorRevision: 3, currentRevision: 3,
+      priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+      priorTier: 'full', currentTier: 'full',
+      sessionExists: true,
+      ...overrides,
+    } as never);
+    assert.equal(decision.resume, false, `${label} must not resume`);
+    assert.equal(decision.reason, reason, `${label} names its refusal`);
+  });
+}
