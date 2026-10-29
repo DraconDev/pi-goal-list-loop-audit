@@ -9,7 +9,7 @@ import { registerOwnedTestProcess } from "../scripts/test-process-registry.mjs";
  */
 
 import * as fs from "node:fs/promises";
-import { constants as fsConstants, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
+import { constants as fsConstants, existsSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
 import { spawn as nodeSpawn, spawnSync as nodeSpawnSync, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import * as path from "node:path";
@@ -2519,6 +2519,12 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // v0.38.3: only present when enabled so default dispatches hash
       // byte-identically to pre-feature workers.
       ...(args.inspection ? { inspection: true } : {}),
+      // A resume only enters the request when the caller proved it sound AND
+      // the transcript is really there; a vanished session degrades to a cold
+      // start instead of a failed audit.
+      ...(args.inspection && args.resumeSessionPath && existsSync(args.resumeSessionPath)
+        ? { resumeSessionPath: args.resumeSessionPath }
+        : {}),
       // v0.38.81: only present when light so full-tier dispatches hash
       // byte-identically to pre-feature workers. Old workers ignore the
       // flag (always challenge — the safe direction).
