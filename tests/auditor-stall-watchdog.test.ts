@@ -24,7 +24,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { spawn as realSpawn, type SpawnOptions } from "node:child_process";
+import { spawn as realSpawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -61,27 +61,73 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 10
   }
 }
 
-/** Assert the detached worker was torn down, accepting EITHER observable
- * consequence of the cancellation.
+/** Assert the detached worker was torn down, using PARENT-OBSERVABLE liveness.
  *
  * `terminateWorker` signals the child's process group (SIGTERM, then SIGKILL
- * after the grace window) and the parent then removes the job scratch. The
- * worker's own SIGTERM handler writes a marker — but the handler only exists
- * once the child has BOOTED far enough to install it. On a saturated host the
- * watchdog fires before that, so the signal hits the default disposition and
- * the child dies with no marker: the cancellation is correct, the marker never
- * appears, and a marker-only assertion reports a healthy watchdog as broken
- * (observed as a contended full-gate failure at load 35 on 16 cores).
+ * after the grace window). The worker's own SIGTERM handler writes a marker —
+ * but the handler only exists once the child has BOOTED far enough to install
+ * it. On a saturated host the watchdog fires before that, so the signal hits
+ * the default disposition and the child dies with no marker: the cancellation
+ * is correct, the marker never appears, and a marker-only assertion reports a
+ * healthy watchdog as broken.
  *
- * So the assertion is the cancellation itself, not one host-dependent
- * symptom of it: the handler ran, OR the process is gone and its job scratch
- * was reaped. A worker that survives the cancellation still fails.
+ * The accepted evidence is therefore the parent's OWN observation of that
+ * exact child leaving: `exitCode`/`signalCode` become non-null when the child
+ * exits, whether it exited through its handler (`0`) or through the default
+ * SIGTERM disposition (`SIGTERM`). Both are parent-observable and neither
+ * depends on the child having booted.
+ *
+ * v0.39.54 (audit): this deliberately does NOT accept a missing job scratch
+ * directory as proof. Production reaps that directory after its bounded
+ * termination waits regardless of whether the child actually died, so a
+ * SURVIVING worker also leaves no directory — accepting its absence let a
+ * live worker pass as torn down (reproduced: predicate passed with
+ * `childAlive: true`). Liveness of the specific child is the only sound
+ * evidence, so the marker is accepted as supplementary proof that the handler
+ * ran, never as a substitute for the child being observed exited.
  */
-async function assertWorkerTornDown(childMarker: string, jobDir: string): Promise<void> {
+async function assertWorkerTornDown(childMarker: string, child: () => ChildProcess | undefined): Promise<void> {
   await waitFor(
-    () => existsSync(childMarker) || (jobDir !== undefined && !existsSync(jobDir)),
-    "the detached silent worker was cancelled (handler ran, or the job was reaped)",
+    () => {
+      const worker = child();
+      const observedExit = worker !== undefined && (worker.exitCode !== null || worker.signalCode !== null);
+      return observedExit || existsSync(childMarker);
+    },
+    "the detached silent worker was cancelled (parent observed its exit)",
   );
+  // The wait may have been satisfied by the handler's marker a moment before
+  // the parent's `exit`/`close` event lands. Require the durable fact itself:
+  // the parent saw THIS child exit.
+  await waitFor(
+    () => {
+      const worker = child();
+      return worker !== undefined && (worker.exitCode !== null || worker.signalCode !== null);
+    },
+    "the parent observed the cancelled worker's process exit (a surviving worker fails here)",
+  );
+  assert.equal(workerAlive(child()), false, "the cancelled worker is not still running");
+}
+
+/** Capture the detached worker's ChildProcess handle so a test can assert
+ * parent-observable liveness for that exact child. */
+function captureWorkerSpawn(): { spawn: typeof realSpawn; child: () => ChildProcess | undefined } {
+  let captured: ChildProcess | undefined;
+  const spawn = ((command: string, args: string[], options: SpawnOptions) => {
+    const spawned = realSpawn(command, args, options);
+    captured = spawned;
+    return spawned;
+  }) as typeof realSpawn;
+  return { spawn, child: () => captured };
+}
+
+/** Whether a captured child is still executing. Uses the parent's own exit
+ * observation first, then a `kill(pid, 0)` probe as a second opinion. */
+function workerAlive(child: ChildProcess | undefined): boolean {
+  if (!child) return false;
+  if (child.exitCode !== null || child.signalCode !== null) return false;
+  const pid = child.pid;
+  if (pid === undefined) return false;
+  try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
 const goal = {
