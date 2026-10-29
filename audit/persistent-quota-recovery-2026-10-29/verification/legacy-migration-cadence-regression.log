@@ -1,0 +1,22 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/persistent-provider-recovery.test.ts:
+(pass) the confirmed steady provider recovery cadence is five minutes [0.88ms]
+(pass) provider compaction error preserves willRetry ownership [0.12ms]
+(pass) provider compaction error preserves aborted ownership [0.04ms]
+(pass) provider compaction error preserves fromExtension ownership [0.02ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.74ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [63.70ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [14.56ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [7.25ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [4.80ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.55ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.31ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.31ms]
+(pass) provider recovery restore cannot bypass user pause [0.30ms]
+(pass) provider recovery restore cannot bypass decision [0.29ms]
+(pass) provider recovery restore cannot bypass cancel [0.36ms]
+(pass) provider recovery restore cannot bypass replaced target [0.30ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [8.46ms]

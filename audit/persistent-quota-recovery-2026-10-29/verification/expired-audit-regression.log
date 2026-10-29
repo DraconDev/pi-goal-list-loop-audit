@@ -20,3 +20,31 @@ tests/persistent-provider-recovery.test.ts:
 (pass) provider recovery restore cannot bypass replaced target [0.26ms]
 (pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
 (pass) auditor retry-waiting restores the original future due time without an early launch [8.88ms]
+88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
+89 | ): Promise<void> {
+90 | 	const intervalMs = options.intervalMs ?? 20;
+91 | 	const deadline = untilMs(options.timeoutMs);
+92 | 	while (!predicate()) {
+93 | 		if (Date.now() > deadline) throw new Error(options.message);
+                                            ^
+error: overdue provider claim launches despite legacy expiry
+      at waitFor (/tmp/glla-persistent-control-6ozkga3v/tests/harness/host-budget.ts:93:40)
+      at async <anonymous> (/tmp/glla-persistent-control-6ozkga3v/tests/persistent-provider-recovery.test.ts:189:13)
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6021.04ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [21.86ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1085.15ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.21ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [14.18ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [5.74ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [6.05ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [5.56ms]
+
+1 tests failed:
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6021.04ms]
+
+ 25 pass
+ 1 fail
+Ran 26 tests across 1 file. [7.61s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-EnGhlK/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-EnGhlK
+[run-tests] finished in 8s (exit 1)
