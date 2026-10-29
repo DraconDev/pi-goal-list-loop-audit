@@ -612,8 +612,9 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
   // re-arms through this same scheduler, but on the retry plan's own backoff
   // instead of the 60s no-verdict tick — the claim must keep trying without
   // re-probing a named provider wall every minute.
+  const persistentProvider = isRecoverableProviderError(pending.providerErrorDiagnostic);
   const requestedDelayMs = options?.delayMs;
-  const cadenceMs = Number.isFinite(requestedDelayMs) && (requestedDelayMs as number) >= 1_000
+  const cadenceMs = persistentProvider ? (auditorRecoveryRetryDelayOverrideMs ?? PERSISTENT_PROVIDER_RETRY_MS) : Number.isFinite(requestedDelayMs) && (requestedDelayMs as number) >= 1_000
     ? Math.floor(requestedDelayMs as number)
     : auditorRecoveryRetryDelayMs();
   const retryAt = Number.isFinite(storedRetryMs) && storedRetryMs > now
@@ -621,10 +622,12 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     : new Date(now + cadenceMs).toISOString();
   const next = {
     ...pending,
+    ...(persistentProvider ? { phase: 'recovery-pending' as const, retryUntil: undefined, automaticRecoveryUntil: undefined } : {}),
     recoveryRetryAt: retryAt,
     ...(aggressive ? { automaticRecoveryFirstAt: window.firstAt, ...(window.until ? { automaticRecoveryUntil: window.until } : { automaticRecoveryUntil: undefined }) } : {}),
   };
   const generation = sessionGeneration;
+  const scheduledGoalId = state.goal?.id;
   if (scheduledAuditorRecoveryAt === retryAt && scheduledAuditorRecoveryGeneration === generation && scheduledAuditorRecoveryTimer) return next;
   clearScheduledAuditorRecoveryTimer();
   scheduledAuditorRecoveryAt = retryAt;
@@ -650,7 +653,8 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     if (!fresh) return;
     const goal = state.goal;
     const claim = goal?.pendingCompletion;
-    if (!goal || goal.status !== "paused" || !claim || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
+    if (!goal || goal.id !== scheduledGoalId || goal.status !== "paused" || !claim
+      || claim.attemptId !== pending.attemptId || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
     const aggressiveNow = aggressiveAuditorRecoveryEnabled(fresh.cwd);
     if (claim.automaticRecoveryAttempted === true && !aggressiveNow && !isRecoverableProviderError(claim.providerErrorDiagnostic)) {
       updateGoal({
@@ -912,6 +916,12 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   if (!goal || goal.status !== "paused" || !claim) return false;
   if ((claim.phase ?? "recovery-pending") !== "recovery-pending") return false;
   if (completionAuditInFlight) return false;
+  if (isRecoverableProviderError(claim.providerErrorDiagnostic)) {
+    if (goal.pauseSource !== 'system' || goal.pauseKind === 'decision'
+      || !/^(?:auditor retry:|auditor blocked:)/.test(goal.pauseReason ?? '')) return false;
+    const due = Date.parse(claim.recoveryRetryAt ?? goal.pauseResumeAt ?? '');
+    if (Number.isFinite(due) && due > Date.now()) return false;
+  }
 
   const generation = sessionGeneration;
   const ctx = freshCtxForGeneration(generation);
