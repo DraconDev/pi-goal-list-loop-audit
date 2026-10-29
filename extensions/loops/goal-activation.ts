@@ -264,6 +264,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
+import { ownsPersistentProviderWait } from '../persistent-provider-recovery.js';
 import { rearmLegacyElapsedRecoveryHold, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
@@ -2383,7 +2384,11 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // general, so the draft-confirmed flag releases cold restore even when
     // the global autoResume is unset or explicitly false.
     const effectiveAutoResume = state.goal?.runToDone === true ? true : autoResumeSetting;
-    const autoResume = shouldAutoResumeOnSessionStart(event?.reason, effectiveAutoResume);
+    // Recovery-owned provider waits retain their already-confirmed authority
+    // across replacement. This does not grant consent to an unrelated cold
+    // load, explicit pause, decision or missing-input blocker.
+    const autoResume = shouldAutoResumeOnSessionStart(event?.reason, effectiveAutoResume)
+      || ownsPersistentProviderWait(state);
     // Consent is established by the same lifecycle paths that are allowed to
     // resume work. Do not release merely because a scheduler was asked to
     // run; rejected/held schedules must leave the old report suppressed.
