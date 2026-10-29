@@ -1,6 +1,8 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
 import { ownsPersistentProviderWait } from '../extensions/persistent-provider-recovery.js';
@@ -13,9 +15,11 @@ const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 const settingsBefore = fs.readFileSync(settingsPath, 'utf8');
 const sessions: { pi: MockPi; ctx: ReturnType<typeof makeMockCtx> }[] = [];
 const quotaError = 'Auto-compaction failed: Summarization failed: Codex error: The usage limit has been reached';
+const originalBinary = process.env.GLLA_PI_BINARY;
 afterEach(async () => {
   for (const { pi, ctx } of sessions.splice(0)) await pi.fire('session_shutdown', { reason: 'test' }, ctx);
   fs.writeFileSync(settingsPath, settingsBefore);
+  if (originalBinary === undefined) delete process.env.GLLA_PI_BINARY; else process.env.GLLA_PI_BINARY = originalBinary;
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
 });
 
@@ -93,6 +97,45 @@ for (const [label, mutate] of [
     assert.equal(ownsPersistentProviderWait(saved), true);
     mutate(saved);
     assert.equal(ownsPersistentProviderWait(saved), false);
+  });
+}
+
+for (const overdue of [false, true]) {
+  test(`auditor provider wait restores ${overdue ? 'one overdue attempt beyond legacy horizons' : 'the original future due time without an early launch'}`, async () => {
+    const cwd = tmpCwd();
+    const marker = path.join(cwd, 'worker-starts');
+    const worker = path.join(cwd, 'inert-provider.mjs');
+    fs.writeFileSync(worker, `#!/usr/bin/env node\nimport fs from 'node:fs';\nprocess.stdin.once('data',()=>fs.appendFileSync(${JSON.stringify(marker)},'started\\n'));\n`);
+    fs.chmodSync(worker, 0o700);
+    process.env.GLLA_PI_BINARY = worker;
+    fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false }));
+    const due = new Date(Date.now() + (overdue ? -1000 : PERSISTENT_PROVIDER_RETRY_MS)).toISOString();
+    seedState(cwd, { goal: seedGoal({ status: 'paused', pauseSource: 'system', pauseKind: 'wait', pauseResumeAt: due,
+      pauseReason: 'auditor retry: provider error', pendingCompletion: {
+        at: '2020-01-01T00:00:00.000Z', phase: 'retry-waiting', attemptId: 'old-provider-attempt',
+        recoveryEpisodeKey: 'quota-fixture', providerErrorDiagnostic: quotaError,
+        retryAttempts: 10000, retryUntil: '2020-01-02T00:00:00.000Z', automaticRecoveryUntil: '2020-01-02T00:00:00.000Z',
+        completionSummary: 'Stored provider recovery claim',
+      } }) });
+    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+    const pi = new MockPi(); activate(pi.api);
+    const ctx = makeMockCtx(cwd);
+    Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+    sessions.push({ pi, ctx });
+    await pi.fire('session_start', { reason: 'startup' }, ctx);
+    if (overdue) {
+      await waitFor(() => fs.existsSync(marker), { timeoutMs: 6000, intervalMs: 10, message: 'overdue provider claim launches despite legacy expiry' });
+      await pi.fire('agent_settled', {}, ctx);
+      assert.equal(fs.readFileSync(marker, 'utf8').trim(), 'started', 'restore launches exactly one worker');
+      assert.equal(readState(cwd).goal?.status, 'auditing');
+      assert.equal(readState(cwd).goal?.pendingCompletion?.completionSummary, 'Stored provider recovery claim');
+    } else {
+      assert.equal(readState(cwd).goal?.pauseResumeAt, due);
+      assert.equal(readState(cwd).goal?.pendingCompletion?.phase, 'retry-waiting');
+      assert.equal(fs.existsSync(marker), false);
+    }
+    assert.equal(readState(cwd).loadHoldAt, undefined, 'owned provider recovery survives cold startup');
+    assert.equal(pi.sent.length, 0, 'stored audit recovery dispatches no main-agent turn');
   });
 }
 
