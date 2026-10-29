@@ -296,8 +296,7 @@ test('the incident journal end-state retries after a stock reopen without consen
       primary: 'minimax/MiniMax-M3.1-Flash', active: 'openai-codex/gpt-6-luna',
       attempted: ['minimax/MiniMax-M3.1-Flash', 'openai-codex/gpt-6-luna'],
       owner: { kind: 'goal', id }, kind: 'goal', attempts: 1001, reason: 'provider error',
-      providerErrorDiagnostic: `Codex error: The usage limit has been reached`,
-      retryAt: overdue,
+      providerErrorDiagnostic: 'Codex error: The usage limit has been reached', retryAt: overdue,
     },
   });
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
@@ -307,17 +306,21 @@ test('the incident journal end-state retries after a stock reopen without consen
   await pi.fire('session_start', { reason: 'startup' }, ctx);
 
   const restored = readState(cwd);
-  assert.equal(restored.loadHoldAt, undefined, 'a due recovery wait is not re-held for a decision it already made');
   assert.equal(restored.goal?.pauseKind, 'wait', 'the migration converts the blocked pause into a timed wait');
-  assert.equal(restored.mainModelRecovery?.attempts, undefined, 'attempt 1001 proves no attempt-count cutoff');
+  assert.equal(restored.mainModelRecovery?.attempts, undefined, 'attempt 1001 proves there is no attempt-count cutoff');
 
-  // An overdue wait probes immediately; a future one arms a timer. Either is
-  // the requirement — what must NOT happen is a silent permanent hold.
-  await waitFor(() => readState(cwd).mainModelRecovery === undefined
-    || mainModelRecoveryRuntimeStatus()?.retryTimerArmed === true, 3000);
-  const dispatched = mainModelRecoveryRuntimeStatus()?.retryTimerArmed === true
-    || readState(cwd).mainModelRecovery === undefined;
-  assert.ok(dispatched, 'the overdue recovery either fired or armed its retry timer');
-  const ledger = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8');
-  assert.doesNotMatch(ledger, /load_hold_engaged/, 'the incident state does not re-engage the cold-load hold');
+  // The retry must actually run. The provider in this fixture is still
+  // unavailable, so the probe is the observable dispatch: it fires without any
+  // consent command, and only a failed probe may re-park the work.
+  await waitFor(() => fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').includes('main_model_probe'), 5000);
+  const entries = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
+    .split('\n').filter(Boolean).map((line) => JSON.parse(line) as { type: string; value?: any });
+  const probeAt = entries.findIndex((entry) => entry.type === 'main_model_probe');
+  assert.ok(probeAt >= 0, 'the overdue recovery dispatches its retry after a stock reopen');
+  assert.ok(entries.slice(0, probeAt).some((entry) => entry.type === 'provider_compaction_recovery_restored'),
+    'the migration precedes the retry');
+  assert.ok(!entries.slice(0, probeAt).some((entry) => entry.type === 'load_hold_engaged'),
+    'the incident state is never re-held as "Held on session restore" before its retry runs');
+  // Nothing asked the operator for permission: no resume command ran.
+  assert.equal(pi.sent.filter((entry) => /resume/.test(JSON.stringify(entry))).length, 0);
 });
