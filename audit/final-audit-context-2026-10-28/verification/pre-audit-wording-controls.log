@@ -1,0 +1,76 @@
+# Isolated controls: pre-audit admission tests must assert durable state, not wording
+#
+# Requirement under test (verification contract): "above-target eligible
+# pre-audit/dispatch boundaries invoke safe compaction or retain durable
+# recovery when unavailable/failed; in-flight audits are not disrupted, and
+# completion/recovery reaches the next safe compaction boundary without lost or
+# duplicate work" — demonstrated by isolated controls that "do not rely on
+# incidental object identity, wording or test totals".
+#
+# The previous tests asserted two human-facing strings:
+#   assert.match(result.content[0]!.text, /AUDIT PENDING/);
+#   assert.match(buildWidgetLines(...), /waiting for safe compaction boundary/);
+# These pin diagnostic English and widget copy, so a harmless rewording failed
+# the suite while the protected behavior was intact.
+#
+# Control surface: disposable copy /tmp/glla-p1 (since removed), carrying
+# extensions/, scripts/, tests/, package.json, tsconfig.json, bunfig.toml and a
+# symlinked node_modules. bunfig.toml is required: its [test] preload
+# (./tests/harness/setup.ts) provides the hermetic global-settings redirect,
+# and without it even an unmodified copy fails on ctx.modelRegistry.find.
+#
+# ---------------------------------------------------------------------------
+# BASELINE (unmodified copy):
+#    11 pass
+#     0 fail
+#
+# ---------------------------------------------------------------------------
+# CONTROL A — harmless rewording must PASS (behavior untouched).
+# Reworded the pre-audit response text in extensions/loops/goal-tools.ts and
+# BOTH widget phase labels in extensions/goal-loop-display.ts
+# ("waiting for safe compaction boundary" -> "holding for a safe compaction
+# boundary"):
+#   "AUDIT PENDING — nonterminal. ..."
+#     -> "Detached audit queued — not yet terminal. Claim persisted; a
+#         preventive compaction check runs at the next owned idle boundary.
+#         Stop here."
+#
+#    11 pass
+#     0 fail
+#   control-A-exit=0
+#
+# RESULT: correctly PASSES. Neither response copy nor widget copy is a load-
+# bearing requirement; the suite now asserts behavior instead of prose. Under
+# the previous assertions this exact edit failed 3 tests (the auditor reported
+# `/AUDIT PENDING/` and `/waiting for safe compaction boundary/` mismatches).
+#
+# ---------------------------------------------------------------------------
+# CONTROL B — removing the admission guard must FAIL on DURABLE state.
+# Deleted the `if (preventiveCompactionDue(ctx)) { ... return staged }` block so
+# completion dispatches immediately inside the still-busy tool callback instead
+# of staging revision-bound admission debt for an owned idle boundary. This is
+# the actual regression the objective repairs.
+#
+#   71 |  assert.equal(staged.pendingCompletion?.preAuditCompaction, true);
+#       |         ^ AssertionError: Expected values to be strictly equal:
+#   (fail) busy complete_goal stages admission, then success launches exactly one stored audit
+#   (fail) busy complete_goal stages admission, then failure launches exactly one stored audit
+#   (fail) busy complete_goal stages admission, then unavailable launches exactly one stored audit
+#   (fail) late compaction callbacks cannot dispatch across revision change
+#   (fail) late compaction callbacks cannot dispatch across cancel change
+#   control-B-exit=1
+#
+# RESULT: correctly FAILS, and it fails on the DURABLE admission assertion
+# (pendingCompletion.preAuditCompaction), not on any message text — proving the
+# replacement assertions still detect the meaningful regression.
+#
+# ---------------------------------------------------------------------------
+# Live repository source (unmodified): tests/pre-audit-compaction.test.ts runs
+# 11 passed / 0 failed. Retained coverage: durable staged admission
+# (preAuditCompaction + stored attemptId), no worker before owned idle
+# admission, a falsely settled busy host stays held, exactly-once compaction
+# and exactly-once audit dispatch across success/failure/unavailable, no audit
+# overlapping compaction, preserved claim summary/objective/contract after
+# admission, no extra main-agent turn, and decision/cold-load/cancel/revision/
+# session/owner gating. A grep of both amended test files for the former
+# wording patterns returns no matches.

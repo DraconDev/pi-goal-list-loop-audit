@@ -154,6 +154,22 @@ audit blocking it.
   made the UNMODIFIED copy fail 2/14 with a `ctx.modelRegistry.find` TypeError.
   That was an environment defect of the control, and the baseline was
   re-established at 14/0 before any control was credited.
+- The same class of pin remained in `tests/pre-audit-compaction.test.ts`, which
+  asserted `/AUDIT PENDING/` on the tool response and
+  `/waiting for safe compaction boundary/` on the rendered widget. Both are
+  diagnostic copy, not the protected contract, so they are replaced with
+  durable and structural evidence: the persisted `preAuditCompaction` debt plus
+  stored `attemptId`, a staged admission that is not an error, and the
+  non-live-audit classification expressed as "the compaction reason is not
+  `audit` and the render carries no `DETACHED · LIVE` liveness badge". The
+  exactly-once dispatch, busy-host hold, preserved claim and
+  decision/cold-load/cancel/revision/session/owner gating assertions are
+  retained unchanged. Controls are in
+  `verification/pre-audit-wording-controls.log`, on a copy whose baseline was
+  re-established at 11/0: CONTROL A reworded the response text and both widget
+  labels and the suite still passes 11/0; CONTROL B removed the admission guard
+  and the suite fails on the DURABLE assertion
+  (`pendingCompletion.preAuditCompaction`), not on prose.
 - Fresh-context reviewer `116ba0a2-9aee-47bc-b236-0b84545e6d90` raised an
   undeclared-global blocker; resumed reviewer `b60f88bc-f960-4aa9-8a29-6628f2db2271`
   verified the intentional runtime-global bridge and the 31/0 focused log,
