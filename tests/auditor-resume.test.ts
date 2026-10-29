@@ -201,13 +201,15 @@ for (const [label, overrides, reason] of [
 ] as const) {
   test(`${label} still restarts the audit cold`, () => {
     const decision = decideAuditorResume({
-      inspection: true,
-      priorAttemptId: 'prior-attempt',
-      priorFailureClass: 'provider',
-      priorRevision: 3, currentRevision: 3,
-      priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
-      priorTier: 'full', currentTier: 'full',
-      sessionExists: true,
+      ...{
+        inspection: true,
+        priorAttemptId: 'prior-attempt',
+        priorFailureClass: 'provider',
+        priorRevision: 3, currentRevision: 3,
+        priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+        priorTier: 'full', currentTier: 'full',
+        sessionExists: true,
+      },
       ...overrides,
     } as never);
     assert.equal(decision.resume, false, `${label} must not resume`);
