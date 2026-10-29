@@ -104,3 +104,5 @@ tests/load-without-autostart.test.ts:
 (pass) v0.35.23: DEFAULT cold load HELDS a persisted live loop instead of resuming its ticks [502.91ms]
 (pass) v0.35.23: explicit autoResume:true restores load-time automation (opt-in = today's behavior) [403.85ms]
 (pass) v0.35.23: /goal resume releases the load hold and re-arms automation [563.59ms]
+(pass) v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23) [1617.10ms]
+(pass) v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe [405.54ms]
