@@ -125,7 +125,7 @@ audit blocking it.
 
 ## Verification progress
 
-- `verification/affected-suites.log`: 365 passed, zero failed across 18 files,
+- `verification/affected-suites.log`: 366 passed, zero failed across 18 files,
   including semantic consent, atomic/malformed marker recovery, admission
   success/failure/unavailable cases, late revision/cancel/session/owner races,
   audit recovery, list approved-completion handoff and decision/cold-load holds.
@@ -221,12 +221,13 @@ audit blocking it.
   reported while the new one does not. The repaired suites run 27 passed /
   zero failed, and the two tests dropped from ~32s to ~6s because they no
   longer wait out a handler that was never installed.
-- Final `npm run release:check` on the finished tree (including the repaired
-  teardown assertion), run at a quiet window (load ~8–11): **exit 0**, retained
-  in `verification/release-check.exit` and
+- Final `npm run release:check` on the finished tree (including the
+  durable-state amendment assertions, the reworded-message control and the
+  repaired teardown assertion), run at a quiet window (load ~6–8): **exit 0**,
+  retained in `verification/release-check.exit` and
   `verification/release-check.log`: **4,433 passed, one pre-existing env-gated
   skip, zero failed; 4,434 discovered across 474 files**, runner exit 0 in
-  **889 seconds** — down from 5,787 s for the same suite under contention,
+  **798 seconds** — down from 5,787 s for the same suite under contention,
   because no test now waits out a starvation timeout. Jiti identity regression, auditor-extension fences, inventory check,
   pack dry-run and installed packed-worker/skill probes all succeeded after it.
   This is local packed
