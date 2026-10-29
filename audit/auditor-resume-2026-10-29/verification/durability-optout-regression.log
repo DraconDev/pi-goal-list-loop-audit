@@ -3,18 +3,18 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [501.40ms]
-(pass) a failed attempt keeps the session a retry can resume [271.79ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [210.01ms]
-(pass) auditorInspection=false restores the original --no-session spawn [270.67ms]
-(pass) a retained session directory is still reapable by the retention sweep [4.92ms]
-(pass) a provider failure resumes the prior transcript [0.15ms]
+(pass) the default dispatch asks for a durable auditor session, not --no-session [294.78ms]
+(pass) a failed attempt keeps the session a retry can resume [293.82ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [215.01ms]
+(pass) auditorInspection=false restores the original --no-session spawn [191.38ms]
+(pass) a retained session directory is still reapable by the retention sweep [3.23ms]
+(pass) a provider failure resumes the prior transcript [0.14ms]
 (pass) a transport failure resumes the prior transcript [0.02ms]
-(pass) a timeout restarts cold the prior transcript
+(pass) a timeout restarts cold the prior transcript [0.04ms]
 (pass) a no-verdict attempt restarts cold the prior transcript
 (pass) a moved goal revision still restarts the audit cold [0.07ms]
 (pass) a replaced claim still restarts the audit cold
-(pass) a changed audit tier still restarts the audit cold
+(pass) a changed audit tier still restarts the audit cold [0.02ms]
 (pass) an explicit cancel still restarts the audit cold
 (pass) a vanished transcript still restarts the audit cold
 210 |         priorTier: 'full', currentTier: 'full',
@@ -34,16 +34,16 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-iv5gfhrq/tests/auditor-resume.test.ts:215:12
+      at /tmp/glla-auditor-resume-control-wgodpzl0/tests/auditor-resume.test.ts:215:12
       at fn (node:test:215:18)
-(fail) durability turned off still restarts the audit cold [1.16ms]
-(pass) a resumed dispatch spawns against the prior attempt transcript [320.71ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [330.13ms]
-(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.31ms]
+(fail) durability turned off still restarts the audit cold [0.94ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [174.26ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [241.71ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.23ms]
 
  17 pass
  1 fail
-Ran 18 tests across 1 file. [3.53s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-j4gtXO/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-j4gtXO
-[run-tests] finished in 4s (exit 1)
+Ran 18 tests across 1 file. [2.21s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-TLweIr/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-TLweIr
+[run-tests] finished in 2s (exit 1)

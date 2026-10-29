@@ -3,3 +3,47 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
+(pass) the default dispatch asks for a durable auditor session, not --no-session [254.94ms]
+(pass) a failed attempt keeps the session a retry can resume [204.74ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [184.24ms]
+(pass) auditorInspection=false restores the original --no-session spawn [197.33ms]
+(pass) a retained session directory is still reapable by the retention sweep [3.47ms]
+(pass) a provider failure resumes the prior transcript [0.13ms]
+(pass) a transport failure resumes the prior transcript [0.03ms]
+(pass) a timeout restarts cold the prior transcript
+(pass) a no-verdict attempt restarts cold the prior transcript
+(pass) a moved goal revision still restarts the audit cold [0.05ms]
+210 |         priorTier: 'full', currentTier: 'full',
+211 |         sessionExists: true,
+212 |       },
+213 |       ...overrides,
+214 |     } as never);
+215 |     assert.equal(decision.resume, false, `${label} must not resume`);
+                 ^
+AssertionError: a replaced claim must not resume
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-2r_dt0ma/tests/auditor-resume.test.ts:215:12
+      at fn (node:test:215:18)
+(fail) a replaced claim still restarts the audit cold [0.84ms]
+(pass) a changed audit tier still restarts the audit cold [0.02ms]
+(pass) an explicit cancel still restarts the audit cold
+(pass) a vanished transcript still restarts the audit cold
+(pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [211.41ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [372.56ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.72ms]
+
+ 17 pass
+ 1 fail
+Ran 18 tests across 1 file. [2.80s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-uYfzUD/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-uYfzUD
+[run-tests] finished in 3s (exit 1)
