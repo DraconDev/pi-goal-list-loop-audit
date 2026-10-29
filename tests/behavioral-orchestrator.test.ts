@@ -31,6 +31,7 @@ import { recentActions } from "../extensions/loops/goal-ui.js";
 import { __testOnlyHeartbeatTick, __testOnlySetZombieRunWindows, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes, __testOnlySubagentHangProbes, upsertSubagentHangProbe, endSubagentHangProbe } from "../extensions/goal-heartbeat.js";
 import { mainModelRecoverySucceeded } from "../extensions/goal-recovery.js";
 import { isProviderRetryPending } from "../extensions/quota-retry.js";
+import { PERSISTENT_PROVIDER_RETRY_MS } from "../extensions/main-model-recovery.js";
 
 // v0.29.5: autoResume is GLOBAL-only now — tests opt in by writing the
 // harness's global settings path, and afterEach resets it so the opt-in
@@ -3373,14 +3374,17 @@ test("a successful core retry clears generic provider recovery and resumes the p
   assert.equal(parked.mainModelRecovery?.quotaSignal, undefined, "provider wording is not persisted as a policy signal");
   assert.ok(parked.mainModelRecovery?.retryAt, "bounded provider retry is persisted");
   const retryMs = Date.parse(parked.mainModelRecovery!.retryAt!) - Date.now();
-  assert.ok(retryMs > 0 && retryMs <= 5_500, `first provider retry is bounded: ${retryMs}ms`);
+  // A generic provider wall is retried on the durable five-minute cadence, not
+  // the 5s eager glitch path; the due time itself is the contract.
+  assert.ok(retryMs > 0 && retryMs <= PERSISTENT_PROVIDER_RETRY_MS + 500, `provider retry uses the durable five-minute cadence: ${retryMs}ms`);
+  assert.ok(retryMs >= PERSISTENT_PROVIDER_RETRY_MS - 1_500, `provider retry is not shortened below the confirmed cadence: ${retryMs}ms`);
+  assert.equal(parked.goal.pauseResumeAt, parked.mainModelRecovery?.retryAt, "the pause surface shows the same durable due time");
   assert.match(parked.goal.pauseReason ?? "", /main model recovery/);
   assert.doesNotMatch(`${parked.goal.pauseReason} ${parked.goal.pauseSuggestedAction}`, /quota exhausted|quota wall|Token Plan|429|rate_limit_error/i, "rate-limit display copy does not claim quota exhaustion or leak the provider payload");
-  const hourly = readLedger(cwd).find((entry) => entry.type === "hourly_probe_scheduled");
-  assert.ok(hourly, "the hourly reset probe is durably scheduled");
-  const fireAt = new Date(String(hourly!.value.fireAt));
-  assert.equal(fireAt.getMinutes(), 0, "the hourly retry uses the hourly slot");
-  assert.equal(fireAt.getSeconds(), 30, "the reset probe waits for the provider's post-hour skew window");
+  // A provider wait keeps ONE cadence. The :00:30 hourly ticker is for legacy
+  // non-provider retries; letting it also fire would queue-jump the durable
+  // five-minute schedule with a second timer for the same claim.
+  assert.equal(readLedger(cwd).some((entry) => entry.type === "hourly_probe_scheduled"), false, "a provider recovery does not also arm a competing hourly probe");
   assert.equal(ctx.ui.matching("429").length, 0, "notifications never show the raw 429");
   assert.equal(ctx.ui.matching("Token Plan").length, 0, "notifications never claim Token Plan exhaustion");
   assert.ok(parked.mainModelRecovery, "the test starts from a durable recovery wait");
