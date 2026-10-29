@@ -33,6 +33,7 @@ import {
 } from "./goal-loop-core.js";
 import {
   classifyMainModelFailure,
+  isRecoverableProviderError,
   isMainModelFallbackFailure,
   mainModelFailureDelayMs,
   modelRef,
@@ -639,7 +640,7 @@ export async function runAuditorFallbackWithPolicy(
     // Missing models and explicit account walls cannot heal in a same-ref
     // retry. Persist exhaustion and advance immediately; the session tail
     // remains eligible even when it shares the configured pin's provider.
-    if (isUnresolvableAuditorModelRefError(first.error) || (failureClass(first) === "provider" && isAuditorAccountFailure(first.error))) {
+    if (isUnresolvableAuditorModelRefError(first.error) || isRecoverableProviderError(first.error) || (failureClass(first) === "provider" && isAuditorAccountFailure(first.error))) {
       if (isAuditorAccountFailure(first.error)) skipSameProviderRungs(selectedRef);
       currentRef = selectedRef;
       const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
