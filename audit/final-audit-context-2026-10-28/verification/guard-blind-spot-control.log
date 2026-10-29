@@ -1,0 +1,31 @@
+# Isolated negative control: the "no hand-rolled wait deadline" guard
+#
+# Performed in a disposable copy (/tmp/glla-guard-control, since removed) with
+# ROOT pointed at that copy. Two fixture test files were added:
+#
+#   tests/zz-perf-deadline-control.test.ts   -> `performance.now() + 2000`
+#   tests/zz-date-deadline-control.test.ts   -> `untilMs(2000)` (compliant)
+#
+# CASE 1 (new guard, clock = (?:Date|performance).now() ) -- FAILS, correct:
+#
+#   + [ 'tests/zz-perf-deadline-control.test.ts:5  const deadline = performance.now() + 2000;' ]
+#   - []
+#   (fail) no test file hand-rolls a wait deadline any more [850.06ms]
+#    0 pass
+#    1 fail
+#
+#   The compliant untilMs() file was NOT reported, so the guard still tolerates
+#   the correct form.
+#
+# CASE 2 (OLD guard, clock = Date.now() only) -- PASSES, the bug:
+#
+#   (pass) no test file hand-rolls a wait deadline any more [745.94ms]
+#    1 pass
+#    0 fail
+#
+#   The identical offending file is silently accepted. This is the hole that
+#   let tests/pre-audit-compaction.test.ts and
+#   tests/compaction-settled-boundary.test.ts ship hand-rolled
+#   performance.now() deadlines and then false-fail a contended full gate.
+#
+# Live sources were not modified by this control; the disposable copy is gone.

@@ -162,6 +162,20 @@ audit blocking it.
   host contention, not a claimed product regression, and no assertion was
   loosened: every condition is still required, only the wall-clock allowance
   follows the CPU actually available.
+- Guard defect found and fixed while investigating that: the repository already
+  had a rule forbidding hand-rolled wait deadlines
+  (`tests/host-contention.test.ts`, "no test file hand-rolls a wait deadline any
+  more"), and it matched only `Date.now()`. Waits written against
+  `performance.now()` — including two of the ones that false-failed the gate —
+  passed the guard silently. The matcher now accepts either clock, so the rule
+  covers the shape it exists to forbid. An isolated-copy control
+  (`verification/guard-blind-spot-control.log`) shows the old matcher PASSES a
+  `performance.now() + 2000` deadline and the new one FAILS it, while a
+  compliant `untilMs(2000)` wait is still accepted in both. This is the
+  durable fix for that class; the host's own oversubscription (measured 6.5x
+  load per CPU against the deliberately pinned 2x ceiling in
+  `extensions/goal-loop-shield.ts` `MECHANICAL_LOAD_SCALE_MAX`) is left alone
+  because that ceiling is an intentional product contract, not a test defect.
 - Final `npm run release:check`: **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:
   **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered
