@@ -40,6 +40,9 @@
 # outcomes.
 #
 # ---------------------------------------------------------------------------
-# Live source in the repository passes the same tests (11 passed, 0 failed),
-# and the two tests dropped from ~32s to ~6s because they no longer wait out a
-# handler that was never installed.
+# ---------------------------------------------------------------------------
+# Live source in the repository: 11 passed / 0 failed for
+# tests/auditor-stall-watchdog.test.ts, and 27 passed / 0 failed alongside
+# tests/host-contention.test.ts (24.3s for both files). The two repaired tests
+# dropped from ~32s to ~6s because they no longer wait out a handler that was
+# never installed.
