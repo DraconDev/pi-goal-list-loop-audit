@@ -73,9 +73,36 @@ test('quota compaction failure retains a five-minute durable recovery and duplic
   sessions.push({ pi: replacement, ctx: replacementCtx });
   const restored = readState(cwd);
   assert.equal(restored.mainModelRecovery?.retryAt, durable.mainModelRecovery?.retryAt, 'reload does not renew or shorten the due time');
-  assert.equal(restored.loadHoldAt, undefined, 'a proven recovery-owned wait does not become an unrelated cold-load hold');
+  // A consent-less cold load engages the ordinary load hold — that is a
+  // deliberate "automation waits for your decision" gate, not the permanent
+  // manual pause this repair targets. The recovery claim, phase and due time
+  // must survive it intact so consent resumes exactly the saved wait.
   assert.equal(restored.goal?.pauseKind, 'wait');
+  assert.equal(restored.mainModelRecovery?.manualResumeRequired, undefined, 'a reload never converts recovery into a manual-hold requirement');
+  assert.equal(restored.goal?.status, 'paused', 'the saved work stays parked, not abandoned');
   assert.equal(replacement.sent.length, 0, 'a future retry is not dispatched early after restore');
+});
+
+test('consent after a cold reload resumes the same durable provider wait, not a new episode', async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [] }));
+  const due = new Date(Date.now() + PERSISTENT_PROVIDER_RETRY_MS).toISOString();
+  const id = 'consent-restore';
+  seedState(cwd, { goal: seedGoal({ id, status: 'paused', pauseKind: 'wait', pauseSource: 'system',
+    pauseReason: 'main model recovery — retrying', pauseResumeAt: due }), mainModelRecovery: {
+    primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], owner: { kind: 'goal', id },
+    kind: 'goal', attempts: 1, reason: 'provider error', providerErrorDiagnostic: quotaError, retryAt: due,
+  } });
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd);
+  sessions.push({ pi, ctx });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  assert.equal(readState(cwd).mainModelRecovery?.retryAt, due, 'the cold load preserves the due time verbatim');
+  await pi.command('goal', 'resume', ctx);
+  const resumed = readState(cwd);
+  assert.equal(resumed.goal?.status, 'active', 'consent resumes the saved work');
+  assert.equal(resumed.mainModelRecovery?.retryAt, undefined, 'an immediate probe clears the wait instead of leaving a stale timer');
 });
 
 for (const userHeld of [false, true]) {
@@ -100,7 +127,7 @@ for (const userHeld of [false, true]) {
       assert.equal(restored.mainModelRecovery?.retryAt, undefined, 'an explicit user hold gains no recovery timer debt');
     } else {
       assert.equal(restored.goal?.pauseKind, 'wait');
-      assert.equal(restored.loadHoldAt, undefined);
+      assert.equal(restored.mainModelRecovery?.manualResumeRequired, undefined, 'migration expects no manual-hold requirement');
       assert.ok(Date.parse(restored.mainModelRecovery!.retryAt!) >= start + PERSISTENT_PROVIDER_RETRY_MS);
       assert.equal(restored.goal?.pauseResumeAt, restored.mainModelRecovery?.retryAt);
     }
@@ -169,7 +196,7 @@ for (const phase of ['retry-waiting', 'recovery-pending'] as const) for (const o
       assert.equal(readState(cwd).goal?.pendingCompletion?.phase, phase);
       assert.equal(fs.existsSync(marker), false);
     }
-    assert.equal(readState(cwd).loadHoldAt, undefined, 'owned provider recovery survives cold startup');
+    assert.equal(readState(cwd).mainModelRecovery?.manualResumeRequired, undefined, 'owned provider recovery survives cold startup');
     assert.equal(pi.sent.length, 0, 'stored audit recovery dispatches no main-agent turn');
   });
 }

@@ -2776,8 +2776,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // v0.35.23: restore itself may have consented to live work (journal
       // replay activating a deferred item, stale rearm) — a hold must never
       // freeze what restore deliberately started.
-      if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number"
-        && !ownsPersistentProviderWait(state)) {
+      if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number") {
         replaceState({ ...state, loadHoldAt: Date.now() });
         persistState(ctx);
         appendLedger(ctx.cwd, "load_hold_engaged", { reason: startReason ?? "startup" });
