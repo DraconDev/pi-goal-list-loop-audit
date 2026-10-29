@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as fs from 'node:fs';
 import { visibleWidth } from '@earendil-works/pi-tui';
 import type { State } from '../extensions/goal-loop-core.js';
 import { readState, sanitizeDisplayText } from '../extensions/goal-loop-core.js';
