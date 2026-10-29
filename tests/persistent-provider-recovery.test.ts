@@ -6,6 +6,7 @@ import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
 import { ownsPersistentProviderWait } from '../extensions/persistent-provider-recovery.js';
+import { mainModelRecoveryRuntimeStatus } from '../extensions/goal-recovery.js';
 import { auditorRetryPlan } from '../extensions/loops/goal-auditor-hooks.js';
 import { classifyCompactionFailure } from '../extensions/compaction-failure.js';
 import { PERSISTENT_PROVIDER_RETRY_MS, classifyMainModelFailure, mainModelFailureDelayMs } from '../extensions/main-model-recovery.js';
@@ -277,3 +278,46 @@ for (const [label, reason, quotaClass] of [
     }
   });
 }
+
+test('the incident journal end-state retries after a stock reopen without consent', async () => {
+  // Exactly what ai-auto-writer/.pi-glla/active.jsonl recorded at
+  // 2026-10-28T16:53:59.814Z: a compaction-failure blocked pause owned by the
+  // system, with the recovery episode retained and its due time already past.
+  // A stock reopen (autoResume OFF — the documented default) must continue the
+  // approved retry rather than freeze it into "Held on session restore".
+  const cwd = tmpCwd();
+  fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [] }));
+  const id = 'incident-replay';
+  const overdue = new Date(Date.now() - 15 * 60_000).toISOString();
+  seedState(cwd, {
+    goal: seedGoal({ id, status: 'paused', pauseKind: 'blocked', pauseSource: 'system',
+      pauseReason: `compaction failure: Auto-compaction failed: Summarization failed: ${quotaError}` }),
+    mainModelRecovery: {
+      primary: 'minimax/MiniMax-M3.1-Flash', active: 'openai-codex/gpt-6-luna',
+      attempted: ['minimax/MiniMax-M3.1-Flash', 'openai-codex/gpt-6-luna'],
+      owner: { kind: 'goal', id }, kind: 'goal', attempts: 1001, reason: 'provider error',
+      providerErrorDiagnostic: `Codex error: The usage limit has been reached`,
+      retryAt: overdue,
+    },
+  });
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd);
+  sessions.push({ pi, ctx });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+
+  const restored = readState(cwd);
+  assert.equal(restored.loadHoldAt, undefined, 'a due recovery wait is not re-held for a decision it already made');
+  assert.equal(restored.goal?.pauseKind, 'wait', 'the migration converts the blocked pause into a timed wait');
+  assert.equal(restored.mainModelRecovery?.attempts, undefined, 'attempt 1001 proves no attempt-count cutoff');
+
+  // An overdue wait probes immediately; a future one arms a timer. Either is
+  // the requirement — what must NOT happen is a silent permanent hold.
+  await waitFor(() => readState(cwd).mainModelRecovery === undefined
+    || mainModelRecoveryRuntimeStatus()?.retryTimerArmed === true, 3000);
+  const dispatched = mainModelRecoveryRuntimeStatus()?.retryTimerArmed === true
+    || readState(cwd).mainModelRecovery === undefined;
+  assert.ok(dispatched, 'the overdue recovery either fired or armed its retry timer');
+  const ledger = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8');
+  assert.doesNotMatch(ledger, /load_hold_engaged/, 'the incident state does not re-engage the cold-load hold');
+});
