@@ -508,10 +508,19 @@ export function restoreLegacyProviderCompactionWait(ctx: ExtensionContext): bool
     || recoveryOwnership(recovery.owner, recovery.kind, state, true) !== 'retained'
     || !isRecoverableProviderError(goal.pauseReason)) return false;
   const previous = { ...state };
-  const due = Date.parse(recovery.retryAt ?? '');
-  const retryAt = Number.isFinite(due) ? recovery.retryAt!
-    : new Date(Date.now() + (nextMainModelFallback(ctx, recovery) ? 1000 : PERSISTENT_PROVIDER_RETRY_MS)).toISOString();
   const failure = classifyMainModelFailure(goal.pauseReason);
+  const due = Date.parse(recovery.retryAt ?? '');
+  // This one-time migration must not invent a cadence the live path would not
+  // choose. A quota-class wall owns the five-minute steady retry; every other
+  // family (billing, auth, transient) keeps the configured ladder, checked
+  // against the same-model budget exactly like setMainModelRecoveryPause.
+  const steadyDelayMs = isQuotaHorizonExempt(goal.pauseReason)
+    ? PERSISTENT_PROVIDER_RETRY_MS
+    : mainModelFailureDelayMs(failure, recovery.attempts ?? 1,
+        loadGlobalSettings().mainModelRetryMinutes);
+  const retryAt = Number.isFinite(due) ? recovery.retryAt!
+    : new Date(Date.now() + Math.max(1_000,
+        boundedSameModelDelay(ctx, recovery, steadyDelayMs))).toISOString();
   state.mainModelRecovery = { ...withMainModelRecoveryWindow(recovery), retryAt,
     primaryProbeAt: undefined, primaryProbeInFlight: undefined,
     reason: mainModelRecoveryReason(failure), providerErrorDiagnostic: failure.raw };
