@@ -35,6 +35,14 @@ CASES = {
         'const steadyDelayMs = isQuotaHorizonExempt(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;',
         'const steadyDelayMs = isRecoverableProviderError(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;',
     ),
+    # The one-time legacy-compaction migration must not invent a cadence the
+    # live path would not choose: forcing the quota cadence onto a billing or
+    # transient wall must fail.
+    'legacy-migration-cadence-regression': (
+        'extensions/goal-recovery.ts',
+        'const steadyDelayMs = isQuotaHorizonExempt(goal.pauseReason)',
+        'const steadyDelayMs = isRecoverableProviderError(goal.pauseReason)',
+    ),
 }
 # Which suites prove each case's protected contract.
 SUITES = {
@@ -43,6 +51,7 @@ SUITES = {
     'terminal-compaction-regression': ['tests/persistent-provider-recovery.test.ts'],
     'expired-audit-regression': ['tests/persistent-provider-recovery.test.ts'],
     'blanket-cadence-regression': ['tests/quota-horizon-exemption.test.ts'],
+    'legacy-migration-cadence-regression': ['tests/persistent-provider-recovery.test.ts'],
 }
 results = []
 for case, mutation in CASES.items():
