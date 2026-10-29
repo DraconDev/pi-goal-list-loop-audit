@@ -192,14 +192,18 @@ audit blocking it.
   with a `kill(pid, 0)` probe). That accepts both legitimate outcomes — the
   worker's handler ran and exited 0, or the default SIGTERM disposition killed
   it before it booted — and a worker that survives still fails.
-  Controls in `verification/stall-marker-negative.log`: the auditor-requested
-  shape disables signaling while leaving scratch cleanup INTACT, and the test
-  correctly fails with "the detached silent worker was cancelled (parent
-  observed its exit)" even though the directory was removed. The coarser
-  earlier control (signaling and cleanup both disabled) also fails. The
-  repaired suite runs 27 passed / zero failed, and the two tests dropped from
-  ~32s to ~6s because they no longer wait out a handler that was never
-  installed.
+  Controls in `verification/stall-marker-negative.log`: (A) the
+  auditor-requested shape disables signaling while leaving scratch cleanup
+  INTACT, and the test correctly fails with "the detached silent worker was
+  cancelled (parent observed its exit)" even though the directory was removed;
+  (B) the coarser earlier control (signaling and cleanup both disabled) also
+  fails; and (C) a direct standalone reproduction of the auditor's probe — a
+  live never-exiting child whose job directory has already been deleted —
+  reports `{"childAlive":true,"jobDirExists":false,"oldPredicatePasses":true,
+  "newPredicatePasses":false}`, i.e. the old predicate false-passed exactly as
+  reported while the new one does not. The repaired suites run 27 passed /
+  zero failed, and the two tests dropped from ~32s to ~6s because they no
+  longer wait out a handler that was never installed.
 - Final `npm run release:check` on the finished tree (including the repaired
   teardown assertion), run at a quiet window (load ~8–11): **exit 0**, retained
   in `verification/release-check.exit` and

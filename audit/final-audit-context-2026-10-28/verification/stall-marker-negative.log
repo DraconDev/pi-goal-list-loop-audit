@@ -46,3 +46,19 @@
 # tests/host-contention.test.ts (24.3s for both files). The two repaired tests
 # dropped from ~32s to ~6s because they no longer wait out a handler that was
 # never installed.
+
+# ---------------------------------------------------------------------------
+# CONTROL C (the auditor's exact probe shape, reproduced directly): a LIVE
+# child whose scratch directory has already been removed, as production does.
+#
+# Standalone Node reproduction (no test harness): spawn a never-exiting child
+# that honors SIGTERM, wait for it to boot, delete its job directory, then
+# evaluate BOTH predicates against the still-running child.
+#
+#   {"childAlive":true,"markerExists":false,"jobDirExists":false,
+#    "oldPredicatePasses":true,"newPredicatePasses":false}
+#
+# RESULT: the OLD predicate (marker OR no-directory) PASSES on a live worker —
+# this is precisely the false pass the auditor reported. The NEW predicate
+# (parent-observed exitCode/signalCode) correctly does NOT pass. The assertion
+# in the test file now uses the new predicate, so a surviving worker fails.
