@@ -137,6 +137,23 @@ audit blocking it.
   intended behavioral reason: object-identity rejection returns,
   malformed-marker success reconciliation is lost, and pre-audit admission
   debt is never persisted. Exit 1 in every case; live sources were restored.
+- The amendment suite initially pinned response wording
+  (`target changed during scope confirmation`, `not confirmed`, `AUDIT
+  PENDING`), so a diagnostic-only rewording failed while the protected behavior
+  was intact — an incidental assertion, not a contract. Those three text
+  assertions are replaced with durable evidence: the persisted goal revision,
+  a deep-equal unchanged goal with no stored `pendingCompletion` on rejection,
+  and a stored `pendingCompletion.attemptId` on success.
+  Both required controls are in
+  `verification/amendment-wording-controls.log`. CONTROL 1 rewrote all three
+  messages without touching behavior and the suite passes 14/0; CONTROL 2
+  restored the original object-identity fence and the suite fails on the
+  DURABLE revision assertion (`the confirmed amendment advanced the audited
+  revision on disk`), not on message text. The control copy also had to include
+  `bunfig.toml`; omitting it dropped the `./tests/harness/setup.ts` preload and
+  made the UNMODIFIED copy fail 2/14 with a `ctx.modelRegistry.find` TypeError.
+  That was an environment defect of the control, and the baseline was
+  re-established at 14/0 before any control was credited.
 - Fresh-context reviewer `116ba0a2-9aee-47bc-b236-0b84545e6d90` raised an
   undeclared-global blocker; resumed reviewer `b60f88bc-f960-4aa9-8a29-6628f2db2271`
   verified the intentional runtime-global bridge and the 31/0 focused log,
