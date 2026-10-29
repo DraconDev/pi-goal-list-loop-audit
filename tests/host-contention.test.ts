@@ -164,15 +164,23 @@ test("the runner passes a serial, load-sized timeout to bun", () => {
 });
 
 test("no test file hand-rolls a wait deadline any more", () => {
-  // A wait deadline is a `Date.now() + N` that is later compared against
-  // `Date.now()`. The budget must come from the shared measurement, so it is
-  // sized for the host and the rule cannot drift back into 40 files.
+  // A wait deadline is a `Date.now() + N` (or `performance.now() + N`) that is
+  // later compared against the same clock. The budget must come from the
+  // shared measurement, so it is sized for the host and the rule cannot drift
+  // back into 40 files.
   // A deadline is compliant when its value goes through the shared helper
   // (untilMs / hangDeadlineMs), through the shared module an embedded child
   // script imports (scaledBudgetMs), or through the budget the parent hands
   // that child (GLLA_TEST_WAIT_BUDGET_MS).
-  const DEADLINE = /\b(?:const|let)\s+(\w+)\s*=\s*Date\.now\(\)\s*\+\s*([^;]+);/;
-  const CHECK = /Date\.now\(\)\s*[<>]=?\s*(\w+)/;
+  //
+  // v0.39.54: the clock is matched by EITHER expression. Matching only
+  // `Date.now()` left the exact hole this rule exists to close: two waits in
+  // this repository were written against `performance.now()` and shipped
+  // green, then false-failed a contended full gate — the guard passed the
+  // very shape it was written to forbid.
+  const CLOCK = String.raw`(?:Date|performance)\.now\(\)`;
+  const DEADLINE = new RegExp(String.raw`\b(?:const|let)\s+(\w+)\s*=\s*${CLOCK}\s*\+\s*([^;]+);`);
+  const CHECK = new RegExp(String.raw`${CLOCK}\s*[<>]=?\s*(\w+)`);
   const SHARED = /untilMs\(|hangDeadlineMs\(|scaledBudgetMs\(|GLLA_TEST_WAIT_BUDGET_MS/;
   const offenders: string[] = [];
   for (const file of walk(path.join(ROOT, "tests"))) {
