@@ -41,3 +41,39 @@ AssertionError: quota recovery does not become a manual blocked pause
 (pass) auditor retry-waiting restores the original future due time without an early launch [9.14ms]
 (pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [160.50ms]
 (pass) auditor recovery-pending restores the original future due time without an early launch [8.08ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1087.09ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.27ms]
+222 | 
+223 |   // A plan-quota wall parks the work with a durable five-minute due time.
+224 |   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
+225 |   const parked = readState(cwd);
+226 |   assert.equal(parked.goal?.status, 'paused');
+227 |   assert.equal(parked.goal?.pauseKind, 'wait');
+               ^
+AssertionError: Expected values to be strictly equal:
+
+'blocked' !== 'wait'
+
+ generatedMessage: true,
+     actual: "blocked",
+   expected: "wait",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-89gz5u_f/tests/persistent-provider-recovery.test.ts:227:10
+      at processTicksAndRejections (native:7:39)
+(fail) a quota wall that clears resumes the parked work and clears the durable wait [7.52ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [6.71ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [6.44ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [8.01ms]
+
+2 tests failed:
+(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [52.61ms]
+(fail) a quota wall that clears resumes the parked work and clears the durable wait [7.52ms]
+
+ 24 pass
+ 2 fail
+Ran 26 tests across 1 file. [1.75s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-VEZZfX/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-VEZZfX
+[run-tests] finished in 2s (exit 1)
