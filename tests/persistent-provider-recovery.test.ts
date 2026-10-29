@@ -2,7 +2,9 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
-import { readState } from '../extensions/goal-loop-core.js';
+import { readState, type State } from '../extensions/goal-loop-core.js';
+import { ownsPersistentProviderWait } from '../extensions/persistent-provider-recovery.js';
+import { auditorRetryPlan } from '../extensions/loops/goal-auditor-hooks.js';
 import { classifyCompactionFailure } from '../extensions/compaction-failure.js';
 import { PERSISTENT_PROVIDER_RETRY_MS } from '../extensions/main-model-recovery.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
@@ -52,4 +54,50 @@ test('quota compaction failure retains a five-minute durable recovery and duplic
   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
   assert.deepEqual(readState(cwd).mainModelRecovery, durable.mainModelRecovery, 'duplicate event preserves episode and due time');
   assert.equal(pi.sent.length, sends, 'quota failure does not dispatch a competing immediate continuation');
+
+  await pi.fire('session_shutdown', { reason: 'reload' }, ctx);
+  sessions.pop();
+  fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [] }));
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const replacement = new MockPi(); activate(replacement.api);
+  const replacementCtx = makeMockCtx(cwd);
+  await replacement.fire('session_start', { reason: 'startup' }, replacementCtx);
+  sessions.push({ pi: replacement, ctx: replacementCtx });
+  const restored = readState(cwd);
+  assert.equal(restored.mainModelRecovery?.retryAt, durable.mainModelRecovery?.retryAt, 'reload does not renew or shorten the due time');
+  assert.equal(restored.loadHoldAt, undefined, 'a proven recovery-owned wait does not become an unrelated cold-load hold');
+  assert.equal(restored.goal?.pauseKind, 'wait');
+  assert.equal(replacement.sent.length, 0, 'a future retry is not dispatched early after restore');
+});
+
+function providerWait(): State {
+  const goal = seedGoal({ status: 'paused', pauseKind: 'wait', pauseSource: 'system', pauseReason: 'main model recovery — retrying', pauseResumeAt: '2030-01-01T00:05:00.000Z' });
+  return { goal, mainModelRecovery: { owner: { kind: 'goal', id: goal.id }, primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], kind: 'goal', attempts: 1000,
+    reason: 'provider error', providerErrorDiagnostic: quotaError, retryAt: goal.pauseResumeAt } } as State;
+}
+for (const [label, mutate] of [
+  ['supervisor pause', (s: State) => { s.supervisorPausedAt = Date.now(); }],
+  ['unrelated cold-load hold', (s: State) => { s.loadHoldAt = Date.now(); }],
+  ['agent missing-input block', (s: State) => { s.goal!.pauseKind = 'blocked'; }],
+  ['user pause', (s: State) => { s.goal!.pauseSource = 'user'; }],
+  ['decision', (s: State) => { s.goal!.pauseKind = 'decision'; }],
+  ['cancel', (s: State) => { s.goal!.status = 'aborted'; }],
+  ['replaced target', (s: State) => { s.goal!.id = 'different'; }],
+  ['explicit recovery stop', (s: State) => { s.mainModelRecovery!.manualResumeRequired = true; }],
+] as const) {
+  test(`provider recovery restore cannot bypass ${label}`, () => {
+    const saved = providerWait();
+    assert.equal(ownsPersistentProviderWait(saved), true);
+    mutate(saved);
+    assert.equal(ownsPersistentProviderWait(saved), false);
+  });
+}
+
+test('provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits', () => {
+  for (const aggressive of [false, true]) {
+    const plan = auditorRetryPlan({ at: '2020-01-01T00:00:00.000Z', retryAttempts: 10000, retryUntil: '2020-01-02T00:00:00.000Z', providerErrorDiagnostic: quotaError }, undefined, undefined, aggressive);
+    assert.equal(plan.automatic, true);
+    assert.equal(plan.unbounded, true);
+    assert.equal(plan.retryAfterSec * 1000, PERSISTENT_PROVIDER_RETRY_MS);
+  }
 });
