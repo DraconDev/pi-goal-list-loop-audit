@@ -214,3 +214,60 @@ for (const [label, overrides, reason] of [
     assert.equal(decision.reason, reason, `${label} names its refusal`);
   });
 }
+
+test('a resumed dispatch spawns against the prior attempt transcript', async () => {
+  // End-to-end: the worker must actually receive --session <prior session>
+  // rather than a fresh per-attempt file, otherwise "resume" is a label.
+  const cwd = tmpCwd();
+  const argvLog = path.join(cwd, 'argv.log');
+  const previous = process.env.GLLA_PI_BINARY;
+  binaries.push(previous);
+  process.env.GLLA_PI_BINARY = inertWorker(cwd, argvLog);
+
+  const priorDir = path.join(cwd, '.pi-glla', 'audit-jobs', 'prior-attempt');
+  fs.mkdirSync(priorDir, { recursive: true });
+  const priorSession = path.join(priorDir, 'session.jsonl');
+  fs.writeFileSync(priorSession, '{"kind":"session","note":"work already done"}\n');
+
+  await runDetachedGoalCompletionAuditor({
+    cwd,
+    model: 'test/auditor-model',
+    thinkingLevel: 'medium',
+    goal: goalFor(),
+    inspection: true,
+    resumeSessionPath: priorSession,
+    runtime: { pollIntervalMs: 10, attemptId: () => 'resume-attempt', logicalAttemptId: 'resume-logical' },
+  } as never);
+
+  const argv = argvEntries(argvLog).at(-1) ?? [];
+  const at = argv.indexOf('--session');
+  assert.ok(at >= 0, 'the resume dispatch requests a session');
+  assert.equal(argv[at + 1], priorSession, 'it continues the PRIOR transcript, not a new empty one');
+  assert.equal(fs.readFileSync(priorSession, 'utf8').includes('work already done'), true,
+    'the prior work is still there to continue from');
+});
+
+test('a resume request whose transcript vanished degrades to a cold start', async () => {
+  // A stale path must never fail an audit: the retry runs cold instead.
+  const cwd = tmpCwd();
+  const argvLog = path.join(cwd, 'argv.log');
+  const previous = process.env.GLLA_PI_BINARY;
+  binaries.push(previous);
+  process.env.GLLA_PI_BINARY = inertWorker(cwd, argvLog);
+
+  await runDetachedGoalCompletionAuditor({
+    cwd,
+    model: 'test/auditor-model',
+    thinkingLevel: 'medium',
+    goal: goalFor(),
+    inspection: true,
+    resumeSessionPath: path.join(cwd, 'gone', 'session.jsonl'),
+    runtime: { pollIntervalMs: 10, attemptId: () => 'stale-resume', logicalAttemptId: 'stale-logical' },
+  } as never);
+
+  const argv = argvEntries(argvLog).at(-1) ?? [];
+  const at = argv.indexOf('--session');
+  assert.ok(at >= 0, 'still a durable dispatch');
+  assert.ok(!argv[at + 1].includes('gone'), 'a missing transcript is not passed through');
+  assert.ok(argv[at + 1].includes('stale-resume'), 'the attempt falls back to its own session file');
+});
