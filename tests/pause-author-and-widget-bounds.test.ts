@@ -41,8 +41,14 @@ test('actual pause entrypoints persist episode authors and resume clears the pri
     await pi.command('goal', 'pause', ctx);
     assert.equal(readState(cwd).goal?.pauseSource, 'user');
     await pi.command('goal', 'resume', ctx);
+    // A permitted configured fallback is normally tried promptly instead of
+    // parking. Clear the chain so this turn exercises the ATTRIBUTION
+    // contract: a runtime provider wait must be authored by the system and
+    // never inherit the prior user/agent author it replaced.
+    fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({ autoResume: true, aggressiveMode: false, mainModelFallbacks: [] }));
     await pi.fire('agent_start', {}, ctx);
     await pi.fire('agent_end', providerError('429 Token Plan rate limit reached (2062)'), ctx);
+    assert.equal(readState(cwd).goal?.pauseKind, 'wait', 'without a configured fallback the quota wall parks a wait');
     assert.equal(readState(cwd).goal?.pauseSource, 'system', 'runtime provider wait cannot inherit a user or agent attribution');
   });
 });
