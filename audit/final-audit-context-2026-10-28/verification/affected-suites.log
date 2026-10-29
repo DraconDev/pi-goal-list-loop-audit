@@ -403,3 +403,15 @@ tests/amendment-confirmation-fence.test.ts:
 (pass) identical rehydration is not a substitute for explicit amendment consent [0.96ms]
 
 tests/list-draft-handoff.test.ts:
+(pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [5715.51ms]
+(pass) stated next dependent question is a legal drafting end: no correction [2846.83ms]
+[run-tests] progress: 120s elapsed · 1s since last output · 34 KiB of suite output
+(pass) short ack without a question is not commentary: no correction [2817.30ms]
+(pass) tool-unavailable fallback: the correction directs prose asking [0.39ms]
+(pass) confirmation gate untouched: correction never earns a proposal [2818.61ms]
+
+ 366 pass
+ 0 fail
+Ran 366 tests across 18 files. [124.52s]
+[run-tests] detached cleanup: 2 owned groups; 0 unverified survivors/records
+[run-tests] finished in 126s (exit 0)
