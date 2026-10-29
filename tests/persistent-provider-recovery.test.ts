@@ -8,7 +8,7 @@ import { readState, type State } from '../extensions/goal-loop-core.js';
 import { ownsPersistentProviderWait } from '../extensions/persistent-provider-recovery.js';
 import { auditorRetryPlan } from '../extensions/loops/goal-auditor-hooks.js';
 import { classifyCompactionFailure } from '../extensions/compaction-failure.js';
-import { PERSISTENT_PROVIDER_RETRY_MS } from '../extensions/main-model-recovery.js';
+import { PERSISTENT_PROVIDER_RETRY_MS, classifyMainModelFailure, mainModelFailureDelayMs } from '../extensions/main-model-recovery.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 
 const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
