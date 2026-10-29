@@ -2,32 +2,33 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [1.15ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [0.98ms]
 (pass) provider compaction error preserves willRetry ownership [0.09ms]
-(pass) provider compaction error preserves aborted ownership [0.02ms]
-(pass) provider compaction error preserves fromExtension ownership [0.01ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.78ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [91.63ms]
-(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [26.19ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [12.91ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [9.89ms]
-(pass) provider recovery restore cannot bypass supervisor pause [1.50ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.40ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.38ms]
-(pass) provider recovery restore cannot bypass user pause [0.36ms]
-(pass) provider recovery restore cannot bypass decision [0.52ms]
-(pass) provider recovery restore cannot bypass cancel [0.51ms]
-(pass) provider recovery restore cannot bypass replaced target [0.39ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.36ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [24.62ms]
-(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [255.98ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [15.16ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1113.57ms]
+(pass) provider compaction error preserves aborted ownership [0.03ms]
+(pass) provider compaction error preserves fromExtension ownership [0.02ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.94ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [78.14ms]
+(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [15.80ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [8.27ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [24.23ms]
+(pass) provider recovery restore cannot bypass supervisor pause [3.86ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [1.19ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.98ms]
+(pass) provider recovery restore cannot bypass user pause [0.69ms]
+(pass) provider recovery restore cannot bypass decision [0.79ms]
+(pass) provider recovery restore cannot bypass cancel [0.59ms]
+(pass) provider recovery restore cannot bypass replaced target [0.83ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.48ms]
+(pass) a pre-existing cold-load hold does not freeze an overdue recovery-owned wait [0.68ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [23.51ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [307.30ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [10.39ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1117.46ms]
 (pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.26ms]
-(pass) a quota wall that clears resumes the parked work and clears the durable wait [14.32ms]
-(pass) legacy compaction migration keeps the live cadence for a quota wall [6.71ms]
-(pass) legacy compaction migration keeps the live cadence for a billing wall [6.20ms]
-(pass) legacy compaction migration keeps the live cadence for a transient failure [7.80ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [26.00ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [29.21ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [18.27ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [12.82ms]
 88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
 89 | ): Promise<void> {
 90 | 	const intervalMs = options.intervalMs ?? 20;
@@ -36,16 +37,16 @@ tests/persistent-provider-recovery.test.ts:
 93 | 		if (Date.now() > deadline) throw new Error(options.message);
                                             ^
 error: the overdue recovery dispatches its retry
-      at waitFor (/tmp/glla-persistent-control-82q5texo/tests/harness/host-budget.ts:93:40)
-      at async <anonymous> (/tmp/glla-persistent-control-82q5texo/tests/persistent-provider-recovery.test.ts:314:9)
-(fail) the incident journal end-state retries after a stock reopen without consent [5026.15ms]
+      at waitFor (/tmp/glla-persistent-control-gzalfa7m/tests/harness/host-budget.ts:93:40)
+      at async <anonymous> (/tmp/glla-persistent-control-gzalfa7m/tests/persistent-provider-recovery.test.ts:340:9)
+(fail) the incident journal end-state retries after a stock reopen without consent [7132.14ms]
 
 1 tests failed:
-(fail) the incident journal end-state retries after a stock reopen without consent [5026.15ms]
+(fail) the incident journal end-state retries after a stock reopen without consent [7132.14ms]
 
- 26 pass
+ 27 pass
  1 fail
-Ran 27 tests across 1 file. [7.06s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-XboX8w/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-XboX8w
-[run-tests] finished in 7s (exit 1)
+Ran 28 tests across 1 file. [9.24s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-zzcgZV/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-zzcgZV
+[run-tests] finished in 9s (exit 1)

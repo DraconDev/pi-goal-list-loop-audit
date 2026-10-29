@@ -2,7 +2,7 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/quota-horizon-exemption.test.ts:
-(pass) quota wait survives the horizon instead of parking [4.89ms]
+(pass) quota wait survives the horizon instead of parking [3.85ms]
 121 |       assert.equal(setMainModelRecoveryPause(r.ctx, episode, 30 * 60_000), true);
 122 |       assert.equal(state.mainModelRecovery?.manualResumeRequired, undefined);
 123 |       assert.equal(state.mainModelRecovery?.autoRetryUntil, undefined);
@@ -17,17 +17,17 @@ AssertionError: false == true
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-persistent-control-ivrhkj6_/tests/quota-horizon-exemption.test.ts:126:14
+      at /tmp/glla-persistent-control-_bar6hzc/tests/quota-horizon-exemption.test.ts:126:14
       at fn (node:test:215:18)
-(fail) billing and non-quota failures retain paced retries beyond legacy expiry without granting purchases [1.63ms]
-(pass) deterministic classifier: 400 markers hold, everything else passes through [0.09ms]
-(pass) deterministic 400 holds even aggressive and fresh — identical retries cannot succeed [0.62ms]
-(pass) deterministic hold names the fix directions [0.52ms]
-(pass) transient wall still schedules under aggressive (control) [0.64ms]
+(fail) billing and non-quota failures retain paced retries beyond legacy expiry without granting purchases [1.09ms]
+(pass) deterministic classifier: 400 markers hold, everything else passes through [0.06ms]
+(pass) deterministic 400 holds even aggressive and fresh — identical retries cannot succeed [0.43ms]
+(pass) deterministic hold names the fix directions [0.26ms]
+(pass) transient wall still schedules under aggressive (control) [0.44ms]
 
  5 pass
  1 fail
-Ran 6 tests across 1 file. [433.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZLqL1K/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZLqL1K
+Ran 6 tests across 1 file. [558.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-j2X8Xd/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-j2X8Xd
 [run-tests] finished in 1s (exit 1)

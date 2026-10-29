@@ -33,3 +33,20 @@ error: overdue provider claim launches despite legacy expiry
       at async <anonymous> (/tmp/glla-persistent-control-qmepnyft/tests/persistent-provider-recovery.test.ts:216:13)
 (fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6191.33ms]
 (pass) auditor recovery-pending restores the original future due time without an early launch [22.58ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1166.90ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [3.62ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [24.40ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [7.88ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [9.33ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [12.21ms]
+(pass) the incident journal end-state retries after a stock reopen without consent [27.92ms]
+
+1 tests failed:
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6191.33ms]
+
+ 27 pass
+ 1 fail
+Ran 28 tests across 1 file. [8.17s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-vDx7XJ/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-vDx7XJ
+[run-tests] finished in 8s (exit 1)
