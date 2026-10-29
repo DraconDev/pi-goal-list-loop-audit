@@ -38,12 +38,16 @@ for (const reordered of [false, true]) {
     };
     try {
       const result = await pi.runTool('complete_goal', claim, ctx);
-      assert.doesNotMatch(result.content[0]!.text, /target changed during scope confirmation/i);
-      assert.equal(readState(cwd).goal?.revision, 2);
-      assert.equal(readState(cwd).goal?.verificationContract?.replace(/^Done when:\s*/i, ''), 'Inspect the ownership map and its coverage gate');
+      // DURABLE evidence, not response wording: the amendment landed on disk
+      // and the completion claim is stored as pending-completion state.
+      const durable = readState(cwd).goal;
+      assert.equal(durable?.revision, 2, "the confirmed amendment advanced the audited revision on disk");
+      assert.equal(durable?.objective, 'Verify documentation ownership');
+      assert.equal(durable?.verificationContract?.replace(/^Done when:\s*/i, ''), 'Inspect the ownership map and its coverage gate');
+      assert.equal(result.isError, undefined, "an explicitly confirmed amendment is not rejected");
+      assert.ok(durable?.pendingCompletion?.attemptId, "the completion claim is stored as durable pending-completion state");
       const journal = fs.readFileSync(path.join(cwd, '.pi-glla/active.jsonl'), 'utf8');
       assert.match(journal, /"goal_tweaked"/);
-      assert.match(result.content[0]!.text, /AUDIT PENDING/);
     } finally {
       await pi.fire('session_shutdown', { reason: 'quit' }, ctx);
       if (originalBinary === undefined) delete process.env.GLLA_PI_BINARY; else process.env.GLLA_PI_BINARY = originalBinary;
@@ -66,10 +70,14 @@ for (const [label, mutate] of mutations) {
     const { cwd, pi, ctx } = harness(); const before = readState(cwd).goal;
     ctx.ui.confirmImpl = async () => { mutate(state.goal!); return true; };
     const result = await pi.runTool('complete_goal', claim, ctx);
-    assert.match(result.content[0]!.text, /target changed during scope confirmation/i);
-    assert.deepEqual(readState(cwd).goal, before);
-    if (label !== 'competing claim') assert.equal(state.goal?.pendingCompletion, undefined);
-    else assert.equal(state.goal?.pendingCompletion?.attemptId, 'competing-attempt');
+    // DURABLE evidence: stale consent must not mutate the goal or store a
+    // claim. Asserted against persisted state, never response wording.
+    const durable = readState(cwd).goal;
+    assert.equal(result.isError, true, "stale consent is refused");
+    assert.equal(durable?.revision, before?.revision, "the audited revision is not advanced");
+    assert.deepEqual(durable, before, "no durable goal field changed");
+    assert.equal(durable?.pendingCompletion, undefined, "no pending completion claim was stored");
+    if (label === 'competing claim') assert.equal(state.goal?.pendingCompletion?.attemptId, 'competing-attempt');
     assert.doesNotMatch(fs.readFileSync(path.join(cwd, '.pi-glla/active.jsonl'), 'utf8'), /"goal_tweaked"/);
   });
 }
@@ -86,9 +94,13 @@ for (const boundary of ['session', 'owner', 'cancel'] as const) {
     };
     try {
       const result = await pi.runTool('complete_goal', claim, ctx);
-      assert.match(result.content[0]!.text, /target changed during scope confirmation/i);
-      assert.deepEqual(readState(cwd).goal, before);
-      assert.equal(state.goal?.pendingCompletion, undefined);
+      // DURABLE evidence: crossing a session/owner/cancel boundary must leave
+      // the persisted goal and its pending-completion state untouched.
+      const durable = readState(cwd).goal;
+      assert.equal(result.isError, true, "a cross-boundary confirmation is refused");
+      assert.deepEqual(durable, before, "no durable goal field changed");
+      assert.equal(durable?.pendingCompletion, undefined, "no pending completion claim was stored");
+      assert.doesNotMatch(fs.readFileSync(path.join(cwd, '.pi-glla/active.jsonl'), 'utf8'), /"goal_tweaked"/);
     } finally { sessionGeneration = generation; ownerSession = owner; }
   });
 }
@@ -97,7 +109,11 @@ test('identical rehydration is not a substitute for explicit amendment consent',
   const { cwd, pi, ctx } = harness(); const before = readState(cwd).goal;
   ctx.ui.confirmImpl = async () => { state.goal = structuredClone(state.goal); return false; };
   const result = await pi.runTool('complete_goal', claim, ctx);
-  assert.match(result.content[0]!.text, /not confirmed/i);
-  assert.deepEqual(readState(cwd).goal, before);
-  assert.equal(state.goal?.pendingCompletion, undefined);
+  // DURABLE evidence: identical rehydration is not consent — nothing persists.
+  const durable = readState(cwd).goal;
+  assert.equal(result.isError, true, "a declined amendment is refused");
+  assert.equal(durable?.revision, before?.revision, "the audited revision is not advanced");
+  assert.deepEqual(durable, before, "no durable goal field changed");
+  assert.equal(durable?.pendingCompletion, undefined, "no pending completion claim was stored");
+  assert.doesNotMatch(fs.readFileSync(path.join(cwd, '.pi-glla/active.jsonl'), 'utf8'), /"goal_tweaked"/);
 });
