@@ -404,3 +404,13 @@ tests/amendment-confirmation-fence.test.ts:
 
 tests/list-draft-handoff.test.ts:
 (pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [6095.04ms]
+(pass) stated next dependent question is a legal drafting end: no correction [3025.77ms]
+(pass) short ack without a question is not commentary: no correction [2813.24ms]
+(pass) tool-unavailable fallback: the correction directs prose asking [11.77ms]
+(pass) confirmation gate untouched: correction never earns a proposal [2812.76ms]
+
+ 366 pass
+ 0 fail
+Ran 366 tests across 18 files. [117.55s]
+[run-tests] detached cleanup: 2 owned groups; 0 unverified survivors/records
+[run-tests] finished in 119s (exit 0)
