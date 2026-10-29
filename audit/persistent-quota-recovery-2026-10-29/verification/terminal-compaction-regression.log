@@ -2,11 +2,11 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [1.31ms]
-(pass) provider compaction error preserves willRetry ownership [0.13ms]
-(pass) provider compaction error preserves aborted ownership [0.04ms]
-(pass) provider compaction error preserves fromExtension ownership [2.30ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.98ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [0.91ms]
+(pass) provider compaction error preserves willRetry ownership [0.09ms]
+(pass) provider compaction error preserves aborted ownership [0.02ms]
+(pass) provider compaction error preserves fromExtension ownership [0.01ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.78ms]
 50 |   const before = Date.now();
 51 |   const sends = pi.sent.length;
 52 |   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
@@ -24,31 +24,32 @@ AssertionError: quota recovery does not become a manual blocked pause
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-persistent-control-tcu3od_c/tests/persistent-provider-recovery.test.ts:55:10
+      at /tmp/glla-persistent-control-tj0xsaxy/tests/persistent-provider-recovery.test.ts:55:10
       at processTicksAndRejections (native:7:39)
-(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [73.92ms]
-(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [21.21ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [8.23ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [10.57ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.80ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.52ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.63ms]
-(pass) provider recovery restore cannot bypass user pause [0.43ms]
-(pass) provider recovery restore cannot bypass decision [0.42ms]
-(pass) provider recovery restore cannot bypass cancel [0.40ms]
-(pass) provider recovery restore cannot bypass replaced target [0.36ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.32ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [14.11ms]
-(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [247.96ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [10.08ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1102.68ms]
+(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [53.55ms]
+(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [21.33ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [6.89ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [5.52ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.55ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.27ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.30ms]
+(pass) provider recovery restore cannot bypass user pause [0.28ms]
+(pass) provider recovery restore cannot bypass decision [0.28ms]
+(pass) provider recovery restore cannot bypass cancel [0.25ms]
+(pass) provider recovery restore cannot bypass replaced target [0.24ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
+(pass) a pre-existing cold-load hold does not freeze an overdue recovery-owned wait [0.29ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [9.53ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [301.31ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [10.04ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1107.32ms]
 (pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.24ms]
-224 | 
-225 |   // A plan-quota wall parks the work with a durable five-minute due time.
-226 |   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
-227 |   const parked = readState(cwd);
-228 |   assert.equal(parked.goal?.status, 'paused');
-229 |   assert.equal(parked.goal?.pauseKind, 'wait');
+250 | 
+251 |   // A plan-quota wall parks the work with a durable five-minute due time.
+252 |   await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
+253 |   const parked = readState(cwd);
+254 |   assert.equal(parked.goal?.status, 'paused');
+255 |   assert.equal(parked.goal?.pauseKind, 'wait');
                ^
 AssertionError: Expected values to be strictly equal:
 
@@ -60,21 +61,21 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-persistent-control-tcu3od_c/tests/persistent-provider-recovery.test.ts:229:10
+      at /tmp/glla-persistent-control-tj0xsaxy/tests/persistent-provider-recovery.test.ts:255:10
       at processTicksAndRejections (native:7:39)
-(fail) a quota wall that clears resumes the parked work and clears the durable wait [6.08ms]
-(pass) legacy compaction migration keeps the live cadence for a quota wall [7.94ms]
-(pass) legacy compaction migration keeps the live cadence for a billing wall [11.94ms]
-(pass) legacy compaction migration keeps the live cadence for a transient failure [12.53ms]
-(pass) the incident journal end-state retries after a stock reopen without consent [27.43ms]
+(fail) a quota wall that clears resumes the parked work and clears the durable wait [6.71ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [6.89ms]
+(pass) legacy compaction migration keeps the live cadence for a billing wall [11.36ms]
+(pass) legacy compaction migration keeps the live cadence for a transient failure [14.92ms]
+(pass) the incident journal end-state retries after a stock reopen without consent [28.82ms]
 
 2 tests failed:
-(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [73.92ms]
-(fail) a quota wall that clears resumes the parked work and clears the durable wait [6.08ms]
+(fail) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [53.55ms]
+(fail) a quota wall that clears resumes the parked work and clears the durable wait [6.71ms]
 
- 25 pass
+ 26 pass
  2 fail
-Ran 27 tests across 1 file. [2.03s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-9vPGMT/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-9vPGMT
+Ran 28 tests across 1 file. [2.00s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-kh6zP2/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-kh6zP2
 [run-tests] finished in 2s (exit 1)

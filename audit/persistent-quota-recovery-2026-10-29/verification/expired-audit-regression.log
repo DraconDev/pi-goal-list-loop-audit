@@ -1,51 +1,23 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=182s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [0.27ms]
-(pass) provider compaction error preserves willRetry ownership [2.41ms]
-(pass) provider compaction error preserves aborted ownership [0.02ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [1.12ms]
+(pass) provider compaction error preserves willRetry ownership [0.14ms]
+(pass) provider compaction error preserves aborted ownership [0.03ms]
 (pass) provider compaction error preserves fromExtension ownership [0.02ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.79ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [68.46ms]
-(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [22.06ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [7.90ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [5.88ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.50ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.35ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.40ms]
-(pass) provider recovery restore cannot bypass user pause [0.36ms]
-(pass) provider recovery restore cannot bypass decision [0.32ms]
-(pass) provider recovery restore cannot bypass cancel [0.32ms]
-(pass) provider recovery restore cannot bypass replaced target [0.30ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.27ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [9.82ms]
-88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
-89 | ): Promise<void> {
-90 | 	const intervalMs = options.intervalMs ?? 20;
-91 | 	const deadline = untilMs(options.timeoutMs);
-92 | 	while (!predicate()) {
-93 | 		if (Date.now() > deadline) throw new Error(options.message);
-                                            ^
-error: overdue provider claim launches despite legacy expiry
-      at waitFor (/tmp/glla-persistent-control-a2vmo_po/tests/harness/host-budget.ts:93:40)
-      at async <anonymous> (/tmp/glla-persistent-control-a2vmo_po/tests/persistent-provider-recovery.test.ts:190:13)
-(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [7055.40ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [26.22ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1520.91ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.24ms]
-(pass) a quota wall that clears resumes the parked work and clears the durable wait [16.35ms]
-(pass) legacy compaction migration keeps the live cadence for a quota wall [12.38ms]
-(pass) legacy compaction migration keeps the live cadence for a billing wall [9.55ms]
-(pass) legacy compaction migration keeps the live cadence for a transient failure [8.25ms]
-(pass) the incident journal end-state retries after a stock reopen without consent [23.25ms]
-
-1 tests failed:
-(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [7055.40ms]
-
- 26 pass
- 1 fail
-Ran 27 tests across 1 file. [9.21s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-9HNgOC/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-9HNgOC
-[run-tests] finished in 9s (exit 1)
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [1.03ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [91.24ms]
+(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [18.23ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [9.96ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [11.21ms]
+(pass) provider recovery restore cannot bypass supervisor pause [1.22ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.59ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.56ms]
+(pass) provider recovery restore cannot bypass user pause [0.54ms]
+(pass) provider recovery restore cannot bypass decision [0.53ms]
+(pass) provider recovery restore cannot bypass cancel [0.44ms]
+(pass) provider recovery restore cannot bypass replaced target [0.45ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.38ms]
+(pass) a pre-existing cold-load hold does not freeze an overdue recovery-owned wait [0.48ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [16.55ms]
