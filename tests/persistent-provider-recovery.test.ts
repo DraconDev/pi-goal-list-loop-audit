@@ -23,6 +23,10 @@ afterEach(async () => {
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
 });
 
+test('the confirmed steady provider recovery cadence is five minutes', () => {
+  assert.equal(PERSISTENT_PROVIDER_RETRY_MS, 5 * 60_000, 'this duration is an explicit operator policy, not an incidental implementation value');
+});
+
 for (const flag of ['willRetry', 'aborted', 'fromExtension'] as const) {
   test(`provider compaction error preserves ${flag} ownership`, () => {
     assert.notEqual(classifyCompactionFailure({ errorMessage: quotaError, [flag]: true }).kind, 'provider-recovery');
