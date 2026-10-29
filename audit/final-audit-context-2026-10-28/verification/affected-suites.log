@@ -286,3 +286,5 @@ Switched to branch 'main'
 (pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [730.04ms]
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [703.29ms]
 (pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [5694.73ms]
+(pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [5711.75ms]
+(pass) v0.39.52: the heartbeat does not reclaim a completion audit it dispatched moments ago [4.69ms]
