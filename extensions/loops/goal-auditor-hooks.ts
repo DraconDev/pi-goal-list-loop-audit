@@ -255,6 +255,7 @@ import {
   type AuditorFallbackCandidate,
   type AuditorFallbackExhaustionInfo,
   type AuditorProgress,
+  decideAuditorResume,
 } from "../goal-loop-auditor-process.js";
 import {
   REPETITION,
@@ -1067,30 +1068,34 @@ export function resolveAuditorResumeForDispatch(input: {
   claim: PendingCompletion;
   currentAttemptId: string;
   currentTier: string;
+  priorTier?: string;
+  currentRevision?: number;
+  priorRevision?: number;
+  cancelled?: boolean;
   cwd: string;
-  revision?: number;
 }): { resume: boolean; sessionPath?: string; reason?: string } {
   const priorAttempt = input.claim.priorAttemptId;
   if (!priorAttempt) return { resume: false, reason: "no-prior-attempt" };
+  // The prior attempt's transcript lives in its own job directory, kept only
+  // while retention holds it. A missing or empty session is a COLD START, never
+  // an error: the audit must still run.
   const sessionPath = path.join(piGlaDir(input.cwd), "audit-jobs", priorAttempt, "session.jsonl");
   let sessionExists = false;
-  try { sessionExists = statSync(sessionPath).size > 0; } catch { sessionExists = false; }
+  try { sessionExists = fs.statSync(sessionPath).size > 0; } catch { sessionExists = false; }
   const decision = decideAuditorResume({
     inspection: input.inspection,
     priorAttemptId: priorAttempt,
     priorFailureClass: input.claim.auditorFailureClass,
-    priorRevision: input.claim.priorRevision,
-    currentRevision: input.revision,
+    priorRevision: input.priorRevision,
+    currentRevision: input.currentRevision,
     priorClaimAttemptId: input.claim.priorAttemptId,
     currentClaimAttemptId: input.currentAttemptId,
-    priorTier: input.claim.auditorTier,
+    priorTier: input.priorTier,
     currentTier: input.currentTier,
-    cancelled: input.claim.auditorCancelled === true,
+    cancelled: input.cancelled,
     sessionExists,
   });
-  return decision.resume
-    ? { resume: true, sessionPath }
-    : { resume: false, reason: decision.reason };
+  return decision.resume ? { resume: true, sessionPath } : { resume: false, reason: decision.reason };
 }
 
 export function inspectionSessionExtras(inspectionSessionPath: string | undefined): string[] {
@@ -1609,6 +1614,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           claim,
           currentAttemptId: claim.attemptId!,
           currentTier: tierDecision.tier,
+          priorTier: claim.auditTier,
           cwd: liveCtx.cwd,
         });
         return runDetachedGoalCompletionAuditor({
