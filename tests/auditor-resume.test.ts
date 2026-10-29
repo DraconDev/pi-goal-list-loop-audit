@@ -7,7 +7,7 @@ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from 
 import { readState } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
-import { runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
+import { inspectAuditJobHealth, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
 
 const sessions: Array<{ pi: MockPi }> = [];
 const binaries: Array<string | undefined> = [];
@@ -149,4 +149,23 @@ test('auditorInspection=false restores the original --no-session spawn', async (
   const argv = argvEntries(argvLog).at(-1) ?? [];
   assert.ok(argv.includes('--no-session'), 'the setting remains a real opt-out');
   assert.ok(!argv.includes('--session'), 'no session is requested when durability is off');
+});
+
+test('a retained session directory is still reapable by the retention sweep', async () => {
+  // Keeping the transcript must not mean leaking it: the retained dir keeps
+  // the worker lock a finished audit keeps, so health classifies it `dead`
+  // once its worker PID is gone and the normal retention ceiling reaps it.
+  const cwd = tmpCwd();
+  const dir = path.join(cwd, '.pi-glla', 'audit-jobs', 'retained-for-resume');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'request.json'), '{}');
+  fs.writeFileSync(path.join(dir, 'session.jsonl'), '{"kind":"session"}\n');
+  fs.writeFileSync(path.join(dir, 'lock'), JSON.stringify({
+    protocolVersion: 1, attemptId: 'retained-for-resume', pid: 999999, role: 'worker', workerPath: '/tmp/worker.mjs',
+  }));
+  const health = inspectAuditJobHealth(cwd, Date.now(), 0) as unknown as {
+    dead: number; ambiguous: number; cleanupCandidates: number; entries: Array<{ status: string }>;
+  };
+  assert.equal(health.entries[0]?.status, 'dead', 'a retained session is a reapable artifact, not an ambiguous one');
+  assert.ok(health.cleanupCandidates > 0, 'the retention sweep can still take it, so sessions do not accumulate unbounded');
 });
