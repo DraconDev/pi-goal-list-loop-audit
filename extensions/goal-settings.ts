@@ -463,9 +463,13 @@ export const DEFAULT_SETTINGS: Settings = {
   // v0.38.3: dead audit job dirs (and their transcripts) survive this long
   // after the worker dies before `/glla audits health cleanup` reaps them.
   auditJobRetentionMs: AUDIT_JOB_CLEANUP_MIN_AGE_MS,
-  // v0.38.3: opt-in live inspection — the auditor's pi becomes a normal
-  // persistent session you can tail/resume. Off = the original --no-session.
-  auditorInspection: false,
+  // v0.38.3 (default flipped in this goal): the auditor's pi is a normal
+  // persistent session by default, so a provider failure can RESUME the same
+  // transcript instead of restarting the whole audit cold. Field evidence
+  // 2026-10-29: three auditor candidates failed in a row and 64 tool calls
+  // over 1h46m were discarded on each switch, so no verdict was ever reached.
+  // Set false to restore the original --no-session spawn.
+  auditorInspection: true,
   // v0.38.81: 1-in-10 light audits silently run full (spot-checks).
   auditSpotCheckRate: 0.1,
   auditorStrictChallenge: false,
