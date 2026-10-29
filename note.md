@@ -1,14 +1,6 @@
 # 
 
-## list got stuck / didnt end despite completing 
+## we were not retring 
 
-/home/dracon/Pictures/Screenshots/Screenshot_20261027_200419.png
-
-## some projects have a problem finishing the final audit 
-
-/home/dracon/Pictures/Screenshots/Screenshot_20261028_122546.png
-
-## big context overrun in list
-
-/home/dracon/Pictures/Screenshots/Screenshot_20261028_122841.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261029_085207.png
 
