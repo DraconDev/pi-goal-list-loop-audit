@@ -42,7 +42,7 @@ Current main-model orchestration already retires legacy elapsed recovery windows
 
 ## Verification progress
 
-`npm run release:check` exits 0: 4455 passing tests across 475 files, plus the pack smoke steps (packed launcher RPC probe, `glla-delegate` skill load, installed import from the packed tarball). `npm run check` and `npm run check:inventory` both exit 0.
+`npm run release:check` exits 0: 4455 passing tests across 475 files, plus the pack smoke steps (packed launcher RPC probe, `glla-delegate` skill load, installed import from the packed tarball). `npm run check` and `npm run check:inventory` both exit 0. The full command output is retained at `verification/release-check.log`, which shows the real gate chain (`test:all` → `check:inventory` → `npm pack --dry-run` → pack smoke) rather than a subset run.
 
 That full gate is what produced this register's most important finding. An earlier checkpoint had `tests/persistent-provider-recovery.test.ts` green, but running the whole suite exposed six failures caused by over-broadening the fix rather than by stale pins: the five-minute cadence and the same-model bypass had leaked from the quota class onto billing/auth/503 failures and onto the unsupervised first-blip retry, overriding separately configured operator policy. The cold-load consent hold had also been weakened. Narrowing the source to `isQuotaHorizonExempt` plus a claim-only parked-claim exemption restored all six suites. A partial green is not evidence; only the full gate established this.
 
