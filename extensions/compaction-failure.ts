@@ -6,12 +6,15 @@
 // that case. Terminal failures need one conservative distinction: a prompt
 // that still cannot fit versus a summarizer whose bounded output was cut off.
 
+import { classifyMainModelFailure } from './main-model-recovery.js';
+
 export type CompactionFailureKind =
   | "retry-owned"
   | "aborted"
   | "from-extension"
   | "summarization-length"
   | "context-overflow"
+  | "provider-recovery"
   | "other-terminal";
 
 export interface CompactionFailureEvent {
@@ -63,5 +66,11 @@ export function classifyCompactionFailure(event: CompactionFailureEvent): Compac
   if (event.fromExtension === true) return { kind: "from-extension", raw };
   if (firstMatch(OUTPUT_CAP_PATTERNS, raw)) return { kind: "summarization-length", raw };
   if (firstMatch(CONTEXT_OVERFLOW_PATTERNS, raw)) return { kind: "context-overflow", raw };
+  // A host's terminal *attempt* does not make a provider outage terminal
+  // for supervised work. Preserve the host/extension ownership checks above.
+  const provider = classifyMainModelFailure(raw);
+  if (['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(provider.kind)) {
+    return { kind: 'provider-recovery', raw };
+  }
   return { kind: "other-terminal", raw };
 }

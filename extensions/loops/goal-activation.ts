@@ -1564,6 +1564,15 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     if (settleBoundaryCompactionFailure(ctx, safe, failure.kind !== "retry-owned" && failure.kind !== "aborted")) return;
     if (failure.kind === "retry-owned" || failure.kind === "aborted" || failure.kind === "from-extension" || !isSupervising()) return;
 
+    if (failure.kind === 'provider-recovery') {
+      // Host retries are already excluded above. Reuse the durable model
+      // recovery owner rather than converting temporary quota/auth/network
+      // failure into a generic manual block that rejects its own retry.
+      // Duplicate failure events leave the existing episode/timer intact.
+      parkMainModelAfterFailure(ctx, classifyMainModelFailure(failure.raw));
+      return;
+    }
+
     // Only a terminal failure that specifically says the prompt still cannot
     // fit justifies a model rotation. A truncated/incomplete summary is a
     // summarization-output failure, not proof that a fallback has a larger
