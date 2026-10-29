@@ -1860,6 +1860,27 @@ async function ensureRegularFile(file: string): Promise<void> {
 /** Each attempt directory is parent-owned scratch space, not an audit
  * archive. Remove it after the parent has consumed (or abandoned) the
  * attempt, while leaving the shared jobs root available for concurrent jobs. */
+/** The session file the worker writes when a durable auditor session was
+ * requested. The worker derives it deterministically from the job dir
+ * (`scripts/goal-auditor-worker.mjs`), so the parent can look for it without
+ * depending on a progress event that a crashed attempt never sends. */
+function auditorSessionPath(jobDir: string): string {
+  return path.join(jobDir, "session.jsonl");
+}
+
+/** A no-verdict attempt may only keep its job directory when a retry can
+ * actually resume the transcript inside it: the attempt must have asked for a
+ * durable session AND really written one. Deleting that directory is what made
+ * resume meaningless — the next attempt would spawn against a missing
+ * transcript and restart cold anyway. Kept dirs stay aged reviewable artifacts
+ * that the normal retention sweep still reaps, so nothing accumulates
+ * unbounded. Whether the specific failure class warrants a resume is decided
+ * at retry time, which is the only place the prior failure class is known. */
+function hasResumableAuditorSession(jobDir: string, inspection: boolean | undefined): boolean {
+  if (!inspection) return false;
+  try { return statSync(auditorSessionPath(jobDir)).size > 0; } catch { return false; }
+}
+
 async function removeAuditJobDirectory(jobDir: string): Promise<void> {
   await fs.rm(jobDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 10 }).catch(() => {});
 }
@@ -2918,10 +2939,19 @@ async function runDetachedGoalCompletionAuditorInner(args: {
         // Keep the worker lock so health classifies the dir 'dead' (reaped
         // once aged past auditJobRetentionMs by /glla audits health cleanup)
         // instead of 'ambiguous' (which cleanup never touches).
+      } else if (hasResumableAuditorSession(jobDir, args.inspection)) {
+        // No verdict, but this attempt left a session a retry can resume.
+        // Deleting it would make the resume capability a no-op: the next
+        // attempt would spawn against a missing transcript and restart cold
+        // anyway. Keep the directory as a reviewable, aged artifact exactly
+        // like a finished audit (the retention sweep still reaps it), so
+        // resultless scratch does not accumulate unbounded either.
+        appendLedger(args.cwd, "audit_session_retained_for_resume", { attemptId, jobDir });
       } else {
-        // No verdict: incomplete transport scratch — remove it so kill-and-
-        // restart loops do not accumulate empty dirs. Never remove a colliding
-        // directory we did not successfully create and therefore do not own.
+        // No verdict and nothing to resume: incomplete transport scratch —
+        // remove it so kill-and-restart loops do not accumulate empty dirs.
+        // Never remove a colliding directory we did not successfully create
+        // and therefore do not own.
         if (lockHeld) await fs.unlink(lockPath).catch(() => {});
         await removeAuditJobDirectory(jobDir);
       }
