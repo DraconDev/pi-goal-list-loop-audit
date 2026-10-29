@@ -20,3 +20,27 @@ tests/persistent-provider-recovery.test.ts:
 (pass) provider recovery restore cannot bypass replaced target [0.27ms]
 (pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
 (pass) auditor retry-waiting restores the original future due time without an early launch [8.91ms]
+88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
+89 | ): Promise<void> {
+90 | 	const intervalMs = options.intervalMs ?? 20;
+91 | 	const deadline = untilMs(options.timeoutMs);
+92 | 	while (!predicate()) {
+93 | 		if (Date.now() > deadline) throw new Error(options.message);
+                                            ^
+error: overdue provider claim launches despite legacy expiry
+      at waitFor (/tmp/glla-persistent-control-fstbn0mp/tests/harness/host-budget.ts:93:40)
+      at async <anonymous> (/tmp/glla-persistent-control-fstbn0mp/tests/persistent-provider-recovery.test.ts:189:13)
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6018.28ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [25.25ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1097.26ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.21ms]
+
+1 tests failed:
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6018.28ms]
+
+ 21 pass
+ 1 fail
+Ran 22 tests across 1 file. [7.63s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-3uSeoU/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-3uSeoU
+[run-tests] finished in 8s (exit 1)
