@@ -2,3 +2,73 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
+(pass) the confirmed steady provider recovery cadence is five minutes [0.85ms]
+(pass) provider compaction error preserves willRetry ownership [0.24ms]
+(pass) provider compaction error preserves aborted ownership [0.03ms]
+(pass) provider compaction error preserves fromExtension ownership [0.02ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [1.57ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [98.95ms]
+(pass) a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one [43.80ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [14.12ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [7.15ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.62ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.56ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.65ms]
+(pass) provider recovery restore cannot bypass user pause [0.38ms]
+(pass) provider recovery restore cannot bypass decision [0.39ms]
+(pass) provider recovery restore cannot bypass cancel [0.37ms]
+(pass) provider recovery restore cannot bypass replaced target [0.32ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.29ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [75.82ms]
+(pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [229.93ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [21.47ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1105.41ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.30ms]
+(pass) a quota wall that clears resumes the parked work and clears the durable wait [21.71ms]
+(pass) legacy compaction migration keeps the live cadence for a quota wall [10.71ms]
+266 |     if (quotaClass) {
+267 |       assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
+268 |         `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
+269 |     } else {
+270 |       // The migration must not force the quota cadence onto a non-quota wall.
+271 |       assert.ok(Math.abs(delay - PERSISTENT_PROVIDER_RETRY_MS) > 60_000,
+                   ^
+AssertionError: a non-quota failure does not inherit the five-minute quota cadence: 300002ms
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-i4ymiq2j/tests/persistent-provider-recovery.test.ts:271:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy compaction migration keeps the live cadence for a billing wall [8.49ms]
+266 |     if (quotaClass) {
+267 |       assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
+268 |         `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
+269 |     } else {
+270 |       // The migration must not force the quota cadence onto a non-quota wall.
+271 |       assert.ok(Math.abs(delay - PERSISTENT_PROVIDER_RETRY_MS) > 60_000,
+                   ^
+AssertionError: a non-quota failure does not inherit the five-minute quota cadence: 300003ms
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-persistent-control-i4ymiq2j/tests/persistent-provider-recovery.test.ts:271:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy compaction migration keeps the live cadence for a transient failure [8.45ms]
+(pass) the incident journal end-state retries after a stock reopen without consent [10.52ms]
+
+2 tests failed:
+(fail) legacy compaction migration keeps the live cadence for a billing wall [8.49ms]
+(fail) legacy compaction migration keeps the live cadence for a transient failure [8.45ms]
+
+ 25 pass
+ 2 fail
+Ran 27 tests across 1 file. [2.11s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-NkJRhY/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-NkJRhY
+[run-tests] finished in 2s (exit 1)
