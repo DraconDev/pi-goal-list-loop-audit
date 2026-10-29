@@ -265,10 +265,15 @@ for (const [label, reason, quotaClass] of [
       assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
         `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
     } else {
-      // One attempt on the configured ladder is 15m — deliberately NOT the
-      // five-minute quota cadence, which belongs to the quota class only.
-      assert.ok(delay > PERSISTENT_PROVIDER_RETRY_MS + 60_000,
-        `a non-quota failure keeps the configured ladder, not the quota cadence: ${delay}ms`);
+      // The migration must not force the quota cadence onto a non-quota wall.
+      assert.ok(Math.abs(delay - PERSISTENT_PROVIDER_RETRY_MS) > 60_000,
+        `a non-quota failure does not inherit the five-minute quota cadence: ${delay}ms`);
+      // It must land on exactly what the live path computes for this episode
+      // (attempt 1 is the shared eager retry), not an invented value.
+      const expected = Math.max(1_000, mainModelFailureDelayMs(
+        classifyMainModelFailure(reason), 1, 15));
+      assert.ok(Math.abs(delay - expected) <= 1_500,
+        `the migration matches the live cadence for this episode: ${delay}ms vs ${expected}ms`);
     }
   });
 }
