@@ -220,3 +220,6 @@ Switched to branch 'main'
 (pass) v0.34.25: the field ordering — stale before compaction, then the successor's compact event absorbs in place [515.76ms]
 (pass) v0.34.25: dead owner + ephemeral ctx cannot claim the plane (subagent lockout fix) [156.12ms]
 (pass) S4: a transient lastCtx probe glitch fails one tool call closed without dropping the context [3.86ms]
+(pass) v0.34.27: stale host recovery absorbs the first replacement contact across lifecycle and stream boundaries [3614.94ms]
+(pass) v0.34.27: plain startup from a dead file-backed successor is not rejected as a subagent [363.55ms]
+(pass) v0.38.68 reviewer P1: compact-defer settles without kicking a turn into the hot window [771.56ms]
