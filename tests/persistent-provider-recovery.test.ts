@@ -311,7 +311,8 @@ test('the incident journal end-state retries after a stock reopen without consen
   // and only its own failure may re-park the work.
   const ledger = () => fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
     .split('\n').filter(Boolean).map((line) => JSON.parse(line) as { type: string; value?: any });
-  await waitFor(() => ledger().some((entry) => entry.type === 'main_model_probe'), 5000);
+  await waitFor(() => ledger().some((entry) => entry.type === 'main_model_probe'),
+    { timeoutMs: 5000, message: 'the overdue recovery dispatches its retry' });
   const entries = ledger();
   const probeAt = entries.findIndex((entry) => entry.type === 'main_model_probe');
   assert.ok(probeAt >= 0, 'the overdue recovery dispatches its retry after a stock reopen');
