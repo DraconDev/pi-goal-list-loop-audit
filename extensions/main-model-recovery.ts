@@ -5,7 +5,7 @@
 // configured candidates, recognizes positively non-recoverable failures, and
 // computes a bounded-but-persistent retry cadence.
 
-import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError, quotaSignal } from "./quota-retry.js";
+import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError, quotaSignal, isDeterministicProviderError } from "./quota-retry.js";
 
 /** Recovery retries the configured chain promptly, then makes one paced
  * attempt every five minutes for as long as the owning work remains eligible.
@@ -97,6 +97,16 @@ export function mainModelPrimaryProbeDelayMs(minutes: unknown = DEFAULT_MAIN_MOD
 }
 
 export type MainModelFailureKind = "rate-limit" | "quota" | "billing" | "auth" | "transient" | "unknown" | "non-recoverable" | "context-overflow";
+
+/** Positive provider-outage evidence, shared by compaction and audit recovery.
+ * Unknown infrastructure, prompt policy and context/output-limit failures keep
+ * their own owners and remedies instead of acquiring retry authority. */
+export function isRecoverableProviderError(raw: string | undefined): boolean {
+  if (!raw?.trim()) return false;
+  const failure = classifyMainModelFailure(raw);
+  return !isDeterministicProviderError(raw)
+    && ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind);
+}
 
 export interface MainModelFailure {
   kind: MainModelFailureKind;
