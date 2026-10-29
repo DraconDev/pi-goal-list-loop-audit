@@ -3364,7 +3364,7 @@ test("a successful core retry clears generic provider recovery and resumes the p
   const errTurn = { messages: [{ role: "assistant", content: [], stopReason: "error", statusCode: 429, errorMessage: "limit exceeded" }] };
   await pi.fire("agent_end", errTurn, ctx); await tick();
   const parked = readState(cwd) as {
-    goal: { status: string; pauseKind?: string; objective?: string; pauseReason?: string; pauseSuggestedAction?: string };
+    goal: { status: string; pauseKind?: string; objective?: string; pauseReason?: string; pauseSuggestedAction?: string; pauseResumeAt?: string };
     mainModelRecovery?: { kind?: string; quotaSignal?: string; retryAt?: string };
   };
   const objective = parked.goal.objective;
