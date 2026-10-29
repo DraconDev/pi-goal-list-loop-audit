@@ -269,6 +269,7 @@ test('a resume request whose transcript vanished degrades to a cold start', asyn
   const argv = argvEntries(argvLog).at(-1) ?? [];
   const at = argv.indexOf('--session');
   assert.ok(at >= 0, 'still a durable dispatch');
-  assert.ok(!argv[at + 1].includes('gone'), 'a missing transcript is not passed through');
-  assert.ok(argv[at + 1].includes('stale-resume'), 'the attempt falls back to its own session file');
+  const chosen = argv[at + 1] ?? '';
+  assert.ok(!chosen.includes('gone'), 'a missing transcript is not passed through');
+  assert.ok(chosen.includes('stale-resume'), 'the attempt falls back to its own session file');
 });
