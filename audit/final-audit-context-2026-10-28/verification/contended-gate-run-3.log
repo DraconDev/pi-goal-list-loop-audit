@@ -1,0 +1,33 @@
+# Contended full-gate run #3 (host load avg 45-100 on 16 cores)
+# Retained excerpt: distinct failing tests and the run summary.
+
+(fail) real detached protocol approval archives the intended project before terminal handoff [29378.82ms]
+[run-tests] progress: 514s elapsed · 7s since last output · 19 KiB of suite output
+
+(fail) concurrent wake paths dispatch only one worker for the exact durable claim [48257.71ms]
+[run-tests] progress: 666s elapsed · 18s since last output · 20 KiB of suite output
+[run-tests] progress: 696s elapsed · 48s since last output · 20 KiB of suite output
+[run-tests] progress: 726s elapsed · 78s since last output · 20 KiB of suite output
+234 | 
+
+(fail) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [93170.34ms]
+
+(fail) stall: worker that never emits a first event is failed fast, not left for the wall [31964.44ms]
+[run-tests] progress: 6678s elapsed · 12s since last output · 386 KiB of suite output
+54 |  * the signal was sent, and on a loaded host that moment is not
+55 |  * instantaneous. */
+56 | async function waitFor(predicate: () => boolean, message: string, timeoutMs = 10_000): Promise<void> {
+
+(fail) stall: first-event budget starts after successful spawn, not pre-spawn setup [33827.49ms]
+[run-tests] progress: 6709s elapsed · 9s since last output · 387 KiB of suite output
+253 |   assert.match(result.error ?? "", /Auditor stalled — no session activity for/);
+254 |   assert.equal(result.infrastructureClass, "timeout", "the stall classifies as retryable infra, feeding the eager ladder");
+255 |   assert.equal(stalled.length, 1, "the watchdog emits auditor_stalled exactly once");
+
+(fail) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [26385.92ms]
+[run-tests] progress: 6739s elapsed · 12s since last output · 388 KiB of suite output
+
+ 4427 pass
+ 1 skip
+Ran 4434 tests across 474 files. [7151.86s]
+[run-tests] finished in 7157s (exit 1)

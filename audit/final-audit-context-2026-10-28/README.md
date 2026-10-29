@@ -155,10 +155,11 @@ audit blocking it.
   `tests/compaction-settled-boundary.test.ts` take their budgets from
   `tests/harness/host-budget.ts` (`waitFor`), which scales with measured host
   contention while still REQUIRING the condition — the three-suite rerun gave
-  26 passed, zero failed. The remaining five (`respec-builder-audit-runtime`,
-  `compactor-worker-lifecycle`, `list-draft-handoff`,
-  `auditor-stall-watchdog`) already use the shared helper and pass on rerun
-  once load fell (38 passed, zero failed) and in isolation. This is recorded as
+  26 passed, zero failed. Three of the remaining (`respec-builder-audit-runtime`,
+  `compactor-worker-lifecycle`, `list-draft-handoff`) already use the shared
+  helper and pass on rerun once load fell and in isolation (38 passed, zero
+  failed). The fourth, `auditor-stall-watchdog`, had a real host-dependent
+  assertion, fixed below. This is recorded as
   host contention, not a claimed product regression, and no assertion was
   loosened: every condition is still required, only the wall-clock allowance
   follows the CPU actually available.
@@ -176,6 +177,19 @@ audit blocking it.
   load per CPU against the deliberately pinned 2x ceiling in
   `extensions/goal-loop-shield.ts` `MECHANICAL_LOAD_SCALE_MAX`) is left alone
   because that ceiling is an intentional product contract, not a test defect.
+- Two `tests/auditor-stall-watchdog.test.ts` assertions measured the HOST, not
+  the product. They required the cancelled detached worker to have booted far
+  enough to install its own SIGTERM handler and write a marker file. On a
+  saturated host the watchdog fires before that, the signal hits the default
+  disposition, the child dies correctly — and no marker appears, so a healthy
+  watchdog was reported as broken. The assertion now accepts either observable
+  consequence of cancellation (handler ran, OR the process is gone and its
+  job scratch was reaped) and still fails a worker that survives. Control
+  `verification/stall-marker-negative.log` removes both the signal and the
+  scratch reaping in a disposable copy and the test correctly fails with
+  "the detached silent worker was cancelled". The repaired suite runs 27
+  passed / zero failed, and the two tests dropped from ~32s to ~10s because
+  they no longer wait out a handler that was never installed.
 - Final `npm run release:check`: **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:
   **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered
