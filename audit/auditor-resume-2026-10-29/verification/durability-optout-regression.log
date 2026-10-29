@@ -1,0 +1,40 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-resume.test.ts:
+(pass) the default dispatch asks for a durable auditor session, not --no-session [501.40ms]
+(pass) a failed attempt keeps the session a retry can resume [271.79ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [210.01ms]
+(pass) auditorInspection=false restores the original --no-session spawn [270.67ms]
+(pass) a retained session directory is still reapable by the retention sweep [4.92ms]
+(pass) a provider failure resumes the prior transcript [0.15ms]
+(pass) a transport failure resumes the prior transcript [0.02ms]
+(pass) a timeout restarts cold the prior transcript
+(pass) a no-verdict attempt restarts cold the prior transcript
+(pass) a moved goal revision still restarts the audit cold [0.07ms]
+(pass) a replaced claim still restarts the audit cold
+(pass) a changed audit tier still restarts the audit cold
+(pass) an explicit cancel still restarts the audit cold
+(pass) a vanished transcript still restarts the audit cold
+210 |         priorTier: 'full', currentTier: 'full',
+211 |         sessionExists: true,
+212 |       },
+213 |       ...overrides,
+214 |     } as never);
+215 |     assert.equal(decision.resume, false, `${label} must not resume`);
+                 ^
+AssertionError: durability turned off must not resume
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-iv5gfhrq/tests/auditor-resume.test.ts:215:12
+      at fn (node:test:215:18)
+(fail) durability turned off still restarts the audit cold [1.16ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [320.71ms]
