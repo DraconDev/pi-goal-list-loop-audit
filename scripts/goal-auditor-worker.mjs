@@ -10,7 +10,7 @@
 import { spawn } from "node:child_process";
 import { createHash, createHmac } from "node:crypto";
 import { lstat, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { constants as fsConstants, readdirSync, readFileSync } from "node:fs";
+import { constants as fsConstants, existsSync, readdirSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import os from "node:os";
@@ -397,7 +397,20 @@ async function main() {
   identity(request, attemptId);
   // v0.38.3: deterministic session path — pinned inside the job dir so its
   // lifetime equals the job-dir retention window (no new cleanup path).
-  const sessionPath = request.inspection === true ? path.join(jobDir, "session.jsonl") : undefined;
+  // A resume request points at the PRIOR attempt's retained session so the
+  // auditor continues its own transcript instead of restarting the audit
+  // cold. The parent has already validated that the path is a real session
+  // for the same goal revision and claim lineage; the worker only refuses a
+  // path that does not exist, so a missing transcript degrades to a cold
+  // start rather than a failed audit.
+  const requestedResume = typeof request.resumeSessionPath === "string" && request.resumeSessionPath
+    ? request.resumeSessionPath
+    : undefined;
+  const resumablePath = requestedResume && existsSync(requestedResume) ? requestedResume : undefined;
+  if (requestedResume && !resumablePath) request.resumeSessionPath = undefined;
+  const sessionPath = request.inspection === true
+    ? (resumablePath ?? path.join(jobDir, "session.jsonl"))
+    : undefined;
   // Mark the detached worker owner durably. A replacement pi host can reap
   // this PID after the original host dies; parent-owned/pending locks are
   // deliberately not safe to kill across a restart.

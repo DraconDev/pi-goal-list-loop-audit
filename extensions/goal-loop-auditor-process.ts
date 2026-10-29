@@ -2337,6 +2337,12 @@ async function runDetachedGoalCompletionAuditorInner(args: {
    * worker persists the auditor's pi as a resumable session pinned inside
    * the job dir. Off/absent = the original --no-session spawn. */
   inspection?: boolean;
+  /** A prior attempt's retained session this dispatch should CONTINUE. The
+   * caller is responsible for having decided that resuming is sound (same
+   * goal revision, same claim lineage, provider-class failure only) — this
+   * layer validates existence and falls back to a cold start, never the
+   * reverse. Part of the request hash. */
+  resumeSessionPath?: string;
   signal?: AbortSignal;
   onProgress?: AuditorProgressCallback;
   /** v0.34.57: fired once when the heartbeat-without-progress watchdog
