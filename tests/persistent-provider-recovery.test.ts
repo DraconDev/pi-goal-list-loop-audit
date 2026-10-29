@@ -209,3 +209,32 @@ test('provider auditor retries remain five-minute and automatic past legacy expi
     assert.equal(plan.retryAfterSec * 1000, PERSISTENT_PROVIDER_RETRY_MS);
   }
 });
+
+test('a quota wall that clears resumes the parked work and clears the durable wait', async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: true, aggressiveMode: false, mainModelFallbacks: [] }));
+  seedState(cwd, { goal: seedGoal({ status: 'active', objective: 'Resume when the quota wall clears' }) });
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd);
+  await pi.fire('session_start', { reason: 'reload' }, ctx);
+  sessions.push({ pi, ctx });
+
+  // A plan-quota wall parks the work with a durable five-minute due time.
+  await pi.fire('session_compact_failed', { errorMessage: quotaError, willRetry: false }, ctx);
+  const parked = readState(cwd);
+  assert.equal(parked.goal?.status, 'paused');
+  assert.equal(parked.goal?.pauseKind, 'wait');
+  assert.ok(parked.mainModelRecovery?.retryAt, 'the wait is durable, not a manual hold');
+
+  // The provider answers again on the next supervised turn.
+  await pi.fire('agent_start', {}, ctx);
+  await pi.fire('agent_end', { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'recovered' }], stopReason: 'end_turn' }] }, ctx);
+  await pi.fire('agent_settled', {}, ctx);
+
+  const resumed = readState(cwd);
+  assert.equal(resumed.mainModelRecovery, undefined, 'a healthy turn clears the durable recovery episode');
+  assert.notEqual(resumed.goal?.status, 'paused', 'the parked work does not stay stranded in a permanent manual pause');
+  const ledger = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8');
+  assert.match(ledger, /"main_model_recovered"/, 'the recovery settlement is durably recorded');
+});
