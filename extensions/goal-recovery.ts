@@ -1054,7 +1054,8 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   }
   // This durable due time owns every retry entry point. Exhausting the
   // configured chain changes cadence, never permission to keep recovering.
-  const requestedDelayMs = Math.max(1_000, boundedSameModelDelay(ctx, normalized, PERSISTENT_PROVIDER_RETRY_MS));
+  const steadyDelayMs = isRecoverableProviderError(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;
+  const requestedDelayMs = Math.max(1_000, boundedSameModelDelay(ctx, normalized, steadyDelayMs));
   if (normalized.manualResumeRequired) {
     holdMainModelRecovery(ctx, normalized, "an explicit recovery hold requires manual action");
     return false;

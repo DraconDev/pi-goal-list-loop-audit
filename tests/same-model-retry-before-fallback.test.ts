@@ -175,6 +175,7 @@ test("integration: fresh recovery prefers an untried configured backup over the 
       owner: { kind: 'chat' }, // This isolated selector rig has no GLLA objective.
       retryAt: new Date(Date.now() - 1).toISOString(), // timer past, so the probe runs
       reason: "main model recovery — provider error",
+      providerErrorDiagnostic: '429 Token Plan rate limit reached',
       kind: "goal",
     };
     await probeMainModelRecovery(ctx);
