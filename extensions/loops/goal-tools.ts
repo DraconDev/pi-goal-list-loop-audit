@@ -2204,7 +2204,7 @@ function registerAgentTools(pi: any): void {
           const failureCopy = providerErrorPresentation(result.error, "completion");
           const recoveryEpisodeKey = durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${failureCopy.fingerprint}`;
           const aggressive = resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode;
-          const plan = auditorRetryPlan(durableCompletionClaim, undefined, undefined, aggressive);
+          const plan = auditorRetryPlan({ ...durableCompletionClaim, providerErrorDiagnostic: failureCopy.diagnostic }, undefined, undefined, aggressive);
           // v0.38.63 (audit-stuck batch): N consecutive identical infra
           // failures terminate the loop visibly — park blocked naming the
           // dead chain, schedule no further retry. Manual/agent resume
@@ -2229,9 +2229,10 @@ function registerAgentTools(pi: any): void {
             auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
             retryAttempts: plan.attempt,
             retryFirstAt: plan.firstAt,
-            retryUntil: plan.autoRetryUntil,
+            retryUntil: plan.unbounded ? undefined : plan.autoRetryUntil,
+            automaticRecoveryUntil: plan.unbounded ? undefined : durableCompletionClaim.automaticRecoveryUntil,
           };
-          if (identical.identicalParkDue && !quotaIdenticalExempt) {
+          if (identical.identicalParkDue && !quotaIdenticalExempt && !plan.unbounded) {
             const deadChain = (durableCompletionClaim.exhaustedChain
               ?? (durableCompletionClaim.auditorCandidateRefs ?? durableCompletionClaim.auditorAttemptedRefs ?? []).join(" → ")
               ?? "").slice(0, 300) || "unknown chain";

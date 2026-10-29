@@ -543,7 +543,10 @@ function automaticRecoveryWindow(pending: PendingCompletion, now = Date.now(), _
     .map((value) => typeof value === "string" ? Date.parse(value) : Number.NaN)
     .find((value) => Number.isFinite(value));
   const firstMs = Number.isFinite(firstCandidate) ? firstCandidate! : now;
-  // Recovery policy may allow more attempts, never a renewed deadline.
+  if (isRecoverableProviderError(pending.providerErrorDiagnostic)) {
+    return { firstAt: new Date(firstMs).toISOString(), untilMs: Number.POSITIVE_INFINITY };
+  }
+  // Non-provider infrastructure retains its independent conservative policy.
   const existingUntil = typeof pending.automaticRecoveryUntil === "string" ? Date.parse(pending.automaticRecoveryUntil) : Number.NaN;
   const untilMs = Number.isFinite(existingUntil)
     ? existingUntil
@@ -599,7 +602,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
   // park time, so the next episode re-walks a fresh chain.
   const now = Date.now();
   const aggressive = aggressiveAuditorRecoveryEnabled(ctx.cwd);
-  if (pending.automaticRecoveryAttempted === true && !aggressive) return pending;
+  if (pending.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(pending.providerErrorDiagnostic)) return pending;
   const window = automaticRecoveryWindow(pending, now, aggressive);
   if (aggressive && Number.isFinite(window.untilMs) && now >= window.untilMs) {
     return { ...pending, recoveryRetryAt: undefined, automaticRecoveryFirstAt: window.firstAt, automaticRecoveryUntil: window.until };
@@ -649,7 +652,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     const claim = goal?.pendingCompletion;
     if (!goal || goal.status !== "paused" || !claim || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
     const aggressiveNow = aggressiveAuditorRecoveryEnabled(fresh.cwd);
-    if (claim.automaticRecoveryAttempted === true && !aggressiveNow) {
+    if (claim.automaticRecoveryAttempted === true && !aggressiveNow && !isRecoverableProviderError(claim.providerErrorDiagnostic)) {
       updateGoal({
         pendingCompletion: { ...claim, recoveryRetryAt: undefined },
         pauseKind: "blocked",
@@ -698,7 +701,7 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   const recoveryWindow = automaticRecoveryWindow(claim, startedMs, aggressive);
   const automaticRecoveryRetry = origin === "session-recovery"
     && (claim.phase ?? "recovery-pending") === "recovery-pending"
-    && (claim.automaticRecoveryAttempted !== true || aggressive)
+    && (claim.automaticRecoveryAttempted !== true || aggressive || isRecoverableProviderError(claim.providerErrorDiagnostic))
     && (!aggressive || startedMs < recoveryWindow.untilMs);
   // An agent-tool resume carries the same in-conversation user
   // authorization as a typed /goal resume, so an exhausted claim also
@@ -914,7 +917,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   const ctx = freshCtxForGeneration(generation);
   if (!ctx) return false;
   const aggressive = aggressiveAuditorRecoveryEnabled(ctx.cwd);
-  if (claim.automaticRecoveryAttempted === true && !aggressive) return false;
+  if (claim.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(claim.providerErrorDiagnostic)) return false;
   if (aggressive) {
     const window = automaticRecoveryWindow(claim, Date.now(), true);
     if (Number.isFinite(window.untilMs) && Date.now() >= window.untilMs) return false;
@@ -929,7 +932,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
     || current.status !== "paused"
     || !currentClaim
     || (currentClaim.phase ?? "recovery-pending") !== "recovery-pending"
-    || (currentClaim.automaticRecoveryAttempted === true && !aggressive)
+    || (currentClaim.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(currentClaim.providerErrorDiagnostic))
   ) return false;
 
   appendLedger(ctx.cwd, "audit_recovery_auto_retry_claimed", {
@@ -1363,7 +1366,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const pending = guardedGoal.pendingCompletion;
     const deadlines = [pending.retryUntil, pending.automaticRecoveryUntil]
       .filter((value): value is string => typeof value === "string" && value.length > 0);
-    const expired = deadlines.some((value) => {
+    const expired = !isRecoverableProviderError(pending.providerErrorDiagnostic) && deadlines.some((value) => {
       const parsed = Date.parse(value);
       return !Number.isFinite(parsed) || Date.now() >= parsed;
     });
