@@ -238,3 +238,37 @@ test('a quota wall that clears resumes the parked work and clears the durable wa
   const ledger = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8');
   assert.match(ledger, /"main_model_recovered"/, 'the recovery settlement is durably recorded');
 });
+
+for (const [label, reason, quotaClass] of [
+  ['a quota wall', `compaction failure: ${quotaError}`, true],
+  ['a billing wall', 'compaction failure: insufficient credits — buy credits', false],
+  ['a transient failure', 'compaction failure: 503 Service Unavailable', false],
+] as const) {
+  test(`legacy compaction migration keeps the live cadence for ${label}`, async () => {
+    const cwd = tmpCwd();
+    fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [], mainModelRetryMinutes: 15 }));
+    const id = `migrate-${label.replace(/\s+/g, '-')}`;
+    seedState(cwd, { goal: seedGoal({ id, status: 'paused', pauseKind: 'blocked', pauseSource: 'system',
+      pauseReason: reason }), mainModelRecovery: {
+      primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], owner: { kind: 'goal', id },
+      kind: 'goal', attempts: 1, reason: 'provider error', providerErrorDiagnostic: reason,
+    } });
+    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+    const pi = new MockPi(); activate(pi.api);
+    const ctx = makeMockCtx(cwd);
+    sessions.push({ pi, ctx });
+    const start = Date.now();
+    await pi.fire('session_start', { reason: 'startup' }, ctx);
+    const restored = readState(cwd);
+    const delay = Date.parse(restored.mainModelRecovery?.retryAt ?? '') - start;
+    if (quotaClass) {
+      assert.ok(delay >= PERSISTENT_PROVIDER_RETRY_MS - 1_500 && delay <= PERSISTENT_PROVIDER_RETRY_MS + 1_500,
+        `a quota wall migrates onto the five-minute cadence: ${delay}ms`);
+    } else {
+      // One attempt on the configured ladder is 15m — deliberately NOT the
+      // five-minute quota cadence, which belongs to the quota class only.
+      assert.ok(delay > PERSISTENT_PROVIDER_RETRY_MS + 60_000,
+        `a non-quota failure keeps the configured ladder, not the quota cadence: ${delay}ms`);
+    }
+  });
+}
