@@ -190,12 +190,15 @@ audit blocking it.
   "the detached silent worker was cancelled". The repaired suite runs 27
   passed / zero failed, and the two tests dropped from ~32s to ~10s because
   they no longer wait out a handler that was never installed.
-- Final `npm run release:check`: **exit 0**, retained in
+- Final `npm run release:check` on the finished tree, run at a low-load window
+  (load ~29 falling to ~15): **exit 0**, retained in
   `verification/release-check.exit` and `verification/release-check.log`:
   **4,433 passed, one pre-existing env-gated skip, zero failed; 4,434 discovered
-  across 474 files**, runner exit 0 in 1,244 seconds. Jiti identity regression,
-  auditor-extension fences, inventory check, pack dry-run and installed
-  packed-worker/skill probes all succeeded afterward. This is local packed
+  across 474 files**, runner exit 0 in **1,933 seconds** — down from 5,787 s on
+  the same suite under contention, because no test now waits out a starvation
+  timeout. Jiti identity regression, auditor-extension fences, inventory check,
+  pack dry-run and installed packed-worker/skill probes all succeeded after it.
+  This is local packed
   evidence, not a published-release claim or a claim about either source
   project's deliverable.
 
