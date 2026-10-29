@@ -49,3 +49,14 @@ export function recoveryWaitIsDue(state: State, now = Date.now()): boolean {
     .filter((value) => Number.isFinite(value));
   return due.length > 0 && due.some((value) => value <= now);
 }
+
+/** The claim-shaped test without the load-hold clause. A stored completion
+ * claim is already parked work, not a live turn: the cold-load hold freezes
+ * AUTOMATION of live goals, and must not silently convert a durable auditor
+ * retry wait into a "held for your decision" state that drops its due time.
+ * Explicit user/supervisor pauses, decisions and foreign ownership still
+ * outrank this exception. */
+export function ownsParkedProviderClaim(state: State): boolean {
+  if (state.supervisorPausedAt) return false;
+  return ownsPersistentProviderWait({ ...state, loadHoldAt: undefined });
+}
