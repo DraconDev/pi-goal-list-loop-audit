@@ -122,8 +122,8 @@ This authority boundary applies before settings-value normalization.
 | `compactorModel` | unset (plan B) | Emergency-compactor primary; never the session model. Global-only. |
 | `compactorModelFallbacks` | `[]` | Ordered compactor fallbacks; no session last resort. Global-only. |
 | `compactionTokenThreshold` | `200000` | Positive context-token target for opportunistic transcript compaction at the next idle boundary, between work turns or list items. Waits while tools, audits, or queued messages own the host; respects pause and abort. Global-only. |
-| `mainModelRetryMinutes` | `15` | Base minutes before main-session recovery; doubles per attempt, caps 5h. Global-only. |
-| `mainModelSameModelRetries` | `10` | Maximum retries the CURRENT main model gets before fallback. With an untried permitted configured backup, a two-minute per-model phase limit also applies; in-flight calls retain the host timeout. 0 = legacy immediate rotation. Clamped to 0..100. Global-only. |
+| `mainModelRetryMinutes` | `15` | Base backoff for failures without positive provider-outage evidence; doubles per attempt, caps 5h. Positive provider/quota failures try permitted alternatives promptly, then retry every five minutes without an attempt/elapsed cutoff. Global-only. |
+| `mainModelSameModelRetries` | `10` | Same-model retry budget for ambiguous/local failures before fallback, with a two-minute phase limit when a permitted backup remains. Positive provider/quota outages bypass this budget and try untried permitted alternatives promptly. In-flight calls retain the host timeout. 0 = immediate rotation. Clamped to 0..100. Global-only. |
 | `mainModelFailback` | `"auto"` | `"auto"` re-probes the primary; `"sticky"` keeps the fallback. Global-only. |
 | `mainModelPrimaryProbeMinutes` | `15` | Minutes between preferred-primary health probes. Global-only. |
 | `forbiddenModels` | `[]` | Refs that must never be selected (case-insensitive substring). |
@@ -156,7 +156,7 @@ This authority boundary applies before settings-value normalization.
 | `auditFeedbackChars` | `0` (full) | Max auditor-report chars returned after disapproval (`0` = full). |
 | `auditorSilent` | `true` | Auditor report renders final-only, no word-by-word HUD. |
 | `auditorProgressSignals` | `true` | Silent audits show phase label + byte counter. |
-| `hourlyRetryProbe` | `true` | Extra blind retry at :00:30 every hour while parked. Global-only. |
+| `hourlyRetryProbe` | `true` | Extra blind retry at :00:30 for eligible legacy recovery waits. Positive provider/quota waits use their durable five-minute cadence instead, without an extra hourly queue-jump. Global-only. |
 | `subagentModelStrategy` | `"inherit-parent"` | Default subagent model policy for new sessions. |
 | `subagentModelOverrides` | unset | Per-agent-type model pin; always wins over strategy. |
 | `subagentThinkingOverrides` | unset | Per-agent-type thinking pin (`off`–`max`); unset per type = session inherit. |
