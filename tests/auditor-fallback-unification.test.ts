@@ -278,7 +278,7 @@ test("a forbidden auditor primary is skipped before the configured fallback and 
   });
 });
 
-test("auditor retries the same ref, then walks the next untried ref with bounded shared backoff", async () => {
+test("auditor promptly walks an untried provider before any steady recovery wait", async () => {
   const candidates: AuditorFallbackCandidate[] = [
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "duplicate" },
@@ -305,21 +305,11 @@ test("auditor retries the same ref, then walks the next untried ref with bounded
   });
 
   assert.equal(outcome.result.approved, true);
-  assert.equal(outcome.retriedOnce, true);
+  assert.equal(outcome.retriedOnce, false);
   assert.equal(outcome.fallbackUsed, true);
-  assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-1"]);
+  assert.deepEqual(calls, ["test/primary", "other/fallback-1"]);
   assert.deepEqual(fallbacks, ["test/primary->other/fallback-1"]);
-  // v0.38.104: this expectation was stale, not the code. The v0.38.104
-  // transient window made the SHARED delay function eager for transient
-  // failures (operator direction 2026-09-28 named the auditor fallback lane
-  // explicitly), so a 503 now takes the 5s eager rung for both the same-ref
-  // retry and the walk to the next ref — previously [5s, 2m]. The WIP changed
-  // this and left the test asserting the old ladder, so the gate was red
-  // before this pass ever ran. Pinned here so the eagerness stays BOUNDED:
-  // the ladder is chain-bounded (at most two calls per candidate), and a wall
-  // still takes the real ladder — asserted below.
-  assert.deepEqual(waits, [5_000, 5_000], "transient failures take the eager rung on both the retry and the fallback walk");
-  assert.ok(waits.every((delay) => delay >= 1_000 && delay <= MAIN_MODEL_MAX_RETRY_DELAY_MS));
+  assert.deepEqual(waits, [], "an available configured provider is tried before sleeping against the failed one");
   assert.deepEqual(selections, ["ok:test/primary", "ok:other/fallback-1"]);
 
   // An account wall should reach the healthy fallback without hammering
@@ -362,7 +352,7 @@ test("auditor forbidden and duplicate refs are skipped before retry ordering", a
     onSelection: (event) => { if (event.toRef) events.push(`${event.reason}:${event.toRef}`); },
   });
   assert.equal(outcome.result.approved, true);
-  assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-2"]);
+  assert.deepEqual(calls, ["test/primary", "other/fallback-2"]);
   assert.ok(events.includes("forbidden:test/forbidden"));
 });
 
@@ -507,29 +497,29 @@ test("infrastructure errors cannot survive as semantic auditor verdicts", async 
 
 test("partial semantic flags cannot bypass fallback recovery", async () => {
   const calls: string[] = [];
-  let attempt = 0;
   const outcome = await runAuditorFallbackWithPolicy([
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
+    { ref: "other/fallback", model: { provider: "other", id: "fallback" }, via: "fallback-pin" },
   ], async (candidate) => {
     calls.push(candidate.ref!);
-    attempt += 1;
-    return attempt === 1
+    return candidate.ref === 'test/primary'
       ? result({ approved: true, error: "503 provider unavailable", model: candidate.ref })
       : result({ approved: true, model: candidate.ref });
   }, {
-    sleep: async () => {},
+    sleep: async () => { assert.fail('provider fallback must not sleep'); },
     shouldRetry: () => true,
   });
 
-  assert.deepEqual(calls, ["test/primary", "test/primary"]);
-  assert.equal(outcome.retriedOnce, true);
+  assert.deepEqual(calls, ["test/primary", "other/fallback"]);
+  assert.equal(outcome.retriedOnce, false);
+  assert.equal(outcome.result.model, 'other/fallback', 'only the real fallback verdict is accepted');
   assert.equal(outcome.result.approved, true);
   assert.equal(outcome.result.error, undefined);
 });
 
 test("same-provider rungs collapse after a provider-class failure", async () => {
   // One dead backend must not burn a launch per rung: after test/primary
-  // fails twice with a provider-class error, test/fallback-1 (same backend)
+  // reports a backend-side error, test/fallback-1 (same backend)
   // is skipped and the chain reports exhausted with the concrete class.
   const exhausted: AuditorFallbackExhaustionInfo[] = [];
   const calls: string[] = [];
@@ -545,7 +535,7 @@ test("same-provider rungs collapse after a provider-class failure", async () => 
     onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
   });
 
-  assert.deepEqual(calls, ["test/primary", "test/primary"], "the same-backend rung is skipped, not launched");
+  assert.deepEqual(calls, ["test/primary"], "the same-backend rung is skipped, not launched");
   assert.equal(outcome.result.fallbackExhausted, true);
   assert.equal(outcome.result.infrastructureClass, "provider");
   assert.equal(exhausted.length, 1);
@@ -570,7 +560,7 @@ test("cross-provider rungs still walk the full chain", async () => {
     onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
   });
 
-  assert.deepEqual(calls, ["a/primary", "a/primary", "b/fallback-1", "b/fallback-1"]);
+  assert.deepEqual(calls, ["a/primary", "b/fallback-1"]);
   assert.equal(outcome.result.fallbackExhausted, true);
   assert.equal(outcome.result.infrastructureClass, "provider");
   assert.equal(exhausted.length, 2);
@@ -631,7 +621,7 @@ test("cursor persistence failure fails closed before a retry or fallback", async
   }, {
     sleep: async (ms) => { waits.push(ms); },
     shouldRetry: () => true,
-    onRetry: () => false,
+    onCandidateExhausted: () => false,
   });
 
   assert.deepEqual(calls, ["test/primary"]);
@@ -668,7 +658,7 @@ test("A8: a host abort interrupts the ladder delay instead of stranding the clai
   // ladder would hang here for the whole retry delay.
   const outcomeP = runAuditorFallbackWithPolicy(candidates, async (candidate) => {
     calls.push(candidate.ref!);
-    return result({ error: "503 upstream unavailable", model: candidate.ref! });
+    return result({ error: "pi exited without an agent_settled RPC event", model: candidate.ref! });
   }, {
     retryBaseMinutes: 15,
     sleep: () => new Promise<void>(() => {}),
@@ -680,7 +670,7 @@ test("A8: a host abort interrupts the ladder delay instead of stranding the clai
   controller.abort();
   const outcome = await outcomeP;
   assert.deepEqual(calls, ["test/primary"], "no second launch after the abort");
-  assert.equal(outcome.result.error, "503 upstream unavailable", "the in-hand result returns promptly");
+  assert.equal(outcome.result.error, "pi exited without an agent_settled RPC event", "the in-hand result returns promptly");
   assert.equal(outcome.retriedOnce, false, "the aborted retry is not recorded as taken");
 });
 
@@ -693,7 +683,7 @@ test("A7: a cursor-callback refusal while live stays a persistence failure", asy
     retryBaseMinutes: 1,
     sleep: async () => {},
     shouldRetry: () => true,
-    onRetry: () => false, // durable write genuinely failed — no handoff
+    onCandidateExhausted: () => false, // durable write genuinely failed — no handoff
   });
   assert.equal(outcome.result.error, "auditor recovery cursor persistence failed", "live refusal manufactures the persistence failure");
 });
@@ -710,7 +700,7 @@ test("A7: a cursor-callback refusal after a generation handoff stops quietly on 
     shouldRetry: () => live,
     // The handoff lands between the fence check and the cursor write —
     // the exact race persistDetachedAuditorCursor loses.
-    onRetry: () => { live = false; return false; },
+    onCandidateExhausted: () => { live = false; return false; },
   });
   assert.equal(outcome.result.error, "503 upstream unavailable", "no manufactured failure after handoff");
 });
@@ -727,8 +717,8 @@ for (const error of ["subscription quota exhausted; retry in 7 days", "HTTP 429 
           ? result({ approved: true, model: "test/session" })
           : result({ error, model: `test/${candidate.model.id}` });
       }, { sleep: async (ms) => { waits.push(ms); } });
-      assert.deepEqual(calls, error.startsWith("503") ? ["primary", "primary", "session"] : ["primary", "session"]);
-      if (!error.startsWith("503")) assert.deepEqual(waits, [], "account failure does not delay the session fallback");
+      assert.deepEqual(calls, ["primary", "session"]);
+      assert.deepEqual(waits, [], "a provider failure does not delay the session fallback");
       assert.equal(out.result.approved, true);
       assert.equal(out.result.model, "test/session");
     });
