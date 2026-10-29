@@ -265,7 +265,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
-import { ownsPersistentProviderWait, ownsParkedProviderClaim } from '../persistent-provider-recovery.js';
+import { ownsParkedProviderClaim } from '../persistent-provider-recovery.js';
 import { rearmLegacyElapsedRecoveryHold, restoreLegacyProviderCompactionWait, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
