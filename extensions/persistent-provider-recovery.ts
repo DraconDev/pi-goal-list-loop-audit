@@ -32,3 +32,20 @@ export function ownsPersistentProviderWait(state: State): boolean {
       && !!claim.recoveryRetryAt && claim.phase === 'recovery-pending'
       && /^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? ''));
 }
+
+/** True when the owned recovery wait's durable due time has already arrived.
+ * A due wait is automation the operator's policy already scheduled; a future
+ * wait is still a pending decision. Only the DUE case is exempt from the
+ * cold-load consent hold — the wait never manufactures consent by itself. */
+export function recoveryWaitIsDue(state: State, now = Date.now()): boolean {
+  if (state.supervisorPausedAt || state.loadHoldAt) return false;
+  if (!ownsPersistentProviderWait({ ...state, loadHoldAt: undefined, supervisorPausedAt: undefined })) return false;
+  const due = [
+    state.goal?.pendingCompletion?.recoveryRetryAt,
+    state.goal?.pauseKind === 'wait' ? state.goal?.pauseResumeAt : undefined,
+    state.mainModelRecovery?.retryAt,
+  ]
+    .map((value) => typeof value === 'string' ? Date.parse(value) : Number.NaN)
+    .filter((value) => Number.isFinite(value));
+  return due.length > 0 && due.some((value) => value <= now);
+}
