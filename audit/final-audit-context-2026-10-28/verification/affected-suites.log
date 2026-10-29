@@ -270,3 +270,5 @@ Switched to branch 'main'
 (pass) v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated [424.64ms]
 (pass) v0.35.x: /glla audits full sanitizes active and global reports [5.77ms]
 (pass) v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining diagnostics [314.60ms]
+(pass) v0.35.x: bare 403 completion diagnostics stay durable while completion surfaces remain sanitized [5700.06ms]
+(pass) v0.34.119: auditor-approved list completion archives the item and activates exactly the next queue item [330.58ms]
