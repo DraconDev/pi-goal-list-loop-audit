@@ -265,7 +265,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
-import { ownsParkedProviderClaim } from '../persistent-provider-recovery.js';
+import { ownsParkedProviderClaim, recoveryWaitIsDue } from '../persistent-provider-recovery.js';
 import { rearmLegacyElapsedRecoveryHold, restoreLegacyProviderCompactionWait, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
@@ -2413,7 +2413,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       ctx.ui.notify(`Main-model recovery stopped automatic probes — the work is safe; ${recoveryResumeCmd} reopens paced automatic recovery after the required action.`, "warning");
     } else if (mainRecovery?.retryAt || mainRecovery?.pendingModelSwitch) {
       const retryAtMs = mainRecovery.retryAt ? Date.parse(mainRecovery.retryAt) : Number.NaN;
-      const recoveryConsent = autoResume || explicitRecovery;
+      // A due wait is continuing approved automation, not a new dispatch.
+      const recoveryConsent = autoResume || explicitRecovery || recoveryWaitIsDue(state);
       if (recoveryConsent) {
         const delay = Number.isFinite(retryAtMs) ? Math.max(0, retryAtMs - Date.now()) : 0;
         ctx.ui.notify(`Restored main-model recovery (${mainRecovery.kind}) — ${mainRecovery.pendingModelSwitch ? `reconciling ${mainRecovery.pendingModelSwitch}` : delay > 0 ? `next probe in ${Math.max(1, Math.ceil(delay / 60_000))}m` : "probe is due now"}.`, "info");
@@ -2776,8 +2777,11 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // v0.35.23: restore itself may have consented to live work (journal
       // replay activating a deferred item, stale rearm) — a hold must never
       // freeze what restore deliberately started.
+      // A due recovery-owned wait is not live automation being silently armed:
+      // its moment has already arrived and the objective forbids stranding it
+      // as a manual pause after a stock reopen. Future waits still hold.
       if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number"
-        && !ownsParkedProviderClaim(state)) {
+        && !ownsParkedProviderClaim(state) && !recoveryWaitIsDue(state)) {
         replaceState({ ...state, loadHoldAt: Date.now() });
         persistState(ctx);
         appendLedger(ctx.cwd, "load_hold_engaged", { reason: startReason ?? "startup" });

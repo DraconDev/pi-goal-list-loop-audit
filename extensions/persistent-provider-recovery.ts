@@ -33,6 +33,28 @@ export function ownsPersistentProviderWait(state: State): boolean {
       && /^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? ''));
 }
 
+/** A recovery-owned wait whose due time has ALREADY passed carries its own
+ * continuation authority across a reload. It is a time-gated wait whose moment
+ * has arrived, not a live turn being silently re-armed: the operator approved
+ * this automation when the episode was created, and the objective forbids
+ * turning an elapsed recovery wait into a permanent manual pause.
+ *
+ * Deliberately narrow — a FUTURE wait still needs consent (v0.35.23), the
+ * cold-load hold is stripped here only so the check can be asked while a hold
+ * is in force, and every explicit hold still outranks it. */
+export function recoveryWaitIsDue(state: State, now = Date.now()): boolean {
+  if (state.supervisorPausedAt) return false;
+  if (!ownsPersistentProviderWait({ ...state, loadHoldAt: undefined })) return false;
+  const due = [
+    state.goal?.pendingCompletion?.recoveryRetryAt,
+    state.goal?.pauseKind === 'wait' ? state.goal?.pauseResumeAt : undefined,
+    state.mainModelRecovery?.retryAt,
+  ]
+    .map((value) => typeof value === 'string' ? Date.parse(value) : Number.NaN)
+    .filter((value) => Number.isFinite(value));
+  return due.length > 0 && due.some((value) => value <= now);
+}
+
 /** The claim-shaped test without the load-hold clause. A stored completion
  * claim is already parked work, not a live turn: the cold-load hold freezes
  * AUTOMATION of live goals, and must not silently convert a durable auditor
