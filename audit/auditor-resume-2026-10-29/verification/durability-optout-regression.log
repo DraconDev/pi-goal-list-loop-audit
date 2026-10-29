@@ -38,3 +38,12 @@ true !== false
       at fn (node:test:215:18)
 (fail) durability turned off still restarts the audit cold [1.16ms]
 (pass) a resumed dispatch spawns against the prior attempt transcript [320.71ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [330.13ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.31ms]
+
+ 17 pass
+ 1 fail
+Ran 18 tests across 1 file. [3.53s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-j4gtXO/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-j4gtXO
+[run-tests] finished in 4s (exit 1)

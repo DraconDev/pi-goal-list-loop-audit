@@ -141,3 +141,42 @@ The provider/quota recovery goal (`20261029112830-o9ecox`) was archived
 present in HEAD and green (`recoveryWaitIsDue` at both call sites;
 `release:check` 4461 pass / 1 skip / 0 fail). It carries no auditor verdict
 because of the same candidate exhaustion documented above.
+
+## Implemented
+
+- `auditorInspection` now defaults to `true`, so an auditor dispatch asks for a
+  durable `--session <jobDir>/session.jsonl` instead of `--no-session`. The
+  setting remains a real opt-out.
+- A no-result attempt now KEEPS its job directory when it actually wrote a
+  session (`hasResumableAuditorSession`). Previously that directory was deleted,
+  which made resume a no-op. Retained directories keep the worker lock a
+  finished audit keeps, so `inspectAuditJobHealth` classifies them `dead` once
+  the worker PID is gone and the existing retention ceiling still reaps them —
+  verified: `{"dead":1,"ambiguous":0,"cleanupCandidates":1}`.
+- `decideAuditorResume` is the explicit policy. Resume requires: durable
+  sessions on, a prior attempt, a `provider` or `transport` failure, an
+  unchanged goal revision, the same claim lineage, an unchanged audit tier, no
+  cancel, and a real non-empty session on disk. Every refusal returns a named
+  reason.
+- The worker spawns `--session <prior session>` and, when resuming, sends a
+  short continuation brief instead of the full audit prompt, because the
+  session already holds the brief and the commands already run.
+- A missing or empty transcript degrades to a cold start, never a failed audit.
+- Every dispatch records `auditor_resume_decision` (resumed or refused, with
+  its reason, the prior attempt, the model being resumed onto, tier and
+  revision), so a continued audit is distinguishable from a first-pass one.
+
+## Verification
+
+`tests/auditor-resume.test.ts` (18 cases) covers the default dispatch, the
+retained-session artifact, reaping of a retained directory, the opt-out, the
+resume/restart matrix for every failure class and every disqualifier, the
+end-to-end `--session <prior transcript>` spawn, and cold fallback for a
+vanished transcript.
+
+Isolated controls (`controls.py`) prove both directions fail meaningfully, and
+that a harmless rewording still passes. Raw logs are in `verification/`.
+
+The auditor verdict path was not changed: `tests/auditor-verdict-authentication`,
+`tests/revision-bound-audit`, `tests/auditor-challenge` and the full
+`tests/auditor-*.test.ts` + `tests/audit-*.test.ts` set stay green (522 pass).
