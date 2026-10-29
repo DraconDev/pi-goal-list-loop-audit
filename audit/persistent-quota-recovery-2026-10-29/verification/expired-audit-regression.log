@@ -21,3 +21,15 @@ tests/persistent-provider-recovery.test.ts:
 (pass) provider recovery restore cannot bypass explicit recovery stop [0.38ms]
 (pass) a pre-existing cold-load hold does not freeze an overdue recovery-owned wait [0.48ms]
 (pass) auditor retry-waiting restores the original future due time without an early launch [16.55ms]
+88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
+89 | ): Promise<void> {
+90 | 	const intervalMs = options.intervalMs ?? 20;
+91 | 	const deadline = untilMs(options.timeoutMs);
+92 | 	while (!predicate()) {
+93 | 		if (Date.now() > deadline) throw new Error(options.message);
+                                            ^
+error: overdue provider claim launches despite legacy expiry
+      at waitFor (/tmp/glla-persistent-control-qmepnyft/tests/harness/host-budget.ts:93:40)
+      at async <anonymous> (/tmp/glla-persistent-control-qmepnyft/tests/persistent-provider-recovery.test.ts:216:13)
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6191.33ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [22.58ms]
