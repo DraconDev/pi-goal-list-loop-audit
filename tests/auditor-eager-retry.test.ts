@@ -111,7 +111,7 @@ test("account failure exhausts a candidate immediately without manufacturing a v
   assert.equal(outcome.result.disapproved, false);
 });
 
-test("eager: a second recoverable provider error remains infrastructure after the one retry", async () => {
+test("persistent: an exhausted provider candidate remains infrastructure for the paced outer retry", async () => {
   const waits: number[] = [];
   let calls = 0;
   const outcome = await runDetachedCompletionWithFallback(
@@ -128,13 +128,14 @@ test("eager: a second recoverable provider error remains infrastructure after th
     },
     { sleep: async (ms) => { waits.push(ms); }, shouldRetry: () => true },
   );
-  assert.equal(calls, 2, "the same candidate gets exactly one eager retry");
-  assert.equal(outcome.retriedOnce, true);
+  assert.equal(calls, 1, "an unavailable provider is not immediately hammered when its chain is exhausted");
+  assert.equal(outcome.retriedOnce, false);
   assert.equal(outcome.fallbackUsed, false, "there is no next candidate to mislabel as a semantic verdict");
   assert.equal(outcome.result.approved, false);
   assert.equal(outcome.result.disapproved, false);
-  assert.equal(outcome.result.error, "429 transient provider failure", "the final provider failure is retained as infrastructure evidence");
-  assert.deepEqual(waits, [5000]);
+  assert.equal(outcome.result.error, "503 upstream unavailable", "the provider failure is retained as infrastructure evidence");
+  assert.equal(outcome.result.fallbackExhausted, true);
+  assert.deepEqual(waits, [], 'steady recovery is owned by the durable outer scheduler, not a detached sleep');
 });
 
 test("eager: conservative attempts remain bounded by the existing durable safety window", () => {

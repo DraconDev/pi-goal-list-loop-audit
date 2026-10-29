@@ -3,7 +3,7 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { sameModelRetryDeadline, sameModelRetryPhaseActive, classifyMainModelFailure } from '../extensions/main-model-recovery.js';
+import { sameModelRetryDeadline, sameModelRetryPhaseActive, classifyMainModelFailure, PERSISTENT_PROVIDER_RETRY_MS } from '../extensions/main-model-recovery.js';
 import { formatMainModelRecoveryStatus, sanitizeMainModelRecovery } from '../extensions/goal-loop-core.js';
 import { createGoalRecovery, parkMainModelAfterFailure, probeMainModelRecovery, scheduleMainModelRecoveryTimer, tryMainModelFallback, mainModelRecoverySucceeded } from '../extensions/goal-recovery.js';
 import { state, replaceState } from '../extensions/goal-state.js';
@@ -104,12 +104,11 @@ test('real recovery clamps reset waits, rotates after slow failures, and restore
     assert.equal(state.mainModelRecovery!.modelFailureSteps, 1, 'new backup starts its own failure cadence');
     assert.ok(timers.at(-1)! <= 5000, 'backup must not inherit primary’s 30-minute rung');
     await probeMainModelRecovery(ctx);
-    assert.deepEqual(state.mainModelRecovery!.attempted, ['provider/free', 'provider/backup'], 'retry admission must not forget the already-failed primary');
-    state.mainModelRecovery!.sameModelPhaseStartedAt = new Date(Date.now() - 180_000).toISOString();
-    await probeMainModelRecovery(ctx);
-    assert.deepEqual(calls, ['provider/backup', 'provider/backup2'], 'a failed first backup advances to the second, never jumping backward to the primary');
+    assert.deepEqual(state.mainModelRecovery!.attempted, ['provider/free', 'provider/backup', 'provider/backup2'], 'prompt fallback preserves the failed predecessors and the selected second backup');
+    assert.deepEqual(calls, ['provider/backup', 'provider/backup2'], 'a failed first backup advances promptly, never jumping backward to the primary');
     parkMainModelAfterFailure(ctx, classifyMainModelFailure('429 TPM rate limit exceeded (1039)'));
-    assert.ok(timers.at(-1)! <= 5000, 'the last backup gets eager retries even when no untried candidate remains');
+    assert.ok(timers.at(-1)! <= PERSISTENT_PROVIDER_RETRY_MS && timers.at(-1)! >= PERSISTENT_PROVIDER_RETRY_MS - 1000,
+      'after every configured alternative fails the episode keeps a five-minute retry, not an eager loop or an hours-long reset wait');
     mainModelRecoverySucceeded(ctx);
     assert.equal(state.mainModelRecovery!.sameModelRetries, 0);
     assert.equal(state.mainModelRecovery!.modelFailureSteps, 0);
@@ -118,7 +117,7 @@ test('real recovery clamps reset waits, rotates after slow failures, and restore
     const freshFailure = Date.now();
     parkMainModelAfterFailure(ctx, classifyMainModelFailure('429 TPM rate limit exceeded (1039)'));
     assert.ok(Date.parse(state.mainModelRecovery!.sameModelPhaseStartedAt!) >= freshFailure, 'a later failure after healthy backup work starts a fresh phase');
-    assert.ok(timers.at(-1)! <= 5000);
+    assert.ok(timers.at(-1)! <= PERSISTENT_PROVIDER_RETRY_MS);
     const restored = sanitizeMainModelRecovery(state.mainModelRecovery);
     assert.equal(restored?.sameModelPhaseStartedAt, state.mainModelRecovery!.sameModelPhaseStartedAt);
     const seed = () => ({ primary: 'provider/free', active: 'provider/free', primaryThinkingLevel: 'high' as const,
