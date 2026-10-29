@@ -202,6 +202,8 @@ import {
   mainModelAutoRetryUntil,
   mainModelRetryDelayMs,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
+  PERSISTENT_PROVIDER_RETRY_MS,
+  isRecoverableProviderError,
   MAX_AUDITOR_CANDIDATE_REFS,
   modelRef,
   normalizeModelRefs,
@@ -854,6 +856,7 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   // The optional legacy parameters are accepted so older embedded callers do
   // not break, but retry scheduling is deliberately reason-agnostic.
   const now = Date.now();
+  const persistentProvider = isRecoverableProviderError(claim.providerErrorDiagnostic);
   const firstMs = claim.retryFirstAt ? Date.parse(claim.retryFirstAt) : Number.NaN;
   const firstAtMs = Number.isFinite(firstMs) ? firstMs : now;
   const firstAt = new Date(firstAtMs).toISOString();
@@ -866,7 +869,7 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   // once, then probe at :00:30 after each hour starts (15:00 → 15:00:30,
   // 16:00 → 16:00:30, …). This picks up a possible reset without making a
   // availability request first.
-  const requestedSec = attempt === 1
+  const requestedSec = persistentProvider ? PERSISTENT_PROVIDER_RETRY_MS / 1000 : attempt === 1
     ? EAGER_AUDITOR_RETRY_SEC
     : Math.max(60, Math.round((nextHourlyProbeMs(now) - now) / 1000));
   // requestedSec stays the diagnostic slot; the persisted wait is capped.
@@ -875,8 +878,8 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   // is the only conservative stop, same as the main-model envelope. The
   // attempt counter stays as diagnostic metadata.
   // An automatic retry never earns a new window, including aggressive mode.
-  const automatic = now + retryAfterSec * 1_000 <= untilMs;
-  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: false };
+  const automatic = persistentProvider || now + retryAfterSec * 1_000 <= untilMs;
+  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: persistentProvider };
 }
 
 export type AuditorModelCandidate = AuditorFallbackCandidate;
@@ -2220,7 +2223,7 @@ function applyCompletedCompletionAudit(args: {
     const failureCopy = providerErrorPresentation(result.error, "completion");
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const aggressive = aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
-    const plan = auditorRetryPlan(durableClaim, undefined, undefined, aggressive);
+    const plan = auditorRetryPlan({ ...durableClaim, providerErrorDiagnostic: failureCopy.diagnostic }, undefined, undefined, aggressive);
     // v0.38.63 (audit-stuck batch): same identical-park gate as the
     // complete_goal ladder path — the loop terminates visibly here too.
     // v0.38.68 (relentless, field 150821): quota walls are transient —
@@ -2243,9 +2246,10 @@ function applyCompletedCompletionAudit(args: {
       auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
       retryAttempts: plan.attempt,
       retryFirstAt: plan.firstAt,
-      retryUntil: plan.autoRetryUntil,
+      retryUntil: plan.unbounded ? undefined : plan.autoRetryUntil,
+      automaticRecoveryUntil: plan.unbounded ? undefined : durableClaim.automaticRecoveryUntil,
     };
-    if (identical.identicalParkDue && !quotaIdenticalExempt) {
+    if (identical.identicalParkDue && !quotaIdenticalExempt && !plan.unbounded) {
       const deadChain = (durableClaim.exhaustedChain
         ?? (durableClaim.auditorCandidateRefs ?? durableClaim.auditorAttemptedRefs ?? []).join(" → ")
         ?? "").slice(0, 300) || "unknown chain";
