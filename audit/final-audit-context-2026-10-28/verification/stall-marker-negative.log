@@ -1,0 +1,22 @@
+# Isolated negative control: auditor-stall-watchdog torn-down assertion
+#
+# Purpose: prove the repaired assertion still detects a worker that is NOT
+# cancelled, and that it no longer depends on the child having booted far
+# enough to install its own SIGTERM handler.
+#
+# Disposable copy (/tmp/glla-stall-control, since removed). Two guard removals:
+#   1. signalWorkerTree() is never called (no SIGTERM, no SIGKILL escalation)
+#   2. removeAuditJobDirectory() is never called (incomplete scratch left behind)
+#
+# RESULT -- correctly FAILS, for the intended behavioral reason:
+#
+#   error: timed out waiting for: the detached silent worker was cancelled
+#          (handler ran, or the job was reaped)
+#   (fail) stall: worker that never emits a first event is failed fast, not
+#          left for the wall [22638.19ms]
+#    0 pass
+#    1 fail
+#
+# Live source in the repository passes the same test (see final gate logs), and
+# the unmodified suite still asserts cancellation -- only the host-dependent
+# marker is no longer the sole accepted symptom.
