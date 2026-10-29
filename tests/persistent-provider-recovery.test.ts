@@ -105,7 +105,7 @@ for (const overdue of [false, true]) {
     const cwd = tmpCwd();
     const marker = path.join(cwd, 'worker-starts');
     const worker = path.join(cwd, 'inert-provider.mjs');
-    fs.writeFileSync(worker, `#!/usr/bin/env node\nimport fs from 'node:fs';\nprocess.stdin.once('data',()=>fs.appendFileSync(${JSON.stringify(marker)},'started\\n'));\n`);
+    fs.writeFileSync(worker, `#!/usr/bin/env node\nimport fs from 'node:fs';\nprocess.stdin.once('data',()=>fs.appendFileSync(${JSON.stringify(marker)},'started\\n'));\nsetInterval(()=>{},1000);\n`);
     fs.chmodSync(worker, 0o700);
     process.env.GLLA_PI_BINARY = worker;
     fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false }));
@@ -127,7 +127,7 @@ for (const overdue of [false, true]) {
       await waitFor(() => fs.existsSync(marker), { timeoutMs: 6000, intervalMs: 10, message: 'overdue provider claim launches despite legacy expiry' });
       await pi.fire('agent_settled', {}, ctx);
       assert.equal(fs.readFileSync(marker, 'utf8').trim(), 'started', 'restore launches exactly one worker');
-      assert.equal(readState(cwd).goal?.status, 'auditing');
+      assert.equal(readState(cwd).goal?.status, 'auditing', JSON.stringify({ goal: readState(cwd).goal, notices: ctx.ui.notifies }));
       assert.equal(readState(cwd).goal?.pendingCompletion?.completionSummary, 'Stored provider recovery claim');
     } else {
       assert.equal(readState(cwd).goal?.pauseResumeAt, due);
