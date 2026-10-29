@@ -43,6 +43,16 @@ CASES = {
         'const steadyDelayMs = isQuotaHorizonExempt(goal.pauseReason)',
         'const steadyDelayMs = isRecoverableProviderError(goal.pauseReason)',
     ),
+    # The incident's durable retry must survive a STOCK reopen (autoResume off).
+    # Reverting the due-wait exemption re-freezes an already-overdue,
+    # recovery-owned wait into "Held on session restore" and must fail.
+    'overdue-reload-hold-regression': (
+        'extensions/loops/goal-activation.ts',
+        '&& !ownsParkedProviderClaim(state) && !recoveryWaitIsDue(state)) {',
+        '&& !ownsParkedProviderClaim(state)) {',
+        'const recoveryConsent = autoResume || explicitRecovery || recoveryWaitIsDue(state);',
+        'const recoveryConsent = autoResume || explicitRecovery;',
+    ),
 }
 # Which suites prove each case's protected contract.
 SUITES = {
