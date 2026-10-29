@@ -193,3 +193,7 @@ Switched to branch 'main'
 (pass) v0.34.49: fresh MAIN session_start resets stale state and rejects the old dispatch generation [319.14ms]
 [run-tests] progress: 30s elapsed · 0s since last output · 16 KiB of suite output
 (pass) v0.34.49: a handoff is one-shot and only matching predecessor identity can resume [319.98ms]
+(pass) v0.34.23: host replacement with a new SessionManager is not rejected as foreign [618.87ms]
+(pass) v0.34.20: registered tools use the replacement invocation context without session_shutdown [318.84ms]
+(pass) T3e (v0.28.21): no active goal + queued list + reload → NOT activated by default; autoresume=on → head activates [314.66ms]
+(pass) v0.34.24: continuation dispatch waits for owner start proof and clears its sidecar [160.64ms]
