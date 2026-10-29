@@ -265,7 +265,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
-import { ownsPersistentProviderWait, recoveryWaitIsDue } from '../persistent-provider-recovery.js';
+import { ownsPersistentProviderWait, ownsParkedProviderClaim } from '../persistent-provider-recovery.js';
 import { rearmLegacyElapsedRecoveryHold, restoreLegacyProviderCompactionWait, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
@@ -2452,7 +2452,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // A provider-parked auditor claim owns its own restore authority: the
       // claim, phase and due time are durable and no user/decision/input hold
       // applies. This does not arm an unrelated main-model recovery timer.
-      const retryConsent = autoResume || explicitRecovery || ownsPersistentProviderWait(state);
+      const retryConsent = autoResume || explicitRecovery || ownsParkedProviderClaim(state);
       const retryResumeCmd = activeGoalSurfaceCommand("resume");
       const retryAtMs = Date.parse(state.goal.pauseResumeAt);
       if (retryConsent) {
@@ -2706,8 +2706,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // due time are durable, and no user/decision/missing-input hold applies.
       // This is deliberately NOT folded into autoResume, which would also arm
       // an unrelated main-model recovery timer on a cold reload.
-      const claimRestoreAuthority = canRecoverNow || ownsPersistentProviderWait(state);
-      if (claimRestoreAuthority && ownsPersistentProviderWait(state) && recoveredClaim?.phase === 'recovery-pending'
+      const claimRestoreAuthority = canRecoverNow || ownsParkedProviderClaim(state);
+      if (claimRestoreAuthority && ownsParkedProviderClaim(state) && recoveredClaim?.phase === 'recovery-pending'
         && recoveredClaim.recoveryRetryAt && isRecoverableProviderError(recoveredClaim.providerErrorDiagnostic)) {
         // Restore the original due time rather than launching early or
         // consuming the timer debt merely because a new session loaded.
@@ -2776,7 +2776,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // v0.35.23: restore itself may have consented to live work (journal
       // replay activating a deferred item, stale rearm) — a hold must never
       // freeze what restore deliberately started.
-      if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number") {
+      if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number"
+        && !ownsParkedProviderClaim(state)) {
         replaceState({ ...state, loadHoldAt: Date.now() });
         persistState(ctx);
         appendLedger(ctx.cwd, "load_hold_engaged", { reason: startReason ?? "startup" });
