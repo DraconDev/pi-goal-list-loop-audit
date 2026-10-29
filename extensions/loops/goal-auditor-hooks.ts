@@ -1618,6 +1618,22 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           // detected here; tierDecision governs this dispatch either way.
           cwd: liveCtx.cwd,
         });
+        // Resume lineage is durable evidence: an operator must be able to tell
+        // a continued audit from a first-pass one without the verdict itself
+        // weakening. A refusal is recorded too, so a cold restart is explained
+        // rather than silent.
+        appendLedger(liveCtx.cwd, "auditor_resume_decision", {
+          goalId,
+          attemptId: claim.attemptId,
+          priorAttemptId: claim.priorAttemptId,
+          resumed: auditorResume.resume,
+          ...(auditorResume.reason ? { reason: auditorResume.reason } : {}),
+          ...(auditorResume.sessionPath ? { sessionPath: auditorResume.sessionPath } : {}),
+          fromModel: modelRef(candidate.model),
+          tier: tierDecision.tier,
+          revision: state.goal?.revision,
+          priorFailureClass: claim.auditorFailureClass,
+        });
         return runDetachedGoalCompletionAuditor({
           cwd: liveCtx.cwd,
           goal: auditGoal,

@@ -275,3 +275,35 @@ test('a resume request whose transcript vanished degrades to a cold start', asyn
   assert.ok(!chosen.includes('gone'), 'a missing transcript is not passed through');
   assert.ok(chosen.includes('stale-resume'), 'the attempt falls back to its own session file');
 });
+
+test('a resumed attempt is still one attempt: identity, tier and challenge are unchanged', () => {
+  // Resume changes WHERE the transcript lives, never HOW the verdict is
+  // judged. These are the properties the audit's independence rests on.
+  const resumed = decideAuditorResume({
+    inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
+    priorRevision: 3, currentRevision: 3,
+    priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+    priorTier: 'full', currentTier: 'full', sessionExists: true,
+  });
+  assert.equal(resumed.resume, true);
+  // A moved revision is refused even when every other condition allows resume,
+  // so a resumed audit can never judge a revision the prior work did not see.
+  const moved = decideAuditorResume({
+    inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
+    priorRevision: 3, currentRevision: 4,
+    priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+    priorTier: 'full', currentTier: 'full', sessionExists: true,
+  });
+  assert.equal(moved.resume, false, 'a resumed audit cannot cross a revision boundary');
+  assert.equal(moved.reason, 'revision-moved');
+  // A light-tier audit must not inherit a full-tier transcript (and vice
+  // versa): the falsification round is tier-scoped.
+  const tierMoved = decideAuditorResume({
+    inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
+    priorRevision: 3, currentRevision: 3,
+    priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+    priorTier: 'full', currentTier: 'light', sessionExists: true,
+  });
+  assert.equal(tierMoved.resume, false, 'a tier change restarts so the challenge round matches the tier');
+  assert.equal(tierMoved.reason, 'tier-changed');
+});
