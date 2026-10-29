@@ -2,24 +2,24 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/persistent-provider-recovery.test.ts:
-(pass) the confirmed steady provider recovery cadence is five minutes [1.02ms]
-(pass) provider compaction error preserves willRetry ownership [0.09ms]
-(pass) provider compaction error preserves aborted ownership [0.02ms]
-(pass) provider compaction error preserves fromExtension ownership [0.01ms]
-(pass) a terminal compaction attempt is not a terminal quota recovery episode [0.88ms]
-(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [54.23ms]
-(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [15.14ms]
-(pass) legacy quota-compaction block migrates only its matching system recovery owner [6.49ms]
-(pass) legacy quota-compaction block preserves a genuine user hold [4.66ms]
-(pass) provider recovery restore cannot bypass supervisor pause [0.59ms]
-(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.26ms]
-(pass) provider recovery restore cannot bypass agent missing-input block [0.25ms]
-(pass) provider recovery restore cannot bypass user pause [0.29ms]
-(pass) provider recovery restore cannot bypass decision [0.37ms]
-(pass) provider recovery restore cannot bypass cancel [0.26ms]
-(pass) provider recovery restore cannot bypass replaced target [0.27ms]
-(pass) provider recovery restore cannot bypass explicit recovery stop [0.24ms]
-(pass) auditor retry-waiting restores the original future due time without an early launch [8.91ms]
+(pass) the confirmed steady provider recovery cadence is five minutes [1.08ms]
+(pass) provider compaction error preserves willRetry ownership [0.14ms]
+(pass) provider compaction error preserves aborted ownership [0.03ms]
+(pass) provider compaction error preserves fromExtension ownership [0.02ms]
+(pass) a terminal compaction attempt is not a terminal quota recovery episode [4.01ms]
+(pass) quota compaction failure retains a five-minute durable recovery and duplicate events do not renew it [54.79ms]
+(pass) consent after a cold reload resumes the same durable provider wait, not a new episode [21.52ms]
+(pass) legacy quota-compaction block migrates only its matching system recovery owner [10.04ms]
+(pass) legacy quota-compaction block preserves a genuine user hold [5.79ms]
+(pass) provider recovery restore cannot bypass supervisor pause [0.56ms]
+(pass) provider recovery restore cannot bypass unrelated cold-load hold [0.29ms]
+(pass) provider recovery restore cannot bypass agent missing-input block [0.28ms]
+(pass) provider recovery restore cannot bypass user pause [0.35ms]
+(pass) provider recovery restore cannot bypass decision [0.54ms]
+(pass) provider recovery restore cannot bypass cancel [0.28ms]
+(pass) provider recovery restore cannot bypass replaced target [0.29ms]
+(pass) provider recovery restore cannot bypass explicit recovery stop [0.25ms]
+(pass) auditor retry-waiting restores the original future due time without an early launch [9.96ms]
 88 | 	options: { timeoutMs: number; message: string; intervalMs?: number },
 89 | ): Promise<void> {
 90 | 	const intervalMs = options.intervalMs ?? 20;
@@ -28,19 +28,7 @@ tests/persistent-provider-recovery.test.ts:
 93 | 		if (Date.now() > deadline) throw new Error(options.message);
                                             ^
 error: overdue provider claim launches despite legacy expiry
-      at waitFor (/tmp/glla-persistent-control-fstbn0mp/tests/harness/host-budget.ts:93:40)
-      at async <anonymous> (/tmp/glla-persistent-control-fstbn0mp/tests/persistent-provider-recovery.test.ts:189:13)
-(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6018.28ms]
-(pass) auditor recovery-pending restores the original future due time without an early launch [25.25ms]
-(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1097.26ms]
-(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.21ms]
-
-1 tests failed:
-(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6018.28ms]
-
- 21 pass
- 1 fail
-Ran 22 tests across 1 file. [7.63s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-3uSeoU/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-3uSeoU
-[run-tests] finished in 8s (exit 1)
+      at waitFor (/tmp/glla-persistent-control-8_ph7ixl/tests/harness/host-budget.ts:93:40)
+      at async <anonymous> (/tmp/glla-persistent-control-8_ph7ixl/tests/persistent-provider-recovery.test.ts:189:13)
+(fail) auditor retry-waiting restores one overdue attempt beyond legacy horizons [6012.09ms]
+(pass) auditor recovery-pending restores the original future due time without an early launch [22.21ms]

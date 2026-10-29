@@ -22,3 +22,10 @@ tests/persistent-provider-recovery.test.ts:
 (pass) auditor retry-waiting restores the original future due time without an early launch [10.64ms]
 (pass) auditor retry-waiting restores one overdue attempt beyond legacy horizons [186.84ms]
 (pass) auditor recovery-pending restores the original future due time without an early launch [11.85ms]
+(pass) auditor recovery-pending restores one overdue attempt beyond legacy horizons [1086.44ms]
+(pass) provider auditor retries remain five-minute and automatic past legacy expiry and attempt limits [0.27ms]
+
+ 22 pass
+ 0 fail
+Ran 22 tests across 1 file. [1.86s]
+[run-tests] finished in 2s (exit 0)
