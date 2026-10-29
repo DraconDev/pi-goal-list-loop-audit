@@ -71,9 +71,12 @@ test('quota compaction failure retains a five-minute durable recovery and duplic
 });
 
 function providerWait(): State {
-  const goal = seedGoal({ status: 'paused', pauseKind: 'wait', pauseSource: 'system', pauseReason: 'main model recovery — retrying', pauseResumeAt: '2030-01-01T00:05:00.000Z' });
-  return { goal, mainModelRecovery: { owner: { kind: 'goal', id: goal.id }, primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], kind: 'goal', attempts: 1000,
-    reason: 'provider error', providerErrorDiagnostic: quotaError, retryAt: goal.pauseResumeAt } } as State;
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ status: 'paused', pauseKind: 'wait', pauseSource: 'system', pauseReason: 'main model recovery — retrying', pauseResumeAt: '2030-01-01T00:05:00.000Z' }) });
+  const saved = readState(cwd);
+  saved.mainModelRecovery = { owner: { kind: 'goal', id: saved.goal!.id }, primary: 'test/primary', active: 'test/primary', attempted: ['test/primary'], kind: 'goal', attempts: 1000,
+    reason: 'provider error', providerErrorDiagnostic: quotaError, retryAt: saved.goal!.pauseResumeAt };
+  return saved;
 }
 for (const [label, mutate] of [
   ['supervisor pause', (s: State) => { s.supervisorPausedAt = Date.now(); }],

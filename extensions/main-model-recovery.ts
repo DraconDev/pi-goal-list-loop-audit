@@ -102,7 +102,7 @@ export type MainModelFailureKind = "rate-limit" | "quota" | "billing" | "auth" |
  * Unknown infrastructure, prompt policy and context/output-limit failures keep
  * their own owners and remedies instead of acquiring retry authority. */
 export function isRecoverableProviderError(raw: string | undefined): boolean {
-  if (!raw?.trim()) return false;
+  if (!raw?.trim() || /^Auditor (?:stalled|exceeded|aborted)\b/i.test(raw.trim())) return false;
   const failure = classifyMainModelFailure(raw);
   return failure.kind !== 'non-recoverable' && failure.kind !== 'context-overflow'
     && !isDeterministicProviderError(raw)
