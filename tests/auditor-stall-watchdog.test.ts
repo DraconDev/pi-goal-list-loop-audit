@@ -167,6 +167,7 @@ setInterval(() => {}, 1_000);
   const stalled: AuditorStalledInfo[] = [];
   const reports: AuditorProgress[] = [];
   const started = Date.now();
+  const captured = captureWorkerSpawn();
   const result = await runDetachedGoalCompletionAuditor({
     cwd: dir,
     goal,
@@ -176,6 +177,7 @@ setInterval(() => {}, 1_000);
     onStalled: (info) => stalled.push(info),
     runtime: {
       workerPath: worker,
+      spawn: captured.spawn,
       attemptId: () => "attempt-first-event-stall",
       pollIntervalMs: 10,
       // Wall deliberately exceeds the silence window: the STALL must fire
@@ -204,10 +206,10 @@ setInterval(() => {}, 1_000);
   );
   // The child installs its SIGTERM handler as its first statement, but the
   // handler RUNS a moment after the signal is delivered: the parent returns
-  // as soon as it has sent it. Wait for the cancellation's observable effect
-  // instead of racing it — and accept either effect, because on a starved
-  // host the watchdog may fire before the child has installed the handler.
-  await assertWorkerTornDown(sigtermMarker, path.join(dir, ".pi-glla", "audit-jobs", "attempt-first-event-stall"));
+  // as soon as it has sent it. Assert the parent's own observation of THIS
+  // child exiting — which holds whether the handler ran or the default SIGTERM
+  // disposition killed it before it booted. A surviving worker still fails.
+  await assertWorkerTornDown(sigtermMarker, captured.child);
   assert.equal(
     existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-first-event-stall")),
     false,
@@ -230,12 +232,14 @@ process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(sigtermMarker)}, "k
 setInterval(() => {}, 1_000);
 `);
   let spawnReturnedAt = 0;
+  let capturedChild: ChildProcess | undefined;
   const delayedSpawn = ((command: string, args: string[], options: SpawnOptions) => {
     // Simulate a busy parent completing dispatch setup immediately before
     // spawn. The watchdog must not charge this delay to worker startup.
     const blocker = new Int32Array(new SharedArrayBuffer(4));
     Atomics.wait(blocker, 0, 0, 1_500);
     const spawned = realSpawn(command, args, options);
+    capturedChild = spawned;
     spawnReturnedAt = Date.now();
     return spawned;
   }) as typeof realSpawn;
@@ -272,7 +276,7 @@ setInterval(() => {}, 1_000);
   // other way round. The bound below is generous enough not to measure host
   // starvation, and still fails if the stall never arrives.
   assert.ok(stalled[0]!.at - spawnReturnedAt < wall + firstEvent, "the watchdog still beats the wall bound");
-  await assertWorkerTornDown(sigtermMarker, path.join(dir, ".pi-glla", "audit-jobs", "attempt-first-event-clock"));
+  await assertWorkerTornDown(sigtermMarker, () => capturedChild);
   await cleanup();
 });
 
