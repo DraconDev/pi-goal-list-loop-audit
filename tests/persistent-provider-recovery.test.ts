@@ -319,8 +319,9 @@ test('the incident journal end-state retries after a stock reopen without consen
   const restoredWait = entries.findIndex((entry, index) => index > migrated && index < probeAt
     && entry.type === 'state' && entry.value?.goal?.pauseKind === 'wait');
   assert.ok(restoredWait >= 0, 'the blocked pause becomes a timed wait before the retry');
-  assert.equal(entries[restoredWait]?.value?.mainModelRecovery?.attempts, undefined,
-    'attempt 1001 proves there is no attempt-count cutoff');
+  // 1001 prior attempts and the retry still fires: no attempt-count cutoff.
+  assert.equal(entries[restoredWait]?.value?.mainModelRecovery?.attempts, 1001,
+    'the exhausted attempt count is preserved, not reset to manufacture a retry');
   assert.ok(!entries.slice(0, probeAt).some((entry) => entry.type === 'load_hold_engaged'),
     'the incident state is never re-held as "Held on session restore" before its retry runs');
   // Nothing asked the operator for permission: no resume command ran.
