@@ -84,7 +84,7 @@ test('quota compaction failure retains a five-minute durable recovery and duplic
   assert.equal(replacement.sent.length, 0, 'a future retry is not dispatched early after restore');
 });
 
-test('consent after a cold reload resumes the same durable provider wait, not a new episode', async () => {
+test('a FUTURE provider wait still needs consent after a cold reload, resuming the same episode not a new one', async () => {
   const cwd = tmpCwd();
   fs.writeFileSync(settingsPath, JSON.stringify({ autoResume: false, aggressiveMode: false, mainModelFallbacks: [] }));
   const due = new Date(Date.now() + PERSISTENT_PROVIDER_RETRY_MS).toISOString();
@@ -198,6 +198,7 @@ for (const phase of ['retry-waiting', 'recovery-pending'] as const) for (const o
       assert.equal(fs.existsSync(marker), false);
     }
     assert.equal(readState(cwd).mainModelRecovery?.manualResumeRequired, undefined, 'owned provider recovery survives cold startup');
+    assert.equal(readState(cwd).loadHoldAt, undefined, 'a parked provider claim is not re-held for a decision it already made');
     assert.equal(pi.sent.length, 0, 'stored audit recovery dispatches no main-agent turn');
   });
 }
