@@ -80,8 +80,12 @@ test("unified: one dead backend skips configured rungs while retaining the sessi
       ? { approved: true, disapproved: false, output: "verified", model: "a/session" }
       : { approved: false, disapproved: false, output: "", model: "a/preferred", error: "HTTP 503 provider unavailable" };
   }, { sleep: async () => {} });
-  assert.deepEqual(calls, ["preferred", "preferred", "session"]);
-  assert.equal(out.result.approved, true);
+  // A named provider wall is not hammered twice before a configured
+  // alternative is tried: the first backend-side failure advances the walk,
+  // skipping the same-provider rung that the failed account would also refuse.
+  assert.deepEqual(calls, ["preferred", "session"], "one dead backend burns one launch, not a per-rung retry ladder");
+  assert.equal(calls.includes("backup"), false, "same-provider rungs stay skipped");
+  assert.equal(out.result.approved, true, "the session last resort still produces the verdict");
 });
 
 test("unified: executable runtime regression covers arming, past-due fire, guards, and opt-out", async () => {
