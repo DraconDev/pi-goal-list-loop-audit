@@ -266,7 +266,7 @@ import {
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
 import { ownsPersistentProviderWait } from '../persistent-provider-recovery.js';
-import { rearmLegacyElapsedRecoveryHold, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
+import { rearmLegacyElapsedRecoveryHold, restoreLegacyProviderCompactionWait, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
   isActuallyStuck,
@@ -2359,6 +2359,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // v0.29.6: stacked-state auto-arbitration FIRST — one live artifact
     // survives before the restore gate decides hold-vs-resume for it.
     autoArbitrateStackedState(ctx);
+    restoreLegacyProviderCompactionWait(ctx);
     // Restore gate (v0.26.9 tri-state): a human LOADING a session
     // ("startup"/"new"/"resume", or no reason) HOLDS — the popup shows what
     // is waiting and nothing starts until they resume explicitly. In-session

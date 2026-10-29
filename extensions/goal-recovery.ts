@@ -494,6 +494,36 @@ export function rearmLegacyElapsedRecoveryHold(ctx: ExtensionContext, restoreCom
   return true;
 }
 
+/** Migrate only the observed quota-compaction dead end, not generic manual
+ * blocks. The explicit system source, matching durable recovery owner and
+ * provider evidence together prove the hold was created by recovery itself. */
+export function restoreLegacyProviderCompactionWait(ctx: ExtensionContext): boolean {
+  const goal = state.goal;
+  const recovery = state.mainModelRecovery;
+  if (supervisorPaused(state) || state.loadHoldAt || stateRootPending() || isPersistenceDegraded()
+    || !goal || goal.status !== 'paused' || goal.pauseKind !== 'blocked' || goal.pauseSource !== 'system'
+    || goal.pendingCompletion || !(goal.pauseReason ?? '').startsWith('compaction failure:')
+    || !recovery?.owner || recovery.kind !== 'goal' || recovery.manualResumeRequired
+    || recoveryOwnership(recovery.owner, recovery.kind, state, true) !== 'retained'
+    || !isRecoverableProviderError(goal.pauseReason)) return false;
+  const previous = { ...state };
+  const due = Date.parse(recovery.retryAt ?? '');
+  const retryAt = Number.isFinite(due) ? recovery.retryAt!
+    : new Date(Date.now() + (nextMainModelFallback(ctx, recovery) ? 1000 : PERSISTENT_PROVIDER_RETRY_MS)).toISOString();
+  const failure = classifyMainModelFailure(goal.pauseReason);
+  state.mainModelRecovery = { ...withMainModelRecoveryWindow(recovery), retryAt,
+    primaryProbeAt: undefined, primaryProbeInFlight: undefined,
+    reason: mainModelRecoveryReason(failure), providerErrorDiagnostic: failure.raw };
+  if (!updateGoal({ pauseKind: 'wait', pauseSource: 'system', pauseResumeAt: retryAt,
+    pauseReason: 'main model recovery — retrying after provider compaction failure',
+    pauseSuggestedAction: 'The provider recovery is automatic; explicit pause or cancellation stops it.' }, ctx)) {
+    replaceState(previous);
+    return false;
+  }
+  appendLedger(ctx.cwd, 'provider_compaction_recovery_restored', { goalId: goal.id, retryAt, owner: recovery.owner });
+  return true;
+}
+
 export function mainModelRecoveryRuntimeStatus(): import('./goal-loop-core.js').MainModelRecoveryRuntime | undefined {
   if (!flags) return undefined;
   const ctx = freshCtxForGeneration(flags.sessionGeneration);
