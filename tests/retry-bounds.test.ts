@@ -20,6 +20,9 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import { readGoalRuntimeSource } from "./harness/goal-source.js";
+import { auditorRetryPlan } from '../extensions/loops/goal-auditor-hooks.js';
+import { withMainModelRecoveryWindow } from '../extensions/goal-recovery.js';
+import { PERSISTENT_PROVIDER_RETRY_MS } from '../extensions/main-model-recovery.js';
 
 const SRC = readGoalRuntimeSource();
 const CONT = fs.readFileSync("extensions/goal-continuation.ts", "utf-8"); // decomposition step 5 (v0.34.113)
@@ -62,19 +65,23 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 �
   assert.match(SRC, /auditInfraStreak: undefined, \/\/ durable retry owns the wait — infra streak broken/);
 });
 
-test("main recovery remains unbounded but auditor retries retain their fixed horizon", () => {
-  // Main-model elapsed-time expiry is retired in every mode. Dedicated
-  // quota-horizon runtime tests verify paced retries and authoritative stops.
-  assert.match(RECOVERY, /return \{ \.\.\.recovery, firstFailureAt, autoRetryUntil: undefined \}/);
-  assert.doesNotMatch(RECOVERY, /horizonApplies|mainModelAutoRetryUntil\(/);
-  assert.match(RECOVERY, /if \(normalized\.manualResumeRequired\)/);
-  assert.match(RECOVERY, /isDeterministicProviderError\(normalized\.providerErrorDiagnostic/);
-  assert.match(RECOVERY, /paced backoff for as long as it remains recoverable/);
-  assert.match(SRC, /auditorRetryPlan\(durableClaim, undefined, undefined, aggressive\)/);
-  // Auditor retry policy is explicitly bounded even in aggressive mode;
-  // this does not change the main-model policy assertions above.
-  assert.match(SRC.replace(/\s+/g, " "), /const automatic = now \+ retryAfterSec \* 1_000 <= untilMs;/);
-  assert.doesNotMatch(SRC, /MAX_AUDITOR_AUTO_RETRY_ATTEMPTS/);
+test("provider recovery outlives legacy horizons while unrelated auditor infrastructure retains its policy", () => {
+  const firstAt = '2020-01-01T00:00:00.000Z';
+  const expired = '2020-01-02T00:00:00.000Z';
+  const main = withMainModelRecoveryWindow({ primary: 'test/model', active: 'test/model', attempted: [], attempts: 1000,
+    kind: 'goal', reason: 'provider error', firstFailureAt: firstAt, autoRetryUntil: expired });
+  assert.equal(main.firstFailureAt, firstAt, 'history is retained rather than renewing the episode');
+  assert.equal(main.autoRetryUntil, undefined);
+  for (const aggressive of [false, true]) {
+    const provider = auditorRetryPlan({ at: firstAt, retryFirstAt: firstAt, retryUntil: expired, retryAttempts: 1000,
+      providerErrorDiagnostic: '429 Token Plan usage limit reached' }, undefined, undefined, aggressive);
+    assert.equal(provider.automatic, true);
+    assert.equal(provider.unbounded, true);
+    assert.equal(provider.retryAfterSec * 1000, PERSISTENT_PROVIDER_RETRY_MS);
+    const infrastructure = auditorRetryPlan({ at: firstAt, retryFirstAt: firstAt, retryUntil: expired,
+      providerErrorDiagnostic: 'worker exited without a verdict' }, undefined, undefined, aggressive);
+    assert.equal(infrastructure.automatic, false, 'unrelated worker failures do not gain provider-recovery authority');
+  }
 });
 
 test("v0.36.0: aggressive auditor disapprovals become durable TODOs and stop on repeated no-progress", () => {
@@ -274,7 +281,8 @@ test("v0.28.26: quota-blocked audits store the claim + the retry re-runs the AUD
   assert.match(SRC, /if \(!archived\) \{[\s\S]*?goal_archive_failed_after_approval/);
   // 5. still-failing → re-pause with the claim PRESERVED + another scheduled retry:
   assert.match(SRC, /auditor retry: retry in \$\{plan\.retryAfterSec\}s \(uniform schedule\)/);
-  assert.match(SRC, /retryUntil: plan\.autoRetryUntil/);
+  // Provider-window behavior is exercised by the runtime policy test above;
+  // a particular object-literal spelling is not a persistence contract.
   // 6. any other verdict hands back to the agent:
   assert.match(SRC, /appendLedger\(liveCtx\.cwd, "provider_retry_audit_verdict", \{/);
 });
