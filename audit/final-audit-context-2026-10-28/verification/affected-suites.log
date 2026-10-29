@@ -287,3 +287,5 @@ Switched to branch 'main'
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [682.18ms]
 (pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [5704.97ms]
 [run-tests] progress: 90s elapsed · 3s since last output · 25 KiB of suite output
+(pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [5718.97ms]
+(pass) v0.39.52: the heartbeat does not reclaim a completion audit it dispatched moments ago [6.03ms]
