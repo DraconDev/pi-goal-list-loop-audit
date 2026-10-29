@@ -676,11 +676,12 @@ export function nextMainModelFallback(ctx: ExtensionContext, recovery = state.ma
     && !(recovery?.attempted ?? []).some(tried => sameModelRef(tried, ref))
     && !isForbiddenModel(ref, settings.forbiddenModels));
 }
-export function mainModelSameModelRetryActive(ctx: ExtensionContext, recovery: MainModelRecovery | undefined, budget: number): boolean {
-  // An untried configured alternative gets the next attempt, rather than
-  // spending a same-model retry budget against an already failing provider.
-  return !nextMainModelFallback(ctx, recovery)
-    && sameModelRetryPhaseActive(recovery, budget, false);
+export function mainModelSameModelRetryActive(ctx: ExtensionContext, recovery: MainModelRecovery | undefined, budget: number, failure?: MainModelFailure): boolean {
+  const hasFallback = !!nextMainModelFallback(ctx, recovery);
+  // Positive provider-outage evidence bypasses the legacy same-model budget.
+  // Ambiguous worker/local failures retain that separately configured policy.
+  if (hasFallback && isRecoverableProviderError(failure?.raw ?? recovery?.providerErrorDiagnostic)) return false;
+  return sameModelRetryPhaseActive(recovery, budget, hasFallback);
 }
 function boundedSameModelDelay(ctx: ExtensionContext, recovery: MainModelRecovery, delayMs: number): number {
   if (!nextMainModelFallback(ctx, recovery)) return delayMs;

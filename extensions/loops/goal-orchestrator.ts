@@ -755,7 +755,7 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
       const sameModelBudget = normalizeMainModelSameModelRetries(loadSettings(ctx.cwd).mainModelSameModelRetries);
       const recoveryActive = state.mainModelRecovery;
       const current = ctx.model ? modelRef(ctx.model) : undefined;
-      const rotationsAllowed = !mainModelSameModelRetryActive(ctx, recoveryActive, sameModelBudget)
+      const rotationsAllowed = !mainModelSameModelRetryActive(ctx, recoveryActive, sameModelBudget, failure)
         || (!!recoveryActive && !!current && !sameModelRef(recoveryActive.active, current));
       const switched = rotationsAllowed ? await tryMainModelFallback(ctx, failure) : false;
       if (switched) return true; // pi's core retry now uses the selected backup
