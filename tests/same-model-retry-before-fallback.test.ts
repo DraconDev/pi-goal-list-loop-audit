@@ -116,7 +116,7 @@ test("source: probe path emits a same-model-retry branch before the selector wal
   assert.match(probe, /Main model recovery: retrying.*same-model retry/i, "operator-visible notify must name the phase and the budget");
 });
 
-test("integration: fresh recovery retries the current model instead of rotating", async () => {
+test("integration: fresh recovery prefers an untried configured backup over the old same-model budget", async () => {
   const cwd = fs.mkdtempSync(path.join("/tmp", "glla-same-model-park-"));
   const settingsFile = globalSettingsPath();
   const original = fs.existsSync(settingsFile) ? fs.readFileSync(settingsFile, "utf8") : undefined;
@@ -165,9 +165,8 @@ test("integration: fresh recovery retries the current model instead of rotating"
       scheduleContinuation: () => {},
       scheduleSessionTimeout: () => setTimeout(() => {}, 60_000),
     });
-    // Fresh episode: no recovery yet, retries=0, budget=10. A scheduled
-    // probe on the parked timer must re-arm on the current model and
-    // emit a same-model-retry probe event, not call setModel on a backup.
+    // The persistent-provider policy supersedes the old ten-attempt phase:
+    // a scheduled probe tries an allowed configured alternative promptly.
     state.mainModelRecovery = {
       primary: "provider/primary",
       active: "provider/primary",
@@ -179,28 +178,11 @@ test("integration: fresh recovery retries the current model instead of rotating"
       kind: "goal",
     };
     await probeMainModelRecovery(ctx);
-    assert.equal(calls.length, 0, "a fresh same-model retry must not call setModel on a backup");
-    assert.equal(state.mainModelRecovery?.active, "provider/primary", "the current model keeps the episode");
-    assert.equal(state.mainModelRecovery?.sameModelRetries, 1, "the same-model counter increments");
-    assert.deepEqual(state.mainModelRecovery?.attempted, ["provider/primary"], "attempted resets to [current] so the chain is fresh after exhaustion");
-    assert.ok(
-      notifies.some((m) => /same-model retry 1\/10/.test(m)),
-      `expected same-model retry notify, got: ${notifies.map((m) => m.slice(0, 80)).join(" | ")}`,
-    );
-    // The ledger is observable evidence for /glla progress and audit.
-    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
-    assert.match(ledger, /main_model_probe.*same-model-retry/, "the probe event carries the same-model-retry mode");
-    const failure = classifyMainModelFailure('429 Token Plan rate limit reached (2062)');
-    for (let retry = 2; retry <= 10; retry++) {
-      parkMainModelAfterFailure(ctx, failure);
-      assert.equal(state.mainModelRecovery?.sameModelRetries, retry - 1, 'parking never consumes the retry budget again');
-      const failures: number = state.mainModelRecovery!.attempts;
-      await probeMainModelRecovery(ctx);
-      assert.equal(state.mainModelRecovery?.sameModelRetries, retry, 'one count per admitted retry');
-      assert.equal(state.mainModelRecovery?.attempts, failures, 'probe does not advance failure cadence');
-      assert.equal(calls.length, 0, 'primary earns all ten retries before fallback');
-    }
-    assert.equal(sameModelRetriesRemain(state.mainModelRecovery?.sameModelRetries, 10), false);
+    assert.deepEqual(calls, ['provider/first'], 'the first configured permitted backup is selected on the first probe');
+    assert.equal(state.mainModelRecovery?.active, 'provider/first');
+    assert.equal(state.mainModelRecovery?.sameModelRetries, 0, 'the selected backup starts its own attempt, not a repeated primary retry');
+    assert.deepEqual(state.mainModelRecovery?.attempted, ['provider/primary', 'provider/first'], 'the durable cursor preserves the failed primary and the selected backup');
+    assert.equal(state.mainModelRecovery?.pendingModelSwitch, undefined, 'the model switch committed durably');
   } finally {
     replaceState({ goal: null } as any);
     if (original === undefined) {
