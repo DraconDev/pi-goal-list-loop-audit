@@ -58,5 +58,9 @@ export function recoveryWaitIsDue(state: State, now = Date.now()): boolean {
  * outrank this exception. */
 export function ownsParkedProviderClaim(state: State): boolean {
   if (state.supervisorPausedAt) return false;
+  // Only a STORED COMPLETION CLAIM is parked work with nothing left to
+  // dispatch. A main-model recovery wait belongs to a live goal whose next
+  // turn is real automation, so the cold-load hold still applies to it.
+  if (!state.goal?.pendingCompletion) return false;
   return ownsPersistentProviderWait({ ...state, loadHoldAt: undefined });
 }
