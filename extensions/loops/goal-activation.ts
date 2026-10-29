@@ -2414,7 +2414,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     } else if (mainRecovery?.retryAt || mainRecovery?.pendingModelSwitch) {
       const retryAtMs = mainRecovery.retryAt ? Date.parse(mainRecovery.retryAt) : Number.NaN;
       // A due wait is continuing approved automation, not a new dispatch.
-      const recoveryConsent = autoResume || explicitRecovery;
+      const recoveryConsent = autoResume || explicitRecovery || recoveryWaitIsDue(state);
       if (recoveryConsent) {
         const delay = Number.isFinite(retryAtMs) ? Math.max(0, retryAtMs - Date.now()) : 0;
         ctx.ui.notify(`Restored main-model recovery (${mainRecovery.kind}) — ${mainRecovery.pendingModelSwitch ? `reconciling ${mainRecovery.pendingModelSwitch}` : delay > 0 ? `next probe in ${Math.max(1, Math.ceil(delay / 60_000))}m` : "probe is due now"}.`, "info");
@@ -2781,7 +2781,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // its moment has already arrived and the objective forbids stranding it
       // as a manual pause after a stock reopen. Future waits still hold.
       if (pendingDurableState && !somethingLive && typeof state.loadHoldAt !== "number"
-        && !ownsParkedProviderClaim(state)) {
+        && !ownsParkedProviderClaim(state) && !recoveryWaitIsDue(state)) {
         replaceState({ ...state, loadHoldAt: Date.now() });
         persistState(ctx);
         appendLedger(ctx.cwd, "load_hold_engaged", { reason: startReason ?? "startup" });
