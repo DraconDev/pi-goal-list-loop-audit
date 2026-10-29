@@ -210,6 +210,7 @@ import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } 
 import {
   classifyInBandProviderFailure,
   classifyMainModelFailure,
+  isRecoverableProviderError,
   isContextOverflowError,
   isMainModelFallbackFailure,
   requiresMainModelRecovery,
@@ -2695,7 +2696,14 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // branch above; a same-pid session replacement without contradicting
       // handoff evidence is mid-flight continuity for the stored claim too.
       const canRecoverNow = explicitRecovery || autoResume || sameProcessContinuityResume;
-      if (canRecoverNow && recoveredClaim && (recoveredClaim.phase ?? "recovery-pending") === "recovery-pending") {
+      if (canRecoverNow && recoveredClaim?.phase === 'recovery-pending'
+        && recoveredClaim.recoveryRetryAt && isRecoverableProviderError(recoveredClaim.providerErrorDiagnostic)) {
+        // Restore the original due time rather than launching early or
+        // consuming the timer debt merely because a new session loaded.
+        const armed = scheduleParkedCompletionAuditRecovery(ctx, recoveredClaim, 'provider-recovery-restore');
+        updateGoal({ pendingCompletion: armed, pauseSource: 'system', pauseKind: 'wait',
+          pauseResumeAt: armed.recoveryRetryAt, pauseReason: 'auditor retry: provider recovery after reload' }, ctx);
+      } else if (canRecoverNow && recoveredClaim && (recoveredClaim.phase ?? "recovery-pending") === "recovery-pending") {
         completionAuditRecoveryArmed = true;
         const started = maybeAutoRetryParkedCompletionAudit(hostLifecycleStart || explicitRecovery ? "host-rebind" : "session-start");
         if (!started) {

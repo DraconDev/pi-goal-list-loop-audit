@@ -23,9 +23,12 @@ export function ownsPersistentProviderWait(state: State): boolean {
       && (state.loop.stopReason ?? '').startsWith('main model recovery —');
   }
   const claim = goal?.pendingCompletion;
-  return goal?.status === 'paused' && goal.pauseSource === 'system'
-    && goal.pauseKind === 'wait' && !!goal.pauseResumeAt
-    && (goal.pauseReason ?? '').startsWith('auditor retry:')
-    && claim?.phase === 'retry-waiting' && !!claim.attemptId
-    && !!claim.recoveryEpisodeKey && isRecoverableProviderError(claim.providerErrorDiagnostic);
+  if (goal?.status !== 'paused' || goal.pauseSource !== 'system'
+    || !claim?.attemptId || !claim.recoveryEpisodeKey
+    || !isRecoverableProviderError(claim.providerErrorDiagnostic)) return false;
+  return (goal.pauseKind === 'wait' && !!goal.pauseResumeAt
+    && (goal.pauseReason ?? '').startsWith('auditor retry:') && claim.phase === 'retry-waiting')
+    || ((goal.pauseKind === 'wait' || goal.pauseKind === 'blocked')
+      && !!claim.recoveryRetryAt && claim.phase === 'recovery-pending'
+      && /^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? ''));
 }

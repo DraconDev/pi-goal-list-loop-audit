@@ -617,7 +617,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
   const cadenceMs = persistentProvider ? (auditorRecoveryRetryDelayOverrideMs ?? PERSISTENT_PROVIDER_RETRY_MS) : Number.isFinite(requestedDelayMs) && (requestedDelayMs as number) >= 1_000
     ? Math.floor(requestedDelayMs as number)
     : auditorRecoveryRetryDelayMs();
-  const retryAt = Number.isFinite(storedRetryMs) && storedRetryMs > now
+  const retryAt = Number.isFinite(storedRetryMs) && (persistentProvider || storedRetryMs > now)
     ? pending.recoveryRetryAt!
     : new Date(now + cadenceMs).toISOString();
   const next = {
@@ -918,7 +918,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   if (completionAuditInFlight) return false;
   if (isRecoverableProviderError(claim.providerErrorDiagnostic)) {
     if (goal.pauseSource !== 'system' || goal.pauseKind === 'decision'
-      || !/^(?:auditor retry:|auditor blocked:)/.test(goal.pauseReason ?? '')) return false;
+      || !/^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? '')) return false;
     const due = Date.parse(claim.recoveryRetryAt ?? goal.pauseResumeAt ?? '');
     if (Number.isFinite(due) && due > Date.now()) return false;
   }
