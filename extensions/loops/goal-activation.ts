@@ -2388,8 +2388,9 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     const effectiveAutoResume = state.goal?.runToDone === true ? true : autoResumeSetting;
     // Recovery-owned provider waits are not a cold-load hold and not a user
     // pause: the durable wait and its due time survive reload intact. Consent
-    // to resume automatically still comes from the ordinary lifecycle paths —
-    // a recovery-owned wait never manufactures auto-resume authority.
+    // to resume a MAIN-MODEL recovery automatically still comes from the
+    // ordinary lifecycle paths — a recovery-owned wait never manufactures
+    // auto-resume authority, so a cold reload keeps the timer unarmed.
     const autoResume = shouldAutoResumeOnSessionStart(event?.reason, effectiveAutoResume);
     // Consent is established by the same lifecycle paths that are allowed to
     // resume work. Do not release merely because a scheduler was asked to
@@ -2448,7 +2449,10 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // for an explicit /goal resume.
     const retryClaim = state.goal?.pendingCompletion;
     if (state.goal?.status === "paused" && retryClaim?.phase === "retry-waiting" && state.goal.pauseKind === "wait" && state.goal.pauseResumeAt) {
-      const retryConsent = autoResume || explicitRecovery;
+      // A provider-parked auditor claim owns its own restore authority: the
+      // claim, phase and due time are durable and no user/decision/input hold
+      // applies. This does not arm an unrelated main-model recovery timer.
+      const retryConsent = autoResume || explicitRecovery || ownsPersistentProviderWait(state);
       const retryResumeCmd = activeGoalSurfaceCommand("resume");
       const retryAtMs = Date.parse(state.goal.pauseResumeAt);
       if (retryConsent) {
@@ -2697,14 +2701,20 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // branch above; a same-pid session replacement without contradicting
       // handoff evidence is mid-flight continuity for the stored claim too.
       const canRecoverNow = explicitRecovery || autoResume || sameProcessContinuityResume;
-      if (canRecoverNow && ownsPersistentProviderWait(state) && recoveredClaim?.phase === 'recovery-pending'
+      // A stored completion claim parked by a provider failure carries its own
+      // narrow restore authority: the owning session is back, the claim and
+      // due time are durable, and no user/decision/missing-input hold applies.
+      // This is deliberately NOT folded into autoResume, which would also arm
+      // an unrelated main-model recovery timer on a cold reload.
+      const claimRestoreAuthority = canRecoverNow || ownsPersistentProviderWait(state);
+      if (claimRestoreAuthority && ownsPersistentProviderWait(state) && recoveredClaim?.phase === 'recovery-pending'
         && recoveredClaim.recoveryRetryAt && isRecoverableProviderError(recoveredClaim.providerErrorDiagnostic)) {
         // Restore the original due time rather than launching early or
         // consuming the timer debt merely because a new session loaded.
         const armed = scheduleParkedCompletionAuditRecovery(ctx, recoveredClaim, 'provider-recovery-restore');
         updateGoal({ pendingCompletion: armed, pauseSource: 'system', pauseKind: 'wait',
           pauseResumeAt: armed.recoveryRetryAt, pauseReason: 'auditor retry: provider recovery after reload' }, ctx);
-      } else if (canRecoverNow && recoveredClaim && (recoveredClaim.phase ?? "recovery-pending") === "recovery-pending") {
+      } else if (claimRestoreAuthority && recoveredClaim && (recoveredClaim.phase ?? "recovery-pending") === "recovery-pending") {
         completionAuditRecoveryArmed = true;
         const started = maybeAutoRetryParkedCompletionAudit(hostLifecycleStart || explicitRecovery ? "host-rebind" : "session-start");
         if (!started) {
