@@ -31,6 +31,7 @@ import {
   classifyMainModelFailure,
   PERSISTENT_PROVIDER_RETRY_MS,
   isContextOverflowError,
+  isRecoverableProviderError,
   isMainModelFailbackAuto,
   isMainModelFallbackFailure,
   mainModelFailureDelayMs,
@@ -1209,7 +1210,8 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
   if (loadGlobalSettings().hourlyRetryProbe !== true) return;
   const mainParked = !!state.mainModelRecovery
     && state.mainModelRecovery.manualResumeRequired !== true
-    && state.mainModelRecovery.retryAt !== undefined;
+    && state.mainModelRecovery.retryAt !== undefined
+    && !isRecoverableProviderError(state.mainModelRecovery.providerErrorDiagnostic);
   // Shared ticker: a parked auditor retry-waiting claim rides the same
   // :00:30 probe as main-model recovery — the auditor is just provider
   // requests, same as main. The ladder timer stays the primary driver; the
@@ -1217,7 +1219,8 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
   // timer) and normally no-ops on the claim-phase guard.
   const auditorParked = state.goal?.status === "paused"
     && (state.goal.pendingCompletion?.phase ?? "") === "retry-waiting"
-    && (state.goal.pauseReason ?? "").startsWith("auditor retry:");
+    && (state.goal.pauseReason ?? "").startsWith("auditor retry:")
+    && !isRecoverableProviderError(state.goal.pendingCompletion?.providerErrorDiagnostic);
   // The ticker is only for a parked recovery. After setModel succeeds,
   // retryAt is cleared while the next supervised turn is being tested; do
   // not let :00:30 switch models underneath that turn.
