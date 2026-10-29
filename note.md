@@ -11,3 +11,7 @@ but it is jsut slwo for some reason as after waiting it out everything was norma
 ## bingo foudn the ugly wall of text problem it is the tweak goal 
 
 /home/dracon/Pictures/Screenshots/Screenshot_20261029_112819.png
+
+### but htis question looks fine, except unstyled
+
+/home/dracon/Pictures/Screenshots/Screenshot_20261029_151933.png
