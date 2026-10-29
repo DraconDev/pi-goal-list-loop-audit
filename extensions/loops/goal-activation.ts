@@ -2386,11 +2386,11 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // general, so the draft-confirmed flag releases cold restore even when
     // the global autoResume is unset or explicitly false.
     const effectiveAutoResume = state.goal?.runToDone === true ? true : autoResumeSetting;
-    // Recovery-owned provider waits retain their already-confirmed authority
-    // across replacement. This does not grant consent to an unrelated cold
-    // load, explicit pause, decision or missing-input blocker.
-    const autoResume = shouldAutoResumeOnSessionStart(event?.reason, effectiveAutoResume)
-      || ownsPersistentProviderWait(state);
+    // Recovery-owned provider waits are not a cold-load hold and not a user
+    // pause: the durable wait and its due time survive reload intact. Consent
+    // to resume automatically still comes from the ordinary lifecycle paths —
+    // a recovery-owned wait never manufactures auto-resume authority.
+    const autoResume = shouldAutoResumeOnSessionStart(event?.reason, effectiveAutoResume);
     // Consent is established by the same lifecycle paths that are allowed to
     // resume work. Do not release merely because a scheduler was asked to
     // run; rejected/held schedules must leave the old report suppressed.

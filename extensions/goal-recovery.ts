@@ -34,6 +34,7 @@ import {
   isRecoverableProviderError,
   isMainModelFailbackAuto,
   isMainModelFallbackFailure,
+  isQuotaHorizonExempt,
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
@@ -708,9 +709,12 @@ export function nextMainModelFallback(ctx: ExtensionContext, recovery = state.ma
 }
 export function mainModelSameModelRetryActive(ctx: ExtensionContext, recovery: MainModelRecovery | undefined, budget: number, failure?: MainModelFailure): boolean {
   const hasFallback = !!nextMainModelFallback(ctx, recovery);
-  // Positive provider-outage evidence bypasses the legacy same-model budget.
-  // Ambiguous worker/local failures retain that separately configured policy.
-  if (hasFallback && isRecoverableProviderError(failure?.raw ?? recovery?.providerErrorDiagnostic)) return false;
+  // Only a quota-class wall (rate-limit / plan-quota) skips the configured
+  // same-model budget to try a permitted alternative promptly — that wall
+  // cannot heal by repeating the same account. Ambiguous/local failures,
+  // billing and auth walls keep the operator's separately-configured budget
+  // so a first transient blip does not spend backup quota.
+  if (hasFallback && isQuotaHorizonExempt(failure?.raw ?? recovery?.providerErrorDiagnostic)) return false;
   return sameModelRetryPhaseActive(recovery, budget, hasFallback);
 }
 function boundedSameModelDelay(ctx: ExtensionContext, recovery: MainModelRecovery, delayMs: number): number {
@@ -1082,9 +1086,11 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
     holdMainModelRecovery(ctx, normalized, "the provider refused the request itself (deterministic client error — e.g. too many images for this model). Switch model or trim the request, then resume");
     return false;
   }
-  // This durable due time owns every retry entry point. Exhausting the
-  // configured chain changes cadence, never permission to keep recovering.
-  const steadyDelayMs = isRecoverableProviderError(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;
+  // A quota-class wall owns one cadence: retry every five minutes with no
+  // attempt/elapsed cutoff. Every other failure family keeps the operator's
+  // configured paced ladder (mainModelRetryMinutes) — billing and auth are
+  // account walls, and a transient blip keeps its short ladder.
+  const steadyDelayMs = isQuotaHorizonExempt(diagnostic) ? PERSISTENT_PROVIDER_RETRY_MS : delayMs;
   const requestedDelayMs = Math.max(1_000, boundedSameModelDelay(ctx, normalized, steadyDelayMs));
   if (normalized.manualResumeRequired) {
     holdMainModelRecovery(ctx, normalized, "an explicit recovery hold requires manual action");
