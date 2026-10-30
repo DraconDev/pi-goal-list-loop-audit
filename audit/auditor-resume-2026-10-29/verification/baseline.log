@@ -3,3 +3,20 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
+(pass) the default dispatch asks for a durable auditor session, not --no-session [19241.62ms]
+(pass) a failed attempt keeps the session a retry can resume [1368.79ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [538.97ms]
+(pass) auditorInspection=false restores the original --no-session spawn [793.31ms]
+(pass) a retained session directory is still reapable by the retention sweep [42.62ms]
+(pass) a provider failure resumes the prior transcript [0.25ms]
+(pass) a transport failure resumes the prior transcript [0.02ms]
+(pass) a timeout restarts cold the prior transcript [0.01ms]
+(pass) a no-verdict attempt restarts cold the prior transcript [0.02ms]
+(pass) a moved goal revision still restarts the audit cold [1.40ms]
+(pass) a replaced claim still restarts the audit cold [0.02ms]
+(pass) a changed audit tier still restarts the audit cold
+(pass) an explicit cancel still restarts the audit cold [0.02ms]
+(pass) a vanished transcript still restarts the audit cold
+(pass) durability turned off still restarts the audit cold
+[run-tests] progress: 30s elapsed · 1s since last output · 1 KiB of suite output
+(pass) a resumed dispatch spawns against the prior attempt transcript [5024.49ms]
