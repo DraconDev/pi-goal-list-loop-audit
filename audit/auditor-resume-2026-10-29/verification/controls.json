@@ -127,9 +127,9 @@
       "scripts/run-tests.mjs",
       "tests/auditor-resume.test.ts"
     ],
-    "exitCode": 0,
+    "exitCode": 1,
     "expectedFailure": true,
-    "expectedResultObserved": false
+    "expectedResultObserved": true
   },
   {
     "case": "missing-resume-ledger-regression",

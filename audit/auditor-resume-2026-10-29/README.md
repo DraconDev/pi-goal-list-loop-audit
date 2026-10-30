@@ -221,6 +221,41 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Fourth disapproval: context exhaustion was resumable (2026-10-30)
+
+Two contract items were still unmet. The first was a behavioral contradiction
+of the objective, not a documentation gap.
+
+**Context exhaustion resumed.** The classifier had no context class at all, so
+every overflow and compaction message fell through to `"provider"` — and
+`"provider"` is resumable. Probing the production classifier and resolver with
+the real message shapes:
+
+| error | before | after |
+| --- | --- | --- |
+| `exceed_context_size_error` | `provider` → `{"resume":true}` | `context-exhausted` → refused |
+| `maximum context length is 200000 tokens` | `provider` → `{"resume":true}` | `context-exhausted` → refused |
+| `Auto-compaction failed: prompt too large` | `provider` → `{"resume":true}` | `context-exhausted` → refused |
+| `503 workspace_billing_scope_unavailable` | `provider` → resume | unchanged (correct) |
+
+Adding the class honestly meant following it through every place the union was
+duplicated: the core type, the process re-export, the infrastructure-retry
+cursor, the persisted retry field on the hooks cursor and the respec builder,
+plus the schema enum. Those copies are why the class could have been added and
+silently dropped; they now reference one declaration.
+
+The matcher is deliberately narrow — a provider error that merely *mentions*
+context still resumes, and there is a test for that, so the fix cannot quietly
+turn every transient fault into a cold restart.
+
+**The ledger half of the lineage requirement had no test.** `grep` found
+`auditor_resume_decision` referenced only at its writer. The new test drives the
+real retry dispatch and asserts the durable row carries `priorAttemptId`,
+`sourceModel`, `resumedOntoModel`, `resumeCount`, `tier` and `revision`.
+
+Both are now load-bearing: `context-exhaustion-resumable-regression` and
+`missing-resume-ledger-regression` each exit nonzero.
+
 ## Third disapproval: the baseline was never stamped (2026-10-30)
 
 The third claim was disapproved, correctly, for the most consequential gap yet.
