@@ -286,6 +286,7 @@ import {
   newDetachedAuditJobAttemptId,
   resolveClaimAuditTier,
   recordGllaInitiatedAuditorAbort,
+  recordUserAuditorAbort,
   runDetachedGoalCompletionAuditor,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
@@ -1306,7 +1307,11 @@ function registerAgentTools(pi: any): void {
           // The host tool's AbortSignal is the explicit user-stop boundary
           // for the detached audit. It lets the Esc escape hatch settle the
           // worker before offering the user the without-audit choice.
-          signal,
+          // v0.39.56 (auditor objection 2026-10-30): an abort that reaches
+          // this signal IS the human's decision, so record it BEFORE the
+          // signal is consumed. Without this the cause stayed "transport" and
+          // the resume policy could not honour an explicit user cancel.
+          signal: recordUserAbortOnSignal(signal, completionClaim.attemptId),
           runtime: {
             attemptId: () => newDetachedAuditJobAttemptId(completionClaim.attemptId!),
             logicalAttemptId: completionClaim.attemptId!,
