@@ -20,3 +20,5 @@ tests/auditor-resume.test.ts:
 (pass) durability turned off still restarts the audit cold
 [run-tests] progress: 30s elapsed · 1s since last output · 1 KiB of suite output
 (pass) a resumed dispatch spawns against the prior attempt transcript [5024.49ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [8107.70ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.56ms]
