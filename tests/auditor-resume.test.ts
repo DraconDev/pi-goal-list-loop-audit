@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
+import { scaledBudgetMs } from '../scripts/host-contention.mjs';
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
 import { appendAuditVerdict, auditorDispatchStampFacts, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
@@ -951,4 +952,80 @@ test('a claim with no baseline fails closed instead of resuming blindly', () => 
   assert.equal(decision.resume, false,
     'absence of a baseline is not permission: the audit must restart cold');
   assert.equal(decision.reason, 'revision-unknown');
+});
+
+/**
+ * v0.39.58 (auditor objection 2026-10-30, MED #3): contract item 5 requires the
+ * resume lineage to be recorded in the ledger AND the verdict provenance, both
+ * asserted by a test. Only the verdict half was ever asserted; `grep` found no
+ * test referencing `auditor_resume_decision` at all, so the ledger writer could
+ * have been deleted without failing anything.
+ *
+ * This drives the REAL retry dispatch (`retryStoredCompletionAudit`) and reads
+ * the durable row it emits.
+ */
+test('the resume ledger row records the full lineage on a real retry dispatch', { timeout: scaledBudgetMs(30000) }, async () => {
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
+  const priorSettings = fs.readFileSync(settingsPath, 'utf8');
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+  // An inert worker: it never produces a verdict, so the point of this test is
+  // the dispatch decision the retry writes, not an audit outcome.
+  const script = path.join(cwd, 'inert-resume-worker.mjs');
+  fs.writeFileSync(script, '#!/usr/bin/env node\nprocess.stdin.resume();\nsetTimeout(() => process.exit(0), 30);\n');
+  fs.chmodSync(script, 0o700);
+  const originalBinary = process.env.GLLA_PI_BINARY;
+  process.env.GLLA_PI_BINARY = script;
+  fs.writeFileSync(settingsPath, JSON.stringify({ aggressiveMode: true, autoResume: true, auditorInspection: true }));
+  try {
+    activate(pi.api);
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: 'resume-ledger' } });
+    Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+    // A prior attempt whose transcript SURVIVES on disk — the whole point.
+    const priorAttemptId = 'audit-ledger-aaaaaa';
+    const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-ledger1-bbbbbb`);
+    fs.mkdirSync(jobDir, { recursive: true });
+    fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '{"type":"session","priorToolCalls":64}\n');
+    const priorModel = 'openai-codex/gpt-6-luna';
+    seedState(cwd, {
+      goal: seedGoal({
+        status: 'paused', pauseKind: 'wait', pauseResumeAt: new Date(Date.now() - 1000).toISOString(),
+        pauseReason: 'auditor retry: provider error',
+        revision: 7,
+        policy: 'goal', objective: 'Verify the intended feature', verificationContract: 'Inspect the behavior',
+        pendingCompletion: {
+          at: new Date().toISOString(), phase: 'retry-waiting', attemptId: priorAttemptId,
+          claimLineageId: 'claim-ledger-cccccc', priorAttemptId,
+          completionSummary: 'Outcome: f. Changed: f. Evidence: t. Tests: p. Unresolved: none. Next: none.',
+          verificationSummary: 'Fixture only',
+          auditorFailureClass: 'provider', auditorRevision: 7, auditorTier: 'full',
+          auditorSourceModel: priorModel, auditorCandidateRef: priorModel,
+          retryAttempts: 2, retryFirstAt: new Date(Date.now() - 60_000).toISOString(),
+        } as any,
+      }),
+      list: [],
+    });
+    __testOnlyLoadState(cwd);
+    await pi.fire('session_start', { reason: 'startup' }, ctx);
+    const ledger = `${cwd}/.pi-glla/active.jsonl`;
+    const before = fs.existsSync(ledger) ? fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).length : 0;
+    await (globalThis as any).retryStoredCompletionAudit('provider-retry');
+    await tick(400);
+    const rows = fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).slice(before).map((l) => JSON.parse(l));
+    const row = rows.find((r: any) => r.type === 'auditor_resume_decision');
+    assert.ok(row, 'the real retry dispatch emits an auditor_resume_decision ledger row');
+    const v = row.value;
+    // The exact lineage contract item 5 names.
+    assert.equal(v.priorAttemptId, priorAttemptId, 'the row names the attempt whose work is being carried forward');
+    assert.equal(v.sourceModel, priorModel, 'the row names the model the PRIOR attempt ran on');
+    assert.ok(v.resumedOntoModel, 'the row names the model the resumed attempt runs on');
+    assert.equal(typeof v.resumeCount, 'number', 'the row carries a resume count');
+    assert.equal(v.tier, 'full', 'the row carries the audit tier');
+    assert.equal(v.revision, 7, 'the row carries the goal revision');
+    assert.equal(v.resumed, true, 'this retry genuinely resumed, so the lineage is a resume and not a cold start');
+  } finally {
+    if (originalBinary === undefined) delete process.env.GLLA_PI_BINARY; else process.env.GLLA_PI_BINARY = originalBinary;
+    fs.writeFileSync(settingsPath, priorSettings);
+  }
 });
