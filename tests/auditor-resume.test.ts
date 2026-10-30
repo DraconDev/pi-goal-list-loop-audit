@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
+import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
 import { appendAuditVerdict, auditorDispatchStampFacts, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { replaceState } from '../extensions/goal-state.js';
-import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
+import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
 import { persistClaimWorkerActivity } from '../extensions/loops/goal-auditor-hooks.js';
 import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
 import { abortCauseForAttempt, decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, recordGllaInitiatedAuditorAbort, recordUserAbortOnSignal, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
@@ -823,4 +823,103 @@ test('a stale attempt cannot write to the claim, resumed or not', () => {
     true,
     'the live attempt still can — the gate is not blanket-refusing',
   );
+});
+
+/**
+ * v0.39.57 (auditor objection 2026-10-30, HIGH #1/#3): the PRIMARY `complete_goal`
+ * dispatch must record the baseline a retry compares against. The earlier tests
+ * hand-built claims carrying `auditorTier`/`auditorRevision`/`auditorSourceModel`,
+ * so they proved the helper while the real dispatch left those absent and the
+ * first retry's moved-revision and changed-tier guards could not fire.
+ *
+ * This drives the REAL tool and asserts the durable claim it leaves behind.
+ */
+async function primaryDispatchClaim() {
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `primary-${Math.random()}` } });
+  Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  seedState(cwd, {
+    goal: seedGoal({ status: 'active', policy: 'goal', objective: 'Verify the intended feature', verificationContract: 'Inspect the feature behavior' }),
+    list: [],
+  });
+  __testOnlyLoadState(cwd);
+  // An inert worker that records that it was spawned, then dies without a
+  // verdict — the mid-audit provider failure this goal is about.
+  const worker = path.join(cwd, 'inert-auditor.mjs');
+  fs.writeFileSync(worker, '#!/usr/bin/env node\nprocess.stdin.resume();\nsetTimeout(() => process.exit(3), 40);\n');
+  fs.chmodSync(worker, 0o700);
+  process.env.GLLA_PI_BINARY = worker;
+  // Compaction is not due, so the dispatch is the PRIMARY path, not admission.
+  ctx.isIdle = () => true; ctx.hasPendingMessages = () => false;
+  ctx.getContextUsage = () => ({ tokens: 1000, contextWindow: 1048000, percent: 0.1 });
+  ctx.compact = options => options?.onComplete?.({ summary: 'x', firstKeptEntryId: 'kept', tokensBefore: 1000 });
+  await pi.runTool('complete_goal', {
+    completionSummary: 'Outcome: feature verified. Changed: feature. Evidence: tests. Tests: pass. Unresolved: none. Next: none.',
+  }, ctx);
+  await tick(600);
+  return readState(cwd).goal?.pendingCompletion;
+}
+
+test('the PRIMARY complete_goal dispatch stamps the retry baseline on the claim', async () => {
+  const claim = await primaryDispatchClaim();
+  assert.ok(claim, 'the primary dispatch persists a claim');
+  // These are the exact fields whose absence made the guards inert.
+  assert.ok(claim.auditorRevision !== undefined,
+    'the primary dispatch records the revision it audited, so a move is detectable');
+  assert.ok(claim.auditorTier,
+    'the primary dispatch records the tier it ran, so a tier change is detectable');
+  assert.ok(claim.auditorSourceModel || claim.auditorCandidateRef,
+    'the primary dispatch records the model it ran on, so fromModel is populated on the first resume');
+});
+
+test('the first retry after a real primary dispatch refuses a moved revision and a changed tier', async () => {
+  const claim = await primaryDispatchClaim();
+  assert.ok(claim, 'the primary dispatch persists a claim');
+  // Build the retry the way the hooks do: same claim, new attempt id.
+  const retry = {
+    ...claim!,
+    priorAttemptId: claim!.attemptId,
+    attemptId: 'audit-retry-after-primary',
+    auditorFailureClass: 'provider' as const,
+  };
+  const cwd = tmpCwd();
+  const priorDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${retry.priorAttemptId}-r1`);
+  fs.mkdirSync(priorDir, { recursive: true });
+  fs.writeFileSync(path.join(priorDir, 'session.jsonl'), '{"kind":"session"}\n');
+  const baseRevision = claim!.auditorRevision!;
+  const baseTier = claim!.auditorTier!;
+
+  const moved = resolveAuditorResumeForDispatch({
+    inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+    currentTier: baseTier, currentRevision: baseRevision + 98, cwd,
+  });
+  assert.equal(moved.resume, false, 'a moved revision must restart cold on the FIRST retry');
+  assert.equal(moved.reason, 'revision-moved');
+
+  const retiered = resolveAuditorResumeForDispatch({
+    inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+    currentTier: baseTier === 'light' ? 'full' : 'light', currentRevision: baseRevision, cwd,
+  });
+  assert.equal(retiered.resume, false, 'a changed tier must restart cold on the FIRST retry');
+  assert.equal(retiered.reason, 'tier-changed');
+
+  const unchanged = resolveAuditorResumeForDispatch({
+    inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+    currentTier: baseTier, currentRevision: baseRevision, cwd,
+  });
+  assert.equal(unchanged.resume, true, 'an unchanged claim still resumes — the guards are not blanket-refusing');
+});
+
+test('a claim with no baseline fails closed instead of resuming blindly', () => {
+  // The production shape that made the guards inert: no revision, no tier.
+  const decision = decideAuditorResume({
+    inspection: true, priorAttemptId: 'audit-unbased', priorFailureClass: 'provider',
+    priorClaimAttemptId: 'cl', currentClaimAttemptId: 'cl',
+    currentRevision: 99, currentTier: 'light', sessionExists: true,
+  });
+  assert.equal(decision.resume, false,
+    'absence of a baseline is not permission: the audit must restart cold');
+  assert.equal(decision.reason, 'revision-unknown');
 });
