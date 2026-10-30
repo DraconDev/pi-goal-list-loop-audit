@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
-import { readState, stampAuditorDispatchFacts } from '../extensions/goal-loop-core.js';
+import { appendAuditVerdict, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
@@ -567,4 +567,52 @@ test('end to end: a rotated claim resolves to the prior transcript and the worke
   assert.ok(at >= 0, 'the resumed dispatch asks for a durable session');
   assert.equal(argv[at + 1], decision.sessionPath,
     'the worker continues the REAL prior transcript, so completed tool work is not recomputed');
+});
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #2): resume lineage must reach
+ * the VERDICT record, not only the dispatch ledger. appendAuditVerdict keeps it
+ * durably, so a reviewer can tell a continued audit from a first pass by
+ * reading the verdict itself.
+ */
+test('a resumed verdict carries its lineage into the durable audit history', () => {
+  const history: AuditVerdict[] = [];
+  appendAuditVerdict(history, {
+    at: new Date().toISOString(),
+    approved: true,
+    disapproved: false,
+    model: 'test/target-model',
+    report: '<approved/>',
+    revision: 5,
+    auditTier: 'full',
+    resumeProvenance: {
+      priorAttemptId: 'audit-mvprov-aaaaaa',
+      fromModel: 'openai-codex/gpt-6-luna',
+      toModel: 'test/target-model',
+      resumeCount: 1,
+      revision: 5,
+      tier: 'full',
+    },
+  });
+  const entry = history.at(-1)!;
+  assert.deepEqual(entry.resumeProvenance, {
+    priorAttemptId: 'audit-mvprov-aaaaaa',
+    fromModel: 'openai-codex/gpt-6-luna',
+    toModel: 'test/target-model',
+    resumeCount: 1,
+    revision: 5,
+    tier: 'full',
+  }, 'every lineage field must be recorded on the verdict');
+  // Attempt gating is unchanged: the verdict still binds to its revision.
+  assert.equal(entry.revision, 5);
+});
+
+test('a first-pass verdict carries NO resume lineage', () => {
+  const history: AuditVerdict[] = [];
+  appendAuditVerdict(history, {
+    at: new Date().toISOString(), approved: true, disapproved: false,
+    model: 'test/auditor', report: '<approved/>', revision: 1, auditTier: 'light',
+  });
+  assert.equal(history.at(-1)!.resumeProvenance, undefined,
+    'absent stays absent — a cold audit must not look resumed');
 });
