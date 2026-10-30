@@ -1025,8 +1025,15 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     await tick(400);
     const rows = fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).slice(before).map((l) => JSON.parse(l));
     const row = rows.find((r: any) => r.type === 'auditor_resume_decision');
-    if (!row) console.log('LEDGER_DEBUG:', JSON.stringify(rows.map((r: any) => r.type)),
-      'SETTINGS:', fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').split('\n').filter(Boolean).slice(before).map((l) => l.slice(0, 200)).join(' | '));
+    if (!row) {
+      const all = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').split('\n').filter(Boolean);
+      console.log('LEDGER_DEBUG before=' + before + ' total=' + all.length,
+        'NEW=' + JSON.stringify(all.slice(before).map((l) => JSON.parse(l).type)),
+        'STATUS=' + JSON.stringify((readState(cwd).goal as any)?.status),
+        'PHASE=' + JSON.stringify((readState(cwd).goal as any)?.pendingCompletion?.phase),
+        'DIAG=' + JSON.stringify((readState(cwd).goal as any)?.pauseReason),
+        'INSPECT=' + JSON.stringify(loadGlobalSettings(cwd).auditorInspection));
+    }
     assert.ok(row, 'the real retry dispatch emits an auditor_resume_decision ledger row');
     const v = row.value;
     // The exact lineage contract item 5 names.
