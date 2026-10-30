@@ -473,6 +473,19 @@
         "spotCheck": {
           "type": "boolean",
           "description": "v0.38.81: true when this full-tier audit was a silent spot-check of the light population."
+        },
+        "resumeProvenance": {
+          "type": "object",
+          "description": "v0.39.55: lineage of a CONTINUED audit (a retry that resumed a prior attempt's transcript). Absent on a first-pass verdict.",
+          "required": ["priorAttemptId"],
+          "properties": {
+            "priorAttemptId": { "type": "string", "minLength": 1 },
+            "fromModel": { "type": "string", "minLength": 1 },
+            "toModel": { "type": "string", "minLength": 1 },
+            "resumeCount": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "revision": { "type": "integer", "minimum": 0 },
+            "tier": { "type": "string", "enum": ["light", "standard", "full"] }
+          }
         }
       }
     }
