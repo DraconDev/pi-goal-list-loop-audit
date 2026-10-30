@@ -1022,8 +1022,9 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     // `manual` origin: the automatic origins are additionally fenced by the
     // load hold and the retry horizon, which are orthogonal to resume lineage.
     await (globalThis as any).retryStoredCompletionAudit('manual');
-    // The dispatch is asynchronous; wait for the durable row instead of a fixed
-    // sleep, so a loaded host cannot turn a real write into a flaky miss.
+    // The dispatch is asynchronous and may be entered by session recovery, so
+    // wait for the durable row across the WHOLE ledger rather than a delta
+    // snapshot — an earlier snapshot would miss a row recovery already wrote.
     const ledgerAll = () => fs.existsSync(ledger)
       ? fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
     try {
@@ -1031,18 +1032,8 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
         timeoutMs: 8000, intervalMs: 20,
         message: 'the retry dispatch emits its resume-lineage ledger row',
       });
-    } catch { /* fall through to the explicit assertions below */ }
-    const rows = ledgerAll().slice(before);
-    const row = rows.find((r: any) => r.type === 'auditor_resume_decision');
-    if (!row) {
-      const all = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').split('\n').filter(Boolean);
-      console.log('LEDGER_DEBUG before=' + before + ' total=' + all.length,
-        'NEW=' + JSON.stringify(all.slice(before).map((l) => JSON.parse(l).type)),
-        'STATUS=' + JSON.stringify((readState(cwd).goal as any)?.status),
-        'PHASE=' + JSON.stringify((readState(cwd).goal as any)?.pendingCompletion?.phase),
-        'DIAG=' + JSON.stringify((readState(cwd).goal as any)?.pauseReason),
-        'INSPECT=' + JSON.stringify(loadGlobalSettings(cwd).auditorInspection));
-    }
+    } catch { /* fall through to the explicit assertion below */ }
+    const row = ledgerAll().find((r: any) => r.type === 'auditor_resume_decision');
     assert.ok(row, 'the real retry dispatch emits an auditor_resume_decision ledger row');
     const v = row.value;
     // The exact lineage contract item 5 names.
