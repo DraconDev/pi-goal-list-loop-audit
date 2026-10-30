@@ -4,3 +4,5 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
 [run-tests] progress: 30s elapsed · 17s since last output · 0 KiB of suite output
+(pass) the default dispatch asks for a durable auditor session, not --no-session [23099.62ms]
+(pass) a failed attempt keeps the session a retry can resume [862.32ms]
