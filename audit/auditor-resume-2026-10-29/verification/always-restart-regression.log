@@ -368,3 +368,6 @@ false !== true
  22 pass
  15 fail
 Ran 37 tests across 1 file. [10.05s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-BD1WbG/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-BD1WbG
+[run-tests] finished in 11s (exit 1)
