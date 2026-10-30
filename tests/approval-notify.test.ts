@@ -72,14 +72,18 @@ test("v0.38.39 withoutStaleNext keeps one concrete next action, still strips sta
 });
 
 test("A10: the kept-session command quotes the worker-reported path", () => {
+  // The protected requirement is shell-safe quoting of a worker-reported path,
+  // not the line's prefix. The bullet marker is part of the summary's
+  // change-first voice: this hint renders inside the terminal summary, which
+  // only admits bullets.
   assert.deepEqual(
     inspectionSessionExtras("/tmp/audit jobs/sess;rm -rf ~.jsonl"),
-    ["Auditor session kept for review: pi --session '/tmp/audit jobs/sess;rm -rf ~.jsonl' (or pi --fork '/tmp/audit jobs/sess;rm -rf ~.jsonl')."],
+    ["• Auditor session kept for review: pi --session '/tmp/audit jobs/sess;rm -rf ~.jsonl' (or pi --fork '/tmp/audit jobs/sess;rm -rf ~.jsonl')."],
     "spaces and metacharacters render inside quotes",
   );
   assert.deepEqual(
     inspectionSessionExtras("/tmp/it's.jsonl"),
-    ["Auditor session kept for review: pi --session '/tmp/it'\\''s.jsonl' (or pi --fork '/tmp/it'\\''s.jsonl')."],
+    ["• Auditor session kept for review: pi --session '/tmp/it'\\''s.jsonl' (or pi --fork '/tmp/it'\\''s.jsonl')."],
     "embedded quotes escape",
   );
   assert.deepEqual(inspectionSessionExtras(undefined), [], "absent path omits the command");
