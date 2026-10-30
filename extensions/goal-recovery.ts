@@ -23,7 +23,7 @@ import { currentRecoveryOwner, recoveryOwnership } from "./recovery-ownership.js
 import { clampThinkingLevel } from "@earendil-works/pi-ai/compat";
 import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
-import { isPersistenceDegraded, recheckPersistenceAfterRepair, appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
+import { isAuditorInfrastructureClass, isPersistenceDegraded, recheckPersistenceAfterRepair, appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
 import { stateRootPending } from './glla-state-root.js';
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
@@ -100,12 +100,9 @@ type CompletionAuditCursorPatch = Partial<Pick<PendingCompletion,
   | "auditorFailureAt"
 >>;
 
-const AUDITOR_FAILURE_CLASSES = new Set<PendingCompletion["auditorFailureClass"]>([
-  "transport",
-  "timeout",
-  "no-verdict",
-  "provider",
-]);
+// The shared list, not a local copy: this duplicate dropped
+// `context-exhausted` and let a recovery restore return the claim without its
+// non-resumable class.
 
 function sanitizeCompletionAuditCursorPatch(patch: CompletionAuditCursorPatch | undefined): CompletionAuditCursorPatch {
   if (!patch) return {};
@@ -114,7 +111,7 @@ function sanitizeCompletionAuditCursorPatch(patch: CompletionAuditCursorPatch | 
     ? normalizeBoundedModelRefs(refs, MAX_AUDITOR_CANDIDATE_REFS)
     : undefined;
   const cleanFailureClass = typeof patch.auditorFailureClass === "string"
-    && AUDITOR_FAILURE_CLASSES.has(patch.auditorFailureClass as PendingCompletion["auditorFailureClass"])
+    && isAuditorInfrastructureClass(patch.auditorFailureClass)
     ? patch.auditorFailureClass
     : undefined;
   return {

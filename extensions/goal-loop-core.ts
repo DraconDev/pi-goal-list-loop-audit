@@ -706,6 +706,41 @@ export type AuditorRecoveryFailureClass = AuditorInfrastructureClass;
  * a duplicated union silently dropped the new `context-exhausted` class. */
 export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted";
 
+/**
+ * The ONE runtime list of failure classes. Every place that whitelists a
+ * persisted `auditorFailureClass` must read this array.
+ *
+ * v0.39.59 (auditor objection 2026-10-30, HIGH #1): adding `context-exhausted`
+ * to the type alone was not enough. Two hand-copied whitelists — here in
+ * `normalizePendingCompletion` and in `goal-recovery.ts` — still listed the old
+ * four values, so a durable reload silently DROPPED the new class and the retry
+ * ladder then defaulted the lost value back to resumable `transport`. An
+ * overflowed transcript could therefore be resumed after a restart, which is
+ * exactly what the class exists to prevent.
+ *
+ * The `satisfies` clause plus the exhaustiveness assertion below make that class
+ * of omission a COMPILE ERROR rather than a silent runtime drop: adding a member
+ * to the union without adding it here fails `tsc`.
+ */
+export const AUDITOR_INFRASTRUCTURE_CLASS_VALUES = [
+  "no-verdict", "timeout", "transport", "provider", "context-exhausted",
+] as const satisfies readonly AuditorInfrastructureClass[];
+
+type MissingAuditorClass =
+  Exclude<AuditorInfrastructureClass, (typeof AUDITOR_INFRASTRUCTURE_CLASS_VALUES)[number]>;
+// If a class is added to the union but not to the array above, this alias
+// becomes a non-`never` type and the assignment stops compiling.
+const AUDITOR_CLASSES_ARE_EXHAUSTIVE: MissingAuditorClass extends never ? true : never = true;
+void AUDITOR_CLASSES_ARE_EXHAUSTIVE;
+
+const AUDITOR_INFRASTRUCTURE_CLASS_SET: ReadonlySet<string> =
+  new Set<string>(AUDITOR_INFRASTRUCTURE_CLASS_VALUES);
+
+/** True when `value` is one of the known auditor failure classes. */
+export function isAuditorInfrastructureClass(value: unknown): value is AuditorInfrastructureClass {
+  return typeof value === "string" && AUDITOR_INFRASTRUCTURE_CLASS_SET.has(value);
+}
+
 /** Durable completion claim metadata. The claim itself is the user's exact
  * completion assertion; the lifecycle fields make an interrupted isolated
  * audit distinguishable from one that is actively running. Fields beyond
@@ -3462,9 +3497,11 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const auditorFailureCount = typeof _auditorFailureCount === "number" && Number.isFinite(_auditorFailureCount)
     ? Math.min(2, Math.max(0, Math.trunc(_auditorFailureCount)))
     : undefined;
-  const auditorFailureClasses: AuditorRecoveryFailureClass[] = ["transport", "timeout", "no-verdict", "provider"];
-  const auditorFailureClass = typeof _auditorFailureClass === "string" && auditorFailureClasses.includes(_auditorFailureClass as AuditorRecoveryFailureClass)
-    ? _auditorFailureClass as AuditorRecoveryFailureClass
+  // Reads the one shared list: a hand-copied whitelist here silently dropped
+  // `context-exhausted` on every reload, which the retry ladder then defaulted
+  // back to resumable `transport`.
+  const auditorFailureClass = isAuditorInfrastructureClass(_auditorFailureClass)
+    ? _auditorFailureClass
     : undefined;
   const auditorFallbackExhausted = _auditorFallbackExhausted === true;
   // Resume lineage at the state boundary: a resume must never be decided from
