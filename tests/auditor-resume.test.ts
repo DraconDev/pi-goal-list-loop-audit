@@ -982,6 +982,15 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     activate(pi.api);
     const ctx = makeMockCtx(cwd, { sessionManager: { name: 'resume-ledger' } });
     Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+    // The dispatch admits only on an owned idle boundary with no compaction
+    // due, and no pre-audit compaction is the point: this test is about the
+    // resume decision, not the admission path.
+    Object.assign(ctx, {
+      isIdle: () => true,
+      hasPendingMessages: () => false,
+      getContextUsage: () => ({ tokens: 1000, contextWindow: 1048000, percent: 0.1 }),
+      compact: (o: any) => o?.onComplete?.({ summary: 'x', firstKeptEntryId: 'k', tokensBefore: 1000 }),
+    });
     // A prior attempt whose transcript SURVIVES on disk — the whole point.
     const priorAttemptId = 'audit-ledger-aaaaaa';
     const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-ledger1-bbbbbb`);
