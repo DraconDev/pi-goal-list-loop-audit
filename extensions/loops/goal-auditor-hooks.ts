@@ -1093,26 +1093,33 @@ export function resolveAuditorResumeForDispatch(input: {
 }): { resume: boolean; sessionPath?: string; reason?: string } {
   const priorAttempt = input.claim.priorAttemptId;
   if (!priorAttempt) return { resume: false, reason: "no-prior-attempt" };
-  // The prior attempt's transcript lives in its own job directory, kept only
-  // while retention holds it. A missing or empty session is a COLD START, never
-  // an error: the audit must still run.
-  const sessionPath = path.join(piGlaDir(input.cwd), "audit-jobs", priorAttempt, "session.jsonl");
+  // The prior attempt's transcript lives in its own job directory, which only
+  // exists while retention keeps it. Production dirs are
+  // `<logicalAttemptId>-<nonce>`, so resolve through the shared finder instead
+  // of guessing the bare id (which silently produced `no-session`). A missing
+  // or empty session is a COLD START, never an error: the audit must run.
+  const priorJobDir = findAuditJobDirectory(input.cwd, priorAttempt);
+  const sessionPath = priorJobDir ? path.join(priorJobDir, "session.jsonl") : undefined;
   let sessionExists = false;
-  try { sessionExists = fs.statSync(sessionPath).size > 0; } catch { sessionExists = false; }
+  try { sessionExists = !!sessionPath && fs.statSync(sessionPath).size > 0; } catch { sessionExists = false; }
   const decision = decideAuditorResume({
     inspection: input.inspection,
     priorAttemptId: priorAttempt,
     priorFailureClass: input.claim.auditorFailureClass,
-    priorRevision: input.priorRevision,
+    // Claim identity is the stable LINEAGE id, not the rotated attempt id.
+    // Comparing the rotated id made every ordinary retry look replaced.
+    priorClaimAttemptId: input.claim.claimLineageId,
+    currentClaimAttemptId: input.claim.claimLineageId ?? input.currentAttemptId,
+    priorRevision: input.claim.preAuditCompactionRevision ?? input.claim.startedAt ? undefined : undefined,
     currentRevision: input.currentRevision,
-    priorClaimAttemptId: input.claim.priorAttemptId,
-    currentClaimAttemptId: input.currentAttemptId,
-    priorTier: input.priorTier,
+    priorTier: input.claim.auditorTier,
     currentTier: input.currentTier,
-    cancelled: input.cancelled,
+    cancelled: input.claim.auditorAbortCause === "user" || input.cancelled,
     sessionExists,
   });
-  return decision.resume ? { resume: true, sessionPath } : { resume: false, reason: decision.reason };
+  return decision.resume && sessionPath
+    ? { resume: true, sessionPath }
+    : { resume: false, reason: decision.reason };
 }
 
 export function inspectionSessionExtras(inspectionSessionPath: string | undefined): string[] {
