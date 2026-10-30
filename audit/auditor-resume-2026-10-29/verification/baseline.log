@@ -28,3 +28,4 @@ tests/auditor-resume.test.ts:
 (pass) the resume and dispatch facts survive a durable round-trip [1421.96ms]
 (pass) context-exhaustion and compaction failures restart cold through the real resolver [3727.77ms]
 (pass) an explicit user cancel and a moved revision both restart cold through the resolver [4.66ms]
+[run-tests] progress: 60s elapsed · 7s since last output · 2 KiB of suite output
