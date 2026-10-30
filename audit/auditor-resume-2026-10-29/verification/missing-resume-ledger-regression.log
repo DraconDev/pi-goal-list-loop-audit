@@ -37,3 +37,30 @@ tests/auditor-resume.test.ts:
 (pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [647.18ms]
 (pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [624.09ms]
 (pass) a claim with no baseline fails closed instead of resuming blindly [0.15ms]
+1032 |         timeoutMs: 8000, intervalMs: 20,
+1033 |         message: 'the retry dispatch emits its resume-lineage ledger row',
+1034 |       });
+1035 |     } catch { /* fall through to the explicit assertion below */ }
+1036 |     const row = ledgerAll().find((r: any) => r.type === 'auditor_resume_decision');
+1037 |     assert.ok(row, 'the real retry dispatch emits an auditor_resume_decision ledger row');
+                  ^
+AssertionError: the real retry dispatch emits an auditor_resume_decision ledger row
+ generatedMessage: false,
+     actual: undefined,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-0qhg0_w6/tests/auditor-resume.test.ts:1037:12
+      at processTicksAndRejections (native:7:39)
+(fail) the resume ledger row records the full lineage on a real retry dispatch [8064.95ms]
+
+1 tests failed:
+(fail) the resume ledger row records the full lineage on a real retry dispatch [8064.95ms]
+
+ 35 pass
+ 1 fail
+Ran 36 tests across 1 file. [11.35s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-nu5mbi/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-nu5mbi
+[run-tests] finished in 11s (exit 1)
