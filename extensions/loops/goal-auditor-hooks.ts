@@ -750,6 +750,10 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   const pending: PendingCompletion = {
     ...claimForAttempt,
     claimLineageId,
+    // The lineage the PRIOR attempt actually ran under. Resume compares this
+    // against the current lineage: equal = the same claim being retried
+    // (resume is safe), different = the claim was replaced (restart cold).
+    ...(priorAttemptId && claim.claimLineageId ? { priorClaimLineageId: claim.claimLineageId } : {}),
     // A2: keep the rotated-away id — the old worker's job dir is keyed
     // by it, and no prefix reap under the NEW id can reach it.
     ...(priorAttemptId ? { priorAttemptId } : {}),
@@ -1109,7 +1113,9 @@ export function resolveAuditorResumeForDispatch(input: {
     priorFailureClass: input.claim.auditorFailureClass,
     // Claim identity is the stable LINEAGE id, not the rotated attempt id.
     // Comparing the rotated id made every ordinary retry look replaced.
-    priorClaimAttemptId: input.claim.claimLineageId,
+    // The PRIOR lineage is what the dead attempt actually ran under; the
+    // current one is this dispatch's. Differing = a different claim.
+    priorClaimAttemptId: input.claim.priorClaimLineageId ?? input.claim.claimLineageId,
     currentClaimAttemptId: input.claim.claimLineageId ?? input.currentAttemptId,
     priorRevision: input.claim.auditorRevision,
     currentRevision: input.currentRevision,
