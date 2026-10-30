@@ -442,3 +442,73 @@ test('the resume and dispatch facts survive a durable round-trip', () => {
   assert.equal(reloaded?.auditorSourceModel, 'minimax/MiniMax-M3.1-Flash');
   assert.equal(reloaded?.auditorAbortCause, 'transport');
 });
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #3): the cold-start classes must
+ * be proven through the REAL dispatch resolver, so a context-exhausted or
+ * timed-out transcript cannot be resumed just because the file happens to
+ * exist. Resuming an overflowed transcript reproduces the failure and burns the
+ * retry budget, so this is the safety direction that must hold.
+ */
+test('context-exhaustion and compaction failures restart cold through the real resolver', () => {
+  const cwd = tmpCwd();
+  const priorAttemptId = 'audit-mvcold-pppppp';
+  const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-mvcold1-qqqqqq`);
+  fs.mkdirSync(jobDir, { recursive: true });
+  // A NON-EMPTY transcript exists: only the failure class may refuse here, so
+  // a passing assertion proves the class check is load-bearing.
+  fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '{"type":"session","overflow":true}\n');
+  const base = {
+    attemptId: 'audit-mvcold-rrrrrr', claimLineageId: 'claim-mvcold-ssssss',
+    priorAttemptId, auditorTier: 'full' as const, auditorRevision: 1, at: new Date().toISOString(),
+  };
+  for (const failureClass of ['timeout', 'no-verdict'] as const) {
+    const decision = resolveAuditorResumeForDispatch({
+      inspection: true, claim: { ...base, auditorFailureClass: failureClass },
+      currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
+    });
+    assert.equal(decision.resume, false,
+      `${failureClass} must restart cold even though the transcript exists`);
+    assert.equal(decision.reason, 'failure-class');
+  }
+  // The same claim on a provider failure DOES resume, proving the transcript is
+  // genuinely available and only the class refusal is doing the work.
+  const provider = resolveAuditorResumeForDispatch({
+    inspection: true, claim: { ...base, auditorFailureClass: 'provider' },
+    currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
+  });
+  assert.equal(provider.resume, true, 'a provider failure on the same claim resumes');
+});
+
+test('an explicit user cancel and a moved revision both restart cold through the resolver', () => {
+  const cwd = tmpCwd();
+  const priorAttemptId = 'audit-mvguard-tttttt';
+  const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-mvguard1-uuuuuu`);
+  fs.mkdirSync(jobDir, { recursive: true });
+  fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '{"type":"session"}\n');
+  const base = {
+    attemptId: 'audit-mvguard-vvvvvv', claimLineageId: 'claim-mvguard-wwwwww',
+    priorAttemptId, auditorFailureClass: 'provider' as const,
+    auditorTier: 'full' as const, auditorRevision: 2, at: new Date().toISOString(),
+  };
+  const cancelled = resolveAuditorResumeForDispatch({
+    inspection: true, claim: { ...base, auditorAbortCause: 'user' as const },
+    currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 2, cwd,
+  });
+  assert.equal(cancelled.resume, false, 'a user cancel must restart cold');
+  assert.equal(cancelled.reason, 'cancelled');
+
+  const moved = resolveAuditorResumeForDispatch({
+    inspection: true, claim: base,
+    currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 3, cwd,
+  });
+  assert.equal(moved.resume, false, 'a moved goal revision must restart cold');
+  assert.equal(moved.reason, 'revision-moved');
+
+  const retiered = resolveAuditorResumeForDispatch({
+    inspection: true, claim: base,
+    currentAttemptId: base.attemptId, currentTier: 'light', currentRevision: 2, cwd,
+  });
+  assert.equal(retiered.resume, false, 'a changed tier must restart cold');
+  assert.equal(retiered.reason, 'tier-changed');
+});
