@@ -221,6 +221,73 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Fifth disapproval: the new class was dropped on reload (2026-10-30)
+
+The auditor caught a defect in my own change, and it falsified the structural
+claim I made about it. I wrote that the class "is declared once instead of in
+five hand-copied unions". Two hand-copied whitelists of the same union survived,
+and one sat in a file I had changed:
+
+```
+extensions/goal-loop-core.ts:3465   const auditorFailureClasses = ["transport", "timeout", "no-verdict", "provider"];
+extensions/goal-recovery.ts:103     const AUDITOR_FAILURE_CLASSES = new Set([...same four...]);
+```
+
+`normalizePendingCompletion` gates the persisted field through that list, so
+`context-exhausted` was silently dropped on every state reload, while `provider`
+survived because it happened to be in the list:
+
+| seeded class | on disk | after `readState` |
+| --- | --- | --- |
+| `provider` | `provider` | `provider` |
+| `context-exhausted` | `context-exhausted` | **undefined** |
+
+That is not cosmetic. Once the class is `undefined`, the retry ladder's
+synthetic branch defaults it to `opts.retryFailureClass ?? "transport"` — and
+`transport` is resumable. After a host restart with the retry marker persisted,
+an overflowed transcript could therefore be **resumed**, which is precisely what
+the class was added to prevent. The test that should have caught this seeded
+`provider`, the one value that survives a stale whitelist.
+
+The durable fix is not "add the missing literal to two lists". The lists are now
+derived from one declaration, with a compile-time exhaustiveness assertion:
+
+```
+export const AUDITOR_INFRASTRUCTURE_CLASS_VALUES = [
+  "no-verdict", "timeout", "transport", "provider", "context-exhausted",
+] as const satisfies readonly AuditorInfrastructureClass[];
+
+type MissingAuditorClass =
+  Exclude<AuditorInfrastructureClass, (typeof AUDITOR_INFRASTRUCTURE_CLASS_VALUES)[number]>;
+const AUDITOR_CLASSES_ARE_EXHAUSTIVE: MissingAuditorClass extends never ? true : never = true;
+```
+
+Adding a member to the union without adding it here is now a **typecheck
+failure**, not a silent runtime drop. Both former copies read the shared list.
+Verified: dropping `context-exhausted` from the array produces
+`error TS2322: Type 'true' is not assignable to type 'never'`.
+
+The tests now pin the durable path. The round-trip test round-trips *every* class
+rather than just `provider`, and the context-restart case seeds the claim, reads
+it back through `readState`, and dispatches against that reloaded object. Both
+fail against the stale whitelist:
+
+```
+AssertionError: context-exhausted must survive a durable reload; a dropped value defaults back to resumable transport
+AssertionError: context-exhausted must survive the reload this dispatch actually reads from
+```
+
+Replaying the auditor's own end-to-end flip chain now refuses instead of
+resuming: `persisted class after reload : context-exhausted`,
+`retryFailureClass ?? transport: context-exhausted`,
+`{"resume":false,"reason":"failure-class"}`.
+
+Two controls cover it: `reload-drops-context-class-regression` reinstates the
+stale whitelist (exit 1) and `shared-class-list-incomplete-regression` removes a
+member from the shared list, which must fail at **typecheck** (exit 2) — the
+script's `CHECK` suite runs `tsc` precisely so the mechanism asserted is the
+mechanism that fires.
+
 ## Fourth disapproval: context exhaustion was resumable (2026-10-30)
 
 Two contract items were still unmet. The first was a behavioral contradiction
