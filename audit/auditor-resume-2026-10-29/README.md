@@ -221,6 +221,29 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Verdict-integrity evidence on the resumed path
+
+The resumed path is proven not to weaken judging, through the real resolver and
+the real protocol:
+
+- **Attempt gating and revision binding** are unchanged: the resumed dispatch
+  carries its own `attemptId`, and a moved goal revision is refused
+  (`revision-moved`) before any worker spawns.
+- **The falsification round survives a resume.** The worker derives the challenge
+  from the TIER alone (`goal-loop-auditor-process.ts`, `strictChallenge` /
+  `challengeSkip`), so resume cannot reach that decision. The test captures the
+  real `request.json` at spawn time and asserts a resumed full-tier dispatch
+  under `strictChallenge` sends no `challenge: false` and no skip reason, while a
+  light tier still records `light-tier`.
+- **`tests/auditor-verdict-authentication`, `tests/revision-bound-audit` and
+  `tests/auditor-challenge` still pass** unchanged (59 pass together with the
+  resume suite), and the full `auditor-*` / `audit-*` set stays green.
+
+The schema drift pin (`persistence-hardening.test.ts` T6) caught a real omission
+while this was being finished: `resumeProvenance` existed on `AuditVerdict` but
+was not declared in `schemas/goal.schema.json`. The pin was right and the schema
+was fixed, rather than the assertion relaxed.
+
 ## Regressions this change surfaced (fixed)
 
 Making durable sessions the default exposed a latent terminal-summary bug that
