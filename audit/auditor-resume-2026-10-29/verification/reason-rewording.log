@@ -1,3 +1,9 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
 [run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-resume.test.ts:
+[run-tests] progress: 31s elapsed · 4s since last output · 0 KiB of suite output
+(pass) the default dispatch asks for a durable auditor session, not --no-session [2382.11ms]
+(pass) a failed attempt keeps the session a retry can resume [4253.14ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [4963.23ms]
