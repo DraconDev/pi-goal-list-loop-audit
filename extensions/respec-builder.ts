@@ -33,7 +33,7 @@ export interface RespecBuilderState {
   audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string; at: string;
     infrastructureRetry?: InfrastructureRetry;
     candidateRef?: string; attemptedRefs?: string[]; retryCandidateRef?: string;
-    retryAttemptStarted?: boolean; retryFailureClass?: "no-verdict" | "timeout" | "transport" | "provider" };
+    retryAttemptStarted?: boolean; retryFailureClass?: AuditorInfrastructureClass };
 }
 
 /** Pure copy transitions; the host must journal the returned state before use. */

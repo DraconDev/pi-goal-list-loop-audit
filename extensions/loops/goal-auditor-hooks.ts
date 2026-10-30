@@ -1,4 +1,6 @@
-import { effectiveToolTimeoutMs, findAuditJobDirectory } from "../goal-loop-auditor-process.js";
+import { effectiveToolTimeoutMs, findAuditJobDirectory,
+  AuditorInfrastructureClass,
+} from "../goal-loop-auditor-process.js";
 import { isReworkRound } from "../goal-loop-auditor.js";
 import { auditReworkNotice } from "../audit-rework-handoff.js";
 import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestrator.js";
@@ -1355,7 +1357,10 @@ export async function runDetachedCompletionWithFallback(
     attemptedRefs?: readonly string[];
     retryCandidateRef?: string;
     retryAttemptStarted?: boolean;
-    retryFailureClass?: "no-verdict" | "timeout" | "transport" | "provider";
+    // Canonical reviewer class (includes `context-exhausted`), not a copy:
+    // duplicating the union is how the new class silently stopped being
+    // storable and the retry would have lost its refusal reason.
+    retryFailureClass?: AuditorInfrastructureClass;
     onAttempt?: (candidate: AuditorModelCandidate, info: AuditorFallbackAttemptInfo) => boolean | void;
     onRetry?: (candidate: AuditorModelCandidate, error: string, info?: AuditorFallbackAttemptInfo) => boolean | void;
     onCandidateExhausted?: (candidate: AuditorModelCandidate, error: string, info: AuditorFallbackExhaustionInfo) => boolean | void;
