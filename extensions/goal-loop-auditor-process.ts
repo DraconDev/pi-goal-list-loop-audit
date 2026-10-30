@@ -1099,6 +1099,30 @@ function processAlive(pid: number): boolean {
   }
 }
 
+/** Locate the most recent job directory belonging to a logical (claim)
+ * attempt. Production dirs are named `<logicalAttemptId>-<nonce>`, so the
+ * bare logical id almost never exists on disk; a resolver that checks only
+ * `audit-jobs/<attemptId>` finds nothing and silently reports `no-session`.
+ * Newest-first by mtime so a retry continues the attempt that actually just
+ * died rather than an older sibling. */
+export function findAuditJobDirectory(cwd: string, logicalAttemptId: string): string | undefined {
+  if (!logicalAttemptId) return undefined;
+  const root = path.join(piGlaDir(cwd), "audit-jobs");
+  let candidates: Array<{ dir: string; mtimeMs: number }> = [];
+  try {
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name !== logicalAttemptId && !entry.name.startsWith(`${logicalAttemptId}-`)) continue;
+      const dir = path.join(root, entry.name);
+      try { candidates.push({ dir, mtimeMs: statSync(dir).mtimeMs }); } catch { /* vanished */ }
+    }
+  } catch {
+    return undefined;
+  }
+  candidates = candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return candidates[0]?.dir;
+}
+
 function durableWorkerPids(cwd: string, logicalAttemptId: string): Array<{ pid: number; attemptId: string; dir: string }> {
   const root = path.join(piGlaDir(cwd), "audit-jobs");
   const names: string[] = [];
