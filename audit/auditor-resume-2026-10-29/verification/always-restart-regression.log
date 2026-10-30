@@ -163,3 +163,118 @@ false !== true
       at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:289:10
       at fn (node:test:215:18)
 (fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [3.88ms]
+337 |   };
+338 |   const resumed = resolveAuditorResumeForDispatch({
+339 |     inspection: true, claim, currentAttemptId: claim.attemptId,
+340 |     currentTier: 'full', currentRevision: 3, cwd,
+341 |   });
+342 |   assert.equal(resumed.resume, true,
+               ^
+AssertionError: a normal retry must resume: priorAttemptId is the rotated job-dir key, not claim identity
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:342:10
+      at fn (node:test:215:18)
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [244.69ms]
+380 |     inspection: true,
+381 |     claim: { attemptId: 'a2', claimLineageId: 'cl', priorAttemptId, auditorFailureClass: 'provider', at: new Date().toISOString() },
+382 |     currentAttemptId: 'a2', currentTier: 'full', cwd,
+383 |   });
+384 |   assert.equal(empty.resume, false, 'an empty transcript is a cold start');
+385 |   assert.equal(empty.reason, 'no-session');
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'failure-class'
+- 'no-session'
+
+ generatedMessage: true,
+     actual: "failure-class",
+   expected: "no-session",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:385:10
+      at fn (node:test:215:18)
+(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [77.34ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [1.39ms]
+(pass) the resume and dispatch facts survive a durable round-trip [27.71ms]
+475 |   // genuinely available and only the class refusal is doing the work.
+476 |   const provider = resolveAuditorResumeForDispatch({
+477 |     inspection: true, claim: { ...base, auditorFailureClass: 'provider' },
+478 |     currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
+479 |   });
+480 |   assert.equal(provider.resume, true, 'a provider failure on the same claim resumes');
+               ^
+AssertionError: a provider failure on the same claim resumes
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:480:10
+      at fn (node:test:215:18)
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [108.51ms]
+501 |   const moved = resolveAuditorResumeForDispatch({
+502 |     inspection: true, claim: base,
+503 |     currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 3, cwd,
+504 |   });
+505 |   assert.equal(moved.resume, false, 'a moved goal revision must restart cold');
+506 |   assert.equal(moved.reason, 'revision-moved');
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'failure-class'
+- 'revision-moved'
+
+ generatedMessage: true,
+     actual: "failure-class",
+   expected: "revision-moved",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:506:10
+      at fn (node:test:215:18)
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [1.30ms]
+543 |   };
+544 |   const decision = resolveAuditorResumeForDispatch({
+545 |     inspection: true, claim, currentAttemptId: claim.attemptId,
+546 |     currentTier: 'full', currentRevision: 5, cwd,
+547 |   });
+548 |   assert.equal(decision.resume, true, 'the rotated claim resumes');
+               ^
+AssertionError: the rotated claim resumes
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:548:10
+      at fn (node:test:215:18)
+(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [28.69ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [13.60ms]
+(pass) a first-pass verdict carries NO resume lineage [0.28ms]
+
+ 15 pass
+ 12 fail
+Ran 27 tests across 1 file. [48.21s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-bti0u7/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-bti0u7
+[run-tests] finished in 49s (exit 1)
