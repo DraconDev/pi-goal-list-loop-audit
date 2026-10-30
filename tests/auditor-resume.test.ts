@@ -10,7 +10,7 @@ import { replaceState } from '../extensions/goal-state.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
 import { persistClaimWorkerActivity } from '../extensions/loops/goal-auditor-hooks.js';
 import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
-import { abortCauseForAttempt, decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, recordGllaInitiatedAuditorAbort, recordUserAbortOnSignal, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
+import { abortCauseForAttempt, auditorResultFailureClass, decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, recordGllaInitiatedAuditorAbort, recordUserAbortOnSignal, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
 
 const sessions: Array<{ pi: MockPi }> = [];
 const binaries: Array<string | undefined> = [];
@@ -470,7 +470,7 @@ test('context-exhaustion and compaction failures restart cold through the real r
     attemptId: 'audit-mvcold-rrrrrr', claimLineageId: 'claim-mvcold-ssssss',
     priorAttemptId, auditorTier: 'full' as const, auditorRevision: 1, at: new Date().toISOString(),
   };
-  for (const failureClass of ['timeout', 'no-verdict'] as const) {
+  for (const failureClass of ['timeout', 'no-verdict', 'context-exhausted'] as const) {
     const decision = resolveAuditorResumeForDispatch({
       inspection: true, claim: { ...base, auditorFailureClass: failureClass },
       currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
@@ -479,6 +479,35 @@ test('context-exhaustion and compaction failures restart cold through the real r
       `${failureClass} must restart cold even though the transcript exists`);
     assert.equal(decision.reason, 'failure-class');
   }
+  // v0.39.58 (auditor objection 2026-10-30, MED #2): drive the REAL provider
+  // error strings through the REAL classifier into the REAL resolver. The
+  // previous version of this test only looped over `timeout`/`no-verdict`,
+  // which are unrelated to context exhaustion, so it never exercised the
+  // requirement its name states. These are the exact shapes the classifier
+  // must refuse: an overflowed transcript resumes only to hit the same wall.
+  const overflowErrors = [
+    'exceed_context_size_error: request exceeds the context window of this model',
+    'maximum context length is 200000 tokens, you requested 210000',
+    'Auto-compaction failed: prompt too large for the model context',
+    'input too long for the model',
+  ];
+  for (const error of overflowErrors) {
+    const failureClass = auditorResultFailureClass({ error } as never);
+    assert.equal(failureClass, 'context-exhausted',
+      `an overflow must be classified non-resumable, not provider: ${error.slice(0, 40)}`);
+    const decision = resolveAuditorResumeForDispatch({
+      inspection: true, claim: { ...base, auditorFailureClass: failureClass },
+      currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
+    });
+    assert.equal(decision.resume, false,
+      `a context/compaction failure must restart cold through the resolver: ${error.slice(0, 40)}`);
+    assert.equal(decision.reason, 'failure-class');
+  }
+  // A provider error that merely MENTIONS context is still resumable — the
+  // matcher must not swallow ordinary transient faults.
+  const transient = 'provider returned 503 while the request context was pending';
+  assert.equal(auditorResultFailureClass({ error: transient } as never), 'provider',
+    'an unrelated provider error that mentions context stays resumable');
   // The same claim on a provider failure DOES resume, proving the transcript is
   // genuinely available and only the class refusal is doing the work.
   const provider = resolveAuditorResumeForDispatch({
