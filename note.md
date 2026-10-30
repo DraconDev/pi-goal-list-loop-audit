@@ -34,3 +34,5 @@ we keep failing the last audit perhaps ddue ot auditor switching
 ## we should be auto continuing no up next
 
 /home/dracon/Pictures/Screenshots/Screenshot_20261030_174009.png
+
+## i oftne see the auditor as opena luna max even though i use session
