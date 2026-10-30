@@ -616,3 +616,44 @@ test('a first-pass verdict carries NO resume lineage', () => {
   assert.equal(history.at(-1)!.resumeProvenance, undefined,
     'absent stays absent — a cold audit must not look resumed');
 });
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #3): a full-tier resumed audit
+ * must still run its falsification round. The worker derives the challenge from
+ * the TIER alone, so this asserts the resume feature cannot reach that decision
+ * — a resumed full-tier dispatch carries challenge:true exactly like a cold
+ * one, and a light tier still skips it with the correct reason.
+ */
+test('a resumed full-tier dispatch still asks for the falsification round', async () => {
+  const cwd = tmpCwd();
+  const argvLog = path.join(cwd, 'argv.log');
+  const previous = process.env.GLLA_PI_BINARY;
+  binaries.push(previous);
+  process.env.GLLA_PI_BINARY = inertWorker(cwd, argvLog);
+
+  const priorDir = path.join(cwd, '.pi-glla', 'audit-jobs', 'prior-full-tier');
+  fs.mkdirSync(priorDir, { recursive: true });
+  const priorSession = path.join(priorDir, 'session.jsonl');
+  fs.writeFileSync(priorSession, '{"kind":"session"}\n');
+
+  for (const tier of ['full', 'light'] as const) {
+    await runDetachedGoalCompletionAuditor({
+      cwd, model: 'test/auditor-model', thinkingLevel: 'medium', goal: goalFor(),
+      inspection: true, auditTier: tier, strictChallenge: true,
+      resumeSessionPath: priorSession,
+      resumeProvenance: { priorAttemptId: 'prior-full-tier', resumeCount: 1, tier },
+      runtime: { pollIntervalMs: 10, attemptId: () => newDetachedAuditJobAttemptId('chal'), logicalAttemptId: 'chal' },
+    } as never);
+    const request = JSON.parse(fs.readFileSync(
+      path.join(fs.readdirSync(path.join(cwd, '.pi-glla', 'audit-jobs'))
+        .filter((d) => d.startsWith('chal-')).map((d) => path.join(cwd, '.pi-glla', 'audit-jobs', d))
+        .at(-1)!, 'request.json'), 'utf8'));
+    if (tier === 'full') {
+      assert.equal(request.challenge, true, 'a resumed FULL-tier audit keeps its falsification round');
+      assert.equal(request.challengeSkip, 'rework-streak');
+    } else {
+      assert.equal(request.challenge, false, 'a light-tier audit still skips falsification');
+      assert.equal(request.challengeSkip, 'light-tier');
+    }
+  }
+});
