@@ -1118,6 +1118,8 @@ export function resolveAuditorResumeForDispatch(input: {
     // current one is this dispatch's. Differing = a different claim.
     priorClaimAttemptId: input.claim.priorClaimLineageId ?? input.claim.claimLineageId,
     currentClaimAttemptId: input.claim.claimLineageId ?? input.currentAttemptId,
+    // `?? 0` mirrors the dispatch stamp: a never-bumped goal records 0, so
+    // "absent" here means the claim predates this baseline entirely.
     priorRevision: input.claim.auditorRevision,
     currentRevision: input.currentRevision,
     priorTier: input.claim.auditorTier,

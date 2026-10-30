@@ -1238,7 +1238,10 @@ function registerAgentTools(pi: any): void {
             attemptModel: modelRef(auditorModel),
             resumed: false,
             tier: tierDecision.tier,
-            ...(typeof auditGoal.revision === "number" ? { revision: auditGoal.revision } : {}),
+            // `revision ?? 0` is the codebase convention for a never-bumped
+            // goal (a fresh goal has no revision). Stamping 0 — not absent —
+            // is what lets the first retry detect a later move to 1.
+            revision: auditGoal.revision ?? 0,
             resumeCount: 0,
           }),
         },
