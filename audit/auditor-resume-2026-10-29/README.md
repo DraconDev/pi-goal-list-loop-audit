@@ -221,6 +221,33 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Second disapproval and its three fixes (2026-10-30)
+
+The second claim was disapproved with three specific gaps, all real:
+
+1. **The user-abort cause was never recorded.** `recordUserAuditorAbort` existed
+   but had no caller, so `"user"` was unreachable and an explicit cancel was
+   classified `"transport"` — which the resume policy treats as resumable. The
+   host `AbortSignal` is now wrapped (`recordUserAbortOnSignal`), the decision is
+   recorded where the human actually makes it, and `result.abortCause` rides the
+   durable claim so a retry refuses to resume it.
+2. **First-resume provenance omitted the source model.** `auditorSourceModel` was
+   only stamped during a RESUMED dispatch, so `fromModel` was absent on the first
+   resume — exactly when lineage first matters. Every dispatch now stamps the
+   model it ran on, read back before the next stamp; both the ledger entry and
+   the verdict name the prior model.
+3. **Verdict application was not tested on the resumed path.** The stale-attempt
+   case only covered stamping. It now exercises the real gates
+   (`persistClaimWorkerActivity`, `isGoalRevisionCurrent`) in both directions, so
+   a blanket refusal fails as loudly as a wrong accept.
+
+A tenth control, `first-resume-source-model-regression`, initially PASSED against
+the broken code — proving the test was reaching past the production decision into
+a helper. Extracting `auditorDispatchStampFacts` made the defect reachable and the
+control now exits nonzero. That is the same failure mode as the first disapproval
+(fabricated inputs satisfying a policy helper), caught this time by the control
+rather than by the auditor.
+
 ## Verdict-integrity evidence on the resumed path
 
 The resumed path is proven not to weaken judging, through the real resolver and
