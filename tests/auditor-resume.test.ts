@@ -1010,10 +1010,13 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     await pi.fire('session_start', { reason: 'startup' }, ctx);
     const ledger = `${cwd}/.pi-glla/active.jsonl`;
     const before = fs.existsSync(ledger) ? fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).length : 0;
-    await (globalThis as any).retryStoredCompletionAudit('provider-retry');
+    // `manual` origin: the automatic origins are additionally fenced by the
+    // load hold and the retry horizon, which are orthogonal to resume lineage.
+    await (globalThis as any).retryStoredCompletionAudit('manual');
     await tick(400);
     const rows = fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).slice(before).map((l) => JSON.parse(l));
     const row = rows.find((r: any) => r.type === 'auditor_resume_decision');
+    if (!row) console.log('LEDGER_DEBUG:', JSON.stringify(rows.map((r: any) => r.type)));
     assert.ok(row, 'the real retry dispatch emits an auditor_resume_decision ledger row');
     const v = row.value;
     // The exact lineage contract item 5 names.
