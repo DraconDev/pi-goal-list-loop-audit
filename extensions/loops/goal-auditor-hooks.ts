@@ -1102,7 +1102,11 @@ export function inspectionSessionExtras(inspectionSessionPath: string | undefine
   const clean = inspectionSessionPath ? sanitizeDisplayText(inspectionSessionPath).trim() : "";
   if (!clean) return [];
   const quoted = `'${clean.replace(/'/g, `'\\''`)}'`;
-  return [`Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
+  // Rendered inside the terminal summary, which has one change-first voice:
+  // contribution lines are bullets (like the record pointer), never bare
+  // prose. A bare sentence here broke the summary shape once durable auditor
+  // sessions became the default and this hint started appearing routinely.
+  return [`• Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
 }
 
 function settleApprovedCompletion(

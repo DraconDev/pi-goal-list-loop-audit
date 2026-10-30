@@ -94,7 +94,6 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
   const lines = entries[0].content.split("\n");
-  console.log('CONTENT>>>' + entries[0].content.split("\n").map((l: string) => JSON.stringify(l)).join("\n"));
   assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. /.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ") || ["What Changed", "Remaining", "Next", "Summary", "Verification"].includes(l)), "posted summary is one change-first voice");
   const numbered = lines.filter((l: string) => /^\d+\. /.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
