@@ -351,6 +351,7 @@
         "auditorResumeCount": { "type": "integer", "minimum": 0, "maximum": 100, "description": "How many times this claim has resumed a prior transcript. Lineage evidence; cleared with a fresh cycle." },
         "auditorSourceModel": { "type": "string", "minLength": 1, "description": "Model the resumed transcript came from, so lineage names from -> to without re-resolution." },
         "auditorTier": { "type": "string", "enum": ["light", "standard", "full"], "description": "Tier the claim was dispatched at. Persisted so a tier change between attempts is detectable and forces a cold restart." },
+        "auditorRevision": { "type": "integer", "minimum": 0, "description": "Goal revision the claim was dispatched against. Persisted so a moved revision between attempts is detectable and forces a cold restart." },
         "auditorAbortCause": { "type": "string", "enum": ["user", "transport"], "description": "Why the attempt stopped. 'user' refuses resume." }
       }
     },

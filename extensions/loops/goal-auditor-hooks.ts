@@ -1110,7 +1110,7 @@ export function resolveAuditorResumeForDispatch(input: {
     // Comparing the rotated id made every ordinary retry look replaced.
     priorClaimAttemptId: input.claim.claimLineageId,
     currentClaimAttemptId: input.claim.claimLineageId ?? input.currentAttemptId,
-    priorRevision: input.claim.preAuditCompactionRevision ?? input.claim.startedAt ? undefined : undefined,
+    priorRevision: input.claim.auditorRevision,
     currentRevision: input.currentRevision,
     priorTier: input.claim.auditorTier,
     currentTier: input.currentTier,
