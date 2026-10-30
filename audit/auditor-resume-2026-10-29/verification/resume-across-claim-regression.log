@@ -73,3 +73,17 @@ true !== false
 (pass) a resumed verdict captured against a moved goal revision is refused [0.08ms]
 (pass) a stale attempt cannot write to the claim, resumed or not [8.55ms]
 (pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [658.28ms]
+(pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [619.97ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.16ms]
+(pass) the resume ledger row records the full lineage on a real retry dispatch [40.54ms]
+
+2 tests failed:
+(fail) a replaced claim still restarts the audit cold [0.65ms]
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [0.75ms]
+
+ 34 pass
+ 2 fail
+Ran 36 tests across 1 file. [3.42s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-h70R3H/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-h70R3H
+[run-tests] finished in 4s (exit 1)
