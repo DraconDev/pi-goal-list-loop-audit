@@ -28,3 +28,9 @@ another
 /home/dracon/Pictures/Screenshots/Screenshot_20261029_165300.png
 
 we keep failing the last audit perhaps ddue ot auditor switching
+
+# later
+
+## we should be auto continuing no up next
+
+/home/dracon/Pictures/Screenshots/Screenshot_20261030_174009.png
