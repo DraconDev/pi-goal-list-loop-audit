@@ -1271,12 +1271,9 @@ function registerAgentTools(pi: any): void {
         // must record the same baseline the retry closure does. Before this only
         // the retry path stamped revision/tier/source-model, so the first retry
         // after a parked provider failure compared against undefined and its
-        // moved-revision and changed-tier guards could not fire. `existingTier`
-        // is resolved once per CLAIM (not per candidate), so a candidate
-        // fallback inside one dispatch cannot look like a tier change.
-        const primaryTier = resolveClaimAuditTier(state.goal?.pendingCompletion ?? completionClaim, (
-          loadSettings(ctx.cwd)
-        ).auditTier);
+        // moved-revision and changed-tier guards could not fire. `tierDecision`
+        // is resolved once per CLAIM, so a candidate fallback inside one
+        // dispatch cannot look like a tier change.
         const stampedDispatch = stampAuditorDispatchFacts(
           state.goal?.pendingCompletion ?? completionClaim,
           completionClaim.attemptId,
@@ -1285,7 +1282,7 @@ function registerAgentTools(pi: any): void {
             ...auditorDispatchStampFacts({
               attemptModel: modelRef(candidate.model),
               resumed: false,
-              tier: primaryTier,
+              tier: tierDecision.tier,
               ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
               resumeCount: 0,
             }),
