@@ -108,5 +108,27 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "primary-dispatch-baseline-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "fail-open-baseline-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   }
 ]
