@@ -20,3 +20,4 @@ tests/auditor-resume.test.ts:
 (pass) a vanished transcript still restarts the audit cold
 (pass) durability turned off still restarts the audit cold
 (pass) a resumed dispatch spawns against the prior attempt transcript [11043.73ms]
+[run-tests] progress: 62s elapsed · 5s since last output · 1 KiB of suite output
