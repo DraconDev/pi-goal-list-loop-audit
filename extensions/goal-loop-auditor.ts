@@ -14,7 +14,7 @@
  * evidence-free approvals.
  */
 
-import type { Goal } from "./goal-loop-core.js";
+import type { AuditorInfrastructureClass, Goal } from "./goal-loop-core.js";
 import { MAX_TELEMETRY_FILES, renderGoalMarkdown } from "./goal-loop-core.js";
 import { DURABLE_SOLUTION_POLICY, solutionJudgmentBrief } from "./durable-solution.js";
 import { VERIFICATION_VALUE_REVIEW_POLICY } from "./verification-value.js";
@@ -78,7 +78,7 @@ export interface GoalAuditorResult {
   model: string;
   thinkingLevel?: string;
   error?: string;
-  infrastructureClass?: "no-verdict" | "timeout" | "transport" | "provider";
+  infrastructureClass?: AuditorInfrastructureClass;
   /** regression_shield outcome when the goal has a verification contract. */
   regressionShieldPassed?: boolean;
   regressionShieldMissing?: string[];

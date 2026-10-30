@@ -51,7 +51,6 @@ import { checkRegressionShield, parseAuditorVerdict } from "./goal-loop-shield.j
 import { renameWithWindowsRetry } from "../scripts/goal-auditor-launch.mjs";
 import { resolveAuditorAllowedExtensions } from "./auditor-extensions.js";
 
-export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted";
 
 /** v0.39.50 (issue #61): WHY an auditor attempt was aborted. `"user"` is the
  * explicit Escape/stop boundary — the one case that may offer the
@@ -65,7 +64,10 @@ export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" 
  * interruption GLLA cannot attribute to the user, so it must never be shown
  * as a decision they made, and must never offer "complete without audit". */
 export type AuditorAbortCause = "user" | "transport";
-export type AuditorRecoveryFailureClass = AuditorInfrastructureClass;
+// Re-exported from goal-loop-core so this module keeps its public surface
+// while the union has exactly one declaration.
+export type { AuditorInfrastructureClass, AuditorRecoveryFailureClass } from "./goal-loop-core.js";
+import type { AuditorInfrastructureClass } from "./goal-loop-core.js";
 const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>([
   "no-verdict", "timeout", "transport", "provider", "context-exhausted",
 ]);
