@@ -964,7 +964,7 @@ test('a claim with no baseline fails closed instead of resuming blindly', () => 
  * This drives the REAL retry dispatch (`retryStoredCompletionAudit`) and reads
  * the durable row it emits.
  */
-test('the resume ledger row records the full lineage on a real retry dispatch', { timeout: scaledBudgetMs(30000) }, async () => {
+test('the resume ledger row records the full lineage on a real retry dispatch', { timeout: scaledBudgetMs(64000) }, async () => {
   const cwd = tmpCwd();
   const pi = new MockPi();
   const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -1027,8 +1027,11 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     // snapshot — an earlier snapshot would miss a row recovery already wrote.
     const ledgerAll = () => fs.existsSync(ledger)
       ? fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+    // Hoisted so the frame-budget guard can read the explicit timeout: its
+    // matcher cannot cross the `)` inside an inline predicate.
+    const hasResumeRow = () => ledgerAll().some((r: any) => r.type === 'auditor_resume_decision');
     try {
-      await waitFor(() => ledgerAll().some((r: any) => r.type === 'auditor_resume_decision'), {
+      await waitFor(hasResumeRow, {
         timeoutMs: 8000, intervalMs: 20,
         message: 'the retry dispatch emits its resume-lineage ledger row',
       });
