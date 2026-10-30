@@ -1,4 +1,4 @@
-import { effectiveToolTimeoutMs } from "../goal-loop-auditor-process.js";
+import { effectiveToolTimeoutMs, findAuditJobDirectory } from "../goal-loop-auditor-process.js";
 import { isReworkRound } from "../goal-loop-auditor.js";
 import { auditReworkNotice } from "../audit-rework-handoff.js";
 import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestrator.js";
@@ -1642,22 +1642,44 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           claim,
           currentAttemptId: claim.attemptId!,
           currentTier: tierDecision.tier,
-          // Tier is not persisted on the claim, so a tier change cannot be
-          // detected here; tierDecision governs this dispatch either way.
+          currentRevision: state.goal?.revision,
           cwd: liveCtx.cwd,
         });
         // Resume lineage is durable evidence: an operator must be able to tell
         // a continued audit from a first-pass one without the verdict itself
         // weakening. A refusal is recorded too, so a cold restart is explained
         // rather than silent.
+        const resumeCount = auditorResume.resume
+          ? (claim.auditorResumeCount ?? 0) + 1
+          : 0;
+        // Stamp the dispatch facts onto the claim so the NEXT retry can tell
+        // whether the revision, tier or cancellation state moved. Without this
+        // the policy could not detect a change and always resumed.
+        const stampedDispatch = stampAuditorDispatchFacts(
+          state.goal?.pendingCompletion ?? claim,
+          claim.attemptId,
+          {
+            forAttemptId: claim.attemptId!,
+            tier: tierDecision.tier,
+            ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
+            ...(auditorResume.resume ? { resumeCount } : {}),
+            ...(auditorResume.resume && claim.auditorCandidateRef
+              ? { sourceModel: claim.auditorCandidateRef }
+              : {}),
+          },
+        );
+        if (stampedDispatch) updateGoal({ pendingCompletion: stampedDispatch }, liveCtx);
         appendLedger(liveCtx.cwd, "auditor_resume_decision", {
           goalId,
           attemptId: claim.attemptId,
           priorAttemptId: claim.priorAttemptId,
+          claimLineageId: claim.claimLineageId,
           resumed: auditorResume.resume,
           ...(auditorResume.reason ? { reason: auditorResume.reason } : {}),
           ...(auditorResume.sessionPath ? { sessionPath: auditorResume.sessionPath } : {}),
+          sourceModel: claim.auditorCandidateRef,
           resumedOntoModel: modelRef(candidate.model),
+          resumeCount: auditorResume.resume ? resumeCount : 0,
           tier: tierDecision.tier,
           revision: state.goal?.revision,
           priorFailureClass: claim.auditorFailureClass,
