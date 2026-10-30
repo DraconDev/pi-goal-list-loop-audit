@@ -22,3 +22,6 @@ tests/auditor-resume.test.ts:
 (pass) a resumed dispatch spawns against the prior attempt transcript [5024.49ms]
 (pass) a resume request whose transcript vanished degrades to a cold start [8107.70ms]
 (pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.56ms]
+(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [2516.38ms]
+(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [3219.85ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.61ms]
