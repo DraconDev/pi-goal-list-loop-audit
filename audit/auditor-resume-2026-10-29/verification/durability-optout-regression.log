@@ -37,3 +37,5 @@ true !== false
       at /tmp/glla-auditor-resume-control-err40qbw/tests/auditor-resume.test.ts:216:12
       at fn (node:test:215:18)
 (fail) durability turned off still restarts the audit cold [11.52ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [5631.76ms]
+[run-tests] progress: 30s elapsed · 0s since last output · 2 KiB of suite output
