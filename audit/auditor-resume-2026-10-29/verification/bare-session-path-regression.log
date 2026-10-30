@@ -6,3 +6,16 @@ tests/auditor-resume.test.ts:
 [run-tests] progress: 30s elapsed · 17s since last output · 0 KiB of suite output
 (pass) the default dispatch asks for a durable auditor session, not --no-session [23099.62ms]
 (pass) a failed attempt keeps the session a retry can resume [862.32ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [1496.77ms]
+(pass) auditorInspection=false restores the original --no-session spawn [2894.68ms]
+(pass) a retained session directory is still reapable by the retention sweep [110.34ms]
+(pass) a provider failure resumes the prior transcript [0.47ms]
+(pass) a transport failure resumes the prior transcript [0.02ms]
+(pass) a timeout restarts cold the prior transcript [0.03ms]
+(pass) a no-verdict attempt restarts cold the prior transcript [0.03ms]
+(pass) a moved goal revision still restarts the audit cold [0.08ms]
+(pass) a replaced claim still restarts the audit cold
+(pass) a changed audit tier still restarts the audit cold [5.83ms]
+(pass) an explicit cancel still restarts the audit cold [0.05ms]
+(pass) a vanished transcript still restarts the audit cold
+(pass) durability turned off still restarts the audit cold
