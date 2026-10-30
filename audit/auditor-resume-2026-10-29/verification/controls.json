@@ -64,5 +64,27 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "rotated-claim-identity-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "bare-session-path-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   }
 ]

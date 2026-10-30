@@ -98,3 +98,6 @@ false !== true
  24 pass
  3 fail
 Ran 27 tests across 1 file. [69.33s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-OIxhQQ/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-OIxhQQ
+[run-tests] finished in 70s (exit 1)
