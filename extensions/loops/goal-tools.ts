@@ -1267,6 +1267,31 @@ function registerAgentTools(pi: any): void {
           state.goal?.pendingCompletion ?? completionClaim, completionClaim.attemptId, effectiveThinking,
         );
         if (stampedThinking) updateGoal({ pendingCompletion: stampedThinking }, ctx);
+        // v0.39.57 (auditor objection 2026-10-30, HIGH #1): the PRIMARY dispatch
+        // must record the same baseline the retry closure does. Before this only
+        // the retry path stamped revision/tier/source-model, so the first retry
+        // after a parked provider failure compared against undefined and its
+        // moved-revision and changed-tier guards could not fire. `existingTier`
+        // is resolved once per CLAIM (not per candidate), so a candidate
+        // fallback inside one dispatch cannot look like a tier change.
+        const primaryTier = resolveClaimAuditTier(state.goal?.pendingCompletion ?? completionClaim, (
+          loadSettings(ctx.cwd)
+        ).auditTier);
+        const stampedDispatch = stampAuditorDispatchFacts(
+          state.goal?.pendingCompletion ?? completionClaim,
+          completionClaim.attemptId,
+          {
+            forAttemptId: completionClaim.attemptId!,
+            ...auditorDispatchStampFacts({
+              attemptModel: modelRef(candidate.model),
+              resumed: false,
+              tier: primaryTier,
+              ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
+              resumeCount: 0,
+            }),
+          },
+        );
+        if (stampedDispatch) updateGoal({ pendingCompletion: stampedDispatch }, ctx);
         refreshUI(ctx);
         // v0.37.0: the worker gets the SAME budgets via env so its own
         // per-tool timer and inactivity brake agree with the parent

@@ -1969,7 +1969,8 @@ export interface AuditorResumeDecision {
   resume: boolean;
   /** Why not, for the ledger — a refusal must be explainable, not silent. */
   reason?: "inspection-off" | "no-prior-attempt" | "failure-class" | "revision-moved"
-    | "claim-replaced" | "tier-changed" | "cancelled" | "no-session";
+    | "claim-replaced" | "tier-changed" | "cancelled" | "no-session"
+    | "revision-unknown" | "tier-unknown";
 }
 
 /** Decide whether a retry continues the prior attempt's transcript.
@@ -1996,8 +1997,15 @@ export function decideAuditorResume(input: {
   if (!input.priorFailureClass || !RESUMABLE_AUDITOR_FAILURES.has(input.priorFailureClass)) {
     return { resume: false, reason: "failure-class" };
   }
-  if (input.priorRevision !== undefined && input.currentRevision !== undefined
-    && input.priorRevision !== input.currentRevision) {
+  // v0.39.57 (auditor objection 2026-10-30, HIGH #2): FAIL CLOSED when the
+  // baseline is absent. The revision and tier guards are only as good as the
+  // values they compare; with `priorRevision`/`priorTier` undefined they were
+  // silently skipped and a moved revision or a changed tier still resumed. A
+  // claim that cannot state what it was dispatched against cannot be proven
+  // to still match, so it restarts cold. Absence is not permission.
+  if (input.priorRevision === undefined) return { resume: false, reason: "revision-unknown" };
+  if (!input.priorTier) return { resume: false, reason: "tier-unknown" };
+  if (input.currentRevision !== undefined && input.priorRevision !== input.currentRevision) {
     return { resume: false, reason: "revision-moved" };
   }
   if (input.priorClaimAttemptId && input.currentClaimAttemptId
