@@ -286,7 +286,7 @@ import {
   newDetachedAuditJobAttemptId,
   resolveClaimAuditTier,
   recordGllaInitiatedAuditorAbort,
-  recordUserAuditorAbort,
+  recordUserAbortOnSignal,
   runDetachedGoalCompletionAuditor,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,

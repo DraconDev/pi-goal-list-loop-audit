@@ -1659,9 +1659,17 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         const resumeCount = auditorResume.resume
           ? (claim.auditorResumeCount ?? 0) + 1
           : 0;
-        // Stamp the dispatch facts onto the claim so the NEXT retry can tell
-        // whether the revision, tier or cancellation state moved. Without this
-        // the policy could not detect a change and always resumed.
+        // v0.39.56 (auditor objection 2026-10-30): the model THIS attempt runs
+        // on is stamped on EVERY dispatch, not only a resumed one. `fromModel`
+        // reads it back on the next attempt, so stamping only on resume made
+        // the FIRST resume omit its source model — the provenance was absent
+        // exactly when it was first needed. `auditorSourceModel` therefore
+        // always names the model the current (about-to-die) attempt used.
+        const attemptModel = modelRef(candidate.model);
+        // The model the PREVIOUS attempt ran on, recorded at its dispatch. Read
+        // BEFORE this dispatch stamps its own value, so a first resume still
+        // reports the model it is continuing from.
+        const priorAttemptModel = claim.auditorSourceModel ?? claim.auditorCandidateRef;
         const stampedDispatch = stampAuditorDispatchFacts(
           state.goal?.pendingCompletion ?? claim,
           claim.attemptId,
@@ -1670,9 +1678,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
             tier: tierDecision.tier,
             ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
             ...(auditorResume.resume ? { resumeCount } : {}),
-            ...(auditorResume.resume && claim.auditorCandidateRef
-              ? { sourceModel: claim.auditorCandidateRef }
-              : {}),
+            sourceModel: attemptModel,
           },
         );
         if (stampedDispatch) updateGoal({ pendingCompletion: stampedDispatch }, liveCtx);
@@ -1684,9 +1690,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           resumed: auditorResume.resume,
           ...(auditorResume.reason ? { reason: auditorResume.reason } : {}),
           ...(auditorResume.sessionPath ? { sessionPath: auditorResume.sessionPath } : {}),
-          sourceModel: claim.auditorCandidateRef,
-          resumedOntoModel: modelRef(candidate.model),
-          resumeCount: auditorResume.resume ? resumeCount : 0,
+          // The model the PRIOR attempt ran on — the same value stamped on the
+          // claim at its own dispatch, so a first resume names its source
+          // instead of reporting nothing.
+          ...(priorAttemptModel ? { sourceModel: priorAttemptModel } : {}),
+          resumedOntoModel: attemptModel,
+          resumeCount,
           tier: tierDecision.tier,
           revision: state.goal?.revision,
           priorFailureClass: claim.auditorFailureClass,
@@ -1737,7 +1746,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
             ? {
               resumeProvenance: {
                 priorAttemptId: claim.priorAttemptId!,
-                ...(claim.auditorSourceModel ? { fromModel: claim.auditorSourceModel } : {}),
+                ...(priorAttemptModel ? { fromModel: priorAttemptModel } : {}),
                 toModel: modelRef(candidate.model),
                 resumeCount,
                 ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
@@ -2280,6 +2289,10 @@ function applyCompletedCompletionAudit(args: {
       recoveryEpisodeKey,
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
       auditorFailureClass: auditorResultFailureClass(result),
+      // v0.39.56: an explicit USER abort rides the durable claim, so the retry
+      // resolver can refuse to resume it. Absent for every other failure (a
+      // GLLA-initiated stop stays "transport").
+      ...(result.abortCause ? { auditorAbortCause: result.abortCause } : {}),
       auditorFallbackExhausted: result.fallbackExhausted || cursorPersistenceFailed ? true : undefined,
       auditorFailureAt: new Date().toISOString(),
     };
@@ -2336,6 +2349,10 @@ function applyCompletedCompletionAudit(args: {
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
       automaticRecoveryAttempted: durableClaim.automaticRecoveryAttempted ?? false,
       auditorFailureClass: auditorResultFailureClass(result),
+      // v0.39.56: an explicit USER abort rides the durable claim, so the retry
+      // resolver can refuse to resume it. Absent for every other failure (a
+      // GLLA-initiated stop stays "transport").
+      ...(result.abortCause ? { auditorAbortCause: result.abortCause } : {}),
       auditorFailureAt: new Date().toISOString(),
     };
     if (typeof scheduleParkedCompletionAuditRecovery === "function") {
@@ -2402,6 +2419,10 @@ function applyCompletedCompletionAudit(args: {
       recoveryEpisodeKey,
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
       auditorFailureClass: auditorResultFailureClass(result),
+      // v0.39.56: an explicit USER abort rides the durable claim, so the retry
+      // resolver can refuse to resume it. Absent for every other failure (a
+      // GLLA-initiated stop stays "transport").
+      ...(result.abortCause ? { auditorAbortCause: result.abortCause } : {}),
       auditorFailureAt: new Date().toISOString(),
       auditorLastFailureFingerprint: identical.auditorLastFailureFingerprint,
       auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,

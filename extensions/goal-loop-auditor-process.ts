@@ -952,6 +952,13 @@ export function recordUserAbortOnSignal(
   return signal;
 }
 
+/** Test-visible reader for the recorded abort cause of one attempt. The
+ * production caller is `infra(...)`; exposing the classifier lets a test assert
+ * the recording path itself rather than inferring it from a result. */
+export function abortCauseForAttempt(logicalAttemptId: string | undefined): AuditorAbortCause {
+  return abortCauseFor(logicalAttemptId);
+}
+
 function abortCauseFor(logicalAttemptId: string | undefined): AuditorAbortCause {
   if (!logicalAttemptId) return "transport";
   // A GLLA-initiated stop outranks (and is the opposite of) a user stop.

@@ -4,11 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
-import { appendAuditVerdict, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
+import { appendAuditVerdict, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
+import { replaceState } from '../extensions/goal-state.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
+import { persistClaimWorkerActivity } from '../extensions/loops/goal-auditor-hooks.js';
 import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
-import { decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
+import { abortCauseForAttempt, decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, recordGllaInitiatedAuditorAbort, recordUserAbortOnSignal, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
 
 const sessions: Array<{ pi: MockPi }> = [];
 const binaries: Array<string | undefined> = [];
@@ -677,4 +679,137 @@ process.exit(1);
     'a resumed FULL-tier audit keeps its falsification round — resume cannot reach this decision');
   assert.equal(captured.challengeSkip, undefined,
     'no skip reason is sent, so round 2 is not disabled');
+});
+
+/**
+ * v0.39.56 (auditor objection 2026-10-30, HIGH #2): the resume ledger entry must
+ * carry the source model on the FIRST resume, and the verdict must too. Before
+ * this, `auditorSourceModel` was only stamped during a RESUMED dispatch, so the
+ * first resume had nothing to read and silently omitted `fromModel` — the
+ * lineage was absent exactly when it was first needed.
+ */
+test('the first resume names its source model in both ledger and verdict', () => {
+  // The claim as it exists at the START of a first resume: the prior attempt
+  // stamped its own model at ITS dispatch (no resume had happened yet).
+  const priorModel = 'openai-codex/gpt-6-luna';
+  const claim = {
+    at: new Date().toISOString(),
+    attemptId: 'audit-first-new',
+    claimLineageId: 'claim-first-lineage',
+    priorAttemptId: 'audit-first-old',
+    auditorFailureClass: 'provider' as const,
+    auditorTier: 'full' as const,
+    auditorRevision: 2,
+    auditorCandidateRef: priorModel,
+    auditorSourceModel: priorModel,
+  };
+  // A dispatch stamps the model IT runs on, so the next attempt can name it.
+  const stamped = stampAuditorDispatchFacts(claim, claim.attemptId, {
+    forAttemptId: claim.attemptId,
+    tier: 'full',
+    revision: 2,
+    resumeCount: 1,
+    sourceModel: 'minimax/MiniMax-M3.1-Flash',
+  })!;
+  assert.equal(stamped.auditorSourceModel, 'minimax/MiniMax-M3.1-Flash',
+    'every dispatch records the model it ran on, not only resumed ones');
+
+  // The resume decision reads the PRIOR value, which must be present.
+  assert.ok(claim.auditorSourceModel, 'the first resume has a source model to report');
+  const provenance = {
+    priorAttemptId: claim.priorAttemptId,
+    fromModel: claim.auditorSourceModel,
+    toModel: 'test/target-model',
+    resumeCount: 1,
+    revision: 2,
+    tier: 'full' as const,
+  };
+  // And it reaches the durable verdict record with that field intact.
+  const history: AuditVerdict[] = [];
+  appendAuditVerdict(history, {
+    at: new Date().toISOString(), approved: true, disapproved: false,
+    model: 'test/target-model', report: '<approved/>', revision: 2,
+    auditTier: 'full', resumeProvenance: provenance,
+  });
+  assert.equal(history.at(-1)!.resumeProvenance?.fromModel, priorModel,
+    'the first resumed verdict names the model it continued from');
+});
+
+test('an explicit user abort is recorded through the real signal and stamped on the claim', () => {
+  // v0.39.56 (HIGH #1): the user-abort recorder had NO caller, so "user" was
+  // unreachable and an explicit cancel was classified "transport" — which the
+  // resume policy treats as resumable. Prove the production wrapper records it.
+  const attemptId = 'audit-abort-signal';
+  const controller = new AbortController();
+  const wrapped = recordUserAbortOnSignal(controller.signal, attemptId);
+  assert.equal(wrapped, controller.signal, 'the original signal is passed through');
+  assert.equal(abortCauseForAttempt(attemptId), 'transport', 'not yet aborted');
+  controller.abort();
+  assert.equal(abortCauseForAttempt(attemptId), 'user',
+    'aborting the host signal IS the user decision and must be recorded');
+
+  // An already-aborted signal (aborted before wrapping) is recorded too: the
+  // Esc path can fire before the dispatch reaches the wrapper.
+  const preAborted = new AbortController();
+  preAborted.abort();
+  recordUserAbortOnSignal(preAborted.signal, 'audit-abort-pre');
+  assert.equal(abortCauseForAttempt('audit-abort-pre'), 'user');
+
+  // GLLA-initiated stops must NOT be reclassified as the user's decision.
+  recordGllaInitiatedAuditorAbort('audit-abort-glla');
+  assert.equal(abortCauseForAttempt('audit-abort-glla'), 'transport',
+    'a GLLA stop stays transport and remains resumable');
+});
+
+/**
+ * v0.39.56 (auditor objection 2026-10-30, HIGH #3): the suite proved a
+ * mismatched attempt cannot STAMP dispatch facts, but never proved a stale or
+ * moved verdict cannot be APPLIED once a resume is involved. Resume must not
+ * create a path where an old transcript's verdict lands on a moved contract.
+ */
+test('a resumed verdict captured against a moved goal revision is refused', () => {
+  const goal = { id: '20261030180000-moved', revision: 4 } as never;
+  const capturedAtDispatch = { goalId: '20261030180000-moved', revision: 3 };
+  assert.equal(isGoalRevisionCurrent(capturedAtDispatch, goal), false,
+    'the goal moved while the resumed audit ran, so its verdict must not apply');
+  // A different goal is refused even when the revision numbers coincide.
+  assert.equal(isGoalRevisionCurrent({ goalId: 'other-goal', revision: 4 }, goal), false,
+    'a verdict from another goal can never apply');
+  // The unchanged case still passes, proving the guard is not blanket-refusing.
+  assert.equal(isGoalRevisionCurrent({ goalId: '20261030180000-moved', revision: 4 }, goal), true);
+});
+
+test('a stale attempt cannot write to the claim, resumed or not', () => {
+  // Exercises the REAL production gate (persistClaimWorkerActivity), not a
+  // reimplementation of its comparison. A retired worker's late activity must
+  // not touch a claim that has rotated to a new attempt.
+  const cwd = tmpCwd();
+  const ctx = makeMockCtx(cwd);
+  seedState(cwd, {
+    goal: seedGoal({
+      id: '20261030180000-stale',
+      status: 'auditing',
+      pendingCompletion: {
+        at: new Date().toISOString(),
+        attemptId: 'audit-live-attempt',
+        claimLineageId: 'claim-live',
+        priorAttemptId: 'audit-retired-attempt',
+        phase: 'running',
+        lastActivityAt: new Date(Date.now() - 120_000).toISOString(),
+      },
+    }),
+  });
+  // Load the seeded record into the module's live state — the gate reads live
+  // state, so a disk-only seed would make the positive case look refused.
+  replaceState(readState(cwd));
+  assert.equal(
+    persistClaimWorkerActivity(ctx as never, '20261030180000-stale', 'audit-retired-attempt', Date.now()),
+    false,
+    'the rotated-away attempt cannot update the live claim',
+  );
+  assert.equal(
+    persistClaimWorkerActivity(ctx as never, '20261030180000-stale', 'audit-live-attempt', Date.now()),
+    true,
+    'the live attempt still can — the gate is not blanket-refusing',
+  );
 });
