@@ -699,7 +699,7 @@ export type CompletionAuditPhase =
   | "recovery-pending"
   | "retry-waiting"
   | "quota-waiting"; // v0.34.142 predecessor of `retry-waiting`, migrated on read
-export type AuditorRecoveryFailureClass = "transport" | "timeout" | "no-verdict" | "provider";
+export type AuditorRecoveryFailureClass = "transport" | "timeout" | "no-verdict" | "provider" | "context-exhausted";
 
 /** Durable completion claim metadata. The claim itself is the user's exact
  * completion assertion; the lifecycle fields make an interrupted isolated

@@ -51,7 +51,7 @@ import { checkRegressionShield, parseAuditorVerdict } from "./goal-loop-shield.j
 import { renameWithWindowsRetry } from "../scripts/goal-auditor-launch.mjs";
 import { resolveAuditorAllowedExtensions } from "./auditor-extensions.js";
 
-export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider";
+export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted";
 
 /** v0.39.50 (issue #61): WHY an auditor attempt was aborted. `"user"` is the
  * explicit Escape/stop boundary — the one case that may offer the
@@ -66,7 +66,26 @@ export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" 
  * as a decision they made, and must never offer "complete without audit". */
 export type AuditorAbortCause = "user" | "transport";
 export type AuditorRecoveryFailureClass = AuditorInfrastructureClass;
-const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>(["no-verdict", "timeout", "transport", "provider"]);
+const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>([
+  "no-verdict", "timeout", "transport", "provider", "context-exhausted",
+]);
+
+/**
+ * A transcript that overran its context window, or a compaction that could not
+ * fit the prompt, is NOT a transient provider fault: the session's own history
+ * is what overflows, so resuming it reproduces the identical error and spends a
+ * retry to reach the same wall. These must restart cold.
+ *
+ * Matched on the concrete provider/compaction wording rather than a bare
+ * "context" word, so an ordinary provider error that merely mentions context is
+ * still treated as resumable.
+ */
+const CONTEXT_EXHAUSTION_PATTERN =
+  /exceed_context_size_error|exceeded? (?:the )?(?:model'?s? )?(?:maximum )?context|maximum context length|context (?:length|window) (?:exceeded|limit|overflow)|prompt (?:is )?too large|Auto-compaction failed|input too long|too many (?:tokens|input tokens)/i;
+
+export function isContextExhaustionError(message: string | undefined): boolean {
+  return !!message && CONTEXT_EXHAUSTION_PATTERN.test(message);
+}
 export const AUDITOR_CURSOR_PERSISTENCE_FAILURE = "auditor recovery cursor persistence failed";
 
 export function isAuditorCursorPersistenceFailure(error: unknown): boolean {
@@ -143,7 +162,9 @@ export function normalizeAuditorInfrastructureResult(result: GoalAuditorResult):
       ? "worker produced no verdict"
       : infrastructureClass === "transport"
         ? "auditor transport failed"
-        : "auditor provider failed");
+        : infrastructureClass === "context-exhausted"
+          ? "auditor context window exhausted"
+          : "auditor provider failed");
   return {
     ...result,
     error,
@@ -515,6 +536,10 @@ export async function runAuditorFallbackWithPolicy(
     if (/^Auditor (?:exceeded|stalled)\b|\b(?:timed? ?out|timeout|inactivity)\b/i.test(error)) return "timeout";
     if (/worker exited|produced no (?:output|verdict)|identity\/request-hash mismatch|invalid auditor|unsupported tool/i.test(error)) return "no-verdict";
     if (/spawn|launch failed|transport|aborted/i.test(error)) return "transport";
+    // Checked before the generic fallback: an overflow would otherwise be
+    // labelled "provider" and become resumable, which is exactly the
+    // retry-budget burn this classification exists to prevent.
+    if (isContextExhaustionError(error)) return "context-exhausted";
     return "provider";
   };
   const markExhausted = (result: GoalAuditorResult, inferredClass?: AuditorInfrastructureClass): GoalAuditorResult => ({
@@ -789,6 +814,9 @@ export function auditorResultFailureClass(result: GoalAuditorResult): AuditorRec
   if (/^Auditor (?:exceeded|stalled)\b|\b(?:timed? ?out|timeout|inactivity)\b/i.test(error)) return "timeout";
   if (/worker exited|produced no (?:output|verdict)|identity\/request-hash mismatch|invalid auditor|unsupported tool/i.test(error)) return "no-verdict";
   if (/spawn|launch failed|transport|aborted/i.test(error)) return "transport";
+  // Must precede the generic "provider" fallback: "provider" is resumable, and
+  // resuming an already-overflowed transcript reproduces the same wall.
+  if (isContextExhaustionError(error)) return "context-exhausted";
   return "provider";
 }
 
