@@ -1,39 +1,38 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=387s heartbeat=30s
+[run-tests] host is 2.1x slower than an idle host — per-test budget raised to 258s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [19241.62ms]
-(pass) a failed attempt keeps the session a retry can resume [1368.79ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [538.97ms]
-(pass) auditorInspection=false restores the original --no-session spawn [793.31ms]
-(pass) a retained session directory is still reapable by the retention sweep [42.62ms]
-(pass) a provider failure resumes the prior transcript [0.25ms]
-(pass) a transport failure resumes the prior transcript [0.02ms]
-(pass) a timeout restarts cold the prior transcript [0.01ms]
-(pass) a no-verdict attempt restarts cold the prior transcript [0.02ms]
-(pass) a moved goal revision still restarts the audit cold [1.40ms]
-(pass) a replaced claim still restarts the audit cold [0.02ms]
-(pass) a changed audit tier still restarts the audit cold
+(pass) the default dispatch asks for a durable auditor session, not --no-session [2194.87ms]
+(pass) a failed attempt keeps the session a retry can resume [555.33ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [645.56ms]
+(pass) auditorInspection=false restores the original --no-session spawn [425.99ms]
+(pass) a retained session directory is still reapable by the retention sweep [15.02ms]
+(pass) a provider failure resumes the prior transcript [0.14ms]
+(pass) a transport failure resumes the prior transcript [0.04ms]
+(pass) a timeout restarts cold the prior transcript [0.02ms]
+(pass) a no-verdict attempt restarts cold the prior transcript [0.03ms]
+(pass) a moved goal revision still restarts the audit cold [0.14ms]
+(pass) a replaced claim still restarts the audit cold [0.03ms]
+(pass) a changed audit tier still restarts the audit cold [0.02ms]
 (pass) an explicit cancel still restarts the audit cold [0.02ms]
-(pass) a vanished transcript still restarts the audit cold
-(pass) durability turned off still restarts the audit cold
-[run-tests] progress: 30s elapsed · 1s since last output · 1 KiB of suite output
-(pass) a resumed dispatch spawns against the prior attempt transcript [5024.49ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [8107.70ms]
-(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.56ms]
-(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [2516.38ms]
-(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [3219.85ms]
-(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.61ms]
-(pass) the resume and dispatch facts survive a durable round-trip [1421.96ms]
-(pass) context-exhaustion and compaction failures restart cold through the real resolver [3727.77ms]
-(pass) an explicit user cancel and a moved revision both restart cold through the resolver [4.66ms]
-[run-tests] progress: 60s elapsed · 7s since last output · 2 KiB of suite output
-(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [19054.28ms]
-(pass) a resumed verdict carries its lineage into the durable audit history [13.04ms]
-(pass) a first-pass verdict carries NO resume lineage [0.22ms]
+(pass) a vanished transcript still restarts the audit cold [0.02ms]
+(pass) durability turned off still restarts the audit cold [0.02ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [339.59ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [426.72ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.23ms]
+(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [0.88ms]
+(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.45ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.14ms]
+(pass) the resume and dispatch facts survive a durable round-trip [1.88ms]
+(pass) context-exhaustion and compaction failures restart cold through the real resolver [0.93ms]
+(pass) an explicit user cancel and a moved revision both restart cold through the resolver [0.35ms]
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [544.28ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [3.67ms]
+(pass) a first-pass verdict carries NO resume lineage [0.12ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [254.38ms]
 
- 27 pass
+ 28 pass
  0 fail
-Ran 27 tests across 1 file. [71.82s]
-[run-tests] finished in 73s (exit 0)
+Ran 28 tests across 1 file. [7.82s]
+[run-tests] finished in 8s (exit 0)
