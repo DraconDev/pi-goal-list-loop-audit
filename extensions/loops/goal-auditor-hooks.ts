@@ -1725,6 +1725,20 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           ...(auditorResume.resume && auditorResume.sessionPath
             ? { resumeSessionPath: auditorResume.sessionPath }
             : {}),
+          // v0.39.55: a resumed audit's lineage rides to the verdict, so the
+          // durable record names the continued-from attempt and model.
+          ...(auditorResume.resume
+            ? {
+              resumeProvenance: {
+                priorAttemptId: claim.priorAttemptId!,
+                ...(claim.auditorSourceModel ? { fromModel: claim.auditorSourceModel } : {}),
+                toModel: modelRef(candidate.model),
+                resumeCount,
+                ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
+                tier: tierDecision.tier,
+              },
+            }
+            : {}),
           runtime: {
             attemptId: () => newDetachedAuditJobAttemptId(claim.attemptId!),
             logicalAttemptId: claim.attemptId!,

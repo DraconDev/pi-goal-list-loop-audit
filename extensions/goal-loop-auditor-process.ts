@@ -115,6 +115,17 @@ export interface GoalAuditorResult {
   /** v0.38.81: true when this full-tier attempt is a silent spot-check
    * of the light population. Absent otherwise (absent stays absent). */
   spotCheck?: boolean;
+  /** v0.39.55: resume lineage for a continued audit, so the verdict itself
+   * says which prior attempt and model it came from. Absent on a cold
+   * first-pass audit (absent stays absent — never invented). */
+  resumeProvenance?: {
+    priorAttemptId: string;
+    fromModel?: string;
+    toModel?: string;
+    resumeCount?: number;
+    revision?: number;
+    tier?: AuditTierName;
+  };
 }
 
 /** Infrastructure errors are never semantic verdicts, even if a parser or
@@ -1529,6 +1540,18 @@ interface AuditorRequest {
    * v0.38.81 convention). The worker scopes the falsification pass to the
    * open objections when it is set. */
   reworkRound?: boolean;
+  /** v0.39.55: resume lineage for a CONTINUED audit. Present only when this
+   * dispatch continues a prior attempt's transcript, so every cold dispatch
+   * keeps its byte-identical request hash. Rides to the verdict so the record
+   * itself names which attempt and model the audit was continued from. */
+  resumeProvenance?: {
+    priorAttemptId: string;
+    fromModel?: string;
+    toModel?: string;
+    resumeCount?: number;
+    revision?: number;
+    tier?: AuditTierName;
+  };
 }
 
 interface AuditorToolCall {
@@ -3060,11 +3083,15 @@ export async function runDetachedGoalCompletionAuditor(
   args: Parameters<typeof runDetachedGoalCompletionAuditorInner>[0],
 ): Promise<GoalAuditorResult> {
   const result = await runDetachedGoalCompletionAuditorInner(args);
-  if (args.auditTier === undefined && args.spotCheck === undefined) return result;
+  if (args.auditTier === undefined && args.spotCheck === undefined && args.resumeProvenance === undefined) return result;
   return {
     ...result,
     ...(args.auditTier ? { auditTier: args.auditTier } : {}),
     ...(args.spotCheck === true ? { spotCheck: true as const } : {}),
+    // v0.39.55: resumed audits carry their lineage onto the verdict, so a
+    // continued audit is distinguishable from a first pass in the durable
+    // record — not only in the dispatch ledger.
+    ...(args.resumeProvenance ? { resumeProvenance: args.resumeProvenance } : {}),
   };
 }
 
