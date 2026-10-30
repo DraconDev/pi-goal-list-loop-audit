@@ -636,6 +636,22 @@ test('a resumed full-tier dispatch still asks for the falsification round', asyn
   const priorSession = path.join(priorDir, 'session.jsonl');
   fs.writeFileSync(priorSession, '{"kind":"session"}\n');
 
+  // The request must be read while it exists: a resultless job dir is removed
+  // after the run, so capturing it at spawn time is the honest read.
+  const seen: Array<{ challenge?: boolean; challengeSkip?: string }> = [];
+  const captureWorker = path.join(cwd, 'capture-request.mjs');
+  fs.writeFileSync(captureWorker, `#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+const jobDir = process.argv[process.argv.indexOf('--job-dir') + 1];
+const req = JSON.parse(fs.readFileSync(path.join(jobDir, 'request.json'), 'utf8'));
+fs.appendFileSync(${JSON.stringify(path.join(cwd, 'captured.jsonl'))},
+  JSON.stringify({ challenge: req.challenge, challengeSkip: req.challengeSkip }) + '\\n');
+process.exit(1);
+`);
+  fs.chmodSync(captureWorker, 0o755);
+  process.env.GLLA_PI_BINARY = captureWorker;
+
   for (const tier of ['full', 'light'] as const) {
     await runDetachedGoalCompletionAuditor({
       cwd, model: 'test/auditor-model', thinkingLevel: 'medium', goal: goalFor(),
@@ -644,16 +660,12 @@ test('a resumed full-tier dispatch still asks for the falsification round', asyn
       resumeProvenance: { priorAttemptId: 'prior-full-tier', resumeCount: 1, tier },
       runtime: { pollIntervalMs: 10, attemptId: () => newDetachedAuditJobAttemptId('chal'), logicalAttemptId: 'chal' },
     } as never);
-    const request = JSON.parse(fs.readFileSync(
-      path.join(fs.readdirSync(path.join(cwd, '.pi-glla', 'audit-jobs'))
-        .filter((d) => d.startsWith('chal-')).map((d) => path.join(cwd, '.pi-glla', 'audit-jobs', d))
-        .at(-1)!, 'request.json'), 'utf8'));
-    if (tier === 'full') {
-      assert.equal(request.challenge, true, 'a resumed FULL-tier audit keeps its falsification round');
-      assert.equal(request.challengeSkip, 'rework-streak');
-    } else {
-      assert.equal(request.challenge, false, 'a light-tier audit still skips falsification');
-      assert.equal(request.challengeSkip, 'light-tier');
-    }
   }
+  seen.push(...fs.readFileSync(path.join(cwd, 'captured.jsonl'), 'utf8')
+    .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)));
+  assert.equal(seen.length, 2, 'both tiers captured their request');
+  assert.equal(seen[0].challenge, true, 'a resumed FULL-tier audit keeps its falsification round');
+  assert.equal(seen[0].challengeSkip, 'rework-streak');
+  assert.equal(seen[1].challenge, false, 'a light-tier audit still skips falsification');
+  assert.equal(seen[1].challengeSkip, 'light-tier');
 });
