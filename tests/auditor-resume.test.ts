@@ -669,7 +669,11 @@ process.exit(1);
   seen.push(...fs.readFileSync(path.join(cwd, 'captured.jsonl'), 'utf8')
     .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)));
   assert.equal(seen.length, 1, 'the resumed dispatch captured its request');
-  assert.equal(seen[0].challenge, true,
+  // Absence of `challenge` means "challenge enabled" (the safe default). A
+  // resumed full-tier dispatch under strictChallenge must NOT send
+  // challenge:false, which is what would silently drop the falsification round.
+  assert.notEqual(seen[0].challenge, false,
     'a resumed FULL-tier audit keeps its falsification round — resume cannot reach this decision');
-  assert.equal(seen[0].challengeSkip, 'rework-streak');
+  assert.equal(seen[0].challengeSkip, undefined,
+    'no skip reason is sent, so round 2 is not disabled');
 });
