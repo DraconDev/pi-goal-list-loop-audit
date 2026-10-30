@@ -2089,6 +2089,9 @@ function applyCompletedCompletionAudit(args: {
       challenge: result.challenge,
       auditTier: result.auditTier,
       spotCheck: result.spotCheck,
+      // v0.39.55: a continued audit records where it came from, so the verdict
+      // itself distinguishes resume from a cold first pass.
+      ...(result.resumeProvenance ? { resumeProvenance: result.resumeProvenance } : {}),
     });
     const verdict: AuditLogEntry["verdict"] =
       result.error && !result.approved && !result.disapproved

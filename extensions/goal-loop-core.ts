@@ -618,6 +618,18 @@ export interface AuditVerdict {
   /** v0.38.81: true when this full-tier audit was a silent spot-check
    * of the light population. Absent otherwise. */
   spotCheck?: boolean;
+  /** v0.39.55: resume lineage when this verdict came from a CONTINUED audit.
+   * Absent on a first-pass audit, so "was this audit resumed, from which
+   * attempt and model, how many times" is answerable from the verdict record
+   * itself rather than only from the dispatch ledger. */
+  resumeProvenance?: {
+    priorAttemptId: string;
+    fromModel?: string;
+    toModel?: string;
+    resumeCount?: number;
+    revision?: number;
+    tier?: "light" | "standard" | "full";
+  };
 }
 
 /** The display classification for one stored auditor result. Keep semantic
