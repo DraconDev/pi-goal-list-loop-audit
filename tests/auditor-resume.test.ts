@@ -5,7 +5,7 @@ import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import { scaledBudgetMs } from '../scripts/host-contention.mjs';
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
-import { appendAuditVerdict, auditorDispatchStampFacts, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
+import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES, appendAuditVerdict, auditorDispatchStampFacts, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { replaceState } from '../extensions/goal-state.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
@@ -450,6 +450,36 @@ test('the resume and dispatch facts survive a durable round-trip', () => {
   assert.equal(reloaded?.auditorResumeCount, 1);
   assert.equal(reloaded?.auditorSourceModel, 'minimax/MiniMax-M3.1-Flash');
   assert.equal(reloaded?.auditorAbortCause, 'transport');
+});
+
+/**
+ * v0.39.59 (auditor objection 2026-10-30, HIGH #2): the round-trip test above
+ * seeds only `provider` — the ONE value that happens to survive a stale
+ * whitelist — so it could not notice that `context-exhausted` was silently
+ * dropped on reload. A dropped class is not cosmetic: the retry ladder then
+ * defaults the lost value back to resumable `transport`, so an already-
+ * overflowed transcript could be resumed after a restart.
+ *
+ * This round-trips EVERY class through the real write/read path, so any future
+ * hand-copied whitelist that omits a member fails here rather than silently
+ * degrading the resume policy.
+ */
+test('every auditor failure class survives a durable round-trip', () => {
+  for (const failureClass of AUDITOR_INFRASTRUCTURE_CLASS_VALUES) {
+    const cwd = tmpCwd();
+    seedState(cwd, {
+      goal: seedGoal({
+        status: 'auditing',
+        pendingCompletion: {
+          at: new Date().toISOString(), attemptId: `audit-rt-${failureClass}`, claimLineageId: 'claim-rt',
+          auditorFailureClass: failureClass, auditorTier: 'full', auditorRevision: 1,
+        },
+      }),
+    });
+    const reloaded = readState(cwd)?.goal?.pendingCompletion;
+    assert.equal(reloaded?.auditorFailureClass, failureClass,
+      `${failureClass} must survive a durable reload; a dropped value defaults back to resumable transport`);
+  }
 });
 
 /**
