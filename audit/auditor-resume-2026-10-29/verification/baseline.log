@@ -25,3 +25,6 @@ tests/auditor-resume.test.ts:
 (pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [2516.38ms]
 (pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [3219.85ms]
 (pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.61ms]
+(pass) the resume and dispatch facts survive a durable round-trip [1421.96ms]
+(pass) context-exhaustion and compaction failures restart cold through the real resolver [3727.77ms]
+(pass) an explicit user cancel and a moved revision both restart cold through the resolver [4.66ms]
