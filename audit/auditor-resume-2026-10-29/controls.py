@@ -114,6 +114,23 @@ CASES = {
         'appendLedger(liveCtx.cwd, "auditor_resume_decision", {',
         'appendLedger(liveCtx.cwd, "auditor_resume_decision_suppressed", {',
     ),
+    # v0.39.59 (auditor objection 2026-10-30, HIGH #1): the surviving hand-copied
+    # whitelist in normalizePendingCompletion silently DROPPED the new class on
+    # reload. Reinstate it: the durable round-trip must then fail.
+    'reload-drops-context-class-regression': (
+        'extensions/goal-loop-core.ts',
+        '  const auditorFailureClass = isAuditorInfrastructureClass(_auditorFailureClass)\n    ? _auditorFailureClass\n    : undefined;',
+        '  const _stale: AuditorRecoveryFailureClass[] = ["transport", "timeout", "no-verdict", "provider"];\n'
+        '  const auditorFailureClass = typeof _auditorFailureClass === "string" && _stale.includes(_auditorFailureClass as AuditorRecoveryFailureClass)\n'
+        '    ? _auditorFailureClass as AuditorRecoveryFailureClass\n'
+        '    : undefined;',
+    ),
+    # The shared list omits a member the union declares.
+    'shared-class-list-incomplete-regression': (
+        'extensions/goal-loop-core.ts',
+        '  "no-verdict", "timeout", "transport", "provider", "context-exhausted",\n] as const satisfies readonly AuditorInfrastructureClass[];',
+        '  "no-verdict", "timeout", "transport", "provider",\n] as const satisfies readonly AuditorInfrastructureClass[];',
+    ),
     # Direction: the baseline guard becomes permissive again (absent = resume),
     # which is the exact production shape the auditor probed.
     'fail-open-baseline-regression': (
@@ -137,6 +154,10 @@ SUITES = {
     'fail-open-baseline-regression': ['tests/auditor-resume.test.ts'],
     'context-exhaustion-resumable-regression': ['tests/auditor-resume.test.ts'],
     'missing-resume-ledger-regression': ['tests/auditor-resume.test.ts'],
+    'reload-drops-context-class-regression': ['tests/auditor-resume.test.ts'],
+    # This one must fail at TYPECHECK, not at test time: the exhaustiveness guard
+    # is a compile error by design.
+    'shared-class-list-incomplete-regression': ['CHECK'],
 }
 
 results = []
@@ -160,7 +181,11 @@ for case, mutation in CASES.items():
         toolchain = Path.home() / '.local/share/bun-toolchains/bun-1.3.14'
         if toolchain.is_dir():
             env['PATH'] = str(toolchain) + os.pathsep + env['PATH']
-        command = ['node', 'scripts/run-tests.mjs', *SUITES[case]]
+        # A `CHECK` suite means the defect must be caught at TYPECHECK: the
+        # exhaustiveness guard is a compile error by design, so asserting it via
+        # runtime tests would prove the wrong mechanism.
+        command = (['npx', 'tsc', '--noEmit'] if SUITES[case] == ['CHECK']
+                   else ['node', 'scripts/run-tests.mjs', *SUITES[case]])
         with (OUT / f'{case}.log').open('w') as output:
             run = subprocess.run(command, cwd=copy, env=env, stdout=output,
                                  stderr=subprocess.STDOUT, timeout=600)
