@@ -92,6 +92,22 @@ CASES = {
         '    ...(input.attemptModel ? { sourceModel: input.attemptModel } : {}),',
         '    ...(input.resumed && input.attemptModel ? { sourceModel: input.attemptModel } : {}),',
     ),
+    # v0.39.57 (auditor objection 2026-10-30): the PRIMARY complete_goal dispatch
+    # never stamped the retry baseline, so the first retry's revision/tier guards
+    # compared against undefined and could not fire. Removing the primary stamp
+    # must fail the real-dispatch tests.
+    'primary-dispatch-baseline-regression': (
+        'extensions/loops/goal-tools.ts',
+        '      if (dispatchBaseline) updateGoal({ pendingCompletion: dispatchBaseline }, ctx);',
+        '      void dispatchBaseline;',
+    ),
+    # Direction: the baseline guard becomes permissive again (absent = resume),
+    # which is the exact production shape the auditor probed.
+    'fail-open-baseline-regression': (
+        'extensions/goal-loop-auditor-process.ts',
+        '  if (input.priorRevision === undefined) return { resume: false, reason: "revision-unknown" };',
+        '  if (input.priorRevision === undefined) return { resume: true };',
+    ),
 }
 SUITES = {
     'baseline': ['tests/auditor-resume.test.ts'],
@@ -104,6 +120,8 @@ SUITES = {
     'bare-session-path-regression': ['tests/auditor-resume.test.ts'],
     'user-abort-unrecorded-regression': ['tests/auditor-resume.test.ts'],
     'first-resume-source-model-regression': ['tests/auditor-resume.test.ts'],
+    'primary-dispatch-baseline-regression': ['tests/auditor-resume.test.ts'],
+    'fail-open-baseline-regression': ['tests/auditor-resume.test.ts'],
 }
 
 results = []
