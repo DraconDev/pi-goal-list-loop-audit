@@ -72,6 +72,7 @@ extractPendingTasks,
   type AuditLogEntry,
   crossRecommendMode,
   stampAuditorAttemptThinking,
+  auditorDispatchStampFacts,
   stampAuditorDispatchFacts,
   formatListDepth,
   parseListItemDeclaration,
@@ -1675,10 +1676,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           claim.attemptId,
           {
             forAttemptId: claim.attemptId!,
-            tier: tierDecision.tier,
-            ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
-            ...(auditorResume.resume ? { resumeCount } : {}),
-            sourceModel: attemptModel,
+            ...auditorDispatchStampFacts({
+              attemptModel,
+              resumed: auditorResume.resume,
+              tier: tierDecision.tier,
+              ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
+              resumeCount,
+            }),
           },
         );
         if (stampedDispatch) updateGoal({ pendingCompletion: stampedDispatch }, liveCtx);

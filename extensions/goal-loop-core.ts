@@ -3587,6 +3587,34 @@ export function stampAuditorAttemptThinking(
   return { ...pending, auditorThinkingLevel: clean };
 }
 
+/** The facts a dispatch stamps on its own claim. Extracted so the decision is
+ * directly testable rather than living inline in the dispatch closure.
+ *
+ * `sourceModel` is stamped on EVERY dispatch, not only a resumed one: it is what
+ * `fromModel` reads back on the next attempt, so stamping it only when resuming
+ * made the FIRST resume omit its source model — the lineage was missing exactly
+ * when it was first needed (auditor objection 2026-10-30). */
+export function auditorDispatchStampFacts(input: {
+  attemptModel: string | undefined;
+  resumed: boolean;
+  tier?: "light" | "standard" | "full";
+  revision?: number;
+  resumeCount?: number;
+}): {
+  tier?: "light" | "standard" | "full";
+  revision?: number;
+  resumeCount?: number;
+  sourceModel?: string;
+} {
+  return {
+    ...(input.tier ? { tier: input.tier } : {}),
+    ...(typeof input.revision === "number" ? { revision: input.revision } : {}),
+    ...(input.resumed && typeof input.resumeCount === "number" ? { resumeCount: input.resumeCount } : {}),
+    // Absent stays absent: an unresolvable model must not be invented as "".
+    ...(input.attemptModel ? { sourceModel: input.attemptModel } : {}),
+  };
+}
+
 /** Stamp the dispatch facts a retry needs to judge resumability. Written when
  * the auditor is actually launched, so the NEXT attempt can tell whether the
  * goal revision, the audit tier or the cancellation state moved while it ran.

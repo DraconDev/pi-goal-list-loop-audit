@@ -86,5 +86,27 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "user-abort-unrecorded-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "first-resume-source-model-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   }
 ]

@@ -1,0 +1,68 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=269s heartbeat=30s
+[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 179s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-resume.test.ts:
+(pass) the default dispatch asks for a durable auditor session, not --no-session [533.74ms]
+(pass) a failed attempt keeps the session a retry can resume [184.51ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [235.51ms]
+(pass) auditorInspection=false restores the original --no-session spawn [181.75ms]
+(pass) a retained session directory is still reapable by the retention sweep [2.31ms]
+(pass) a provider failure resumes the prior transcript [0.10ms]
+(pass) a transport failure resumes the prior transcript [0.01ms]
+(pass) a timeout restarts cold the prior transcript [0.02ms]
+(pass) a no-verdict attempt restarts cold the prior transcript
+(pass) a moved goal revision still restarts the audit cold [0.04ms]
+(pass) a replaced claim still restarts the audit cold
+(pass) a changed audit tier still restarts the audit cold
+(pass) an explicit cancel still restarts the audit cold
+(pass) a vanished transcript still restarts the audit cold
+(pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [179.40ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [192.05ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.27ms]
+(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.12ms]
+(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.38ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.15ms]
+(pass) the resume and dispatch facts survive a durable round-trip [1.67ms]
+(pass) context-exhaustion and compaction failures restart cold through the real resolver [0.36ms]
+(pass) an explicit user cancel and a moved revision both restart cold through the resolver [0.31ms]
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [184.04ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [0.56ms]
+(pass) a first-pass verdict carries NO resume lineage [0.08ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [142.62ms]
+(pass) the first resume names its source model in both ledger and verdict [0.16ms]
+748 |   const controller = new AbortController();
+749 |   const wrapped = recordUserAbortOnSignal(controller.signal, attemptId);
+750 |   assert.equal(wrapped, controller.signal, 'the original signal is passed through');
+751 |   assert.equal(abortCauseForAttempt(attemptId), 'transport', 'not yet aborted');
+752 |   controller.abort();
+753 |   assert.equal(abortCauseForAttempt(attemptId), 'user',
+               ^
+AssertionError: aborting the host signal IS the user decision and must be recorded
++ actual - expected
+
++ 'transport'
+- 'user'
+
+ generatedMessage: false,
+     actual: "transport",
+   expected: "user",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-opk0j03_/tests/auditor-resume.test.ts:753:10
+      at fn (node:test:215:18)
+(fail) an explicit user abort is recorded through the real signal and stamped on the claim [1.20ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.10ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [9.77ms]
+
+1 tests failed:
+(fail) an explicit user abort is recorded through the real signal and stamped on the claim [1.20ms]
+
+ 31 pass
+ 1 fail
+Ran 32 tests across 1 file. [2.49s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-DaJLZD/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-DaJLZD
+[run-tests] finished in 3s (exit 1)

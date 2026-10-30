@@ -75,6 +75,23 @@ CASES = {
         'const priorJobDir = findAuditJobDirectory(input.cwd, priorAttempt);',
         'const priorJobDir = path.join(input.cwd, ".pi-glla", "audit-jobs", priorAttempt);',
     ),
+    # v0.39.56 (auditor objection 2026-10-30): the user abort was never recorded,
+    # so an explicit cancel was classified transport and got resumed. Restoring
+    # that bug must fail the abort-cause test.
+    'user-abort-unrecorded-regression': (
+        'extensions/goal-loop-auditor-process.ts',
+        'signal.addEventListener("abort", () => recordUserAuditorAbort(logicalAttemptId), { once: true });',
+        'signal.addEventListener("abort", () => {}, { once: true });',
+    ),
+    # v0.39.56: the source model was only stamped on a resumed dispatch, so the
+    # FIRST resume omitted fromModel. Restoring that must fail the lineage test.
+    # The stamping decision lives in auditorDispatchStampFacts; mutating THAT
+    # restores the original defect (source model only on a resumed dispatch).
+    'first-resume-source-model-regression': (
+        'extensions/goal-loop-core.ts',
+        '    ...(input.attemptModel ? { sourceModel: input.attemptModel } : {}),',
+        '    ...(input.resumed && input.attemptModel ? { sourceModel: input.attemptModel } : {}),',
+    ),
 }
 SUITES = {
     'baseline': ['tests/auditor-resume.test.ts'],
@@ -85,6 +102,8 @@ SUITES = {
     'durability-optout-regression': ['tests/auditor-resume.test.ts'],
     'rotated-claim-identity-regression': ['tests/auditor-resume.test.ts'],
     'bare-session-path-regression': ['tests/auditor-resume.test.ts'],
+    'user-abort-unrecorded-regression': ['tests/auditor-resume.test.ts'],
+    'first-resume-source-model-regression': ['tests/auditor-resume.test.ts'],
 }
 
 results = []

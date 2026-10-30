@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
-import { appendAuditVerdict, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
+import { appendAuditVerdict, auditorDispatchStampFacts, isGoalRevisionCurrent, readState, stampAuditorDispatchFacts, type AuditVerdict } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { replaceState } from '../extensions/goal-state.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
@@ -704,12 +704,17 @@ test('the first resume names its source model in both ledger and verdict', () =>
     auditorSourceModel: priorModel,
   };
   // A dispatch stamps the model IT runs on, so the next attempt can name it.
+  // This goes through the PRODUCTION decision function, so dropping the
+  // always-stamp (the original defect) fails here.
   const stamped = stampAuditorDispatchFacts(claim, claim.attemptId, {
     forAttemptId: claim.attemptId,
-    tier: 'full',
-    revision: 2,
-    resumeCount: 1,
-    sourceModel: 'minimax/MiniMax-M3.1-Flash',
+    ...auditorDispatchStampFacts({
+      attemptModel: 'minimax/MiniMax-M3.1-Flash',
+      resumed: false,   // a FIRST pass: the defect omitted the model here
+      tier: 'full',
+      revision: 2,
+      resumeCount: 0,
+    }),
   })!;
   assert.equal(stamped.auditorSourceModel, 'minimax/MiniMax-M3.1-Flash',
     'every dispatch records the model it ran on, not only resumed ones');
