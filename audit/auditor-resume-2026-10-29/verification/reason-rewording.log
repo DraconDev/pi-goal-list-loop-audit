@@ -3,3 +3,4 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
+[run-tests] progress: 32s elapsed · 19s since last output · 0 KiB of suite output
