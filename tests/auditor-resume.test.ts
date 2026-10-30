@@ -512,3 +512,59 @@ test('an explicit user cancel and a moved revision both restart cold through the
   assert.equal(retiered.resume, false, 'a changed tier must restart cold');
   assert.equal(retiered.reason, 'tier-changed');
 });
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #1/#3): the FULL chain end to
+ * end — the production resolver locates a production-named retained session for
+ * a rotated claim, and that exact path is what the real worker is spawned
+ * against. Each half was tested separately before, which is how a broken join
+ * between them passed review while production still restarted cold.
+ */
+test('end to end: a rotated claim resolves to the prior transcript and the worker resumes it', async () => {
+  const cwd = tmpCwd();
+  const argvLog = path.join(cwd, 'argv.log');
+  const previous = process.env.GLLA_PI_BINARY;
+  binaries.push(previous);
+  process.env.GLLA_PI_BINARY = inertWorker(cwd, argvLog);
+
+  // The first attempt died on a provider failure, leaving a real transcript in
+  // a production-named dir `<logicalAttemptId>-<nonce>`.
+  const priorLogical = 'audit-mve2e-xxxxxx';
+  const priorDir = path.join(cwd, '.pi-glla', 'audit-jobs', newDetachedAuditJobAttemptId(priorLogical));
+  fs.mkdirSync(priorDir, { recursive: true });
+  const priorSession = path.join(priorDir, 'session.jsonl');
+  fs.writeFileSync(priorSession, '{"kind":"session","note":"64 tool calls already spent here"}\n');
+
+  // The claim has ROTATED: new attemptId, priorAttemptId is the old one.
+  const claim = {
+    attemptId: 'audit-mve2e2-yyyyyy', claimLineageId: 'claim-mve2e-zzzzzz',
+    priorAttemptId: priorLogical, auditorFailureClass: 'provider' as const,
+    auditorTier: 'full' as const, auditorRevision: 5, at: new Date().toISOString(),
+  };
+  const decision = resolveAuditorResumeForDispatch({
+    inspection: true, claim, currentAttemptId: claim.attemptId,
+    currentTier: 'full', currentRevision: 5, cwd,
+  });
+  assert.equal(decision.resume, true, 'the rotated claim resumes');
+  assert.equal(decision.sessionPath, priorSession);
+
+  await runDetachedGoalCompletionAuditor({
+    cwd,
+    model: 'test/auditor-model',
+    thinkingLevel: 'medium',
+    goal: goalFor(),
+    inspection: true,
+    resumeSessionPath: decision.sessionPath,
+    resumeProvenance: {
+      priorAttemptId: priorLogical, fromModel: 'openai-codex/gpt-6-luna',
+      toModel: 'test/auditor-model', resumeCount: 1, revision: 5, tier: 'full',
+    },
+    runtime: { pollIntervalMs: 10, attemptId: () => newDetachedAuditJobAttemptId(claim.attemptId), logicalAttemptId: claim.attemptId },
+  } as never);
+
+  const argv = argvEntries(argvLog).at(-1) ?? [];
+  const at = argv.indexOf('--session');
+  assert.ok(at >= 0, 'the resumed dispatch asks for a durable session');
+  assert.equal(argv[at + 1], decision.sessionPath,
+    'the worker continues the REAL prior transcript, so completed tool work is not recomputed');
+});
