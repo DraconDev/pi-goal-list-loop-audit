@@ -441,6 +441,14 @@ function newCompletionAuditAttemptId(): string {
   return `audit-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Stable identity for ONE complete_goal submission, across every attempt
+ * rotation. Resume compares this instead of the rotated attempt id, so an
+ * ordinary retry is not mistaken for a replaced claim. A genuinely new claim
+ * mints a fresh lineage id, which the policy refuses to resume across. */
+function newCompletionAuditClaimLineageId(): string {
+  return `claim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 /** A logical completion claim can be retried after its old worker has left a
  * durable job directory behind. Each detached process attempt gets its own
  * filesystem identity; the claim's `pendingCompletion.attemptId` remains the
@@ -741,7 +749,6 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   const pending: PendingCompletion = {
     ...claimForAttempt,
     claimLineageId,
-    ...(priorAttemptId && freshAuditorCycle ? { auditorSourceModel: claim.auditorCandidateRef } : {}),
     // A2: keep the rotated-away id — the old worker's job dir is keyed
     // by it, and no prefix reap under the NEW id can reach it.
     ...(priorAttemptId ? { priorAttemptId } : {}),
