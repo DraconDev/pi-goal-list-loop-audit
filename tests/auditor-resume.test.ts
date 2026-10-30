@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { waitFor } from './harness/host-budget.js';
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
-import { readState } from '../extensions/goal-loop-core.js';
+import { readState, stampAuditorDispatchFacts } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
@@ -344,10 +344,22 @@ test('production retry wiring: a real rotation resumes instead of reporting clai
   assert.equal(resumed.sessionPath, path.join(jobDir, 'session.jsonl'),
     'the resolver must find the nonce-suffixed job dir the worker actually wrote');
 
-  // A genuinely NEW claim mints a new lineage id and must restart cold.
+  // A genuinely NEW claim is a fresh submission: no prior attempt, so it can
+  // never inherit an older transcript that happens to still be on disk.
+  const freshClaim = resolveAuditorResumeForDispatch({
+    inspection: true,
+    claim: { attemptId: 'audit-mvfresh-gggggg', claimLineageId: 'claim-fresh-hhhhhh', auditorFailureClass: 'provider', at: claim.at },
+    currentAttemptId: 'audit-mvfresh-gggggg',
+    currentTier: 'full', currentRevision: 3, cwd,
+  });
+  assert.equal(freshClaim.resume, false, 'a fresh claim must not inherit a lingering transcript');
+  assert.equal(freshClaim.reason, 'no-prior-attempt');
+
+  // A claim REPLACED mid-flight carries the previous lineage explicitly, so the
+  // mismatch is detectable without conflating it with the rotated job-dir key.
   const replaced = resolveAuditorResumeForDispatch({
     inspection: true,
-    claim: { ...claim, claimLineageId: 'claim-other-dddddd' },
+    claim: { ...claim, claimLineageId: 'claim-other-dddddd', priorClaimLineageId: 'claim-mvlineage-cccccc' },
     currentAttemptId: claim.attemptId,
     currentTier: 'full', currentRevision: 3, cwd,
   });
@@ -371,4 +383,61 @@ test('a resume whose retained session is only in the nonce-suffixed dir is found
   });
   assert.equal(empty.resume, false, 'an empty transcript is a cold start');
   assert.equal(empty.reason, 'no-session');
+});
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #2): resume lineage must land in
+ * BOTH the ledger and the verdict provenance, with the source and target model
+ * and a resume count — not just "resumed: true". These assert the durable
+ * fields a reviewer needs to tell a continued audit from a first pass.
+ */
+test('a resumed dispatch stamps lineage on the claim so the next retry can detect movement', () => {
+  const attemptId = 'audit-mvstamp-iiiiii';
+  const pending = {
+    at: new Date().toISOString(), attemptId, claimLineageId: 'claim-mvstamp-jjjjjj',
+    priorAttemptId: 'audit-mvprev-kkkkkk', auditorFailureClass: 'provider' as const,
+  };
+  const stamped = stampAuditorDispatchFacts(pending, attemptId, {
+    forAttemptId: attemptId, tier: 'full', revision: 7,
+    resumeCount: 2, sourceModel: 'openai-codex/gpt-6-luna',
+  });
+  assert.ok(stamped, 'the current attempt must be stamped');
+  assert.equal(stamped.auditorTier, 'full');
+  assert.equal(stamped.auditorRevision, 7);
+  assert.equal(stamped.auditorResumeCount, 2);
+  assert.equal(stamped.auditorSourceModel, 'openai-codex/gpt-6-luna');
+
+  // A stamp for a superseded attempt must never touch the live claim: a late
+  // write from the rotated-away worker cannot rewrite lineage.
+  const stale = stampAuditorDispatchFacts(pending, attemptId, { forAttemptId: 'audit-old-llllll', tier: 'light' });
+  assert.equal(stale, undefined, 'a mismatched attempt cannot stamp dispatch facts');
+});
+
+test('the resume and dispatch facts survive a durable round-trip', () => {
+  const cwd = tmpCwd();
+  const goal = seedGoal({ id: '20261030120000-resume', objective: 'round-trip resume lineage', status: 'auditing' });
+  seedState(cwd, {
+    ...goal,
+    pendingCompletion: {
+      at: new Date().toISOString(),
+      attemptId: 'audit-mvrt-mmmmmm',
+      claimLineageId: 'claim-mvrt-nnnnnn',
+      priorClaimLineageId: 'claim-mvrt-nnnnnn',
+      priorAttemptId: 'audit-mvrtold-oooooo',
+      auditorFailureClass: 'provider',
+      auditorTier: 'full',
+      auditorRevision: 4,
+      auditorResumeCount: 1,
+      auditorSourceModel: 'minimax/MiniMax-M3.1-Flash',
+      auditorAbortCause: 'transport',
+    },
+  });
+  const reloaded = readState(cwd)?.goal?.pendingCompletion;
+  assert.equal(reloaded?.claimLineageId, 'claim-mvrt-nnnnnn', 'claim lineage must survive reload');
+  assert.equal(reloaded?.priorAttemptId, 'audit-mvrtold-oooooo', 'the rotated job-dir key must survive reload');
+  assert.equal(reloaded?.auditorTier, 'full', 'the dispatch tier must survive so a change is detectable');
+  assert.equal(reloaded?.auditorRevision, 4, 'the dispatch revision must survive so a move is detectable');
+  assert.equal(reloaded?.auditorResumeCount, 1);
+  assert.equal(reloaded?.auditorSourceModel, 'minimax/MiniMax-M3.1-Flash');
+  assert.equal(reloaded?.auditorAbortCause, 'transport');
 });
