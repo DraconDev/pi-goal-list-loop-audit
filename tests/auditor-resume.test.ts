@@ -501,10 +501,27 @@ test('context-exhaustion and compaction failures restart cold through the real r
     attemptId: 'audit-mvcold-rrrrrr', claimLineageId: 'claim-mvcold-ssssss',
     priorAttemptId, auditorTier: 'full' as const, auditorRevision: 1, at: new Date().toISOString(),
   };
+  // v0.39.59 (auditor objection 2026-10-30, HIGH #2): drive these through a REAL
+  // durable reload, not a hand-built in-memory claim. The dropped-class defect
+  // lived exactly here — the in-memory claim carried the class the reload would
+  // have discarded, so the old version of this loop could not see the bug.
   for (const failureClass of ['timeout', 'no-verdict', 'context-exhausted'] as const) {
+    const reloadCwd = tmpCwd();
+    const reloadDir = path.join(reloadCwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-mvcold1-qqqqqq`);
+    fs.mkdirSync(reloadDir, { recursive: true });
+    fs.writeFileSync(path.join(reloadDir, 'session.jsonl'), '{"type":"session","overflow":true}\n');
+    seedState(reloadCwd, {
+      goal: seedGoal({
+        status: 'auditing',
+        pendingCompletion: { ...base, auditorFailureClass: failureClass },
+      }),
+    });
+    const persisted = readState(reloadCwd)?.goal?.pendingCompletion;
+    assert.equal(persisted?.auditorFailureClass, failureClass,
+      `${failureClass} must survive the reload this dispatch actually reads from`);
     const decision = resolveAuditorResumeForDispatch({
-      inspection: true, claim: { ...base, auditorFailureClass: failureClass },
-      currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd,
+      inspection: true, claim: persisted!,
+      currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 1, cwd: reloadCwd,
     });
     assert.equal(decision.resume, false,
       `${failureClass} must restart cold even though the transcript exists`);
