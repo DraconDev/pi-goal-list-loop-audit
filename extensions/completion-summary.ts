@@ -1397,8 +1397,10 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
       approvalBullet,
       ...challengeDisclosure(input.goal),
       ...(foldCounts ? [] : [trailerBullet(countsLine)]),
-      recordBullet,
+      // Extras are secondary annotations, so they sit BEFORE the record
+      // pointer: the record stays the last line of every terminal summary.
       ...(input.extras ?? []),
+      recordBullet,
     ],
     recap,
     transcriptLines: [...transcriptBody, approvalBullet, ...challengeDisclosure(input.goal)],
