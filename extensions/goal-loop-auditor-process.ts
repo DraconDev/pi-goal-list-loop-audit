@@ -67,7 +67,7 @@ export type AuditorAbortCause = "user" | "transport";
 // Re-exported from goal-loop-core so this module keeps its public surface
 // while the union has exactly one declaration.
 export type { AuditorInfrastructureClass, AuditorRecoveryFailureClass } from "./goal-loop-core.js";
-import type { AuditorInfrastructureClass } from "./goal-loop-core.js";
+import type { AuditorInfrastructureClass, AuditorRecoveryFailureClass } from "./goal-loop-core.js";
 const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>([
   "no-verdict", "timeout", "transport", "provider", "context-exhausted",
 ]);

@@ -1,5 +1,6 @@
 import type { InfrastructureRetry } from "./infrastructure-retry.js";
 import type { GoalAuditorResult } from "./goal-loop-auditor.js";
+import type { AuditorInfrastructureClass } from "./goal-loop-core.js";
 import { randomUUID } from "node:crypto";
 
 export type RespecBuilderPhase = "drafting" | "planning" | "building" | "auditing" | "replanning" | "complete";
