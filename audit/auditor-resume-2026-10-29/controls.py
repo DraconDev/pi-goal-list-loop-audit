@@ -36,8 +36,7 @@ CASES = {
     # Direction 2: resume regardless of a moved revision.
     'resume-across-revision-regression': (
         'extensions/goal-loop-auditor-process.ts',
-        'if (input.priorRevision !== undefined && input.currentRevision !== undefined\n'
-        '    && input.priorRevision !== input.currentRevision) {\n'
+        'if (input.currentRevision !== undefined && input.priorRevision !== input.currentRevision) {\n'
         '    return { resume: false, reason: "revision-moved" };',
         'if (false) {\n'
         '    return { resume: false, reason: "revision-moved" };',
