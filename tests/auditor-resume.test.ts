@@ -1022,8 +1022,17 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     // `manual` origin: the automatic origins are additionally fenced by the
     // load hold and the retry horizon, which are orthogonal to resume lineage.
     await (globalThis as any).retryStoredCompletionAudit('manual');
-    await tick(400);
-    const rows = fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).slice(before).map((l) => JSON.parse(l));
+    // The dispatch is asynchronous; wait for the durable row instead of a fixed
+    // sleep, so a loaded host cannot turn a real write into a flaky miss.
+    const ledgerAll = () => fs.existsSync(ledger)
+      ? fs.readFileSync(ledger, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : [];
+    try {
+      await waitFor(() => ledgerAll().some((r: any) => r.type === 'auditor_resume_decision'), {
+        timeoutMs: 8000, intervalMs: 20,
+        message: 'the retry dispatch emits its resume-lineage ledger row',
+      });
+    } catch { /* fall through to the explicit assertions below */ }
+    const rows = ledgerAll().slice(before);
     const row = rows.find((r: any) => r.type === 'auditor_resume_decision');
     if (!row) {
       const all = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').split('\n').filter(Boolean);
