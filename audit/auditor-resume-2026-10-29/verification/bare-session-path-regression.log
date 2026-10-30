@@ -19,3 +19,4 @@ tests/auditor-resume.test.ts:
 (pass) an explicit cancel still restarts the audit cold [0.05ms]
 (pass) a vanished transcript still restarts the audit cold
 (pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [11043.73ms]
