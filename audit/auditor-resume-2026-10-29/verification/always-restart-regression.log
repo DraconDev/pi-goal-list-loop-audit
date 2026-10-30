@@ -3,3 +3,163 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
+[run-tests] progress: 30s elapsed · 19s since last output · 0 KiB of suite output
+(pass) the default dispatch asks for a durable auditor session, not --no-session [23144.74ms]
+(pass) a failed attempt keeps the session a retry can resume [952.59ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [1232.35ms]
+(pass) auditorInspection=false restores the original --no-session spawn [1401.30ms]
+(pass) a retained session directory is still reapable by the retention sweep [74.01ms]
+185 |       priorRevision: 3, currentRevision: 3,
+186 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+187 |       priorTier: 'full', currentTier: 'full',
+188 |       sessionExists: true,
+189 |     });
+190 |     assert.equal(decision.resume, expected, `${label}: ${JSON.stringify(decision)}`);
+                 ^
+AssertionError: a provider failure resumes: {"resume":false,"reason":"failure-class"}
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:190:12
+      at fn (node:test:215:18)
+(fail) a provider failure resumes the prior transcript [38.96ms]
+185 |       priorRevision: 3, currentRevision: 3,
+186 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+187 |       priorTier: 'full', currentTier: 'full',
+188 |       sessionExists: true,
+189 |     });
+190 |     assert.equal(decision.resume, expected, `${label}: ${JSON.stringify(decision)}`);
+                 ^
+AssertionError: a transport failure resumes: {"resume":false,"reason":"failure-class"}
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:190:12
+      at fn (node:test:215:18)
+(fail) a transport failure resumes the prior transcript [0.55ms]
+(pass) a timeout restarts cold the prior transcript [0.02ms]
+(pass) a no-verdict attempt restarts cold the prior transcript [0.03ms]
+212 |         sessionExists: true,
+213 |       },
+214 |       ...overrides,
+215 |     } as never);
+216 |     assert.equal(decision.resume, false, `${label} must not resume`);
+217 |     assert.equal(decision.reason, reason, `${label} names its refusal`);
+                 ^
+AssertionError: a moved goal revision names its refusal
++ actual - expected
+
++ 'failure-class'
+- 'revision-moved'
+
+ generatedMessage: false,
+     actual: "failure-class",
+   expected: "revision-moved",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:217:12
+      at fn (node:test:215:18)
+(fail) a moved goal revision still restarts the audit cold [9.27ms]
+212 |         sessionExists: true,
+213 |       },
+214 |       ...overrides,
+215 |     } as never);
+216 |     assert.equal(decision.resume, false, `${label} must not resume`);
+217 |     assert.equal(decision.reason, reason, `${label} names its refusal`);
+                 ^
+AssertionError: a replaced claim names its refusal
++ actual - expected
+
++ 'failure-class'
+- 'claim-replaced'
+
+ generatedMessage: false,
+     actual: "failure-class",
+   expected: "claim-replaced",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:217:12
+      at fn (node:test:215:18)
+(fail) a replaced claim still restarts the audit cold [0.20ms]
+212 |         sessionExists: true,
+213 |       },
+214 |       ...overrides,
+215 |     } as never);
+216 |     assert.equal(decision.resume, false, `${label} must not resume`);
+217 |     assert.equal(decision.reason, reason, `${label} names its refusal`);
+                 ^
+AssertionError: a changed audit tier names its refusal
++ actual - expected
+
++ 'failure-class'
+- 'tier-changed'
+
+ generatedMessage: false,
+     actual: "failure-class",
+   expected: "tier-changed",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:217:12
+      at fn (node:test:215:18)
+(fail) a changed audit tier still restarts the audit cold [0.16ms]
+(pass) an explicit cancel still restarts the audit cold [0.06ms]
+212 |         sessionExists: true,
+213 |       },
+214 |       ...overrides,
+215 |     } as never);
+216 |     assert.equal(decision.resume, false, `${label} must not resume`);
+217 |     assert.equal(decision.reason, reason, `${label} names its refusal`);
+                 ^
+AssertionError: a vanished transcript names its refusal
++ actual - expected
+
++ 'failure-class'
+- 'no-session'
+
+ generatedMessage: false,
+     actual: "failure-class",
+   expected: "no-session",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:217:12
+      at fn (node:test:215:18)
+(fail) a vanished transcript still restarts the audit cold [0.08ms]
+(pass) durability turned off still restarts the audit cold [0.01ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [2761.40ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [1619.83ms]
+284 |     inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
+285 |     priorRevision: 3, currentRevision: 3,
+286 |     priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
+287 |     priorTier: 'full', currentTier: 'full', sessionExists: true,
+288 |   });
+289 |   assert.equal(resumed.resume, true);
+               ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-eqcuekuu/tests/auditor-resume.test.ts:289:10
+      at fn (node:test:215:18)
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [3.88ms]
