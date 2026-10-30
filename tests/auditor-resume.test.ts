@@ -415,9 +415,9 @@ test('a resumed dispatch stamps lineage on the claim so the next retry can detec
 
 test('the resume and dispatch facts survive a durable round-trip', () => {
   const cwd = tmpCwd();
-  const goal = seedGoal({ id: '20261030120000-resume', objective: 'round-trip resume lineage', status: 'auditing' });
   seedState(cwd, {
-    ...goal,
+    goal: seedGoal({
+    status: 'auditing',
     pendingCompletion: {
       at: new Date().toISOString(),
       attemptId: 'audit-mvrt-mmmmmm',
@@ -431,6 +431,7 @@ test('the resume and dispatch facts survive a durable round-trip', () => {
       auditorSourceModel: 'minimax/MiniMax-M3.1-Flash',
       auditorAbortCause: 'transport',
     },
+    }),
   });
   const reloaded = readState(cwd)?.goal?.pendingCompletion;
   assert.equal(reloaded?.claimLineageId, 'claim-mvrt-nnnnnn', 'claim lineage must survive reload');
