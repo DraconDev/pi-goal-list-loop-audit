@@ -930,6 +930,28 @@ export function recordGllaInitiatedAuditorAbort(logicalAttemptId: string): void 
   if (logicalAttemptId) gllaInitiatedAborts.add(logicalAttemptId);
 }
 
+/** Wrap a host AbortSignal so an abort that reaches it is recorded as the
+ * USER's decision before the worker observes it.
+ *
+ * The Esc escape hatch aborts this signal, and before v0.39.56 nothing read it:
+ * `recordUserAuditorAbort` had no caller, so `"user"` was unreachable and an
+ * explicit user cancel was classified `"transport"` — which the resume policy
+ * treats as resumable. An explicit cancel must restart cold, so the cause has
+ * to be recorded at the one place the human's intent is actually observable.
+ * Returns the original signal unchanged when it is absent. */
+export function recordUserAbortOnSignal(
+  signal: AbortSignal | undefined,
+  logicalAttemptId: string | undefined,
+): AbortSignal | undefined {
+  if (!signal || !logicalAttemptId) return signal;
+  if (signal.aborted) {
+    recordUserAuditorAbort(logicalAttemptId);
+    return signal;
+  }
+  signal.addEventListener("abort", () => recordUserAuditorAbort(logicalAttemptId), { once: true });
+  return signal;
+}
+
 function abortCauseFor(logicalAttemptId: string | undefined): AuditorAbortCause {
   if (!logicalAttemptId) return "transport";
   // A GLLA-initiated stop outranks (and is the opposite of) a user stop.
