@@ -29,3 +29,11 @@ tests/auditor-resume.test.ts:
 (pass) context-exhaustion and compaction failures restart cold through the real resolver [3727.77ms]
 (pass) an explicit user cancel and a moved revision both restart cold through the resolver [4.66ms]
 [run-tests] progress: 60s elapsed · 7s since last output · 2 KiB of suite output
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [19054.28ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [13.04ms]
+(pass) a first-pass verdict carries NO resume lineage [0.22ms]
+
+ 27 pass
+ 0 fail
+Ran 27 tests across 1 file. [71.82s]
+[run-tests] finished in 73s (exit 0)
