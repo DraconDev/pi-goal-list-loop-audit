@@ -333,6 +333,7 @@ test('production retry wiring: a real rotation resumes instead of reporting clai
     auditorFailureClass: 'provider' as const,
     auditorTier: 'full' as const,
     auditorRevision: 3,
+    at: new Date().toISOString(),
   };
   const resumed = resolveAuditorResumeForDispatch({
     inspection: true, claim, currentAttemptId: claim.attemptId,
@@ -365,7 +366,7 @@ test('a resume whose retained session is only in the nonce-suffixed dir is found
   fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '');
   const empty = resolveAuditorResumeForDispatch({
     inspection: true,
-    claim: { attemptId: 'a2', claimLineageId: 'cl', priorAttemptId, auditorFailureClass: 'provider' },
+    claim: { attemptId: 'a2', claimLineageId: 'cl', priorAttemptId, auditorFailureClass: 'provider', at: new Date().toISOString() },
     currentAttemptId: 'a2', currentTier: 'full', cwd,
   });
   assert.equal(empty.resume, false, 'an empty transcript is a cold start');

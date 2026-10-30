@@ -861,6 +861,9 @@ export interface PendingCompletion {
   /** Stable identity for one complete_goal submission across attempt
    * rotation. Resume compares THIS, not the rotated attempt id. */
   claimLineageId?: string;
+  /** The lineage id the PRIOR attempt ran under, so a replaced claim is
+   * detectable without conflating it with the rotated job-dir key. */
+  priorClaimLineageId?: string;
   /** How many times this claim has continued a prior transcript. */
   auditorResumeCount?: number;
   /** Model the resumed transcript came from (from -> to lineage). */
@@ -3389,6 +3392,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     preAuditCompaction: _preAuditCompaction,
     preAuditCompactionRevision: _preAuditCompactionRevision,
     claimLineageId: _claimLineageId,
+    priorClaimLineageId: _priorClaimLineageId,
     priorAttemptId: _priorAttemptId,
     auditorResumeCount: _auditorResumeCount,
     auditorSourceModel: _auditorSourceModel,
@@ -3452,6 +3456,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const boundedId = (v: unknown): string | undefined =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, 200) : undefined;
   const claimLineageId = boundedId(_claimLineageId);
+  const priorClaimLineageId = boundedId(_priorClaimLineageId);
   const priorAttemptId = boundedId(_priorAttemptId);
   const auditorSourceModel = boundedId(_auditorSourceModel);
   const auditorResumeCount = typeof _auditorResumeCount === "number" && Number.isFinite(_auditorResumeCount)
@@ -3519,6 +3524,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(exhaustedChain ? { exhaustedChain } : {}),
     ...(auditorThinkingLevel ? { auditorThinkingLevel } : {}),
     ...(claimLineageId ? { claimLineageId } : {}),
+    ...(priorClaimLineageId ? { priorClaimLineageId } : {}),
     ...(priorAttemptId ? { priorAttemptId } : {}),
     ...(auditorSourceModel ? { auditorSourceModel } : {}),
     ...(auditorResumeCount !== undefined ? { auditorResumeCount } : {}),
