@@ -3375,6 +3375,13 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     showVerification: _showVerification,
     preAuditCompaction: _preAuditCompaction,
     preAuditCompactionRevision: _preAuditCompactionRevision,
+    claimLineageId: _claimLineageId,
+    priorAttemptId: _priorAttemptId,
+    auditorResumeCount: _auditorResumeCount,
+    auditorSourceModel: _auditorSourceModel,
+    auditorTier: _auditorTier,
+    auditorRevision: _auditorRevision,
+    auditorAbortCause: _auditorAbortCause,
     ...canonicalOrUnknown
   } = raw;
   const phase = _phase === "quota-waiting" ? "retry-waiting" : _phase;
@@ -3426,6 +3433,27 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ? _auditorFailureClass as AuditorRecoveryFailureClass
     : undefined;
   const auditorFallbackExhausted = _auditorFallbackExhausted === true;
+  // Resume lineage at the state boundary: a resume must never be decided from
+  // a half-parsed record, so each field degrades to absent instead of
+  // carrying garbage into the policy.
+  const boundedId = (v: unknown): string | undefined =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, 200) : undefined;
+  const claimLineageId = boundedId(_claimLineageId);
+  const priorAttemptId = boundedId(_priorAttemptId);
+  const auditorSourceModel = boundedId(_auditorSourceModel);
+  const auditorResumeCount = typeof _auditorResumeCount === "number" && Number.isFinite(_auditorResumeCount)
+    ? Math.min(100, Math.max(0, Math.trunc(_auditorResumeCount)))
+    : undefined;
+  const auditorTiers = ["light", "standard", "full"] as const;
+  const auditorTier = typeof _auditorTier === "string" && (auditorTiers as readonly string[]).includes(_auditorTier)
+    ? _auditorTier as (typeof auditorTiers)[number]
+    : undefined;
+  const auditorRevision = typeof _auditorRevision === "number" && Number.isSafeInteger(_auditorRevision) && _auditorRevision >= 0
+    ? _auditorRevision
+    : undefined;
+  const auditorAbortCause = _auditorAbortCause === "user" || _auditorAbortCause === "transport"
+    ? _auditorAbortCause
+    : undefined;
   const auditorFailureAt = typeof _auditorFailureAt === "string" && Number.isFinite(Date.parse(_auditorFailureAt))
     ? new Date(Date.parse(_auditorFailureAt)).toISOString()
     : undefined;
