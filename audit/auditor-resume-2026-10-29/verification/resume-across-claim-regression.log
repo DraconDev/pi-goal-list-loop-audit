@@ -6,3 +6,62 @@ tests/auditor-resume.test.ts:
 (pass) the default dispatch asks for a durable auditor session, not --no-session [1720.49ms]
 (pass) a failed attempt keeps the session a retry can resume [1140.83ms]
 (pass) a dispatch that did not ask for a session still reaps its scratch [2744.67ms]
+(pass) auditorInspection=false restores the original --no-session spawn [1808.34ms]
+(pass) a retained session directory is still reapable by the retention sweep [6.88ms]
+(pass) a provider failure resumes the prior transcript [0.45ms]
+(pass) a transport failure resumes the prior transcript [0.10ms]
+(pass) a timeout restarts cold the prior transcript [0.06ms]
+(pass) a no-verdict attempt restarts cold the prior transcript [0.06ms]
+(pass) a moved goal revision still restarts the audit cold [0.28ms]
+211 |         priorTier: 'full', currentTier: 'full',
+212 |         sessionExists: true,
+213 |       },
+214 |       ...overrides,
+215 |     } as never);
+216 |     assert.equal(decision.resume, false, `${label} must not resume`);
+                 ^
+AssertionError: a replaced claim must not resume
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-7roaaqeq/tests/auditor-resume.test.ts:216:12
+      at fn (node:test:215:18)
+(fail) a replaced claim still restarts the audit cold [10.59ms]
+(pass) a changed audit tier still restarts the audit cold [0.04ms]
+(pass) an explicit cancel still restarts the audit cold [0.02ms]
+(pass) a vanished transcript still restarts the audit cold
+(pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [1206.31ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [1341.07ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [1.73ms]
+361 |     inspection: true,
+362 |     claim: { ...claim, claimLineageId: 'claim-other-dddddd', priorClaimLineageId: 'claim-mvlineage-cccccc' },
+363 |     currentAttemptId: claim.attemptId,
+364 |     currentTier: 'full', currentRevision: 3, cwd,
+365 |   });
+366 |   assert.equal(replaced.resume, false, 'a replaced claim must not inherit the transcript');
+               ^
+AssertionError: a replaced claim must not inherit the transcript
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-7roaaqeq/tests/auditor-resume.test.ts:366:10
+      at fn (node:test:215:18)
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [3.86ms]
+(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [26.86ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [1.62ms]
+(pass) the resume and dispatch facts survive a durable round-trip [4.71ms]
+(pass) context-exhaustion and compaction failures restart cold through the real resolver [5.11ms]
+(pass) an explicit user cancel and a moved revision both restart cold through the resolver [0.53ms]
