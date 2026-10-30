@@ -723,7 +723,7 @@ export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" 
  * to the union without adding it here fails `tsc`.
  */
 export const AUDITOR_INFRASTRUCTURE_CLASS_VALUES = [
-  "no-verdict", "timeout", "transport", "provider", "context-exhausted",
+  "no-verdict", "timeout", "transport", "provider",
 ] as const satisfies readonly AuditorInfrastructureClass[];
 
 type MissingAuditorClass =
