@@ -858,6 +858,19 @@ export interface PendingCompletion {
    * the prior worker may still be alive; the durable lineage lets the
    * retry's cancel + pre-dispatch reap cover the old job dir too. */
   priorAttemptId?: string;
+  /** Stable identity for one complete_goal submission across attempt
+   * rotation. Resume compares THIS, not the rotated attempt id. */
+  claimLineageId?: string;
+  /** How many times this claim has continued a prior transcript. */
+  auditorResumeCount?: number;
+  /** Model the resumed transcript came from (from -> to lineage). */
+  auditorSourceModel?: string;
+  /** Tier this claim was dispatched at, so a change is detectable. */
+  auditorTier?: "light" | "standard" | "full";
+  /** Goal revision this claim was dispatched against. */
+  auditorRevision?: number;
+  /** Why the attempt stopped; "user" refuses resume. */
+  auditorAbortCause?: "user" | "transport";
   /** Start time for the current isolated-auditor attempt. */
   startedAt?: string;
   /** Why the claim is waiting for a fresh attempt. */
@@ -3505,6 +3518,13 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
     ...(exhaustedChain ? { exhaustedChain } : {}),
     ...(auditorThinkingLevel ? { auditorThinkingLevel } : {}),
+    ...(claimLineageId ? { claimLineageId } : {}),
+    ...(priorAttemptId ? { priorAttemptId } : {}),
+    ...(auditorSourceModel ? { auditorSourceModel } : {}),
+    ...(auditorResumeCount !== undefined ? { auditorResumeCount } : {}),
+    ...(auditorTier ? { auditorTier } : {}),
+    ...(auditorRevision !== undefined ? { auditorRevision } : {}),
+    ...(auditorAbortCause ? { auditorAbortCause } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
