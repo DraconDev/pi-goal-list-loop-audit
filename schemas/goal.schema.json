@@ -345,7 +345,13 @@
         "auditorFallbackExhausted": { "type": "boolean" },
         "auditorFailureAt": { "type": "string", "format": "date-time" },
         "exhaustedChain": { "type": "string", "maxLength": 2000, "description": "Newline-free names of the auditor candidates exhausted in the current bounded cycle, joined with ' → '. Set at burn time; cleared with the cycle. Display-only diagnostic — never candidate-selection state." },
-        "auditorThinkingLevel": { "type": "string", "maxLength": 20, "description": "Effective thinking level resolved for the running attempt (per-candidate fallback applied at launch). Display-only — never candidate-selection state; absent on legacy claims." }
+        "auditorThinkingLevel": { "type": "string", "maxLength": 20, "description": "Effective thinking level resolved for the running attempt (per-candidate fallback applied at launch). Display-only — never candidate-selection state; absent on legacy claims." },
+        "priorAttemptId": { "type": "string", "minLength": 1, "description": "The rotated-away attempt id. Keys the prior worker's job directory; NOT claim identity." },
+        "claimLineageId": { "type": "string", "minLength": 1, "description": "Stable identity for one complete_goal submission across attempt rotation. A retry keeps it; a new claim mints one. Resume compares THIS, so a normal retry is not refused as claim-replaced." },
+        "auditorResumeCount": { "type": "integer", "minimum": 0, "maximum": 100, "description": "How many times this claim has resumed a prior transcript. Lineage evidence; cleared with a fresh cycle." },
+        "auditorSourceModel": { "type": "string", "minLength": 1, "description": "Model the resumed transcript came from, so lineage names from -> to without re-resolution." },
+        "auditorTier": { "type": "string", "enum": ["light", "standard", "full"], "description": "Tier the claim was dispatched at. Persisted so a tier change between attempts is detectable and forces a cold restart." },
+        "auditorAbortCause": { "type": "string", "enum": ["user", "transport"], "description": "Why the attempt stopped. 'user' refuses resume." }
       }
     },
     "solutionText": { "type": "string", "minLength": 1, "maxLength": 1000 },

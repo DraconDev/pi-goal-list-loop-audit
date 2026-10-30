@@ -730,8 +730,18 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
       ? { ...claim, ...freshAuditorCycleClaim(claim) }
       : claim;
   const priorAttemptId = claim.attemptId;
+  // v0.39.55 auditor objection (2026-10-30): `priorAttemptId` is the
+  // ROTATED job-dir key, not claim identity. Comparing it against the new
+  // attemptId made every ordinary retry fail the resume policy as
+  // `claim-replaced`, so the transcript was never continued. Claim identity
+  // is this lineage id: minted once per complete_goal submission and carried
+  // across every attempt rotation. A genuinely replaced claim (a new
+  // submission) mints a new one, which is what the policy must refuse.
+  const claimLineageId = claim.claimLineageId ?? priorAttemptId ?? newCompletionAuditClaimLineageId();
   const pending: PendingCompletion = {
     ...claimForAttempt,
+    claimLineageId,
+    ...(priorAttemptId && freshAuditorCycle ? { auditorSourceModel: claim.auditorCandidateRef } : {}),
     // A2: keep the rotated-away id — the old worker's job dir is keyed
     // by it, and no prefix reap under the NEW id can reach it.
     ...(priorAttemptId ? { priorAttemptId } : {}),
