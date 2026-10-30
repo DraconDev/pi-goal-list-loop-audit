@@ -143,6 +143,28 @@
     "expectedResultObserved": true
   },
   {
+    "case": "reload-drops-context-class-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "shared-class-list-incomplete-regression",
+    "command": [
+      "npx",
+      "tsc",
+      "--noEmit"
+    ],
+    "exitCode": 2,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "fail-open-baseline-regression",
     "command": [
       "node",
