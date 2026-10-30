@@ -1,13 +1,13 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=354s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 236s
+[run-tests] mode=explicit slow_files=13 stall_timeout=337s heartbeat=30s
+[run-tests] host is 1.9x slower than an idle host — per-test budget raised to 224s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [320.58ms]
-(pass) a failed attempt keeps the session a retry can resume [206.21ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [272.14ms]
-(pass) auditorInspection=false restores the original --no-session spawn [244.96ms]
-(pass) a retained session directory is still reapable by the retention sweep [3.53ms]
+(pass) the default dispatch asks for a durable auditor session, not --no-session [4831.28ms]
+(pass) a failed attempt keeps the session a retry can resume [200.35ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [203.75ms]
+(pass) auditorInspection=false restores the original --no-session spawn [222.81ms]
+(pass) a retained session directory is still reapable by the retention sweep [4.89ms]
 187 |       priorRevision: 3, currentRevision: 3,
 188 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
 189 |       priorTier: 'full', currentTier: 'full',
@@ -25,9 +25,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:192:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:192:12
       at fn (node:test:215:18)
-(fail) a provider failure resumes the prior transcript [1.18ms]
+(fail) a provider failure resumes the prior transcript [1.39ms]
 187 |       priorRevision: 3, currentRevision: 3,
 188 |       priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
 189 |       priorTier: 'full', currentTier: 'full',
@@ -45,10 +45,10 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:192:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:192:12
       at fn (node:test:215:18)
-(fail) a transport failure resumes the prior transcript [0.16ms]
-(pass) a timeout restarts cold the prior transcript [0.01ms]
+(fail) a transport failure resumes the prior transcript [0.09ms]
+(pass) a timeout restarts cold the prior transcript
 (pass) a no-verdict attempt restarts cold the prior transcript
 214 |         sessionExists: true,
 215 |       },
@@ -69,9 +69,9 @@ AssertionError: a moved goal revision names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:219:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:219:12
       at fn (node:test:215:18)
-(fail) a moved goal revision still restarts the audit cold [0.43ms]
+(fail) a moved goal revision still restarts the audit cold [0.34ms]
 214 |         sessionExists: true,
 215 |       },
 216 |       ...overrides,
@@ -91,9 +91,9 @@ AssertionError: a replaced claim names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:219:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:219:12
       at fn (node:test:215:18)
-(fail) a replaced claim still restarts the audit cold [0.13ms]
+(fail) a replaced claim still restarts the audit cold [0.11ms]
 214 |         sessionExists: true,
 215 |       },
 216 |       ...overrides,
@@ -113,10 +113,10 @@ AssertionError: a changed audit tier names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:219:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:219:12
       at fn (node:test:215:18)
-(fail) a changed audit tier still restarts the audit cold [0.05ms]
-(pass) an explicit cancel still restarts the audit cold
+(fail) a changed audit tier still restarts the audit cold [0.06ms]
+(pass) an explicit cancel still restarts the audit cold [0.01ms]
 214 |         sessionExists: true,
 215 |       },
 216 |       ...overrides,
@@ -136,12 +136,12 @@ AssertionError: a vanished transcript names its refusal
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:219:12
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:219:12
       at fn (node:test:215:18)
 (fail) a vanished transcript still restarts the audit cold [0.06ms]
-(pass) durability turned off still restarts the audit cold
-(pass) a resumed dispatch spawns against the prior attempt transcript [253.65ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [197.07ms]
+(pass) durability turned off still restarts the audit cold [0.01ms]
+(pass) a resumed dispatch spawns against the prior attempt transcript [266.32ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [232.52ms]
 286 |     inspection: true, priorAttemptId: 'prior-attempt', priorFailureClass: 'provider',
 287 |     priorRevision: 3, currentRevision: 3,
 288 |     priorClaimAttemptId: 'prior-attempt', currentClaimAttemptId: 'prior-attempt',
@@ -159,9 +159,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:291:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:291:10
       at fn (node:test:215:18)
-(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.46ms]
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.41ms]
 339 |   };
 340 |   const resumed = resolveAuditorResumeForDispatch({
 341 |     inspection: true, claim, currentAttemptId: claim.attemptId,
@@ -179,9 +179,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:344:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:344:10
       at fn (node:test:215:18)
-(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.09ms]
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.04ms]
 388 |       auditorRevision: 0, auditorTier: 'full',
 389 |     },
 390 |     currentAttemptId: 'a2', currentTier: 'full', currentRevision: 0, cwd,
@@ -201,11 +201,11 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:393:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:393:10
       at fn (node:test:215:18)
-(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.43ms]
-(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.11ms]
-(pass) the resume and dispatch facts survive a durable round-trip [1.63ms]
+(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.93ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.16ms]
+(pass) the resume and dispatch facts survive a durable round-trip [1.81ms]
 483 |   // genuinely available and only the class refusal is doing the work.
 484 |   const provider = resolveAuditorResumeForDispatch({
 485 |     inspection: true, claim: { ...base, auditorFailureClass: 'provider' },
@@ -223,9 +223,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:488:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:488:10
       at fn (node:test:215:18)
-(fail) context-exhaustion and compaction failures restart cold through the real resolver [0.43ms]
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [0.54ms]
 509 |   const moved = resolveAuditorResumeForDispatch({
 510 |     inspection: true, claim: base,
 511 |     currentAttemptId: base.attemptId, currentTier: 'full', currentRevision: 3, cwd,
@@ -245,9 +245,9 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:514:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:514:10
       at fn (node:test:215:18)
-(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.42ms]
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.68ms]
 551 |   };
 552 |   const decision = resolveAuditorResumeForDispatch({
 553 |     inspection: true, claim, currentAttemptId: claim.attemptId,
@@ -265,17 +265,17 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:556:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:556:10
       at fn (node:test:215:18)
-(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [0.58ms]
-(pass) a resumed verdict carries its lineage into the durable audit history [0.20ms]
-(pass) a first-pass verdict carries NO resume lineage [0.06ms]
-(pass) a resumed full-tier dispatch still asks for the falsification round [211.45ms]
-(pass) the first resume names its source model in both ledger and verdict [0.27ms]
-(pass) an explicit user abort is recorded through the real signal and stamped on the claim [0.38ms]
-(pass) a resumed verdict captured against a moved goal revision is refused [0.08ms]
-(pass) a stale attempt cannot write to the claim, resumed or not [14.64ms]
-(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [681.98ms]
+(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [0.83ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [0.31ms]
+(pass) a first-pass verdict carries NO resume lineage [0.08ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [157.39ms]
+(pass) the first resume names its source model in both ledger and verdict [0.18ms]
+(pass) an explicit user abort is recorded through the real signal and stamped on the claim [0.29ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.05ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [13.93ms]
+(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [663.52ms]
 894 |   const moved = resolveAuditorResumeForDispatch({
 895 |     inspection: true, claim: retry, currentAttemptId: retry.attemptId,
 896 |     currentTier: baseTier, currentRevision: baseRevision + 98, cwd,
@@ -295,9 +295,9 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:899:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:899:10
       at processTicksAndRejections (native:7:39)
-(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [619.16ms]
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [618.24ms]
 919 |     priorClaimAttemptId: 'cl', currentClaimAttemptId: 'cl',
 920 |     currentRevision: 99, currentTier: 'light', sessionExists: true,
 921 |   });
@@ -317,32 +317,32 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-deg8dj2j/tests/auditor-resume.test.ts:924:10
+      at /tmp/glla-auditor-resume-control-tc79vy_q/tests/auditor-resume.test.ts:924:10
       at fn (node:test:215:18)
       at done (unknown:1:1)
       at endTest (node:test:209:13)
       at processTicksAndRejections (native:7:39)
-(fail) a claim with no baseline fails closed instead of resuming blindly [0.43ms]
+(fail) a claim with no baseline fails closed instead of resuming blindly [0.26ms]
 
 14 tests failed:
-(fail) a provider failure resumes the prior transcript [1.18ms]
-(fail) a transport failure resumes the prior transcript [0.16ms]
-(fail) a moved goal revision still restarts the audit cold [0.43ms]
-(fail) a replaced claim still restarts the audit cold [0.13ms]
-(fail) a changed audit tier still restarts the audit cold [0.05ms]
+(fail) a provider failure resumes the prior transcript [1.39ms]
+(fail) a transport failure resumes the prior transcript [0.09ms]
+(fail) a moved goal revision still restarts the audit cold [0.34ms]
+(fail) a replaced claim still restarts the audit cold [0.11ms]
+(fail) a changed audit tier still restarts the audit cold [0.06ms]
 (fail) a vanished transcript still restarts the audit cold [0.06ms]
-(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.46ms]
-(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.09ms]
-(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.43ms]
-(fail) context-exhaustion and compaction failures restart cold through the real resolver [0.43ms]
-(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.42ms]
-(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [0.58ms]
-(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [619.16ms]
-(fail) a claim with no baseline fails closed instead of resuming blindly [0.43ms]
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.41ms]
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.04ms]
+(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.93ms]
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [0.54ms]
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.68ms]
+(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [0.83ms]
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [618.24ms]
+(fail) a claim with no baseline fails closed instead of resuming blindly [0.26ms]
 
  21 pass
  14 fail
-Ran 35 tests across 1 file. [3.65s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-njjqws/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-njjqws
-[run-tests] finished in 4s (exit 1)
+Ran 35 tests across 1 file. [9.04s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-JmG02Q/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-JmG02Q
+[run-tests] finished in 9s (exit 1)
