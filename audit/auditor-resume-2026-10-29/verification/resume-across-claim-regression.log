@@ -86,3 +86,6 @@ true !== false
  35 pass
  2 fail
 Ran 37 tests across 1 file. [12.03s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZZzHiV/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZZzHiV
+[run-tests] finished in 12s (exit 1)
