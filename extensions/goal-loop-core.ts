@@ -3569,6 +3569,32 @@ export function stampAuditorAttemptThinking(
   return { ...pending, auditorThinkingLevel: clean };
 }
 
+/** Stamp the dispatch facts a retry needs to judge resumability. Written when
+ * the auditor is actually launched, so the NEXT attempt can tell whether the
+ * goal revision, the audit tier or the cancellation state moved while it ran.
+ * "Resume unless something changed" is only safe if the baseline is durable. */
+export function stampAuditorDispatchFacts(
+  pending: PendingCompletion | null | undefined,
+  attemptId: string | undefined,
+  facts: {
+    forAttemptId: string;
+    tier?: "light" | "standard" | "full";
+    revision?: number;
+    resumeCount?: number;
+    sourceModel?: string;
+  },
+): PendingCompletion | undefined {
+  if (!pending || !attemptId || pending.attemptId !== attemptId) return undefined;
+  if (facts.forAttemptId !== attemptId) return undefined;
+  return {
+    ...pending,
+    ...(facts.tier ? { auditorTier: facts.tier } : {}),
+    ...(typeof facts.revision === "number" ? { auditorRevision: facts.revision } : {}),
+    ...(typeof facts.resumeCount === "number" ? { auditorResumeCount: facts.resumeCount } : {}),
+    ...(facts.sourceModel ? { auditorSourceModel: facts.sourceModel } : {}),
+  };
+}
+
 /** Claim one display/action notice in a durable recovery episode. The caller
  * must persist the containing record after this returns true. */
 export function claimRecoveryNotice(record: { recoveryNoticeKeys?: string[] }, key: string): boolean {
