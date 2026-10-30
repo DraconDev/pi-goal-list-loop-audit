@@ -221,6 +221,39 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Third disapproval: the baseline was never stamped (2026-10-30)
+
+The third claim was disapproved, correctly, for the most consequential gap yet.
+The guards were written but **only the retry closure stamped the baseline**, so
+the first retry after a parked provider failure compared against `undefined`:
+
+| probe (production claim shape) | before | after |
+| --- | --- | --- |
+| revision moved 1 -> 99 | `{"resume":true,...}` | `{"resume":false,"reason":"revision-unknown"}` |
+| tier full -> light | `{"resume":true,...}` | `{"resume":false,"reason":"tier-unknown"}` |
+| same, baseline armed | `revision-moved` | `revision-moved` |
+| unchanged, baseline armed | `resume:true` | `resume:true` |
+
+It was reachable: `/goal tweak` accepts a *paused* goal and bumps the revision
+without clearing `pendingCompletion`, so the very first retry could resume a
+transcript gathered against the **old contract**.
+
+Two fixes, both load-bearing:
+
+1. **The primary `complete_goal` dispatch stamps the baseline** once per claim
+   (not per candidate — a candidate fallback inside one dispatch must not read as
+   a tier change). `revision` uses the codebase's `?? 0` convention, because a
+   fresh goal has no revision and "absent" must not mean "unknown".
+2. **The policy fails closed** when the baseline is absent (`revision-unknown`,
+   `tier-unknown`) instead of skipping the guard. Absence is not permission: a
+   claim that cannot state what it was dispatched against cannot be proven to
+   still match, so it restarts cold.
+
+The tests now drive the **real `complete_goal` tool** and assert the claim it
+leaves behind, instead of hand-building a claim carrying the very fields whose
+absence was the defect. Two new controls (`primary-dispatch-baseline-regression`,
+`fail-open-baseline-regression`) reinstate each defect and exit nonzero.
+
 ## Second disapproval and its three fixes (2026-10-30)
 
 The second claim was disapproved with three specific gaps, all real:
