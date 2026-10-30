@@ -3,3 +3,6 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
+(pass) the default dispatch asks for a durable auditor session, not --no-session [5603.35ms]
+(pass) a failed attempt keeps the session a retry can resume [460.59ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [716.73ms]
