@@ -100,6 +100,20 @@ CASES = {
         '      if (dispatchBaseline) updateGoal({ pendingCompletion: dispatchBaseline }, ctx);',
         '      void dispatchBaseline;',
     ),
+    # v0.39.58 (auditor objection 2026-10-30, HIGH #1): context exhaustion fell
+    # through to the resumable "provider" class, so an already-overflowed
+    # transcript was resumed — the exact retry-budget burn the contract forbids.
+    'context-exhaustion-resumable-regression': (
+        'extensions/goal-loop-auditor-process.ts',
+        '    if (isContextExhaustionError(error)) return "context-exhausted";\n    return "provider";\n  };',
+        '    return "provider";\n  };',
+    ),
+    # v0.39.58 (MED #3): the resume-lineage ledger row had no test at all.
+    'missing-resume-ledger-regression': (
+        'extensions/loops/goal-auditor-hooks.ts',
+        'appendLedger(liveCtx.cwd, "auditor_resume_decision", {',
+        'appendLedger(liveCtx.cwd, "auditor_resume_decision_suppressed", {',
+    ),
     # Direction: the baseline guard becomes permissive again (absent = resume),
     # which is the exact production shape the auditor probed.
     'fail-open-baseline-regression': (
@@ -121,6 +135,8 @@ SUITES = {
     'first-resume-source-model-regression': ['tests/auditor-resume.test.ts'],
     'primary-dispatch-baseline-regression': ['tests/auditor-resume.test.ts'],
     'fail-open-baseline-regression': ['tests/auditor-resume.test.ts'],
+    'context-exhaustion-resumable-regression': ['tests/auditor-resume.test.ts'],
+    'missing-resume-ledger-regression': ['tests/auditor-resume.test.ts'],
 }
 
 results = []
