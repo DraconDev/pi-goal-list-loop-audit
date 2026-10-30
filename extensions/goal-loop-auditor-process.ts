@@ -2428,6 +2428,17 @@ async function runDetachedGoalCompletionAuditorInner(args: {
    * the whole change, and the falsification pass is scoped to those
    * objections too. Part of the request hash (present only when true). */
   reworkRound?: boolean;
+  /** v0.39.55: resume lineage for a CONTINUED audit. Read only by the public
+   * wrapper (stamped onto the result) so the worker request and its hash are
+   * unchanged — the worker does not need to know it was resumed. */
+  resumeProvenance?: {
+    priorAttemptId: string;
+    fromModel?: string;
+    toModel?: string;
+    resumeCount?: number;
+    revision?: number;
+    tier?: AuditTierName;
+  };
   /** v0.36.0: extension specs allow-listed for the detached auditor
    * (settings key auditorAllowedExtensions). Raw specs (npm:/git:/relative)
    * are resolved to concrete install paths HERE, inside the process layer,
