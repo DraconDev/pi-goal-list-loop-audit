@@ -378,10 +378,16 @@ test('a resume whose retained session is only in the nonce-suffixed dir is found
   assert.equal(findAuditJobDirectory(cwd, priorAttemptId), jobDir,
     'the shared finder must match the production `<logical>-<nonce>` shape');
   fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '');
+  // A fully-armed baseline isolates the empty-transcript cause: without it the
+  // fail-closed baseline check would fire first and mask what this proves.
   const empty = resolveAuditorResumeForDispatch({
     inspection: true,
-    claim: { attemptId: 'a2', claimLineageId: 'cl', priorAttemptId, auditorFailureClass: 'provider', at: new Date().toISOString() },
-    currentAttemptId: 'a2', currentTier: 'full', cwd,
+    claim: {
+      attemptId: 'a2', claimLineageId: 'cl', priorAttemptId,
+      auditorFailureClass: 'provider', at: new Date().toISOString(),
+      auditorRevision: 0, auditorTier: 'full',
+    },
+    currentAttemptId: 'a2', currentTier: 'full', currentRevision: 0, cwd,
   });
   assert.equal(empty.resume, false, 'an empty transcript is a cold start');
   assert.equal(empty.reason, 'no-session');
