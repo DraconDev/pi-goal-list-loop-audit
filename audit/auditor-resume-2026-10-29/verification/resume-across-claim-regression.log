@@ -37,3 +37,12 @@ true !== false
 (pass) a vanished transcript still restarts the audit cold
 (pass) durability turned off still restarts the audit cold
 (pass) a resumed dispatch spawns against the prior attempt transcript [133.24ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [129.51ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.13ms]
+
+ 17 pass
+ 1 fail
+Ran 18 tests across 1 file. [1180.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-Au4i7f/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-Au4i7f
+[run-tests] finished in 1s (exit 1)
