@@ -180,3 +180,20 @@ that a harmless rewording still passes. Raw logs are in `verification/`.
 The auditor verdict path was not changed: `tests/auditor-verdict-authentication`,
 `tests/revision-bound-audit`, `tests/auditor-challenge` and the full
 `tests/auditor-*.test.ts` + `tests/audit-*.test.ts` set stay green (522 pass).
+
+Gates at final HEAD `5e576645`: `npm run release:check` exits 0 — 4479 pass,
+1 skip, 0 fail across 476 files, plus pack smoke; `npm run check` and
+`npm run check:inventory` exit 0. Full output retained at
+`verification/release-check.log`.
+
+## Regressions this change surfaced (fixed)
+
+Making durable sessions the default exposed a latent terminal-summary bug that
+had been dormant only because the session hint almost never rendered: the
+"Auditor session kept for review" line was contributed as bare prose AFTER the
+record pointer. It now renders as a bullet and is placed before the record, so
+the summary keeps one change-first voice with the record still last
+(`extensions/completion-summary.ts`, `extensions/loops/goal-auditor-hooks.ts`).
+`tests/approval-notify.test.ts`'s shape assertion was updated to match the new
+bullet prefix while keeping its real requirement — shell-safe quoting of a
+worker-reported path — intact.
