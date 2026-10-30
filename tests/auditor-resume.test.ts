@@ -640,11 +640,15 @@ test('a resumed full-tier dispatch still asks for the falsification round', asyn
   // after the run, so capturing it at spawn time is the honest read.
   const seen: Array<{ challenge?: boolean; challengeSkip?: string }> = [];
   const captureWorker = path.join(cwd, 'capture-request.mjs');
+  // This script IS the child pi that the real worker spawns, so the job dir is
+  // not on its argv — find the active request on disk instead.
   fs.writeFileSync(captureWorker, `#!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-const jobDir = process.argv[process.argv.indexOf('--job-dir') + 1];
-const req = JSON.parse(fs.readFileSync(path.join(jobDir, 'request.json'), 'utf8'));
+const root = path.join(${JSON.stringify(cwd)}, '.pi-glla', 'audit-jobs');
+const dirs = fs.existsSync(root) ? fs.readdirSync(root).sort() : [];
+const reqPath = dirs.map((d) => path.join(root, d, 'request.json')).filter((f) => fs.existsSync(f)).at(-1);
+const req = JSON.parse(fs.readFileSync(reqPath, 'utf8'));
 fs.appendFileSync(${JSON.stringify(path.join(cwd, 'captured.jsonl'))},
   JSON.stringify({ challenge: req.challenge, challengeSkip: req.challengeSkip }) + '\\n');
 process.exit(1);
