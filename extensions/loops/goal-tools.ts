@@ -1222,6 +1222,28 @@ function registerAgentTools(pi: any): void {
         goalId: auditGoalId, attemptId: auditAttemptId, tier: tierDecision.tier,
         reasons: tierDecision.reasons, spotCheck: tierDecision.spotCheck,
       });
+      // v0.39.57 (auditor objection 2026-10-30, HIGH #1): record the retry
+      // BASELINE here — once per claim, not per candidate. Before this only the
+      // hooks retry closure stamped revision/tier/source-model, so the first
+      // retry after a parked provider failure compared against undefined and its
+      // moved-revision and changed-tier guards could not fire. Stamping per
+      // candidate would also misread a candidate fallback as a tier change, so
+      // the tier and revision come from this dispatch-wide decision.
+      const dispatchBaseline = stampAuditorDispatchFacts(
+        state.goal?.pendingCompletion ?? completionClaim,
+        completionClaim.attemptId,
+        {
+          forAttemptId: completionClaim.attemptId!,
+          ...auditorDispatchStampFacts({
+            attemptModel: modelRef(auditorModel),
+            resumed: false,
+            tier: tierDecision.tier,
+            ...(typeof auditGoal.revision === "number" ? { revision: auditGoal.revision } : {}),
+            resumeCount: 0,
+          }),
+        },
+      );
+      if (dispatchBaseline) updateGoal({ pendingCompletion: dispatchBaseline }, ctx);
       // v0.34.90: no redundant chat notify here — pi's own complete_goal
       // response already says the claim persisted and the detached auditor
       // is queued; a second "Auditor queued" message is chat spam (never
@@ -1269,28 +1291,6 @@ function registerAgentTools(pi: any): void {
           state.goal?.pendingCompletion ?? completionClaim, completionClaim.attemptId, effectiveThinking,
         );
         if (stampedThinking) updateGoal({ pendingCompletion: stampedThinking }, ctx);
-        // v0.39.57 (auditor objection 2026-10-30, HIGH #1): the PRIMARY dispatch
-        // must record the same baseline the retry closure does. Before this only
-        // the retry path stamped revision/tier/source-model, so the first retry
-        // after a parked provider failure compared against undefined and its
-        // moved-revision and changed-tier guards could not fire. `tierDecision`
-        // is resolved once per CLAIM, so a candidate fallback inside one
-        // dispatch cannot look like a tier change.
-        const stampedDispatch = stampAuditorDispatchFacts(
-          state.goal?.pendingCompletion ?? completionClaim,
-          completionClaim.attemptId,
-          {
-            forAttemptId: completionClaim.attemptId!,
-            ...auditorDispatchStampFacts({
-              attemptModel: modelRef(candidate.model),
-              resumed: false,
-              tier: tierDecision.tier,
-              ...(typeof state.goal?.revision === "number" ? { revision: state.goal.revision } : {}),
-              resumeCount: 0,
-            }),
-          },
-        );
-        if (stampedDispatch) updateGoal({ pendingCompletion: stampedDispatch }, ctx);
         refreshUI(ctx);
         // v0.37.0: the worker gets the SAME budgets via env so its own
         // per-tool timer and inactivity brake agree with the parent
