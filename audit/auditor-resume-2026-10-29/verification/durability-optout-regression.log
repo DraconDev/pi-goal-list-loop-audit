@@ -47,3 +47,16 @@ true !== false
 (pass) the resume and dispatch facts survive a durable round-trip [21.82ms]
 (pass) context-exhaustion and compaction failures restart cold through the real resolver [36.99ms]
 (pass) an explicit user cancel and a moved revision both restart cold through the resolver [7.12ms]
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [4329.35ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [1.82ms]
+(pass) a first-pass verdict carries NO resume lineage [0.11ms]
+
+1 tests failed:
+(fail) durability turned off still restarts the audit cold [11.52ms]
+
+ 26 pass
+ 1 fail
+Ran 27 tests across 1 file. [40.62s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-JoojEO/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-JoojEO
+[run-tests] finished in 41s (exit 1)

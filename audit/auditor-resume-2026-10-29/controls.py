@@ -57,6 +57,24 @@ CASES = {
         'if (!input.inspection) return { resume: false, reason: "inspection-off" };',
         'if (false) return { resume: false, reason: "inspection-off" };',
     ),
+    # v0.39.55 (auditor objection 2026-10-30): the ORIGINAL suite passed while
+    # production still refused every retry, because it called the pure policy
+    # with fabricated matching ids. These two mutations restore exactly that
+    # production bug and must fail the end-to-end wiring tests.
+    #   Direction: claim identity goes back to the ROTATED attempt id, so every
+    #   ordinary retry is refused as claim-replaced.
+    'rotated-claim-identity-regression': (
+        'extensions/loops/goal-auditor-hooks.ts',
+        'priorClaimAttemptId: input.claim.priorClaimLineageId ?? input.claim.claimLineageId,',
+        'priorClaimAttemptId: input.claim.priorAttemptId,',
+    ),
+    #   Direction: the resolver goes back to guessing the bare attempt-id path,
+    #   so the retained nonce-suffixed session is never found.
+    'bare-session-path-regression': (
+        'extensions/loops/goal-auditor-hooks.ts',
+        'const priorJobDir = findAuditJobDirectory(input.cwd, priorAttempt);',
+        'const priorJobDir = path.join(input.cwd, ".pi-glla", "audit-jobs", priorAttempt);',
+    ),
 }
 SUITES = {
     'baseline': ['tests/auditor-resume.test.ts'],
@@ -65,6 +83,8 @@ SUITES = {
     'resume-across-revision-regression': ['tests/auditor-resume.test.ts'],
     'resume-across-claim-regression': ['tests/auditor-resume.test.ts'],
     'durability-optout-regression': ['tests/auditor-resume.test.ts'],
+    'rotated-claim-identity-regression': ['tests/auditor-resume.test.ts'],
+    'bare-session-path-regression': ['tests/auditor-resume.test.ts'],
 }
 
 results = []
