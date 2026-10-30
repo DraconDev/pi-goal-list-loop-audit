@@ -105,8 +105,8 @@ CASES = {
     # transcript was resumed — the exact retry-budget burn the contract forbids.
     'context-exhaustion-resumable-regression': (
         'extensions/goal-loop-auditor-process.ts',
-        '    if (isContextExhaustionError(error)) return "context-exhausted";\n    return "provider";\n  };',
-        '    return "provider";\n  };',
+        '  if (isContextExhaustionError(error)) return "context-exhausted";\n  return "provider";\n}',
+        '  return "provider";\n}',
     ),
     # v0.39.58 (MED #3): the resume-lineage ledger row had no test at all.
     'missing-resume-ledger-regression': (

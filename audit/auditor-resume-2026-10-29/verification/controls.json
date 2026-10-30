@@ -121,6 +121,28 @@
     "expectedResultObserved": true
   },
   {
+    "case": "context-exhaustion-resumable-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": true,
+    "expectedResultObserved": false
+  },
+  {
+    "case": "missing-resume-ledger-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "fail-open-baseline-regression",
     "command": [
       "node",
