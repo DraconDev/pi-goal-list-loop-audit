@@ -193,9 +193,12 @@ export interface Settings {
   /** v0.38.3: on → the detached auditor's pi runs as a normal persistent
    * session (--session <jobDir>/session.jsonl) instead of --no-session, so
    * you can `tail -f` it live or resume it interactively after the audit.
-   * Default OFF: the original --no-session spawn is unchanged. The session
-   * file lives inside the job dir, so its lifetime = the job-dir retention
-   * window (auditJobRetentionMs). */
+   * Default ON (v0.39.55): a provider failure resumes the same transcript
+   * instead of restarting the whole audit, and this setting is what makes
+   * that possible — with it off, every retry restarts cold. Set false to
+   * restore the original --no-session spawn. The session file lives inside
+   * the job dir, so its lifetime = the job-dir retention window
+   * (auditJobRetentionMs). */
   auditorInspection?: boolean;
   /** Global-only: when main-model recovery is parked, fire an extra retry at
    * the next :00:30 every hour. This is a blind retry slot; the plugin does

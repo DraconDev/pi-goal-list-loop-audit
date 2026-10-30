@@ -648,10 +648,10 @@ export function buildSettingsRows(
       id: "auditorInspection",
       section: "auditor",
       label: "Auditor inspection session",
-      valueText: show("auditorInspection", "off"),
+      valueText: show("auditorInspection", "on"),
       sourceText: src("auditorInspection"),
       description:
-        "on: the auditor's pi runs as a normal persistent session (--session <jobDir>/session.jsonl) you can tail -f live or resume after the audit · off: the original --no-session spawn (default)",
+        "on (default): the auditor's pi runs as a normal persistent session (--session <jobDir>/session.jsonl) you can tail -f live, and a provider failure resumes it instead of restarting the whole audit · off: the original --no-session spawn",
     },
     {
       id: "auditorStrictChallenge",

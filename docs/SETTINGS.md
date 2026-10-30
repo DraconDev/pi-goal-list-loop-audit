@@ -140,7 +140,7 @@ This authority boundary applies before settings-value normalization.
 | `auditJobRetentionMs` | `900000` | How long proven-dead audit job dirs are kept (0–7d, 0 = reap now). Global-only. |
 | `auditSpotCheckRate` | `0.1` | Fraction of light-tier audits silently escalated to full (0 = off, 1 = calibrate). Global-only. |
 | `auditorStrictChallenge` | `false` | Require successful falsification on full-tier approvals, including rework rounds. Challenge failure leaves infrastructure/no-verdict rather than accepting round one. Opt-in for high-risk work; light-tier policy is unchanged. Global-only. |
-| `auditorInspection` | `false` | Auditor runs as a persistent session you can tail/resume. Global-only. |
+| `auditorInspection` | `true` | Auditor runs as a persistent session you can tail/resume, and a provider failure resumes that transcript instead of restarting the audit. Set `false` for the original `--no-session` spawn. Global-only. |
 | `notifyCmd` | unset | Shell command on goal complete / pause / loop stop; message is `$1`. |
 | `tokenLimit` | unset (off) | Per-goal token budget; crossing it pauses. `0` = off. |
 | `wedgeAlertMinutes` | unset (30, or off while aggressive mode is on — the default) | Busy-but-silent minutes before the wedge alert; `0` = off. The menu shows the effective value. |
