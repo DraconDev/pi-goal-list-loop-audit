@@ -7,7 +7,8 @@ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from 
 import { readState } from '../extensions/goal-loop-core.js';
 import { loadGlobalSettings, DEFAULT_SETTINGS } from '../extensions/goal-settings.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
-import { decideAuditorResume, inspectAuditJobHealth, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
+import { resolveAuditorResumeForDispatch } from '../extensions/loops/goal-auditor-hooks.js';
+import { decideAuditorResume, findAuditJobDirectory, inspectAuditJobHealth, newDetachedAuditJobAttemptId, runDetachedGoalCompletionAuditor } from '../extensions/goal-loop-auditor-process.js';
 
 const sessions: Array<{ pi: MockPi }> = [];
 const binaries: Array<string | undefined> = [];
@@ -306,4 +307,67 @@ test('a resumed attempt is still one attempt: identity, tier and challenge are u
   });
   assert.equal(tierMoved.resume, false, 'a tier change restarts so the challenge round matches the tier');
   assert.equal(tierMoved.reason, 'tier-changed');
+});
+
+/**
+ * v0.39.55 (auditor objection 2026-10-30, HIGH #1): the resume decision must be
+ * driven by the REAL dispatch resolver with PRODUCTION attempt-ID naming, not
+ * by calling the pure policy with fabricated matching ids. The policy tests
+ * above passed while production still refused every retry as `claim-replaced`,
+ * because `priorAttemptId` is the rotated job-dir key being compared against
+ * the new attempt id. These tests pin the wiring.
+ */
+test('production retry wiring: a real rotation resumes instead of reporting claim-replaced', async () => {
+  const cwd = tmpCwd();
+  // Production naming: dirs are `<logicalAttemptId>-<nonce>`, and the claim
+  // records the ROTATED id, never the current attempt id.
+  const priorAttemptId = 'audit-mvprior-aaaaaa';
+  const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', newDetachedAuditJobAttemptId(priorAttemptId));
+  fs.mkdirSync(jobDir, { recursive: true });
+  fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '{"type":"session"}\n');
+
+  const claim = {
+    attemptId: 'audit-mvcurrent-bbbbbb',
+    claimLineageId: 'claim-mvlineage-cccccc',
+    priorAttemptId,
+    auditorFailureClass: 'provider' as const,
+    auditorTier: 'full' as const,
+    auditorRevision: 3,
+  };
+  const resumed = resolveAuditorResumeForDispatch({
+    inspection: true, claim, currentAttemptId: claim.attemptId,
+    currentTier: 'full', currentRevision: 3, cwd,
+  });
+  assert.equal(resumed.resume, true,
+    'a normal retry must resume: priorAttemptId is the rotated job-dir key, not claim identity');
+  assert.equal(resumed.sessionPath, path.join(jobDir, 'session.jsonl'),
+    'the resolver must find the nonce-suffixed job dir the worker actually wrote');
+
+  // A genuinely NEW claim mints a new lineage id and must restart cold.
+  const replaced = resolveAuditorResumeForDispatch({
+    inspection: true,
+    claim: { ...claim, claimLineageId: 'claim-other-dddddd' },
+    currentAttemptId: claim.attemptId,
+    currentTier: 'full', currentRevision: 3, cwd,
+  });
+  assert.equal(replaced.resume, false, 'a replaced claim must not inherit the transcript');
+  assert.equal(replaced.reason, 'claim-replaced');
+});
+
+test('a resume whose retained session is only in the nonce-suffixed dir is found, not missed', async () => {
+  const cwd = tmpCwd();
+  const priorAttemptId = 'audit-mvfind-eeeeee';
+  // The bare logical id does NOT exist; only the production-named sibling does.
+  const jobDir = path.join(cwd, '.pi-glla', 'audit-jobs', `${priorAttemptId}-mvfind2-ffffff`);
+  fs.mkdirSync(jobDir, { recursive: true });
+  assert.equal(findAuditJobDirectory(cwd, priorAttemptId), jobDir,
+    'the shared finder must match the production `<logical>-<nonce>` shape');
+  fs.writeFileSync(path.join(jobDir, 'session.jsonl'), '');
+  const empty = resolveAuditorResumeForDispatch({
+    inspection: true,
+    claim: { attemptId: 'a2', claimLineageId: 'cl', priorAttemptId, auditorFailureClass: 'provider' },
+    currentAttemptId: 'a2', currentTier: 'full', cwd,
+  });
+  assert.equal(empty.resume, false, 'an empty transcript is a cold start');
+  assert.equal(empty.reason, 'no-session');
 });
