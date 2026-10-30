@@ -186,6 +186,41 @@ Gates at final HEAD `5e576645`: `npm run release:check` exits 0 — 4479 pass,
 `npm run check:inventory` exit 0. Full output retained at
 `verification/release-check.log`.
 
+## Follow-up: the first claim was disapproved and why (2026-10-30)
+
+The first completion claim was disapproved, correctly. The durable default, the
+retention rule and the report were fine, but the **production retry path never
+resumed** — the tests passed because they called the pure policy helper with
+fabricated matching ids instead of driving the real dispatch resolver. Three
+defects, all now fixed and covered:
+
+1. **Claim identity conflated with the rotated job-dir key.** `beginCompletionAudit`
+   saved the old `attemptId` as `priorAttemptId` and minted a new `attemptId` for
+   the retry, then the resolver compared the two as claim identity — so an
+   ordinary retry was refused as `claim-replaced` every time. Claim identity is
+   now a stable `claimLineageId` minted once per `complete_goal` submission; a
+   genuinely replaced claim carries the prior lineage in `priorClaimLineageId`,
+   so the mismatch is still detectable.
+2. **The session was looked for at a path the worker never writes.** Production
+   job dirs are `audit-jobs/<logicalAttemptId>-<nonce>`; the resolver checked
+   `audit-jobs/<priorAttemptId>/session.jsonl`, which almost never exists, and
+   reported `no-session`. It now resolves through `findAuditJobDirectory`
+   (newest-first by mtime).
+3. **Revision, tier and cancel state were never supplied.** The guards existed
+   but could not fire, so "a moved revision restarts cold" was untestable in
+   production. All three are now persisted on the claim at dispatch
+   (`auditorRevision`, `auditorTier`, `auditorAbortCause`).
+
+Resume lineage now reaches **both** surfaces the contract names: the
+`auditor_resume_decision` ledger entry (source model, target model, resume
+count, revision, tier, prior attempt) and the verdict itself, via
+`resumeProvenance` on the audit-history entry.
+
+Two new isolated controls pin the wiring, because the previous control set was
+satisfied by a broken production path: `rotated-claim-identity-regression`
+restores the old claim comparison and `bare-session-path-regression` restores
+the bare-path lookup. Both now exit nonzero.
+
 ## Regressions this change surfaced (fixed)
 
 Making durable sessions the default exposed a latent terminal-summary bug that
