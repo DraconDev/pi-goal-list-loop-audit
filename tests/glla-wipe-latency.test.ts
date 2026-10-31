@@ -66,20 +66,25 @@ test('the work a wipe performs stays well under a perceptible freeze', () => {
   }
 });
 
-test('wipe cost does not scale with journal size the way a full scan would', () => {
-  // The original suspicious hypothesis was "the journal grew large". Pin the
-  // ACTUAL relationship: reading a 10x larger journal must not cost 10x the
-  // time, because the reader takes the last state row, not the whole history.
-  const small = tmpCwd();
-  const big = tmpCwd();
-  seedLargeJournal(small, 50);
-  seedLargeJournal(big, 500);
+test('a pathologically expensive reader is caught, not just a slow one', () => {
+  // v0.39.61: an earlier version of this test asserted "10x the journal must not
+  // cost 10x the time". That premise was WRONG and the assertion was vacuous:
+  // readState is I/O-bound, so it already scales roughly linearly with file size
+  // (measured 2.3ms at 50 rows -> 21ms at 2000). A control proved it caught
+  // nothing. What matters for a user-visible freeze is an absolute ceiling on
+  // realistic and oversized journals, so the cost of any accidental per-record
+  // work shows up as a number rather than hiding inside a generous ratio.
+  const realistic = tmpCwd();
+  seedLargeJournal(realistic, 200);   // well beyond the live 109-row profile
+  const oversized = tmpCwd();
+  seedLargeJournal(oversized, 2000);  // ~10x beyond anything observed
 
-  const smallMs = medianMs(9, () => readState(small));
-  const bigMs = medianMs(9, () => readState(big));
+  const realisticMs = medianMs(5, () => readState(realistic));
+  const oversizedMs = medianMs(5, () => readState(oversized));
 
-  // Generous factor: this is a scaling sanity check, not a perf benchmark, so a
-  // loaded host cannot flake it. A true full-scan regression would be ~10x.
-  assert.ok(bigMs < Math.max(smallMs * 4, smallMs + 120),
-    `10x the journal grew readState from ${smallMs.toFixed(1)}ms to ${bigMs.toFixed(1)}ms — that is full-scan behaviour`);
+  // Ceilings are far below a perceptible freeze (< 250ms) yet comfortably above
+  // the measured baseline (a few ms), so a loaded host cannot flake them while
+  // per-record work added in the wipe path fails loudly.
+  assert.ok(realisticMs < 120, `readState took ${realisticMs.toFixed(1)}ms at 200 rows — wipe would feel slow`);
+  assert.ok(oversizedMs < 200, `readState took ${oversizedMs.toFixed(1)}ms at 2000 rows — cost grew beyond I/O`);
 });
