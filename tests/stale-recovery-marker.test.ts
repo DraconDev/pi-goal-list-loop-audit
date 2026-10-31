@@ -38,16 +38,21 @@ function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal'): unknown {
   };
 }
 
-/** The banner that made the complaint concrete. */
-function standaloneCardShown(state: State): boolean {
-  const lines = buildWidgetLines(state, null, NOW, undefined, undefined);
+/** The banner that made the complaint concrete.
+ *
+ * The renderer takes the ownership verdict as ephemeral extras (it must not
+ * import state machinery), so a real caller supplies it. `liveOwner` is what
+ * `mainModelRecoveryHasLiveOwner()` computes in goal-ui.ts. */
+function standaloneCardShown(state: State, liveOwner?: boolean): boolean {
+  const extras = liveOwner === undefined ? undefined : { recoveryHasLiveOwner: liveOwner };
+  const lines = buildWidgetLines(state, null, NOW, undefined, undefined, extras);
   return (lines ?? []).some((line) => /no GLLA objective/i.test(line));
 }
 
 test('a completed goal with a leftover recovery marker does NOT render the recovery card', () => {
   // The exact screenshot state: no goal at all, only a stale marker.
   const shipped = { goal: null, list: [], mainModelRecovery: recovery() } as unknown as State;
-  assert.equal(standaloneCardShown(shipped), false,
+  assert.equal(standaloneCardShown(shipped, false), false,
     "the recovery card must not ask the user to retry a chat with nothing wrong; the banner is the note.md complaint");
 
   // And a goal that is present but terminal cannot own a marker either.
@@ -56,21 +61,19 @@ test('a completed goal with a leftover recovery marker does NOT render the recov
     list: [],
     mainModelRecovery: recovery(),
   } as unknown as State;
-  assert.equal(standaloneCardShown(terminal), false,
+  assert.equal(standaloneCardShown(terminal, false), false,
     'a terminal goal must not keep the recovery card alive');
 });
 
 test('a live recovery marker still renders its card — the guard is not blanket-hiding', () => {
-  // A non-terminal goal that hit the main-model wall is a REAL recovery.
-  const live = {
-    goal: seedGoal({ status: 'paused', pauseKind: 'wait' }),
-    list: [],
-    mainModelRecovery: recovery(),
-  } as unknown as State;
-  const lines = buildWidgetLines(live, null, NOW, undefined, undefined);
-  assert.ok(lines && lines.length > 0, 'a genuine recovery still paints a card');
+  // The panel that produced the complaint, with a marker that DOES have work
+  // waiting on it: the card must come back, otherwise this fix would hide real
+  // recoveries instead of stale ones.
+  const ownerless = { goal: null, list: [], mainModelRecovery: recovery() } as unknown as State;
+  assert.equal(standaloneCardShown(ownerless, true), true,
+    'a marker with a live owner still renders its recovery card');
 
-  // A loop parked by the wall keeps its dedicated card.
+  // A loop parked by the wall keeps its dedicated card regardless.
   const loopOwned = {
     goal: null,
     list: [],
