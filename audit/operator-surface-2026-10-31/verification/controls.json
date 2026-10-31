@@ -1,0 +1,94 @@
+[
+  {
+    "case": "baseline",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-recovery-marker.test.ts",
+      "tests/amendment-confirm-compact.test.ts",
+      "tests/list-auto-advance.test.ts",
+      "tests/auditor-model-display.test.ts",
+      "tests/stale-build-warning.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": false,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "harmless-rewording",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-recovery-marker.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": false,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "stale-recovery-card-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-recovery-marker.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "chat-recovery-hidden-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-recovery-marker.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": true,
+    "expectedResultObserved": false
+  },
+  {
+    "case": "amendment-wall-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "no-auto-advance-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/list-auto-advance.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "configured-model-wins-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-model-display.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "stale-build-silent-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-build-warning.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  }
+]
