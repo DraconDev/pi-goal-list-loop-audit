@@ -13,3 +13,18 @@ tests/list-auto-advance.test.ts:
 (pass) queue items wait while an item is still in flight [15382.34ms]
 (pass) a completed item leaves the queue readable for the completion path to advance [13.62ms]
 (pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [32.73ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [391.48ms]
+
+tests/stale-build-warning.test.ts:
+(pass) an older loaded build warns and names the reconcile action [13929.63ms]
+(pass) a matching version stays silent — the normal case must not nag [10.52ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [12.67ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [17.28ms]
+(pass) version comparison is numeric, not lexical [1.37ms]
+(pass) session start surfaces the stale-build warning and still runs [408.14ms]
+
+tests/stale-recovery-marker.test.ts:
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.85ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.62ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.05ms]
+[run-tests] progress: 65s elapsed · 14s since last output · 2 KiB of suite output
