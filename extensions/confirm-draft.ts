@@ -174,27 +174,33 @@ export function buildAmendmentConfirmBody(input: {
   newObjective: string;
   oldContract?: string;
   newContract?: string;
-  maxChars?: number;
+  maxContractChars?: number;
 }): string {
-  const max = input.maxChars ?? 280;
-  const clip = (text: string): string => {
+  // Consent EXACTNESS beats brevity for the objective: the user approves a
+  // specific old→new pair, so neither side is ever clipped. The wall was
+  // dominated by the two reprinted contracts and five labelled sections, which
+  // is what this removes. A contract is secondary detail and may be shortened
+  // with an explicit marker.
+  const contractMax = input.maxContractChars ?? 280;
+  const clipContract = (text: string): string => {
     const clean = text.trim();
     if (!clean) return "(none)";
-    if (clean.length <= max) return clean;
-    // Keep the head and the tail: the tail usually carries the acceptance clause.
-    const head = clean.slice(0, Math.max(40, max - 80)).trimEnd();
+    if (clean.length <= contractMax) return clean;
+    const head = clean.slice(0, Math.max(40, contractMax - 80)).trimEnd();
     const tail = clean.slice(-60).trimStart();
     return `${head} … ${tail}`;
   };
   const lines: string[] = [
-    `From: ${clip(input.oldObjective)}`,
-    `To:   ${clip(input.newObjective)}`,
+    `From: ${input.oldObjective.trim() || "(none)"}`,
+    `To:   ${input.newObjective.trim() || "(none)"}`,
   ];
   const oldContract = (input.oldContract ?? "").trim();
   const newContract = (input.newContract ?? "").trim();
   if (newContract !== oldContract) {
-    lines.push("", `Contract: ${clip(oldContract)} → ${clip(newContract)}`);
+    lines.push("", `Contract: ${clipContract(oldContract)} → ${clipContract(newContract)}`);
   } else if (newContract) {
+    // An UNCHANGED contract is not part of the decision — printing it twice was
+    // most of the wall. Say it is untouched instead of echoing it.
     lines.push("", "Contract: unchanged");
   }
   lines.push("", "This changes what the independent auditor will judge.");
