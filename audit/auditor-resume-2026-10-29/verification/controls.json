@@ -165,6 +165,28 @@
     "expectedResultObserved": true
   },
   {
+    "case": "hand-copied-process-set-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-resume.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "schema-enum-drops-context-class-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/goal-schema-parity.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "fail-open-baseline-regression",
     "command": [
       "node",
