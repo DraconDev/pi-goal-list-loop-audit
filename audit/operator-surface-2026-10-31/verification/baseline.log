@@ -40,3 +40,4 @@ tests/amendment-confirm-compact.test.ts:
  25 pass
  0 fail
 Ran 25 tests across 5 files. [27.96s]
+[run-tests] finished in 31s (exit 0)
