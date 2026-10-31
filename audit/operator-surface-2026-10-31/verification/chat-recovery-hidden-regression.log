@@ -3,3 +3,14 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [3.05ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [2.68ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.12ms]
+(pass) a terminal goal retires the main-model recovery marker durably [427.75ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [180.97ms]
+(pass) the real settlement path retires the recovery marker when it archives [389.19ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 1 file. [9.21s]
+[run-tests] finished in 13s (exit 0)
