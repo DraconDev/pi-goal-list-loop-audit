@@ -189,3 +189,36 @@ test("every schema definition the runtime backs is reachable, and its types agre
   assert.ok(checked >= 140, `the sweep must keep its coverage (checked ${checked} property pairs)`);
   assert.deepEqual(mismatches, [], `schema/runtime type mismatches:\n${mismatches.join("\n")}`);
 });
+
+/**
+ * v0.39.60 (auditor objection 2026-10-31, MED #2): the schema's
+ * `auditorFailureClass` enum is a THIRD copy of the failure-class list. A class
+ * added to the union and the shared array but not to the shipped schema would be
+ * written by the runtime and then REJECTED by schema validation of a persisted
+ * goal — an accepted state the published contract forbids.
+ *
+ * The array and the enum are now asserted equal in both directions, so neither
+ * can drift without failing here.
+ */
+test('the schema failure-class enum matches the shared runtime list exactly', async () => {
+  const { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } = await import('../extensions/goal-loop-core.js');
+  const schema = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schemas', 'goal.schema.json'), 'utf8'));
+  // Locate the enum wherever the claim definition lives, so a schema reshuffle
+  // does not silently turn this assertion into a no-op.
+  const found: string[][] = [];
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    for (const [key, value] of Object.entries(record)) {
+      if (key === 'auditorFailureClass' && value && typeof value === 'object') {
+        const spec = value as { type?: unknown; enum?: unknown };
+        if (Array.isArray(spec.enum)) found.push(spec.enum.filter((v): v is string => typeof v === 'string'));
+      }
+      walk(value);
+    }
+  };
+  walk(schema);
+  assert.equal(found.length, 1, 'expected exactly one auditorFailureClass enum in the shipped schema');
+  assert.deepEqual([...found[0]!].sort(), [...AUDITOR_INFRASTRUCTURE_CLASS_VALUES].sort(),
+    'the schema enum must list exactly the runtime failure classes; a class accepted by code but rejected by the schema is an unpublishable state');
+});
