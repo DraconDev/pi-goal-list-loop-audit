@@ -3,11 +3,11 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [3474.75ms]
-(pass) a matching version stays silent — the normal case must not nag [0.73ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.17ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [9.71ms]
-(pass) version comparison is numeric, not lexical [1.83ms]
+(pass) an older loaded build warns and names the reconcile action [109.77ms]
+(pass) a matching version stays silent — the normal case must not nag [0.25ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.18ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [2.25ms]
+(pass) version comparison is numeric, not lexical [0.40ms]
 101 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
 102 |   await new Promise((resolve) => setTimeout(resolve, 250));
 103 | 
@@ -25,13 +25,13 @@ AssertionError: session start warns exactly once about the stale build
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-zexm440y/tests/stale-build-warning.test.ts:106:10
+      at /tmp/glla-ops-control-pgp2dnoz/tests/stale-build-warning.test.ts:106:10
       at processTicksAndRejections (native:7:39)
-(fail) session start surfaces the stale-build warning and still runs [991.17ms]
+(fail) session start surfaces the stale-build warning and still runs [282.69ms]
 
  5 pass
  1 fail
-Ran 6 tests across 1 file. [8.18s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-fHpCVp/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-fHpCVp
-[run-tests] finished in 8s (exit 1)
+Ran 6 tests across 1 file. [2.14s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QNugW0/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QNugW0
+[run-tests] finished in 2s (exit 1)
