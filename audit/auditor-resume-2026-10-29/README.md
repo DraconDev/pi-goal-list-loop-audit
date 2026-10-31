@@ -221,6 +221,46 @@ satisfied by a broken production path: `rotated-claim-identity-regression`
 restores the old claim comparison and `bare-session-path-regression` restores
 the bare-path lookup. Both now exit nonzero.
 
+## Sixth disapproval: "one declaration" was still three (2026-10-31)
+
+I claimed the previous fix derived *every* runtime whitelist from one
+declaration. It did not, and the auditor proved it with a mutation my own
+guard could not see.
+
+`extensions/goal-loop-auditor-process.ts` kept a hand-copied
+`new Set<AuditorInfrastructureClass>([...five literals...])`. An array literal
+is validated **element-wise**, so omitting a member is legal TypeScript: adding
+a sixth class to the union and to the shared array compiled cleanly while that
+Set stayed stale, and the exhaustiveness assertion in the core could not observe
+it. That Set gates `normalizeAuditorInfrastructureResult`, the ladder's
+`failureClass` and `auditorResultFailureClass` — so a stale copy rewrote the
+persisted class and the resolver resumed what should have restarted cold. The
+suite stayed 37/37 green in that state.
+
+I reproduced the compile-clean hole before fixing it: with a sixth class added
+everywhere the guard could see and `process.ts` left stale, `tsc` exited 0.
+
+Fixes, all structural:
+
+1. **The process Set is derived** from `AUDITOR_INFRASTRUCTURE_CLASS_VALUES`, so
+   a stale copy is not expressible.
+2. **`infrastructure-retry.ts`'s fourth copy is derived too**, adding only its
+   two retry-specific classes (`auth`, `config`).
+3. **The schema enum is asserted equal** to the shared list in both directions
+   (`tests/goal-schema-parity.test.ts`), so a class the code accepts but the
+   published schema rejects fails a test. The test locates the enum by walking
+   the schema and requires exactly one match, so a schema reshuffle cannot turn
+   it into a silent no-op.
+4. **A runtime gate test** asserts every shared class survives
+   `auditorResultFailureClass` unrewritten — the consequence a typecheck cannot
+   check, which fails the moment the derivation is undone.
+
+Verified biting: reinstating the stale four-member Set fails
+`the auditor infrastructure gate accepts every shared failure class unrewritten`
+(37 pass / 1 fail). Controls `hand-copied-process-set-regression` (exit 1) and
+`schema-enum-drops-context-class-regression` (exit 1) cover both, alongside the
+existing `shared-class-list-incomplete-regression` (exit 2 at typecheck).
+
 ## Fifth disapproval: the new class was dropped on reload (2026-10-30)
 
 The auditor caught a defect in my own change, and it falsified the structural
