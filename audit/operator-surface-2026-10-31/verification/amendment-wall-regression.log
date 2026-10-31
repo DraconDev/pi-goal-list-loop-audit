@@ -1,9 +1,9 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=413s heartbeat=30s
-[run-tests] host is 2.3x slower than an idle host — per-test budget raised to 275s
+[run-tests] mode=explicit slow_files=13 stall_timeout=394s heartbeat=30s
+[run-tests] host is 2.2x slower than an idle host — per-test budget raised to 262s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [1.62ms]
+(pass) the amendment confirm keeps the exact old and new objective text [4.14ms]
 34 |     oldObjective: 'Ship the feature',
 35 |     newObjective: 'Ship the feature and its tests',
 36 |     oldContract: contract,
@@ -21,11 +21,11 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-xfmtbf4o/tests/amendment-confirm-compact.test.ts:39:10
+      at /tmp/glla-ops-control-5bpkdb0c/tests/amendment-confirm-compact.test.ts:39:10
       at fn (node:test:215:18)
-(fail) an unchanged contract is NOT reprinted — that was most of the wall [9.73ms]
-(pass) a changed contract IS shown, both sides [7.86ms]
-(pass) a long objective is clipped with a visible marker, never silently cut [0.29ms]
+(fail) an unchanged contract is NOT reprinted — that was most of the wall [15.22ms]
+(pass) a changed contract IS shown, both sides [6.35ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.25ms]
 76 |     oldObjective: LONG_OBJECTIVE,
 77 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
 78 |     oldContract: 'x'.repeat(300),
@@ -40,13 +40,13 @@ AssertionError: the default body must be materially shorter (1125 vs 1331)
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-xfmtbf4o/tests/amendment-confirm-compact.test.ts:81:10
+      at /tmp/glla-ops-control-5bpkdb0c/tests/amendment-confirm-compact.test.ts:81:10
       at fn (node:test:215:18)
-(fail) the compact body is measurably smaller than the old five-section form [0.45ms]
+(fail) the compact body is measurably smaller than the old five-section form [0.23ms]
 
  3 pass
  2 fail
-Ran 5 tests across 1 file. [3.31s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-lLWag1/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-lLWag1
-[run-tests] finished in 4s (exit 1)
+Ran 5 tests across 1 file. [2.40s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-oUHEZa/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-oUHEZa
+[run-tests] finished in 3s (exit 1)
