@@ -2648,7 +2648,7 @@ function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null
   if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, now, theme, width, extras?.respecAuditLiveScope);
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
-  if (!state.goal && state.mainModelRecovery) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
+  if (!state.goal && state.mainModelRecovery && recoveryHasLiveOwner(state)) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
   const g = state.goal;
   const held = heldLoop(state);
   if (!g) {
@@ -2691,6 +2691,35 @@ function parkedLoopRecoveryLines(loop: LoopState, recovery: MainModelRecovery, n
 }
 
 /** v0.28.17: standalone card for a restore-held loop (no goal visible). */
+/**
+ * v0.39.61 (note.md 2026-10-31): a recovery marker is only meaningful while
+ * something is still waiting on it. Two live owners exist:
+ *
+ *   - a goal that is not terminal (the wall parked its work), or
+ *   - a loop parked by the wall (handled by the dedicated loop card).
+ *
+ * With NO goal and NO loop, a marker can only be a leftover from a goal that has
+ * since completed and been archived. Rendering the recovery card then tells the
+ * user to act on nothing — the exact complaint recorded in note.md, six hours
+ * after the archive.
+ *
+ * This is a display-side backstop: settlement now clears the marker, but a state
+ * file written by an older build can still hold one, and a stale marker must not
+ * revive a card for work that is gone.
+ */
+function recoveryHasLiveOwner(state: State): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery) return false;
+  // A parked loop owns its own card; keep it.
+  if (recovery.kind === "loop") return true;
+  const goal = state.goal;
+  if (!goal) return false;
+  // A terminal goal cannot own a recovery marker: it finished or was abandoned.
+  const status = (goal as { status?: string }).status;
+  if (status === "complete" || status === "closed" || status === "archived") return false;
+  return true;
+}
+
 function standaloneRecoveryLines(recovery: MainModelRecovery, now: number, theme?: DisplayTheme, width?: number, configuredBackups: string[] = [], runtime?: WidgetExtras['mainModelRecoveryRuntime']): string[] {
   const current = recovery.active ?? recovery.primary;
   const wall = "main-model recovery";
