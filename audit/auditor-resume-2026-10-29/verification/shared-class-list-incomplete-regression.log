@@ -1,0 +1,1 @@
+extensions/auditor-failure-classes.ts(24,7): error TS2322: Type 'true' is not assignable to type 'never'.

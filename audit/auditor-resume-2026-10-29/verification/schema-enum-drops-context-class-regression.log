@@ -3,7 +3,7 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/goal-schema-parity.test.ts:
-(pass) every schema definition the runtime backs is reachable, and its types agree [17.97ms]
+(pass) every schema definition the runtime backs is reachable, and its types agree [25.65ms]
 217 |       walk(value);
 218 |     }
 219 |   };
@@ -30,13 +30,13 @@ AssertionError: the schema enum must list exactly the runtime failure classes; a
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-64djpl8g/tests/goal-schema-parity.test.ts:222:10
-      at processTicksAndRejections (native:7:39)
-(fail) the schema failure-class enum matches the shared runtime list exactly [207.17ms]
+      at /tmp/glla-auditor-resume-control-17oljnf6/tests/goal-schema-parity.test.ts:222:10
+      at fn (node:test:215:18)
+(fail) the schema failure-class enum matches the shared runtime list exactly [18.01ms]
 
  1 pass
  1 fail
-Ran 2 tests across 1 file. [2.97s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-aCf3PT/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-aCf3PT
-[run-tests] finished in 3s (exit 1)
+Ran 2 tests across 1 file. [7.64s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-VlMqc6/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-VlMqc6
+[run-tests] finished in 8s (exit 1)
