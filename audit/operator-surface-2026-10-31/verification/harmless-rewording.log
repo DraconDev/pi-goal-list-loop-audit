@@ -1,17 +1,17 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=332s heartbeat=30s
+[run-tests] host is 1.8x slower than an idle host — per-test budget raised to 221s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [3.13ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [4.65ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.11ms]
-(pass) a terminal goal retires the main-model recovery marker durably [177.90ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [109.94ms]
-(pass) the real settlement path retires the recovery marker when it archives [244.06ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [137.16ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [12.15ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [2.32ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.10ms]
+(pass) a terminal goal retires the main-model recovery marker durably [215.03ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [118.32ms]
+(pass) the real settlement path retires the recovery marker when it archives [264.49ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [178.44ms]
 
  7 pass
  0 fail
-Ran 7 tests across 1 file. [1154.00ms]
-[run-tests] finished in 1s (exit 0)
+Ran 7 tests across 1 file. [1445.00ms]
+[run-tests] finished in 2s (exit 0)

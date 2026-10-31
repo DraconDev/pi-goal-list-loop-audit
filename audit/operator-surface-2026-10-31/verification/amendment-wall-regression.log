@@ -1,9 +1,9 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=358s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 239s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [10.50ms]
+(pass) the amendment confirm keeps the exact old and new objective text [5.66ms]
 34 |     oldObjective: 'Ship the feature',
 35 |     newObjective: 'Ship the feature and its tests',
 36 |     oldContract: contract,
@@ -21,34 +21,35 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:39:10
+      at /tmp/glla-ops-control-efkseq7e/tests/amendment-confirm-compact.test.ts:39:10
       at fn (node:test:215:18)
 (fail) an unchanged contract is NOT reprinted — that was most of the wall [0.95ms]
-(pass) a changed contract IS shown, both sides [0.07ms]
-(pass) a long objective is clipped with a visible marker, never silently cut [0.19ms]
-76 |     oldObjective: LONG_OBJECTIVE,
-77 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
-78 |     oldContract: 'x'.repeat(300),
-79 |     newContract: 'x'.repeat(300),
-80 |   });
-81 |   assert.ok(compact.length < oldForm.length / 2,
+(pass) a changed contract IS shown, both sides [0.08ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.10ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.08ms]
+86 |     oldObjective: LONG_OBJECTIVE,
+87 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
+88 |     oldContract: 'x'.repeat(300),
+89 |     newContract: 'x'.repeat(300),
+90 |   });
+91 |   assert.ok(compact.length < oldForm.length / 2,
               ^
-AssertionError: the default body must be materially shorter (1125 vs 1331)
+AssertionError: the default body must be materially shorter (1144 vs 1331)
  generatedMessage: false,
      actual: false,
    expected: true,
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:81:10
+      at /tmp/glla-ops-control-efkseq7e/tests/amendment-confirm-compact.test.ts:91:10
       at fn (node:test:215:18)
-(fail) the compact body is measurably smaller than the old five-section form [0.13ms]
-129 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
-130 |   // Consent fidelity: the exact old and new objective both appear.
-131 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
-132 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
-133 |   // Compactness: an unchanged contract is not echoed.
-134 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
+(fail) the compact body is measurably smaller than the old five-section form [0.12ms]
+139 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
+140 |   // Consent fidelity: the exact old and new objective both appear.
+141 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
+142 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
+143 |   // Compactness: an unchanged contract is not echoed.
+144 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
                ^
 AssertionError: the unchanged contract must not be reprinted by the real path
 
@@ -60,13 +61,13 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:134:10
+      at /tmp/glla-ops-control-efkseq7e/tests/amendment-confirm-compact.test.ts:144:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [2121.71ms]
+(fail) the real complete_goal amendment confirm uses the compact body [81.07ms]
 
- 3 pass
+ 4 pass
  3 fail
-Ran 6 tests across 1 file. [6.17s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-YXHACt/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-YXHACt
-[run-tests] finished in 7s (exit 1)
+Ran 7 tests across 1 file. [816.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-zTkSQa/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-zTkSQa
+[run-tests] finished in 1s (exit 1)

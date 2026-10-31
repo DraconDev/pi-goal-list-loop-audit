@@ -1,14 +1,14 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=358s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 239s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [10.94ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.72ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [15.99ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.69ms]
 (pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.07ms]
-(pass) a terminal goal retires the main-model recovery marker durably [256.84ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [125.22ms]
-(pass) the real settlement path retires the recovery marker when it archives [269.30ms]
+(pass) a terminal goal retires the main-model recovery marker durably [219.54ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [127.88ms]
+(pass) the real settlement path retires the recovery marker when it archives [317.76ms]
 225 | 
 226 |   // chat-owned, no goal: LIVE — an ordinary-chat retry is going to happen.
 227 |   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
@@ -26,13 +26,13 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-wnliqqfq/tests/stale-recovery-marker.test.ts:230:10
+      at /tmp/glla-ops-control-vdib3iqg/tests/stale-recovery-marker.test.ts:230:10
       at processTicksAndRejections (native:7:39)
-(fail) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [61.75ms]
+(fail) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [57.50ms]
 
  6 pass
  1 fail
-Ran 7 tests across 1 file. [1.63s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-uNkcdm/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-uNkcdm
+Ran 7 tests across 1 file. [1489.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-fuxbYG/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-fuxbYG
 [run-tests] finished in 2s (exit 1)

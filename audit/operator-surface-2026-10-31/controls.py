@@ -53,8 +53,8 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     # 2. Tweak-confirm: restore full contracts in the body even when unchanged.
     'amendment-wall-regression': (
         'extensions/confirm-draft.ts',
-        '  } else if (newContract) {\n    lines.push("", "Contract: unchanged");\n  }',
-        '  } else if (newContract) {\n    lines.push("", `Contract: ${clip(oldContract)} → ${clip(newContract)}`);\n  }',
+        '    // An UNCHANGED contract is not part of the decision — printing it twice was\n    // most of the wall. Say it is untouched instead of echoing it.\n    lines.push("", "Contract: unchanged");',
+        '    lines.push("", `Contract: ${clipContract(oldContract)} → ${clipContract(newContract)}`);',
     ),
 
     # 2b. Tweak-confirm WIRING: the real complete_goal call site reverts to the
