@@ -131,6 +131,23 @@ CASES = {
         '  "no-verdict", "timeout", "transport", "provider", "context-exhausted",\n] as const satisfies readonly AuditorInfrastructureClass[];',
         '  "no-verdict", "timeout", "transport", "provider",\n] as const satisfies readonly AuditorInfrastructureClass[];',
     ),
+    # v0.39.60 (auditor objection 2026-10-31, HIGH #1): reinstate the hand-copied
+    # Set in process.ts, omitting the context class. tsc cannot see a MISSING
+    # element in an array literal, so only the runtime gate test catches this.
+    'hand-copied-process-set-regression': (
+        'extensions/goal-loop-auditor-process.ts',
+        'const AUDITOR_INFRASTRUCTURE_CLASSES: ReadonlySet<string> =\n  new Set<string>(AUDITOR_INFRASTRUCTURE_CLASS_VALUES);',
+        'const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>([\n'
+        '  "no-verdict", "timeout", "transport", "provider",\n]);',
+    ),
+    # v0.39.60 (MED #2): the shipped schema enum is a third copy. Dropping the
+    # context class there would let the runtime write a class the published
+    # schema rejects.
+    'schema-enum-drops-context-class-regression': (
+        'schemas/goal.schema.json',
+        '"auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider", "context-exhausted"] },',
+        '"auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider"] },',
+    ),
     # Direction: the baseline guard becomes permissive again (absent = resume),
     # which is the exact production shape the auditor probed.
     'fail-open-baseline-regression': (
@@ -158,6 +175,9 @@ SUITES = {
     # This one must fail at TYPECHECK, not at test time: the exhaustiveness guard
     # is a compile error by design.
     'shared-class-list-incomplete-regression': ['CHECK'],
+    # Runtime gate: tsc cannot see a missing element in an array literal.
+    'hand-copied-process-set-regression': ['tests/auditor-resume.test.ts'],
+    'schema-enum-drops-context-class-regression': ['tests/goal-schema-parity.test.ts'],
 }
 
 results = []
