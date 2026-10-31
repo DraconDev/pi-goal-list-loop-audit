@@ -173,10 +173,28 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | --- | --- | --- |
 | 1 | `tests/stale-recovery-marker.test.ts` | yes — card re-renders when the ownership gate is removed |
 | 2 | `tests/amendment-confirm-compact.test.ts` | yes — old five-section body is not the default |
-| 3 | `tests/glla-wipe-latency.test.ts` | budget + scaling pins |
+| 3 | `tests/glla-wipe-latency.test.ts` | yes — per-record work blows the ceiling |
 | 4 | `tests/list-auto-advance.test.ts` | yes — the queue does not advance without the hook |
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
+
+### Two weak assertions the controls exposed
+
+The controls are not decoration; they caught two of my own tests being vacuous:
+
+1. **`stale-recovery-marker` chat case.** It passed the ownership verdict *in*,
+   so it never exercised `mainModelRecoveryHasLiveOwner`. Deleting the `chat`
+   branch left every test green while hiding a real ordinary-chat recovery. It
+   now drives the real predicate for all four ownership outcomes.
+2. **`glla-wipe-latency` scaling check.** "10x the journal must not cost 10x the
+   time" was a **wrong premise**: `readState` is I/O-bound and already scales
+   roughly linearly (measured 2.3 ms at 50 rows → 21 ms at 2000). The assertion
+   caught nothing. It is replaced by absolute ceilings on realistic and oversized
+   journals, and the control now injects per-record (quadratic) work, which it
+   does catch.
+
+Both are recorded rather than quietly repaired, because a control that passes
+against broken code is worse than no control.
 
 One existing test changed meaning: `tests/display.test.ts` "standalone main-model
 recovery remains visible when no goal is active" pinned the very behaviour item 1
