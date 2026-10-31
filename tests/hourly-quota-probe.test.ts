@@ -165,14 +165,15 @@ test("v0.34.132: executable runtime regression covers failure re-arm, opt-out, a
 test("v0.34.92: session_start re-arms the hourly ticker when recovery is parked", () => {
   const handlerIdx = GOAL_SRC.indexOf('pi.on("session_start"');
   assert.ok(handlerIdx > 0, "session_start handler exists");
-  // session_start handler grew past 20k chars in v0.35.21 (the restore
-  // gained the disk-sidecar queue convergence block); slice enough to
-  // still cover the schedule call at the bottom of the recovery block.
-  // v0.38.12: the last-wins supersede block added ~700 chars above the
-  // recovery block — 28k keeps both schedule calls inside the window.
-  // v0.38.78: the run-to-done consent block added ~500 chars above —
-  // 30k keeps both schedule calls (now at ~28.2k/28.5k) inside.
-  const tail = GOAL_SRC.slice(handlerIdx, handlerIdx + 30_000);
+  // v0.39.61: slice to the REAL end of the handler instead of a magic
+  // character window. The old `handlerIdx + 30_000` had already been bumped
+  // three times (20k -> 28k -> 30k) as the handler grew, and any unrelated
+  // insertion above the recovery block silently pushed these calls out of the
+  // window and failed a requirement that had not actually regressed. The next
+  // top-level `pi.on(` is the handler's true boundary, so this now covers the
+  // WHOLE handler and can never need bumping again.
+  const nextHandler = GOAL_SRC.indexOf('\n  pi.on(', handlerIdx + 1);
+  const tail = GOAL_SRC.slice(handlerIdx, nextHandler > handlerIdx ? nextHandler : undefined);
   assert.match(tail, /scheduleMainModelRecoveryTimer\(ctx, delay\);/, "session_start re-schedules recovery");
   assert.match(tail, /scheduleHourlyProbe\(ctx\);/, "session_start also re-arms the hourly ticker");
 });
