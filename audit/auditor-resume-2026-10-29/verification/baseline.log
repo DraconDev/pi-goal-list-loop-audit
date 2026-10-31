@@ -31,3 +31,18 @@ tests/auditor-resume.test.ts:
 (pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [375.88ms]
 (pass) a resumed verdict carries its lineage into the durable audit history [2.67ms]
 (pass) a first-pass verdict carries NO resume lineage [0.11ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [300.60ms]
+(pass) the first resume names its source model in both ledger and verdict [0.26ms]
+(pass) an explicit user abort is recorded through the real signal and stamped on the claim [6.29ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.45ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [42.16ms]
+(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [787.40ms]
+(pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [646.57ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.27ms]
+(pass) the resume ledger row records the full lineage on a real retry dispatch [59.27ms]
+(pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.12ms]
+
+ 38 pass
+ 0 fail
+Ran 38 tests across 1 file. [11.24s]
+[run-tests] finished in 11s (exit 0)
