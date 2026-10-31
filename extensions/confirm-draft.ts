@@ -156,3 +156,47 @@ export class ConfirmDraftComponent implements Component {
     return this.selectList.getSelectedItem()?.value ?? null;
   }
 }
+
+/**
+ * v0.39.61 (note.md 2026-10-31, tweak wall of text): the completion scope
+ * amendment confirm printed five labelled sections and both full contracts,
+ * which wrapped into a wall that hid the decision. The consent record must stay
+ * EXACT — the user is approving a specific old→new objective pair — but the
+ * default body does not need to reprint an unchanged contract twice.
+ *
+ * The rule: always show the exact old and new objective. Show a contract only
+ * when it actually changes, because an unchanged contract is not part of the
+ * decision. Long objectives are clipped to a readable length with an explicit
+ * marker, never silently truncated.
+ */
+export function buildAmendmentConfirmBody(input: {
+  oldObjective: string;
+  newObjective: string;
+  oldContract?: string;
+  newContract?: string;
+  maxChars?: number;
+}): string {
+  const max = input.maxChars ?? 280;
+  const clip = (text: string): string => {
+    const clean = text.trim();
+    if (!clean) return "(none)";
+    if (clean.length <= max) return clean;
+    // Keep the head and the tail: the tail usually carries the acceptance clause.
+    const head = clean.slice(0, Math.max(40, max - 80)).trimEnd();
+    const tail = clean.slice(-60).trimStart();
+    return `${head} … ${tail}`;
+  };
+  const lines: string[] = [
+    `From: ${clip(input.oldObjective)}`,
+    `To:   ${clip(input.newObjective)}`,
+  ];
+  const oldContract = (input.oldContract ?? "").trim();
+  const newContract = (input.newContract ?? "").trim();
+  if (newContract !== oldContract) {
+    lines.push("", `Contract: ${clip(oldContract)} → ${clip(newContract)}`);
+  } else if (newContract) {
+    lines.push("", "Contract: unchanged");
+  }
+  lines.push("", "This changes what the independent auditor will judge.");
+  return lines.join("\n");
+}

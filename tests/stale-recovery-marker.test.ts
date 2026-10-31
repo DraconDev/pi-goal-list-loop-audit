@@ -92,6 +92,16 @@ test('a live recovery marker still renders its card — the guard is not blanket
   assert.ok(loopLines && loopLines.length > 0, 'a parked loop still explains its recovery');
 });
 
+test('an ordinary-chat recovery keeps its card — the display guard must not hide it', () => {
+  // A chat-owned marker is LIVE work: the ordinary chat is going to be retried.
+  // `recoveryOwnership` returns 'chat' for it, and the live-owner verdict must
+  // include that case; treating it as dead would hide a real recovery, which is
+  // the opposite of the bug being fixed.
+  const chatOwned = { goal: null, list: [], mainModelRecovery: recovery('chat') } as unknown as State;
+  assert.equal(standaloneCardShown(chatOwned, true), true,
+    'a chat-owned recovery still renders its card');
+});
+
 test('a terminal goal retires the main-model recovery marker durably', async () => {
   const cwd = tmpCwd();
   const pi = new MockPi();

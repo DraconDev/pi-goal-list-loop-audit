@@ -42,4 +42,9 @@ we keep failing the last audit perhaps ddue ot auditor switching
 /home/dracon/Pictures/Screenshots/Screenshot_20261031_092215.png
 seemingly there was no objective, just seemed that way ?
 
+# next
+
+we can have profiles, the main idea for this was that for most cases i use the default with defautl fallbacks, but what if i wanted something where we never fall back we stick with
+the strong session model perhaps even if runs out ?, another thing could be something cheap profile where we are perhaps sticking with selected free/cheap models and again we are not fallings bck 
+to default models
 

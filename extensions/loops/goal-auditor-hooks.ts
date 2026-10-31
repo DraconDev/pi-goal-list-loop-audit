@@ -296,7 +296,6 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume,
-  retireOrphanedMainModelRecovery,
 } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
@@ -1216,17 +1215,6 @@ export function settleApprovedCompletion(
     priorCompletionSummary: claim.priorCompletionSummary,
     terminalRender: { goalId, objective: approvalObjective, chatLines: approvalRender.chatLines },
   });
-  // v0.39.61 (note.md 2026-10-31, stale-recovery finding): a terminal goal that
-  // left a main-model recovery marker behind made the widget render the
-  // standalone recovery card for work that no longer existed — six hours after
-  // the archive, the user was told to "send 'continue' to retry this chat" with
-  // nothing wrong. The marker belongs to the goal that hit the wall; once that
-  // goal is archived it has no live owner, so it must not outlive it.
-  // `retireOrphanedMainModelRecovery` is the production owner of this
-  // transition: it persists, rolls back on a failed write, and ledgers the
-  // retirement. Reusing it keeps one implementation instead of a second one that
-  // could drift or forget to persist.
-  if (archived) retireOrphanedMainModelRecovery(ctx, true);
   if (!archived) {
     // archiveCurrentGoal already preserved the live record and warned the
     // user. The claim STAYS `settling` on purpose: the approval is durable and

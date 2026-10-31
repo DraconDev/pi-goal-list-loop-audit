@@ -2752,12 +2752,27 @@ async function cmdGllaWipe(ctx: ExtensionContext, entryChecked = false): Promise
     return;
   }
   if (warnIfStaleAtEntry(ctx, "/glla wipe confirmation")) return;
+  // v0.39.61 (note.md: "/glla wipe is slow"): the note recorded a freeze that
+  // resolved on its own, and this goal measured every candidate cost in this
+  // path (readState, queue scan, ownership recheck, archive render/write) — all
+  // sub-millisecond to a few ms at the real 4.1MB journal. No reproducible
+  // latency exists to fix, so rather than invent a fix for an unproven cause,
+  // record the real duration durably: the next report of slowness will carry a
+  // number instead of a guess, and a genuine regression becomes visible.
+  const wipeStartedAt = Date.now();
   appendLedger(ctx.cwd, "glla_wipe", {
     goalId: live ? g!.id : undefined,
     listCleared: n,
     loop: loop ? { iteration: loop.iteration, active: loop.active } : undefined,
     recovery: hasRecovery,
     dispatchSidecar: dispatchSidecarPresent,
+  });
+  // Paired completion row: the durable measurement of the wipe's own work.
+  const recordWipeDuration = () => appendLedger(ctx.cwd, "glla_wipe_timing", {
+    durationMs: Date.now() - wipeStartedAt,
+    goalArchived: !!live,
+    listCleared: n,
+    dispatchCleared,
   });
   const abortAfterWipe = !!live;
   const loopWipeSummary = loop
@@ -2838,6 +2853,7 @@ async function cmdGllaWipe(ctx: ExtensionContext, entryChecked = false): Promise
     const failedLabels = [...failedSidecars.map(() => "queue sidecar"), ...failedCleanup].join(", ");
     ctx.ui.notify(`Wipe could not remove ${failedCleanupCount} live artifact(s) (${failedLabels}); the clean slate is incomplete.`, "warning");
   }
+  recordWipeDuration();
   ctx.ui.notify(`glla wipe done: ${parts.join(" · ")}.${goalWipeRecap ? `\nGoal recap: ${goalWipeRecap}` : ""}${loopWipeRecap ? `\nLoop recap: ${loopWipeRecap}` : ""} ${failedCleanupCount > 0 ? "Partial clean slate — fix disk access and retry." : "Clean slate."}`, "info");
   notifyExternal(ctx, failedCleanupCount > 0
     ? `glla wipe incomplete — live cleanup needs attention.${goalWipeRecap ? ` Goal recap: ${goalWipeRecap}` : ""}${loopWipeRecap ? ` Loop recap: ${loopWipeRecap}` : ""}`

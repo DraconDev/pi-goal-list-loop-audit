@@ -376,6 +376,7 @@ import {
 } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111) — clusters B (main-model recovery) + C (completion-audit recovery)
 import {
   ConfirmDraftComponent,
+  buildAmendmentConfirmBody,
 } from "../confirm-draft.js";
 import {
   applyMeasurement,
@@ -892,7 +893,17 @@ function registerAgentTools(pi: any): void {
         if (scopeChanged) {
           let confirmed = false;
           try {
-            confirmed = await ctx.ui.confirm("Confirm completion scope amendment", `Current objective:\n${oldObjective}\n\nCurrent verification contract:\n${amendmentContract || "(none)"}\n\nProposed objective:\n${cleanObj}\n\nProposed verification contract:\n${proposedContract || "(none)"}\n\nThis changes what the independent auditor will judge. Approve this specific amendment?`);
+            // v0.39.61 (note.md tweak wall of text): a compact body that still
+            // prints the EXACT old→new objective pair. The full contracts are
+            // only shown when one actually changes, because an unchanged
+            // contract is not part of the decision and was most of the wall.
+            confirmed = await ctx.ui.confirm(
+              "Confirm completion scope amendment",
+              buildAmendmentConfirmBody({
+                oldObjective, newObjective: cleanObj,
+                oldContract: amendmentContract, newContract: proposedContract,
+              }),
+            );
           } catch {
             // Unavailable/stale UI cannot grant scope authority.
           }

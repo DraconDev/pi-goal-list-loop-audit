@@ -726,7 +726,11 @@ export function mainModelRecoveryHasLiveOwner(): boolean {
   const ownership = recoveryOwnership(
     recovery.owner, recovery.kind, { goal: state.goal ?? undefined, loop: state.loop ?? undefined }, true,
   );
-  return ownership === 'retained' || ownership === 'restore-pending';
+  // `chat` is a LIVE owner: an ordinary-chat retry has its own recovery and its
+  // card is legitimate. Only a marker whose owner is gone (`terminal`, `absent`,
+  // `replaced`) has nothing left to act on. Treating `chat` as dead would hide
+  // real recoveries — the opposite defect.
+  return ownership === 'retained' || ownership === 'restore-pending' || ownership === 'chat';
 }
 
 export function mainModelFallbackRefs(ctx: ExtensionContext): string[] {
