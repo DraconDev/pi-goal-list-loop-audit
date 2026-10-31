@@ -178,6 +178,21 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
+### Gate history (recorded, not hidden)
+
+The first two full runs each failed on **load**, not on behaviour, and both were
+diagnosed rather than re-run until green:
+
+- `tests/glla-wipe-latency.test.ts` used fixed wall-clock ceilings and failed at
+  load ~58 on 16 cores for a reader that was provably fine. Those are HANG
+  BOUNDS, not benchmarks, so they now scale with the host via `scaledBudgetMs`.
+- `busy complete_goal stages admission…` failed once inside the parallel gate
+  (16 s vs a 6 s wait) and passes standalone at load 91 (11/11) — a
+  parallel-contention flake, unchanged by this work.
+
+The final clean run: **4529 pass, 1 skip, 0 fail across 482 files, exit 0**
+(`verification/release-check.log`).
+
 ### Two weak assertions the controls exposed
 
 The controls are not decoration; they caught two of my own tests being vacuous:
