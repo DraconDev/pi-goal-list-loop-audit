@@ -18,7 +18,6 @@ import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
 import { readState } from '../extensions/goal-loop-core.js';
-import { listQueue } from '../extensions/loops/goal-list-queue.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 
 afterEach(() => {
@@ -26,6 +25,9 @@ afterEach(() => {
 });
 
 const ITEM = (n: number) => `Short task ${n}`;
+
+/** The durable queue, read from state — the same source the hook consults. */
+const queueOf = (cwd: string) => readState(cwd).list ?? [];
 
 async function setup(current: Record<string, unknown>, waiting: string[]) {
   const cwd = tmpCwd();
@@ -45,7 +47,7 @@ test('queue items wait while an item is still in flight', async () => {
   const { cwd } = await setup({ status: 'active' }, [ITEM(1), ITEM(2)]);
   const goal = readState(cwd).goal;
   assert.equal(goal?.status, 'active', 'the active item owns the slot');
-  assert.equal(listQueue().length, 2, 'the queue keeps its waiting items');
+  assert.equal(queueOf(cwd).length, 2, 'the queue keeps its waiting items');
 });
 
 test('a completed item leaves the queue readable for the completion path to advance', async () => {
@@ -55,7 +57,7 @@ test('a completed item leaves the queue readable for the completion path to adva
   const { cwd } = await setup({ status: 'complete' }, [ITEM(1), ITEM(2)]);
   const goal = readState(cwd).goal;
   assert.equal(goal?.status, 'complete', 'the finished item is terminal');
-  const queue = listQueue();
+  const queue = queueOf(cwd);
   assert.equal(queue.length, 2, 'the queue survives the completion');
   assert.equal(queue[0]?.objective, ITEM(1), 'the next item is the head, not lost');
 });
@@ -65,7 +67,7 @@ test('a paused or blocked item keeps the queue held — auto-advance must not bl
   // remain exactly as it was so the item can be resumed, not skipped past.
   for (const status of ['paused', 'blocked'] as const) {
     const { cwd } = await setup({ status, pauseKind: status === 'blocked' ? 'blocked' : 'wait' }, [ITEM(1), ITEM(2)]);
-    const queue = listQueue();
+    const queue = queueOf(cwd);
     assert.equal(queue.length, 2, `${status}: the queue is preserved for a decision, not advanced`);
     assert.equal(queue[0]?.objective, ITEM(1), `${status}: the head is unchanged`);
   }
