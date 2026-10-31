@@ -118,7 +118,7 @@ CASES = {
     # whitelist in normalizePendingCompletion silently DROPPED the new class on
     # reload. Reinstate it: the durable round-trip must then fail.
     'reload-drops-context-class-regression': (
-        'extensions/goal-loop-core.ts',
+        'extensions/auditor-failure-classes.ts',
         '  const auditorFailureClass = isAuditorInfrastructureClass(_auditorFailureClass)\n    ? _auditorFailureClass\n    : undefined;',
         '  const _stale: AuditorRecoveryFailureClass[] = ["transport", "timeout", "no-verdict", "provider"];\n'
         '  const auditorFailureClass = typeof _auditorFailureClass === "string" && _stale.includes(_auditorFailureClass as AuditorRecoveryFailureClass)\n'
@@ -127,7 +127,7 @@ CASES = {
     ),
     # The shared list omits a member the union declares.
     'shared-class-list-incomplete-regression': (
-        'extensions/goal-loop-core.ts',
+        'extensions/auditor-failure-classes.ts',
         '  "no-verdict", "timeout", "transport", "provider", "context-exhausted",\n] as const satisfies readonly AuditorInfrastructureClass[];',
         '  "no-verdict", "timeout", "transport", "provider",\n] as const satisfies readonly AuditorInfrastructureClass[];',
     ),
@@ -136,8 +136,8 @@ CASES = {
     # element in an array literal, so only the runtime gate test catches this.
     'hand-copied-process-set-regression': (
         'extensions/goal-loop-auditor-process.ts',
-        'const AUDITOR_INFRASTRUCTURE_CLASSES: ReadonlySet<string> =\n  new Set<string>(AUDITOR_INFRASTRUCTURE_CLASS_VALUES);',
-        'const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>([\n'
+        'import { AUDITOR_INFRASTRUCTURE_CLASSES } from "./auditor-failure-classes.js";',
+        'const AUDITOR_INFRASTRUCTURE_CLASSES: ReadonlySet<string> = new Set<string>([\n'
         '  "no-verdict", "timeout", "transport", "provider",\n]);',
     ),
     # v0.39.60 (MED #2): the shipped schema enum is a third copy. Dropping the
