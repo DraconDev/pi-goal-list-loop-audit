@@ -6,3 +6,4 @@ tests/glla-wipe-latency.test.ts:
 (pass) the work a wipe performs stays well under a perceptible freeze [2112.57ms]
 [run-tests] progress: 30s elapsed · 24s since last output · 0 KiB of suite output
 [run-tests] progress: 60s elapsed · 54s since last output · 0 KiB of suite output
+[run-tests] progress: 90s elapsed · 84s since last output · 0 KiB of suite output
