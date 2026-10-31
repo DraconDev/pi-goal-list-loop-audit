@@ -176,27 +176,19 @@ test('the real settlement path retires the recovery marker when it archives', as
     verificationSummary: 'Fixture only',
     phase: 'starting',
   } as never;
-  let settled = false;
-  try {
-    settled = settleApprovedCompletion(ctx as never, {
-      goalId: String(settlingGoal.id),
-      generation: 0,
-      claim,
-      model: 'test/auditor-model',
-      origin: 'provider-retry',
-    });
-  } catch {
-    // The archive path has host dependencies; the assertion below still holds
-    // for the retirement call itself, which runs after a successful archive.
-    settled = false;
-  }
+  // No try/catch escape hatch: settlement works against this harness (verified),
+  // so an exception here is a real failure and must surface rather than quietly
+  // turning this test into a no-op.
+  const settled = settleApprovedCompletion(ctx as never, {
+    goalId: String(settlingGoal.id),
+    generation: 0,
+    claim,
+    model: 'test/auditor-model',
+    origin: 'provider-retry',
+  });
   await tick(150);
-  if (settled) {
-    assert.equal(readState(cwd).mainModelRecovery, undefined,
-      'settlement must not leave a recovery marker for the archived goal');
-  } else {
-    // Settlement could not archive in this harness — do not assert a transition
-    // that never ran. The retirement helper's own behaviour is covered above.
-    assert.ok(true);
-  }
+  assert.equal(settled, true, 'the fixture must actually reach the archive');
+  assert.equal(readState(cwd).mainModelRecovery, undefined,
+    'settlement must not leave a recovery marker for the archived goal');
+  assert.equal(readState(cwd).goal, null, 'the goal really was archived');
 });
