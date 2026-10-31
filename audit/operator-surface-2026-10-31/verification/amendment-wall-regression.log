@@ -43,3 +43,30 @@ AssertionError: the default body must be materially shorter (1125 vs 1331)
       at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:81:10
       at fn (node:test:215:18)
 (fail) the compact body is measurably smaller than the old five-section form [0.13ms]
+129 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
+130 |   // Consent fidelity: the exact old and new objective both appear.
+131 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
+132 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
+133 |   // Compactness: an unchanged contract is not echoed.
+134 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
+               ^
+AssertionError: the unchanged contract must not be reprinted by the real path
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:134:10
+      at processTicksAndRejections (native:7:39)
+(fail) the real complete_goal amendment confirm uses the compact body [2121.71ms]
+
+ 3 pass
+ 3 fail
+Ran 6 tests across 1 file. [6.17s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-YXHACt/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-YXHACt
+[run-tests] finished in 7s (exit 1)
