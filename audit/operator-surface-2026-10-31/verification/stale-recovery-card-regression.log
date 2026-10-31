@@ -20,19 +20,19 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-_nmt0a3z/tests/stale-recovery-marker.test.ts:66:10
+      at /tmp/glla-ops-control-5lrcl7sk/tests/stale-recovery-marker.test.ts:66:10
       at fn (node:test:215:18)
-(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [29.27ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.57ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.09ms]
-(pass) a terminal goal retires the main-model recovery marker durably [823.71ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [604.77ms]
-(pass) the real settlement path retires the recovery marker when it archives [705.60ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [563.74ms]
+(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [10.05ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.63ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.12ms]
+(pass) a terminal goal retires the main-model recovery marker durably [181.24ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [112.87ms]
+(pass) the real settlement path retires the recovery marker when it archives [260.47ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [138.12ms]
 
  6 pass
  1 fail
-Ran 7 tests across 1 file. [4.54s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-K3Am23/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-K3Am23
-[run-tests] finished in 5s (exit 1)
+Ran 7 tests across 1 file. [1462.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-FJBvON/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-FJBvON
+[run-tests] finished in 2s (exit 1)
