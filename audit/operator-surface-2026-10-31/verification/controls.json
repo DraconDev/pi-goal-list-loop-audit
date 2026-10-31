@@ -59,6 +59,17 @@
     "expectedResultObserved": true
   },
   {
+    "case": "amendment-wiring-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "no-auto-advance-regression",
     "command": [
       "node",
