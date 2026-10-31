@@ -3,3 +3,46 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-model-display.test.ts:
+49 | 
+50 | test('a session-model audit names the model that ran, not a configured pin', () => {
+51 |   // The exact note.md shape: configured primary is the luna pin, but the audit
+52 |   // ran on the session model.
+53 |   const text = cardText(auditState({ auditorSourceModel: SESSION_MODEL }), SESSION_MODEL);
+54 |   assert.ok(text.includes(SESSION_MODEL),
+              ^
+AssertionError: the card must name the model that actually ran
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-1uqnczfr/tests/auditor-model-display.test.ts:54:10
+      at fn (node:test:215:18)
+(fail) a session-model audit names the model that ran, not a configured pin [57.01ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [1.35ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.51ms]
+80 |   // that produced the note.md observation.
+81 |   const text = cardText(
+82 |     auditState({ auditorSourceModel: SESSION_MODEL, auditorRetryCandidateRef: CONFIGURED }),
+83 |     undefined,
+84 |   );
+85 |   assert.ok(text.includes(SESSION_MODEL) || text.includes('session model'),
+              ^
+AssertionError: the recorded executed model is preferred to the configured retry candidate
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-1uqnczfr/tests/auditor-model-display.test.ts:85:10
+      at fn (node:test:215:18)
+(fail) the recorded executed model outranks the configured candidate [0.38ms]
+
+ 2 pass
+ 2 fail
+Ran 4 tests across 1 file. [10.86s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-eFG3xo/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-eFG3xo
+[run-tests] finished in 11s (exit 1)
