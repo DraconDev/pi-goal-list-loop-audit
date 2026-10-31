@@ -5,3 +5,27 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 tests/glla-wipe-latency.test.ts:
 (pass) the work a wipe performs stays well under a perceptible freeze [617.53ms]
 [run-tests] progress: 30s elapsed · 29s since last output · 0 KiB of suite output
+84 | 
+85 |   // Ceilings are far below a perceptible freeze (< 250ms) yet comfortably above
+86 |   // the measured baseline (a few ms), so a loaded host cannot flake them while
+87 |   // per-record work added in the wipe path fails loudly.
+88 |   assert.ok(realisticMs < 120, `readState took ${realisticMs.toFixed(1)}ms at 200 rows — wipe would feel slow`);
+89 |   assert.ok(oversizedMs < 200, `readState took ${oversizedMs.toFixed(1)}ms at 2000 rows — cost grew beyond I/O`);
+              ^
+AssertionError: readState took 9337.4ms at 2000 rows — cost grew beyond I/O
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-lxnfqovd/tests/glla-wipe-latency.test.ts:89:10
+      at fn (node:test:215:18)
+(fail) a pathologically expensive reader is caught, not just a slow one [47885.57ms]
+
+ 1 pass
+ 1 fail
+Ran 2 tests across 1 file. [49.19s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-qyaPBx/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-qyaPBx
+[run-tests] finished in 51s (exit 1)
