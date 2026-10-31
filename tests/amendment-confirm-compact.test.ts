@@ -81,3 +81,61 @@ test('the compact body is measurably smaller than the old five-section form', ()
   assert.ok(compact.length < oldForm.length / 2,
     `the default body must be materially shorter (${compact.length} vs ${oldForm.length})`);
 });
+
+/**
+ * The test above calls the builder directly. That is the SAME fabricated-input
+ * shape earlier audits rejected: if the real tool stopped calling this builder,
+ * the suite would stay green. This drives the real `complete_goal` amendment
+ * confirm and reads the body it actually passed to the UI.
+ */
+test('the real complete_goal amendment confirm uses the compact body', async () => {
+  const { default: activate, __testOnlyLoadState, __testOnlyResetOwnerSession,
+    __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } = await import('../extensions/loops/goal.js');
+  const { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } = await import('./harness/mock-pi.js');
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `amendment-compact-${Math.random()}` } });
+  Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+
+  const LONG_OLD = 'Ship the feature end to end with its tests and the release notes';
+  const LONG_NEW = 'Ship the feature end to end with its tests, the release notes, and the migration guide';
+  const SAME_CONTRACT = 'npm run check exits 0';
+  seedState(cwd, {
+    goal: seedGoal({ status: 'active', objective: LONG_OLD, verificationContract: SAME_CONTRACT }),
+    list: [],
+  });
+  __testOnlyLoadState(cwd);
+
+  // Capture the body the real tool passes to the confirm dialog.
+  const seen: Array<{ title: string; body: string }> = [];
+  Object.assign(ctx.ui, {
+    confirmImpl: (title: string, body: string) => {
+      seen.push({ title, body });
+      return Promise.resolve(false); // decline: we only inspect the rendering
+    },
+  });
+
+  await pi.runTool('complete_goal', {
+    completionSummary: 'Outcome: shipped. Changed: feature. Evidence: tests. Tests: pass. Unresolved: none. Next: none.',
+    verificationSummary: 'Fixture only',
+    objective: LONG_NEW,
+  }, ctx);
+
+  const amendment = seen.find((entry) => /scope amendment/i.test(entry.title));
+  assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
+  // Consent fidelity: the exact old and new objective both appear.
+  assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
+  assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
+  // Compactness: an unchanged contract is not echoed.
+  assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
+    'the unchanged contract must not be reprinted by the real path');
+  assert.match(amendment!.body, /Contract: unchanged/, 'the user is told the contract is untouched');
+  // And it is materially shorter than the old five-section form would have been.
+  const oldFormLength = 5 * SAME_CONTRACT.length + LONG_OLD.length + LONG_NEW.length + 200;
+  assert.ok(amendment!.body.length < oldFormLength,
+    `the real confirm body must be shorter than the old form (${amendment!.body.length} vs ${oldFormLength})`);
+});
