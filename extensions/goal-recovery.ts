@@ -721,6 +721,23 @@ export function clearOwnedMainModelRecovery(): void {
   flags.continuationDispatchStoodDown = false;
 }
 
+/**
+ * v0.39.61: does this recovery marker still have work waiting on it?
+ *
+ * Reuses the existing ownership model rather than re-deriving terminality: the
+ * same `recoveryOwnership` verdict that governs restore decides whether the
+ * marker is still meaningful. A marker whose owner is absent or terminal has
+ * nothing to act on, so the widget must not render a recovery card for it.
+ */
+export function mainModelRecoveryHasLiveOwner(): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery) return false;
+  const ownership = recoveryOwnership(
+    recovery.owner, recovery.kind, { goal: state.goal ?? undefined, loop: state.loop ?? undefined }, true,
+  );
+  return ownership === 'retained' || ownership === 'restore-pending';
+}
+
 export function mainModelFallbackRefs(ctx: ExtensionContext): string[] {
   try { return normalizeMainModelFallbackRefs(loadGlobalSettings().mainModelFallbacks); } catch { return []; }
 }
