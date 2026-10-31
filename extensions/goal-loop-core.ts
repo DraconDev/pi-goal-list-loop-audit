@@ -704,7 +704,7 @@ export type AuditorRecoveryFailureClass = AuditorInfrastructureClass;
 /** Every failure class an auditor run can report. Declared once here so the
  * classifier, the resume policy and the persisted retry cursor cannot drift:
  * a duplicated union silently dropped the new `context-exhausted` class. */
-export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted" | "rate-limit";
+export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted";
 
 /**
  * The ONE runtime list of failure classes. Every place that whitelists a
@@ -723,7 +723,7 @@ export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" 
  * to the union without adding it here fails `tsc`.
  */
 export const AUDITOR_INFRASTRUCTURE_CLASS_VALUES = [
-  "no-verdict", "timeout", "transport", "provider", "context-exhausted", "rate-limit",
+  "no-verdict", "timeout", "transport", "provider", "context-exhausted",
 ] as const satisfies readonly AuditorInfrastructureClass[];
 
 type MissingAuditorClass =
