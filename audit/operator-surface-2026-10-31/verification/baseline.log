@@ -3,42 +3,9 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-model-display.test.ts:
-(pass) a session-model audit names the model that ran, not a configured pin [12.04ms]
-(pass) a configured-pin audit is NOT mislabelled as the session model [0.41ms]
-(pass) the configured ref is only used when nothing recorded an executed model [0.41ms]
-(pass) the recorded executed model outranks the configured candidate [0.23ms]
+(pass) a session-model audit names the model that ran, not a configured pin [16.08ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.59ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.38ms]
+(pass) the recorded executed model outranks the configured candidate [9.24ms]
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [72.73ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [26.64ms]
-(pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [15.56ms]
-(pass) a cleanly completed item auto-advances the queue without /list next [413.85ms]
-
-tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [52.02ms]
-(pass) a matching version stays silent — the normal case must not nag [7.67ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.42ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [2.83ms]
-(pass) version comparison is numeric, not lexical [0.16ms]
-(pass) session start surfaces the stale-build warning and still runs [280.83ms]
-
-tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [7.30ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.63ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.08ms]
-(pass) a terminal goal retires the main-model recovery marker durably [173.78ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [119.82ms]
-(pass) the real settlement path retires the recovery marker when it archives [303.60ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [165.43ms]
-
-tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.41ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.09ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
-(pass) a long objective is clipped with a visible marker, never silently cut [0.64ms]
-(pass) the compact body is measurably smaller than the old five-section form [1.60ms]
-
- 26 pass
- 0 fail
-Ran 26 tests across 5 files. [4.26s]
-[run-tests] finished in 4s (exit 0)

@@ -57,6 +57,15 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         '  } else if (newContract) {\n    lines.push("", `Contract: ${clip(oldContract)} → ${clip(newContract)}`);\n  }',
     ),
 
+    # 2b. Tweak-confirm WIRING: the real complete_goal call site reverts to the
+    #     old five-section body while the helper stays correct. This is the test
+    #     that proves the suite drives the real path, not just the helper.
+    'amendment-wiring-regression': (
+        'extensions/loops/goal-tools.ts',
+        '            confirmed = await ctx.ui.confirm(\n              "Confirm completion scope amendment",\n              buildAmendmentConfirmBody({',
+        '            confirmed = await ctx.ui.confirm(\n              "Confirm completion scope amendment",\n              [oldObjective, amendmentContract, cleanObj, proposedContract].join("\\n") || buildAmendmentConfirmBody({',
+    ),
+
     # 4. List auto-advance: remove the settlement advance.
     'no-auto-advance-regression': (
         'extensions/loops/goal-auditor-hooks.ts',
@@ -97,6 +106,7 @@ SUITES: dict[str, list[str]] = {
     'stale-recovery-card-regression': ['tests/stale-recovery-marker.test.ts'],
     'chat-recovery-hidden-regression': ['tests/stale-recovery-marker.test.ts'],
     'amendment-wall-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'amendment-wiring-regression': ['tests/amendment-confirm-compact.test.ts'],
     'no-auto-advance-regression': ['tests/list-auto-advance.test.ts'],
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
