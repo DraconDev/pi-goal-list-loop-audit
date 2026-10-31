@@ -196,3 +196,6 @@ false !== true
  31 pass
  7 fail
 Ran 38 tests across 1 file. [9.29s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-S5puzv/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-S5puzv
+[run-tests] finished in 10s (exit 1)
