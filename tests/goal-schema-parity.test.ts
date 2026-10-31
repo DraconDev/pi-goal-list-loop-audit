@@ -25,6 +25,7 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } from "../extensions/goal-loop-core.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const schema = JSON.parse(fs.readFileSync(path.join(ROOT, "schemas/goal.schema.json"), "utf8")) as {
@@ -200,8 +201,7 @@ test("every schema definition the runtime backs is reachable, and its types agre
  * The array and the enum are now asserted equal in both directions, so neither
  * can drift without failing here.
  */
-test('the schema failure-class enum matches the shared runtime list exactly', async () => {
-  const { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } = await import('../extensions/goal-loop-core.js');
+test('the schema failure-class enum matches the shared runtime list exactly', () => {
   const schema = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schemas', 'goal.schema.json'), 'utf8'));
   // Locate the enum wherever the claim definition lives, so a schema reshuffle
   // does not silently turn this assertion into a no-op.
