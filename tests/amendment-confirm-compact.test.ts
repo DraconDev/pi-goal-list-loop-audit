@@ -52,19 +52,29 @@ test('a changed contract IS shown, both sides', () => {
   assert.match(body, /release:check/, 'the proposed contract is shown when it changes');
 });
 
-test('a long objective is clipped with a visible marker, never silently cut', () => {
+test('a long objective is NEVER clipped — consent exactness beats brevity', () => {
   const body = buildAmendmentConfirmBody({
     oldObjective: LONG_OBJECTIVE,
-    newObjective: LONG_OBJECTIVE + ' Additionally record lineage.',
+    newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
   });
-  const lines = body.split('\n').filter((line) => line.trim());
-  // The decision must fit on screen: no body line may run to paragraph length.
-  for (const line of lines) {
-    assert.ok(line.length <= 340, `confirm lines must stay readable, got ${line.length} chars`);
-  }
-  assert.match(body, /…/, 'a clipped objective carries an explicit ellipsis marker');
-  // The tail is kept because acceptance clauses live there.
-  assert.match(body, /lineage/, 'the tail of a long objective survives the clip');
+  // Both sides appear in full: the user is approving this exact pair.
+  assert.ok(body.includes(LONG_OBJECTIVE.trim()),
+    'the previous objective must appear verbatim, not abbreviated');
+  assert.ok(body.includes(`${LONG_OBJECTIVE} Additionally record lineage.`),
+    'the proposed objective must appear verbatim');
+  assert.equal(body.includes('…'), false,
+    'the objective is never clipped; only secondary contract detail may be');
+});
+
+test('a very long CONTRACT is shortened with a visible marker', () => {
+  const body = buildAmendmentConfirmBody({
+    oldObjective: 'Ship the feature',
+    newObjective: 'Ship the feature and its tests',
+    oldContract: 'x'.repeat(4000),
+    newContract: 'y'.repeat(4000),
+  });
+  assert.match(body, /…/, 'secondary contract detail carries an explicit ellipsis marker');
+  assert.ok(body.length < 900, `the contract detail must stay bounded, got ${body.length} chars`);
 });
 
 test('the compact body is measurably smaller than the old five-section form', () => {
