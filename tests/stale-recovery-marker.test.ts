@@ -18,7 +18,7 @@ import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
 import { buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
-import { clearOwnedMainModelRecovery } from '../extensions/goal-recovery.js';
+import { retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
 
@@ -91,27 +91,50 @@ test('a live recovery marker still renders its card — the guard is not blanket
   assert.ok(loopLines && loopLines.length > 0, 'a parked loop still explains its recovery');
 });
 
-test('settling a terminal goal clears the main-model recovery marker', async () => {
+test('a terminal goal retires the main-model recovery marker durably', async () => {
   const cwd = tmpCwd();
   const pi = new MockPi();
   activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `stale-recovery-${Math.random()}` } });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
+  // The owner goal is TERMINAL, exactly as after an archive: the marker has
+  // nothing left to act on.
   seedState(cwd, {
+    goal: seedGoal({ status: 'complete', objective: 'Verify the feature' }),
+    list: [],
+    mainModelRecovery: recovery(),
+  });
+  __testOnlyLoadState(cwd);
+  await tick(50);
+  assert.ok(readState(cwd).mainModelRecovery, 'the seeded marker is live before retirement');
+
+  // The production transition the settlement path now calls.
+  const outcome = retireOrphanedMainModelRecovery(ctx, true);
+  await tick(50);
+  assert.equal(outcome, 'retired', 'a terminal goal retires the marker rather than retaining it');
+  assert.equal(readState(cwd).mainModelRecovery, undefined,
+    'the retirement is DURABLE — a stale marker on disk is the note.md bug');
+});
+
+test('a live owner retains its marker — retirement is not blanket-clearing', async () => {
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `retain-recovery-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  seedState(cwd, {
+    // A paused goal is still live work: the wall parked it, it did not finish.
     goal: seedGoal({ status: 'paused', pauseKind: 'wait', objective: 'Verify the feature' }),
     list: [],
     mainModelRecovery: recovery(),
   });
   __testOnlyLoadState(cwd);
   await tick(50);
-  assert.ok(readState(cwd).mainModelRecovery, 'the seeded marker is visible to the runtime before the clear');
+  const before = readState(cwd).mainModelRecovery;
+  assert.ok(before, 'the seeded marker is live');
 
-  // The production clear used by the settlement path.
-  clearOwnedMainModelRecovery();
+  const outcome = retireOrphanedMainModelRecovery(ctx, true);
   await tick(50);
-  assert.equal(readState(cwd).mainModelRecovery, undefined,
-    'a terminal goal must not leave a recovery marker in the durable state');
-
-  // Reaching it through the real settle path is covered by the audit-settlement
-  // suites; this pins the state transition itself.
+  assert.equal(outcome, 'retained', 'live work keeps its recovery marker');
+  assert.ok(readState(cwd).mainModelRecovery, 'retention is durable, not just in memory');
 });
