@@ -32,3 +32,13 @@ tests/stale-recovery-marker.test.ts:
 (pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [472.94ms]
 
 tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [5.89ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [5.67ms]
+(pass) a changed contract IS shown, both sides [0.08ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.84ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.09ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 5 files. [19.09s]
+[run-tests] finished in 19s (exit 0)
