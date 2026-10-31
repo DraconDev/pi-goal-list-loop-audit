@@ -295,7 +295,9 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
-import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
+import { consumeRecoveryResume,
+  clearOwnedMainModelRecovery,
+} from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
   endSubagentHangProbe,

@@ -702,6 +702,25 @@ export function clearMainModelRecoveryTimer(): void {
   cancelHourlyProbe();
 }
 
+/**
+ * v0.39.61: drop the main-model recovery marker together with its timers when
+ * the goal that owned it reaches a terminal state.
+ *
+ * The marker records "this goal hit the main-model wall"; it has no meaning once
+ * that goal is archived. Leaving it behind made the widget render the standalone
+ * recovery card for finished work — the user was told to send 'continue' to
+ * retry a chat with nothing wrong with it. Tier/resume markers are left alone:
+ * this clears recovery ownership only.
+ */
+export function clearOwnedMainModelRecovery(): void {
+  clearMainModelRecoveryTimer();
+  if (!state.mainModelRecovery) return;
+  state.mainModelRecovery = undefined;
+  flags.lastMainModelFailure = null;
+  flags.mainModelAbortForRecovery = false;
+  flags.continuationDispatchStoodDown = false;
+}
+
 export function mainModelFallbackRefs(ctx: ExtensionContext): string[] {
   try { return normalizeMainModelFallbackRefs(loadGlobalSettings().mainModelFallbacks); } catch { return []; }
 }
