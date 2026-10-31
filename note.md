@@ -40,6 +40,6 @@ we keep failing the last audit perhaps ddue ot auditor switching
 ## not progressing but nto closed 
 
 /home/dracon/Pictures/Screenshots/Screenshot_20261031_092215.png
-
+seemingly there was no objective, just seemed that way ?
 
 
