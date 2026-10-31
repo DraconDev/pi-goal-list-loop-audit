@@ -118,8 +118,8 @@ CASES = {
     # whitelist in normalizePendingCompletion silently DROPPED the new class on
     # reload. Reinstate it: the durable round-trip must then fail.
     'reload-drops-context-class-regression': (
-        'extensions/auditor-failure-classes.ts',
-        '  const auditorFailureClass = isAuditorInfrastructureClass(_auditorFailureClass)\n    ? _auditorFailureClass\n    : undefined;',
+        'extensions/goal-loop-core.ts',
+        '  const auditorFailureClass = isAuditorClass(_auditorFailureClass)\n    ? _auditorFailureClass\n    : undefined;',
         '  const _stale: AuditorRecoveryFailureClass[] = ["transport", "timeout", "no-verdict", "provider"];\n'
         '  const auditorFailureClass = typeof _auditorFailureClass === "string" && _stale.includes(_auditorFailureClass as AuditorRecoveryFailureClass)\n'
         '    ? _auditorFailureClass as AuditorRecoveryFailureClass\n'
