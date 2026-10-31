@@ -1,0 +1,1 @@
+extensions/goal-loop-core.ts(733,7): error TS2322: Type 'true' is not assignable to type 'never'.

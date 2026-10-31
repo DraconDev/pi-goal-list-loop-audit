@@ -1,0 +1,39 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/goal-schema-parity.test.ts:
+(pass) every schema definition the runtime backs is reachable, and its types agree [17.97ms]
+217 |       walk(value);
+218 |     }
+219 |   };
+220 |   walk(schema);
+221 |   assert.equal(found.length, 1, 'expected exactly one auditorFailureClass enum in the shipped schema');
+222 |   assert.deepEqual([...found[0]!].sort(), [...AUDITOR_INFRASTRUCTURE_CLASS_VALUES].sort(),
+               ^
+AssertionError: the schema enum must list exactly the runtime failure classes; a class accepted by code but rejected by the schema is an unpublishable state
++ actual - expected
+
+  [
+-   'context-exhausted',
+    'no-verdict',
+    'provider',
+    'timeout',
+    'transport'
+  ]
+
+ generatedMessage: false,
+     actual: [ "no-verdict", "provider", "timeout", "transport" ],
+   expected: [ "context-exhausted", "no-verdict",
+  "provider", "timeout", "transport"
+],
+   operator: "deepStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-64djpl8g/tests/goal-schema-parity.test.ts:222:10
+      at processTicksAndRejections (native:7:39)
+(fail) the schema failure-class enum matches the shared runtime list exactly [207.17ms]
+
+ 1 pass
+ 1 fail
+Ran 2 tests across 1 file. [2.97s]
