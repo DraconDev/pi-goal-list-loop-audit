@@ -681,6 +681,13 @@ test("standalone main-model recovery remains visible when no goal is active", ()
     goal: null,
     list: [],
     mainModelRecovery: {
+      // v0.39.61: this is the LEGITIMATE standalone case — an ordinary-chat
+      // recovery, which has no goal by definition and must stay visible. The
+      // fixture needs its owner to say so: without one, ownership resolves to
+      // "absent" and the card is correctly suppressed as a stale leftover (the
+      // note.md bug). Both directions are pinned in
+      // tests/stale-recovery-marker.test.ts.
+      owner: { kind: "chat" },
       primary: "provider/primary",
       active: "provider/backup-one",
       attempted: ["provider/primary", "provider/backup-one"],
