@@ -1,5 +1,5 @@
 import { safeDiagnostic } from "./safe-diagnostic.js";
-import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } from "./goal-loop-core.js";
+import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } from "./auditor-failure-classes.js";
 /** Infrastructure failures end a bounded episode, never the supervision contract.
  * Counts are diagnostic and affect pacing only; admission belongs to the host. */
 export type InfrastructureFailureClass =

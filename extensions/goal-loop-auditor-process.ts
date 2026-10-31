@@ -68,19 +68,17 @@ export type AuditorAbortCause = "user" | "transport";
 // while the union has exactly one declaration.
 export type { AuditorInfrastructureClass, AuditorRecoveryFailureClass } from "./goal-loop-core.js";
 import type { AuditorInfrastructureClass, AuditorRecoveryFailureClass } from "./goal-loop-core.js";
-import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } from "./goal-loop-core.js";
+import { AUDITOR_INFRASTRUCTURE_CLASSES } from "./auditor-failure-classes.js";
 // v0.39.60 (auditor objection 2026-10-31, HIGH #1): DERIVED, not hand-copied.
 //
 // This used to be `new Set<AuditorInfrastructureClass>([...five literals...])`.
 // An array literal is validated element-wise, so a MISSING member is legal TS:
 // adding a class to the union and to the shared array compiled cleanly while
-// this Set stayed stale, and the exhaustiveness guard in goal-loop-core could
-// not see it. The consequence was the round-5 defect again — this Set gates
-// `normalizeAuditorInfrastructureResult`, the ladder's `failureClass` and
+// this Set stayed stale, and the exhaustiveness guard could not see it. This Set
+// gates `normalizeAuditorInfrastructureResult`, the ladder's `failureClass` and
 // `auditorResultFailureClass`, so a stale copy rewrote the persisted class and
-// the resolver resumed what should have restarted cold.
-const AUDITOR_INFRASTRUCTURE_CLASSES: ReadonlySet<string> =
-  new Set<string>(AUDITOR_INFRASTRUCTURE_CLASS_VALUES);
+// the resolver resumed what should have restarted cold. It is now the shared
+// Set itself — not a copy of any kind.
 
 /**
  * A transcript that overran its context window, or a compaction that could not
