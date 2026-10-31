@@ -37,3 +37,6 @@ AssertionError: the schema enum must list exactly the runtime failure classes; a
  1 pass
  1 fail
 Ran 2 tests across 1 file. [2.97s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-aCf3PT/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-aCf3PT
+[run-tests] finished in 3s (exit 1)
