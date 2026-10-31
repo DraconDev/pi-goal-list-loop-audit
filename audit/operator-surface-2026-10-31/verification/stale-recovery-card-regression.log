@@ -1,3 +1,38 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
 [run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/stale-recovery-marker.test.ts:
+61 | }
+62 | 
+63 | test('a completed goal with a leftover recovery marker does NOT render the recovery card', () => {
+64 |   // The exact screenshot state: no goal at all, only a stale marker.
+65 |   const shipped = { goal: null, list: [], mainModelRecovery: recovery() } as unknown as State;
+66 |   assert.equal(standaloneCardShown(shipped, false), false,
+              ^
+AssertionError: the recovery card must not ask the user to retry a chat with nothing wrong; the banner is the note.md complaint
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-h5nxmzkt/tests/stale-recovery-marker.test.ts:66:10
+      at fn (node:test:215:18)
+(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [153.32ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [7.90ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.11ms]
+(pass) a terminal goal retires the main-model recovery marker durably [5903.85ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [173.21ms]
+(pass) the real settlement path retires the recovery marker when it archives [504.82ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [1008.72ms]
+
+ 6 pass
+ 1 fail
+Ran 7 tests across 1 file. [22.98s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-7pxW0i/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-7pxW0i
+[run-tests] finished in 25s (exit 1)
