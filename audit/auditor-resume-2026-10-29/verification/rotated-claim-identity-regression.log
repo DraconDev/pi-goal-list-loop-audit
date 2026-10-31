@@ -130,3 +130,72 @@ false !== true
 (fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [1.82ms]
 (pass) a resumed verdict carries its lineage into the durable audit history [0.29ms]
 (pass) a first-pass verdict carries NO resume lineage [0.06ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [281.79ms]
+(pass) the first resume names its source model in both ledger and verdict [0.29ms]
+(pass) an explicit user abort is recorded through the real signal and stamped on the claim [0.40ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.14ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [30.89ms]
+(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [782.19ms]
+978 |   const retiered = resolveAuditorResumeForDispatch({
+979 |     inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+980 |     currentTier: baseTier === 'light' ? 'full' : 'light', currentRevision: baseRevision, cwd,
+981 |   });
+982 |   assert.equal(retiered.resume, false, 'a changed tier must restart cold on the FIRST retry');
+983 |   assert.equal(retiered.reason, 'tier-changed');
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'claim-replaced'
+- 'tier-changed'
+
+ generatedMessage: true,
+     actual: "claim-replaced",
+   expected: "tier-changed",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-nbz77z30/tests/auditor-resume.test.ts:983:10
+      at processTicksAndRejections (native:7:39)
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [684.21ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.25ms]
+1091 |     assert.equal(v.sourceModel, priorModel, 'the row names the model the PRIOR attempt ran on');
+1092 |     assert.ok(v.resumedOntoModel, 'the row names the model the resumed attempt runs on');
+1093 |     assert.equal(typeof v.resumeCount, 'number', 'the row carries a resume count');
+1094 |     assert.equal(v.tier, 'full', 'the row carries the audit tier');
+1095 |     assert.equal(v.revision, 7, 'the row carries the goal revision');
+1096 |     assert.equal(v.resumed, true, 'this retry genuinely resumed, so the lineage is a resume and not a cold start');
+                  ^
+AssertionError: this retry genuinely resumed, so the lineage is a resume and not a cold start
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-nbz77z30/tests/auditor-resume.test.ts:1096:12
+      at processTicksAndRejections (native:7:39)
+      at done (unknown:1:1)
+      at endTest (node:test:209:13)
+      at processTicksAndRejections (native:7:39)
+(fail) the resume ledger row records the full lineage on a real retry dispatch [162.47ms]
+(pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.25ms]
+
+7 tests failed:
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [2.11ms]
+(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.81ms]
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [3.64ms]
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.98ms]
+(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [1.82ms]
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [684.21ms]
+(fail) the resume ledger row records the full lineage on a real retry dispatch [162.47ms]
+
+ 31 pass
+ 7 fail
+Ran 38 tests across 1 file. [6.24s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-69ANOs/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-69ANOs
+[run-tests] finished in 7s (exit 1)
