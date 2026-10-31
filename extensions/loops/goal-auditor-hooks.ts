@@ -296,7 +296,7 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume,
-  clearOwnedMainModelRecovery,
+  retireOrphanedMainModelRecovery,
 } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
@@ -1219,7 +1219,11 @@ function settleApprovedCompletion(
   // the archive, the user was told to "send 'continue' to retry this chat" with
   // nothing wrong. The marker belongs to the goal that hit the wall; once that
   // goal is archived it has no live owner, so it must not outlive it.
-  if (archived) clearOwnedMainModelRecovery();
+  // `retireOrphanedMainModelRecovery` is the production owner of this
+  // transition: it persists, rolls back on a failed write, and ledgers the
+  // retirement. Reusing it keeps one implementation instead of a second one that
+  // could drift or forget to persist.
+  if (archived) retireOrphanedMainModelRecovery(ctx, true);
   if (!archived) {
     // archiveCurrentGoal already preserved the live record and warned the
     // user. The claim STAYS `settling` on purpose: the approval is durable and

@@ -712,15 +712,6 @@ export function clearMainModelRecoveryTimer(): void {
  * retry a chat with nothing wrong with it. Tier/resume markers are left alone:
  * this clears recovery ownership only.
  */
-export function clearOwnedMainModelRecovery(): void {
-  clearMainModelRecoveryTimer();
-  if (!state.mainModelRecovery) return;
-  state.mainModelRecovery = undefined;
-  flags.lastMainModelFailure = null;
-  flags.mainModelAbortForRecovery = false;
-  flags.continuationDispatchStoodDown = false;
-}
-
 /**
  * v0.39.61: does this recovery marker still have work waiting on it?
  *
