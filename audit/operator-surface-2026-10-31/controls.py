@@ -30,8 +30,8 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     # If this fails, the suite is over-fitted to wording rather than behaviour.
     'harmless-rewording': (
         'extensions/goal-loop-display.ts',
-        'send \'continue\' to retry this chat',
-        'send \'continue\' to retry this session',
+        '/glla resume clears the stale marker',
+        '/glla resume clears the stale recovery marker',
     ),
 
     # 1. Stale recovery marker: drop the ownership gate so an ownerless marker
