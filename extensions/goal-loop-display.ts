@@ -2773,12 +2773,35 @@ function auditorPhaseTone(phase: AuditorDisplayPhase, live: boolean, toolWait = 
 /** The model actually verifying the claim: live progress first, then the
  * claim's candidate cursor (which survives reload), never an invented
  * default. */
+/**
+ * Which model to name on the audit card.
+ *
+ * v0.39.61 (note.md 2026-10-31: "I often see the auditor as openai luna max even
+ * though I use session"): this preferred the RETRY/configured candidate ref over
+ * the model that actually ran, so a session-model audit was labelled with a
+ * configured auditor candidate that was never dispatched.
+ *
+ * Precedence now follows "what ran, then what was recorded, then what was
+ * configured":
+ *   1. audit.model                — the live worker's own report
+ *   2. claim.auditorSourceModel   — the model stamped at dispatch/resume
+ *   3. configured candidate refs  — only when nothing recorded an executed model
+ *
+ * `isSessionModelTail` refs are rendered with an explicit "session model"
+ * label, so a session audit says so instead of naming a configured pin.
+ */
 function auditorCardModelRef(audit: AuditDisplayProgress | null | undefined, claim: PendingCompletion | undefined): string | undefined {
-  const ref = audit?.model
-    ?? claim?.auditorRetryCandidateRef
+  const executed = audit?.model ?? claim?.auditorSourceModel;
+  const configured = claim?.auditorRetryCandidateRef
     ?? claim?.auditorCandidateRef
     ?? claim?.auditorCandidateRefs?.[0];
-  return ref ? truncate(ref, 48) : undefined;
+  const ref = executed ?? configured;
+  if (!ref) return undefined;
+  const label = typeof claim?.auditorSessionModel === "string" && claim.auditorSessionModel.length > 0
+    && (ref === claim.auditorSessionModel || ref.includes("session-fallback"))
+    ? `${ref} · session model`
+    : ref;
+  return truncate(label, 56);
 }
 
 /** Next action per audit phase, sharing the closer vocabulary so the lead
