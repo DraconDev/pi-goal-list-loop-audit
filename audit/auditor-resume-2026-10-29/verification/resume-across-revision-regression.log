@@ -85,3 +85,48 @@ true !== false
       at /tmp/glla-auditor-resume-control-ygvenqpk/tests/auditor-resume.test.ts:590:10
       at fn (node:test:215:18)
 (fail) an explicit user cancel and a moved revision both restart cold through the resolver [4.22ms]
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [311.82ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [0.51ms]
+(pass) a first-pass verdict carries NO resume lineage [0.07ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [269.79ms]
+(pass) the first resume names its source model in both ledger and verdict [0.29ms]
+(pass) an explicit user abort is recorded through the real signal and stamped on the claim [0.31ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.07ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [29.95ms]
+(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [709.15ms]
+970 | 
+971 |   const moved = resolveAuditorResumeForDispatch({
+972 |     inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+973 |     currentTier: baseTier, currentRevision: baseRevision + 98, cwd,
+974 |   });
+975 |   assert.equal(moved.resume, false, 'a moved revision must restart cold on the FIRST retry');
+               ^
+AssertionError: a moved revision must restart cold on the FIRST retry
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-ygvenqpk/tests/auditor-resume.test.ts:975:10
+      at processTicksAndRejections (native:7:39)
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [633.75ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.18ms]
+(pass) the resume ledger row records the full lineage on a real retry dispatch [57.11ms]
+(pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.14ms]
+
+4 tests failed:
+(fail) a moved goal revision still restarts the audit cold [6.24ms]
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.57ms]
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [4.22ms]
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [633.75ms]
+
+ 34 pass
+ 4 fail
+Ran 38 tests across 1 file. [10.16s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-FmzjkI/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-FmzjkI
+[run-tests] finished in 10s (exit 1)
