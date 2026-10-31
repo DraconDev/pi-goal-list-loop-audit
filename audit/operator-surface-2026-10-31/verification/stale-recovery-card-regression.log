@@ -1,5 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=405s heartbeat=30s
+[run-tests] host is 2.3x slower than an idle host — per-test budget raised to 270s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
@@ -20,19 +20,19 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-5lrcl7sk/tests/stale-recovery-marker.test.ts:66:10
+      at /tmp/glla-ops-control-moji6uci/tests/stale-recovery-marker.test.ts:66:10
       at fn (node:test:215:18)
-(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [10.05ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.63ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.12ms]
-(pass) a terminal goal retires the main-model recovery marker durably [181.24ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [112.87ms]
-(pass) the real settlement path retires the recovery marker when it archives [260.47ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [138.12ms]
+(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [73.76ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [2.45ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [8.93ms]
+(pass) a terminal goal retires the main-model recovery marker durably [890.06ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [151.82ms]
+(pass) the real settlement path retires the recovery marker when it archives [509.83ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [264.55ms]
 
  6 pass
  1 fail
-Ran 7 tests across 1 file. [1462.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-FJBvON/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-FJBvON
-[run-tests] finished in 2s (exit 1)
+Ran 7 tests across 1 file. [5.73s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZrlaSL/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZrlaSL
+[run-tests] finished in 6s (exit 1)
