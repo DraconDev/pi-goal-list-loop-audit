@@ -29,12 +29,19 @@ afterEach(() => {
 const NOW = Date.parse('2026-10-31T09:22:00Z');
 
 function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal'): unknown {
+  // Full MainModelRecovery shape: the renderer reads `attempted` and the other
+  // arrays, so a partial fixture would fail for the wrong reason.
   return {
     kind,
     primary: 'openai-codex/gpt-6-luna',
     active: 'minimax/MiniMax-M3.1-Flash',
+    attempted: ['openai-codex/gpt-6-luna'],
+    skipped: [],
+    failures: 1,
+    episodes: [],
     firstFailureAt: '2026-10-31T01:40:00Z',
     lastFailureAt: '2026-10-31T01:40:00Z',
+    ...(kind === 'goal' ? { owner: { kind: 'goal', id: 'goal-owner-1', startedAt: '2026-10-31T01:40:00Z' } } : {}),
   };
 }
 
