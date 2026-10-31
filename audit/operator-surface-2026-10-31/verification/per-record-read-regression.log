@@ -4,3 +4,4 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-wipe-latency.test.ts:
 (pass) the work a wipe performs stays well under a perceptible freeze [617.53ms]
+[run-tests] progress: 30s elapsed · 29s since last output · 0 KiB of suite output
