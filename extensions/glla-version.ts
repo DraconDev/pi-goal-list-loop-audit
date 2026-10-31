@@ -137,3 +137,63 @@ export function formatGllaVersion(cwd?: string, info: GllaVersionInfo = readGlla
   }
   return lines.join("\n");
 }
+
+/**
+ * v0.39.61 (note.md 2026-10-31): "a banner reported v0.39.36 while package.json
+ * is 0.39.54". The user was reading behaviour that was NOT in the source under
+ * discussion — the loaded extension build was older than the repository it was
+ * being developed in. That makes every display observation unreliable, so it is
+ * worth one clear line rather than a silent mismatch.
+ *
+ * Compares the LOADED build (this module's own package.json, i.e. what is
+ * actually executing) against the package.json in the working directory (the
+ * checkout being edited). Only a strictly older loaded build warns: a newer or
+ * equal build is normal (a published install driving a repo, or the repo itself),
+ * and an unreadable manifest proves nothing so it stays silent.
+ */
+export interface StaleBuildStatus {
+  stale: boolean;
+  loaded?: string;
+  repo?: string;
+}
+
+function readVersionAt(manifestPath: string): string | undefined {
+  try {
+    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (typeof parsed === "object" && parsed !== null) {
+      const version = (parsed as Record<string, unknown>).version;
+      if (typeof version === "string" && /^\d+\.\d+\.\d+/.test(version.trim())) return version.trim();
+    }
+  } catch {
+    // A missing/damaged manifest proves nothing about staleness.
+  }
+  return undefined;
+}
+
+/** Compare dotted numeric versions; returns <0, 0, >0. Non-numeric tails are
+ * ignored so a prerelease suffix cannot make an older build look newer. */
+export function compareGllaVersions(a: string, b: string): number {
+  const parts = (value: string): number[] => value.split(/[.+-]/).slice(0, 3)
+    .map((chunk) => Number.parseInt(chunk, 10))
+    .map((n) => (Number.isFinite(n) ? n : 0));
+  const left = parts(a), right = parts(b);
+  for (let i = 0; i < 3; i++) {
+    const diff = (left[i] ?? 0) - (right[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+export function detectStaleBuild(cwd: string | undefined): StaleBuildStatus {
+  const loaded = readVersionAt(PACKAGE_JSON_PATH);
+  if (!cwd) return { stale: false, loaded };
+  const repo = readVersionAt(path.join(cwd, "package.json"));
+  if (!loaded || !repo) return { stale: false, loaded, repo };
+  return { stale: compareGllaVersions(loaded, repo) < 0, loaded, repo };
+}
+
+/** The single human line for a stale build — a warning plus the fix action. */
+export function formatStaleBuildWarning(status: StaleBuildStatus): string | undefined {
+  if (!status.stale || !status.loaded || !status.repo) return undefined;
+  return `glla: loaded build v${status.loaded} is older than this repo (v${status.repo}) — behaviour below may not match the source. Reload the session (or reinstall the extension) to pick up the current build.`;
+}
