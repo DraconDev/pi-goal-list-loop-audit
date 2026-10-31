@@ -16,3 +16,31 @@ tests/list-auto-advance.test.ts:
 
 tests/stale-build-warning.test.ts:
 [run-tests] progress: 30s elapsed · 2s since last output · 1 KiB of suite output
+(pass) an older loaded build warns and names the reconcile action [15881.05ms]
+(pass) a matching version stays silent — the normal case must not nag [0.81ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.31ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [242.25ms]
+(pass) version comparison is numeric, not lexical [1.52ms]
+(pass) session start surfaces the stale-build warning and still runs [2817.33ms]
+
+tests/stale-recovery-marker.test.ts:
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [5.72ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [1.49ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.10ms]
+[run-tests] progress: 60s elapsed · 11s since last output · 2 KiB of suite output
+(pass) a terminal goal retires the main-model recovery marker durably [13619.20ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [199.21ms]
+(pass) the real settlement path retires the recovery marker when it archives [1193.10ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [1797.86ms]
+
+tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [4.70ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [1.02ms]
+(pass) a changed contract IS shown, both sides [0.11ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.75ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.16ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 5 files. [66.47s]
+[run-tests] finished in 68s (exit 0)
