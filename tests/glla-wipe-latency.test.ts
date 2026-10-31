@@ -21,6 +21,7 @@ import path from 'node:path';
 import { appendLedger, readState, readQueueFromDisk, queueItemSidecarCount, renderGoalMarkdown } from '../extensions/goal-loop-core.js';
 import { refreshOwnershipStanding } from '../extensions/loops/goal-session.js';
 import { seedGoal, tmpCwd } from './harness/mock-pi.js';
+import { scaledBudgetMs } from '../scripts/host-contention.mjs';
 
 /** A journal shaped like the real one: a few very large state rows. */
 function seedLargeJournal(cwd: string, rows: number): void {
@@ -61,8 +62,10 @@ test('the work a wipe performs stays well under a perceptible freeze', () => {
   if (goal) legs.push(['renderGoalMarkdown', medianMs(5, () => renderGoalMarkdown(goal)), 200]);
 
   for (const [name, measured, budget] of legs) {
-    assert.ok(measured < budget,
-      `${name} took ${measured.toFixed(1)}ms, budget ${budget}ms — wipe latency regressed`);
+    // Hang bounds, host-scaled: a busy machine must not fail a healthy leg.
+    const ceiling = scaledBudgetMs(budget);
+    assert.ok(measured < ceiling,
+      `${name} took ${measured.toFixed(1)}ms, ceiling ${ceiling}ms — wipe latency regressed`);
   }
 });
 
@@ -85,6 +88,15 @@ test('a pathologically expensive reader is caught, not just a slow one', () => {
   // Ceilings are far below a perceptible freeze (< 250ms) yet comfortably above
   // the measured baseline (a few ms), so a loaded host cannot flake them while
   // per-record work added in the wipe path fails loudly.
-  assert.ok(realisticMs < 120, `readState took ${realisticMs.toFixed(1)}ms at 200 rows — wipe would feel slow`);
-  assert.ok(oversizedMs < 200, `readState took ${oversizedMs.toFixed(1)}ms at 2000 rows — cost grew beyond I/O`);
+  // v0.39.61: these are HANG BOUNDS, not benchmarks, so they must scale with the
+  // host. Fixed wall-clock ceilings failed on a loaded host (load ~58 on 16
+  // cores) for a reader that was provably fine — the same lesson the frame-budget
+  // guard enforces elsewhere. scaledBudgetMs keeps the ceiling meaningful on an
+  // idle host while not turning contention into a false failure.
+  const realisticCeiling = scaledBudgetMs(120);
+  const oversizedCeiling = scaledBudgetMs(200);
+  assert.ok(realisticMs < realisticCeiling,
+    `readState took ${realisticMs.toFixed(1)}ms at 200 rows, ceiling ${realisticCeiling}ms — wipe would feel slow`);
+  assert.ok(oversizedMs < oversizedCeiling,
+    `readState took ${oversizedMs.toFixed(1)}ms at 2000 rows, ceiling ${oversizedCeiling}ms — cost grew beyond I/O`);
 });
