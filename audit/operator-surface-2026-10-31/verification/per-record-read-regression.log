@@ -7,3 +7,28 @@ tests/glla-wipe-latency.test.ts:
 [run-tests] progress: 30s elapsed · 24s since last output · 0 KiB of suite output
 [run-tests] progress: 60s elapsed · 54s since last output · 0 KiB of suite output
 [run-tests] progress: 90s elapsed · 84s since last output · 0 KiB of suite output
+[run-tests] progress: 120s elapsed · 114s since last output · 0 KiB of suite output
+84 | 
+85 |   // Ceilings are far below a perceptible freeze (< 250ms) yet comfortably above
+86 |   // the measured baseline (a few ms), so a loaded host cannot flake them while
+87 |   // per-record work added in the wipe path fails loudly.
+88 |   assert.ok(realisticMs < 120, `readState took ${realisticMs.toFixed(1)}ms at 200 rows — wipe would feel slow`);
+89 |   assert.ok(oversizedMs < 200, `readState took ${oversizedMs.toFixed(1)}ms at 2000 rows — cost grew beyond I/O`);
+              ^
+AssertionError: readState took 24060.0ms at 2000 rows — cost grew beyond I/O
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-pu8tnsu8/tests/glla-wipe-latency.test.ts:89:10
+      at fn (node:test:215:18)
+(fail) a pathologically expensive reader is caught, not just a slow one [126622.15ms]
+
+ 1 pass
+ 1 fail
+Ran 2 tests across 1 file. [132.83s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-s9r3xw/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-s9r3xw
+[run-tests] finished in 134s (exit 1)
