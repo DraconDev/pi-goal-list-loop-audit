@@ -1226,7 +1226,7 @@ export function settleApprovedCompletion(
   // transition: it persists, rolls back on a failed write, and ledgers the
   // retirement. Reusing it keeps one implementation instead of a second one that
   // could drift or forget to persist.
-  void archived;
+  if (archived) retireOrphanedMainModelRecovery(ctx, true);
   if (!archived) {
     // archiveCurrentGoal already preserved the live record and warned the
     // user. The claim STAYS `settling` on purpose: the approval is durable and
