@@ -2797,11 +2797,16 @@ function auditorCardModelRef(audit: AuditDisplayProgress | null | undefined, cla
     ?? claim?.auditorCandidateRefs?.[0];
   const ref = executed ?? configured;
   if (!ref) return undefined;
-  const label = typeof claim?.auditorSessionModel === "string" && claim.auditorSessionModel.length > 0
-    && (ref === claim.auditorSessionModel || ref.includes("session-fallback"))
-    ? `${ref} · session model`
-    : ref;
-  return truncate(label, 56);
+  // Name the session model when the executed model is NOT one of the claim's
+  // configured candidates: that is exactly the "I use session but the card names
+  // a configured auditor pin" case. Derived from recorded refs, never guessed.
+  const configuredRefs = [
+    claim?.auditorRetryCandidateRef, claim?.auditorCandidateRef, ...(claim?.auditorCandidateRefs ?? []),
+  ].filter((value): value is string => typeof value === "string" && value.length > 0)
+    .map((value) => value.toLowerCase());
+  const isSessionModel = executed !== undefined && configuredRefs.length > 0
+    && !configuredRefs.includes(ref.toLowerCase());
+  return truncate(isSessionModel ? `${ref} · session model` : ref, 56);
 }
 
 /** Next action per audit phase, sharing the closer vocabulary so the lead
