@@ -1,3 +1,12 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
 [run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
+[run-tests] progress: 30s elapsed · 30s since last output · 0 KiB of suite output
+
+tests/auditor-model-display.test.ts:
+(pass) a session-model audit names the model that ran, not a configured pin [9.87ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.36ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.34ms]
+(pass) the recorded executed model outranks the configured candidate [0.24ms]
+
+tests/list-auto-advance.test.ts:
