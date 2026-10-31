@@ -32,3 +32,6 @@ AssertionError: session start warns exactly once about the stale build
  5 pass
  1 fail
 Ran 6 tests across 1 file. [6.58s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-2Gvufg/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-2Gvufg
+[run-tests] finished in 7s (exit 1)
