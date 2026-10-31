@@ -42,6 +42,9 @@ function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal', ownerGoalId?: string)
     episodes: [],
     firstFailureAt: '2026-10-31T01:40:00Z',
     lastFailureAt: '2026-10-31T01:40:00Z',
+    // A chat-owned marker declares itself as such: without an owner, ownership
+    // resolves 'absent', which is a DIFFERENT case (an orphaned leftover).
+    ...(kind === 'chat' ? { owner: { kind: 'chat' } } : {}),
     ...(kind === 'goal' && ownerGoalId ? { owner: { kind: 'goal', id: ownerGoalId } } : {}),
   };
 }
