@@ -202,3 +202,50 @@ test('the real settlement path retires the recovery marker when it archives', as
     'settlement must not leave a recovery marker for the archived goal');
   assert.equal(readState(cwd).goal, null, 'the goal really was archived');
 });
+
+/**
+ * The test above passes the verdict in, so it does NOT exercise the predicate
+ * that computes it. A control proved the gap: deleting the `chat` case from
+ * mainModelRecoveryHasLiveOwner left every test green, because nothing drove the
+ * real predicate for a chat-owned marker — and treating chat as dead would hide
+ * a legitimate ordinary-chat recovery.
+ *
+ * This drives the REAL function for each ownership outcome.
+ */
+test('the live-owner predicate keeps chat-owned recoveries and drops ownerless ones', async () => {
+  const { mainModelRecoveryHasLiveOwner } = await import('../extensions/goal-recovery.js');
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `owner-predicate-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+
+  // chat-owned, no goal: LIVE — an ordinary-chat retry is going to happen.
+  seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
+  __testOnlyLoadState(cwd);
+  await tick(30);
+  assert.equal(mainModelRecoveryHasLiveOwner(), true,
+    'a chat-owned marker is live work; treating it as dead would hide a real recovery');
+
+  // goal-owned but the goal is terminal: NOT live — this is the note.md bug.
+  const terminal = seedGoal({ status: 'complete', objective: 'Verify the feature' });
+  seedState(cwd, { goal: terminal, list: [], mainModelRecovery: recovery('goal', String(terminal.id)) });
+  __testOnlyLoadState(cwd);
+  await tick(30);
+  assert.equal(mainModelRecoveryHasLiveOwner(), false,
+    'a marker whose owning goal is terminal has nothing left to act on');
+
+  // goal-owned and the goal is live: LIVE.
+  const live = seedGoal({ status: 'paused', pauseKind: 'wait', objective: 'Verify the feature' });
+  seedState(cwd, { goal: live, list: [], mainModelRecovery: recovery('goal', String(live.id)) });
+  __testOnlyLoadState(cwd);
+  await tick(30);
+  assert.equal(mainModelRecoveryHasLiveOwner(), true,
+    'a paused goal is still saved work and keeps its recovery marker');
+
+  // no marker at all: NOT live.
+  seedState(cwd, { goal: null, list: [] });
+  __testOnlyLoadState(cwd);
+  await tick(30);
+  assert.equal(mainModelRecoveryHasLiveOwner(), false, 'no marker means nothing to show');
+});
