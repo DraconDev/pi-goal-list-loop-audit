@@ -11,7 +11,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWidgetLines } from '../extensions/goal-loop-display.js';
-import { seedGoal, type State } from './harness/mock-pi.js';
+import { seedGoal } from './harness/mock-pi.js';
+import type { State } from '../extensions/goal-loop-core.js';
 
 const NOW = Date.parse('2026-10-31T09:22:00Z');
 const CONFIGURED = 'openai-codex/gpt-6-luna';
