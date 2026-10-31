@@ -228,6 +228,12 @@ export interface WidgetExtras {
    * compact summary plus detailed widget rows. The detached auditor stays
    * on its own verification surface. */
   agents?: { line?: string; lines?: string[] };
+  /** v0.39.61: does the main-model recovery marker still have work waiting on
+   * it? Supplied by the runtime adapter (which owns the ownership model) so this
+   * pure renderer never imports state machinery. Absent means "unknown" — the
+   * card then does NOT render, because a recovery card for finished work is the
+   * note.md complaint and silence is the safe default. */
+  recoveryHasLiveOwner?: boolean;
   /** v0.38.23: raw tracked rows for the head lifesign (evidence readout +
    * breathing glyph). Ephemeral like everything in extras — the head
    * derives bands from these, never from wall-clock guesses. */
@@ -2648,7 +2654,7 @@ function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null
   if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, now, theme, width, extras?.respecAuditLiveScope);
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
-  if (!state.goal && state.mainModelRecovery && mainModelRecoveryHasLiveOwner()) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
+  if (!state.goal && state.mainModelRecovery && extras?.recoveryHasLiveOwner === true) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
   const g = state.goal;
   const held = heldLoop(state);
   if (!g) {
