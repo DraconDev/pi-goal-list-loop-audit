@@ -81,6 +81,17 @@
     "expectedResultObserved": true
   },
   {
+    "case": "full-scan-read-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/glla-wipe-latency.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": true,
+    "expectedResultObserved": false
+  },
+  {
     "case": "stale-build-silent-regression",
     "command": [
       "node",

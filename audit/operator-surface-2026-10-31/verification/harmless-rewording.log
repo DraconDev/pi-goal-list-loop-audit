@@ -9,3 +9,9 @@ tests/stale-recovery-marker.test.ts:
 (pass) a terminal goal retires the main-model recovery marker durably [678.34ms]
 (pass) a live owner retains its marker — retirement is not blanket-clearing [177.45ms]
 (pass) the real settlement path retires the recovery marker when it archives [404.38ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [177.35ms]
+
+ 7 pass
+ 0 fail
+Ran 7 tests across 1 file. [6.40s]
+[run-tests] finished in 8s (exit 0)

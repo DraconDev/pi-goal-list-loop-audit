@@ -20,19 +20,19 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-h5nxmzkt/tests/stale-recovery-marker.test.ts:66:10
+      at /tmp/glla-ops-control-_nmt0a3z/tests/stale-recovery-marker.test.ts:66:10
       at fn (node:test:215:18)
-(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [153.32ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [7.90ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.11ms]
-(pass) a terminal goal retires the main-model recovery marker durably [5903.85ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [173.21ms]
-(pass) the real settlement path retires the recovery marker when it archives [504.82ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [1008.72ms]
+(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [29.27ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.57ms]
+(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.09ms]
+(pass) a terminal goal retires the main-model recovery marker durably [823.71ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [604.77ms]
+(pass) the real settlement path retires the recovery marker when it archives [705.60ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [563.74ms]
 
  6 pass
  1 fail
-Ran 7 tests across 1 file. [22.98s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-7pxW0i/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-7pxW0i
-[run-tests] finished in 25s (exit 1)
+Ran 7 tests across 1 file. [4.54s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-K3Am23/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-K3Am23
+[run-tests] finished in 5s (exit 1)
