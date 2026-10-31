@@ -254,6 +254,11 @@ Fixes, all structural:
 4. **A runtime gate test** asserts every shared class survives
    `auditorResultFailureClass` unrewritten — the consequence a typecheck cannot
    check, which fails the moment the derivation is undone.
+5. **The declaration moved to a leaf module** (`extensions/auditor-failure-classes.ts`)
+   and is re-exported from core. Deriving `infrastructure-retry` from the core
+   copy created `infrastructure-retry -> core -> infrastructure-retry`, which
+   failed at module init (`Cannot access ... before initialization`) and broke
+   every file in the suite. A leaf module keeps one declaration with no cycle.
 
 Verified biting: reinstating the stale four-member Set fails
 `the auditor infrastructure gate accepts every shared failure class unrewritten`
