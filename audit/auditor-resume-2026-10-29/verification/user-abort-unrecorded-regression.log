@@ -3,36 +3,36 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-resume.test.ts:
-(pass) the default dispatch asks for a durable auditor session, not --no-session [486.68ms]
-(pass) a failed attempt keeps the session a retry can resume [1493.40ms]
-(pass) a dispatch that did not ask for a session still reaps its scratch [353.21ms]
-(pass) auditorInspection=false restores the original --no-session spawn [394.99ms]
-(pass) a retained session directory is still reapable by the retention sweep [4.38ms]
-(pass) a provider failure resumes the prior transcript [0.15ms]
-(pass) a transport failure resumes the prior transcript [0.02ms]
-(pass) a timeout restarts cold the prior transcript [0.01ms]
+(pass) the default dispatch asks for a durable auditor session, not --no-session [218.46ms]
+(pass) a failed attempt keeps the session a retry can resume [159.22ms]
+(pass) a dispatch that did not ask for a session still reaps its scratch [170.90ms]
+(pass) auditorInspection=false restores the original --no-session spawn [173.52ms]
+(pass) a retained session directory is still reapable by the retention sweep [4.74ms]
+(pass) a provider failure resumes the prior transcript [0.09ms]
+(pass) a transport failure resumes the prior transcript
+(pass) a timeout restarts cold the prior transcript
 (pass) a no-verdict attempt restarts cold the prior transcript
-(pass) a moved goal revision still restarts the audit cold [0.10ms]
+(pass) a moved goal revision still restarts the audit cold [0.03ms]
 (pass) a replaced claim still restarts the audit cold
 (pass) a changed audit tier still restarts the audit cold
 (pass) an explicit cancel still restarts the audit cold
 (pass) a vanished transcript still restarts the audit cold
-(pass) durability turned off still restarts the audit cold [0.01ms]
-(pass) a resumed dispatch spawns against the prior attempt transcript [249.10ms]
-(pass) a resume request whose transcript vanished degrades to a cold start [305.71ms]
-(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.23ms]
-(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [2.68ms]
-(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.39ms]
-(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.15ms]
-(pass) the resume and dispatch facts survive a durable round-trip [1.95ms]
-(pass) every auditor failure class survives a durable round-trip [4.00ms]
-(pass) context-exhaustion and compaction failures restart cold through the real resolver [2.88ms]
-(pass) an explicit user cancel and a moved revision both restart cold through the resolver [0.48ms]
-(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [390.55ms]
-(pass) a resumed verdict carries its lineage into the durable audit history [0.38ms]
-(pass) a first-pass verdict carries NO resume lineage [0.07ms]
-(pass) a resumed full-tier dispatch still asks for the falsification round [246.90ms]
-(pass) the first resume names its source model in both ledger and verdict [0.35ms]
+(pass) durability turned off still restarts the audit cold
+(pass) a resumed dispatch spawns against the prior attempt transcript [200.34ms]
+(pass) a resume request whose transcript vanished degrades to a cold start [173.14ms]
+(pass) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.21ms]
+(pass) production retry wiring: a real rotation resumes instead of reporting claim-replaced [0.78ms]
+(pass) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.38ms]
+(pass) a resumed dispatch stamps lineage on the claim so the next retry can detect movement [0.11ms]
+(pass) the resume and dispatch facts survive a durable round-trip [1.37ms]
+(pass) every auditor failure class survives a durable round-trip [1.98ms]
+(pass) context-exhaustion and compaction failures restart cold through the real resolver [1.65ms]
+(pass) an explicit user cancel and a moved revision both restart cold through the resolver [0.30ms]
+(pass) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [284.67ms]
+(pass) a resumed verdict carries its lineage into the durable audit history [0.50ms]
+(pass) a first-pass verdict carries NO resume lineage [0.08ms]
+(pass) a resumed full-tier dispatch still asks for the falsification round [120.50ms]
+(pass) the first resume names its source model in both ledger and verdict [0.20ms]
 831 |   const controller = new AbortController();
 832 |   const wrapped = recordUserAbortOnSignal(controller.signal, attemptId);
 833 |   assert.equal(wrapped, controller.signal, 'the original signal is passed through');
@@ -52,23 +52,23 @@ AssertionError: aborting the host signal IS the user decision and must be record
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-auditor-resume-control-fhhds27v/tests/auditor-resume.test.ts:836:10
+      at /tmp/glla-auditor-resume-control-594d5_73/tests/auditor-resume.test.ts:836:10
       at fn (node:test:215:18)
-(fail) an explicit user abort is recorded through the real signal and stamped on the claim [8.58ms]
-(pass) a resumed verdict captured against a moved goal revision is refused [0.14ms]
-(pass) a stale attempt cannot write to the claim, resumed or not [15.91ms]
-(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [687.24ms]
-(pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [673.92ms]
-(pass) a claim with no baseline fails closed instead of resuming blindly [0.14ms]
-(pass) the resume ledger row records the full lineage on a real retry dispatch [85.87ms]
+(fail) an explicit user abort is recorded through the real signal and stamped on the claim [1.08ms]
+(pass) a resumed verdict captured against a moved goal revision is refused [0.08ms]
+(pass) a stale attempt cannot write to the claim, resumed or not [9.70ms]
+(pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [647.17ms]
+(pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [635.40ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.21ms]
+(pass) the resume ledger row records the full lineage on a real retry dispatch [55.18ms]
 (pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.12ms]
 
 1 tests failed:
-(fail) an explicit user abort is recorded through the real signal and stamped on the claim [8.58ms]
+(fail) an explicit user abort is recorded through the real signal and stamped on the claim [1.08ms]
 
  37 pass
  1 fail
-Ran 38 tests across 1 file. [8.39s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-SjRzbQ/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-SjRzbQ
-[run-tests] finished in 9s (exit 1)
+Ran 38 tests across 1 file. [3.72s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-4Kat6p/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-4Kat6p
+[run-tests] finished in 4s (exit 1)
