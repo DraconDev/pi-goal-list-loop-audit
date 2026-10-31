@@ -28,3 +28,18 @@ tests/stale-recovery-marker.test.ts:
 (pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.62ms]
 (pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.05ms]
 [run-tests] progress: 65s elapsed · 14s since last output · 2 KiB of suite output
+(pass) a terminal goal retires the main-model recovery marker durably [22874.78ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [536.93ms]
+(pass) the real settlement path retires the recovery marker when it archives [338.64ms]
+
+tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [2.88ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.07ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.21ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.09ms]
+
+ 25 pass
+ 0 fail
+Ran 25 tests across 5 files. [70.51s]
+[run-tests] finished in 76s (exit 0)
