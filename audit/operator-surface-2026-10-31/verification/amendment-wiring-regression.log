@@ -1,3 +1,37 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=373s heartbeat=30s
 [run-tests] host is 2.1x slower than an idle host — per-test budget raised to 249s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [0.58ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.07ms]
+(pass) a changed contract IS shown, both sides [0.06ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.21ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.07ms]
+129 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
+130 |   // Consent fidelity: the exact old and new objective both appear.
+131 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
+132 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
+133 |   // Compactness: an unchanged contract is not echoed.
+134 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
+               ^
+AssertionError: the unchanged contract must not be reprinted by the real path
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-_lo9pf3t/tests/amendment-confirm-compact.test.ts:134:10
+      at processTicksAndRejections (native:7:39)
+(fail) the real complete_goal amendment confirm uses the compact body [1020.97ms]
+
+ 5 pass
+ 1 fail
+Ran 6 tests across 1 file. [8.26s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-Y44pCD/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-Y44pCD
+[run-tests] finished in 9s (exit 1)

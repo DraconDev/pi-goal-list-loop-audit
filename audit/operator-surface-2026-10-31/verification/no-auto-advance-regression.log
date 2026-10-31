@@ -3,9 +3,9 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [89.04ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [8.52ms]
-(pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [8.22ms]
+(pass) queue items wait while an item is still in flight [820.72ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [67.24ms]
+(pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [33.43ms]
 100 | 
 101 |   const after = readState(cwd);
 102 |   // The queue advanced: the next item became the active goal, with no /list next.
@@ -26,13 +26,13 @@ AssertionError: the item that ran is the queue head after the finished one was c
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-dxif0aki/tests/list-auto-advance.test.ts:105:10
+      at /tmp/glla-ops-control-o4ixga0j/tests/list-auto-advance.test.ts:105:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [343.65ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [968.85ms]
 
  3 pass
  1 fail
-Ran 4 tests across 1 file. [2.02s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-6HSZmB/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-6HSZmB
-[run-tests] finished in 2s (exit 1)
+Ran 4 tests across 1 file. [5.05s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-J0VoWC/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-J0VoWC
+[run-tests] finished in 5s (exit 1)
