@@ -9,3 +9,6 @@ tests/auditor-model-display.test.ts:
 (pass) the recorded executed model outranks the configured candidate [9.24ms]
 
 tests/list-auto-advance.test.ts:
+(pass) queue items wait while an item is still in flight [7778.07ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [90.71ms]
+(pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [96.43ms]
