@@ -18,6 +18,7 @@ import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
 import { readState } from '../extensions/goal-loop-core.js';
+import { settleApprovedCompletion } from '../extensions/loops/goal-auditor-hooks.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 
 afterEach(() => {
@@ -71,4 +72,42 @@ test('a paused or blocked item keeps the queue held — auto-advance must not bl
     assert.equal(queue.length, 2, `${status}: the queue is preserved for a decision, not advanced`);
     assert.equal(queue[0]?.objective, ITEM(1), `${status}: the head is unchanged`);
   }
+});
+
+/**
+ * The direction the note actually asked for: a CLEAN completion advances without
+ * the user typing /list next. This drives the real settlement path rather than
+ * asserting the precondition.
+ */
+test('a cleanly completed item auto-advances the queue without /list next', async () => {
+  const { cwd, ctx } = await setup({ status: 'auditing', verificationContract: 'Inspect the behavior' }, [ITEM(1), ITEM(2)]);
+  const goalId = String(readState(cwd).goal!.id);
+  assert.equal(readState(cwd).list?.length, 2, 'two items are waiting');
+
+  const settled = settleApprovedCompletion(ctx as never, {
+    goalId,
+    generation: 0,
+    claim: {
+      at: new Date().toISOString(), attemptId: 'audit-auto-advance', claimLineageId: 'claim-auto-advance',
+      completionSummary: 'Outcome: done. Changed: behavior. Evidence: tests. Tests: pass. Unresolved: none. Next: none.',
+      verificationSummary: 'Fixture only', phase: 'starting',
+    } as never,
+    model: 'test/auditor-model',
+    origin: 'provider-retry',
+  });
+  assert.equal(settled, true, 'the approved completion archived');
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const after = readState(cwd);
+  // The queue advanced: the next item became the active goal, with no /list next.
+  assert.equal(after.goal?.status, 'active',
+    'the next list item started on its own — the note asked for exactly this');
+  assert.equal(after.goal?.objective, ITEM(2),
+    'the item that ran is the queue head after the finished one was consumed');
+
+  const rows = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
+    .split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    .filter((row) => row.type === 'list_auto_advance');
+  assert.equal(rows.length, 1, 'the advance is recorded once, durably');
+  assert.equal(rows[0].value.via, 'completion-settlement', 'the ledger names the path that advanced');
 });
