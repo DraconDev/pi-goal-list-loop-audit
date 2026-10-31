@@ -3,11 +3,11 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [9458.17ms]
-(pass) a matching version stays silent — the normal case must not nag [14.83ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [4.52ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [18.05ms]
-(pass) version comparison is numeric, not lexical [0.44ms]
+(pass) an older loaded build warns and names the reconcile action [79.13ms]
+(pass) a matching version stays silent — the normal case must not nag [11.92ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.29ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.27ms]
+(pass) version comparison is numeric, not lexical [7.67ms]
 101 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
 102 |   await new Promise((resolve) => setTimeout(resolve, 250));
 103 | 
@@ -25,13 +25,13 @@ AssertionError: session start warns exactly once about the stale build
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-ikyofw6a/tests/stale-build-warning.test.ts:106:10
+      at /tmp/glla-ops-control-iwm0s56i/tests/stale-build-warning.test.ts:106:10
       at processTicksAndRejections (native:7:39)
-(fail) session start surfaces the stale-build warning and still runs [418.25ms]
+(fail) session start surfaces the stale-build warning and still runs [657.08ms]
 
  5 pass
  1 fail
-Ran 6 tests across 1 file. [20.33s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-LslxpP/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-LslxpP
-[run-tests] finished in 21s (exit 1)
+Ran 6 tests across 1 file. [1367.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-YwvDDI/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-YwvDDI
+[run-tests] finished in 2s (exit 1)
