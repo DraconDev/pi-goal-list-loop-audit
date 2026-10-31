@@ -71,6 +71,16 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         '  const executed = undefined as string | undefined;',
     ),
 
+    # 3. Wipe latency: reinstate the full-scan behaviour the budget test guards.
+    #    readState must take the LAST state row, not replay every historical one;
+    #    this makes every read walk the whole file, which is the regression the
+    #    scaling assertion exists to catch.
+    'full-scan-read-regression': (
+        'extensions/goal-loop-core.ts',
+        '    const files = ledgerFiles(cwd);\n    const hasSegments = files.some((candidate) => candidate !== file);',
+        '    const files = ledgerFiles(cwd);\n    for (const _f of files) { try { for (const _l of fs.readFileSync(_f, "utf8").split("\\n")) { parseLedgerRecord(_l); } } catch {} }\n    const hasSegments = files.some((candidate) => candidate !== file);',
+    ),
+
     # 6. Stale-build: stop emitting the warning at session start.
     'stale-build-silent-regression': (
         'extensions/loops/goal-activation.ts',
@@ -91,6 +101,7 @@ SUITES: dict[str, list[str]] = {
     'no-auto-advance-regression': ['tests/list-auto-advance.test.ts'],
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
+    'full-scan-read-regression': ['tests/glla-wipe-latency.test.ts'],
 }
 
 results = []
