@@ -3,3 +3,43 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [10.50ms]
+34 |     oldObjective: 'Ship the feature',
+35 |     newObjective: 'Ship the feature and its tests',
+36 |     oldContract: contract,
+37 |     newContract: contract,
+38 |   });
+39 |   assert.equal(body.includes(contract), false,
+              ^
+AssertionError: an identical contract must not be echoed twice; it is not part of the decision
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:39:10
+      at fn (node:test:215:18)
+(fail) an unchanged contract is NOT reprinted — that was most of the wall [0.95ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
+(pass) a long objective is clipped with a visible marker, never silently cut [0.19ms]
+76 |     oldObjective: LONG_OBJECTIVE,
+77 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
+78 |     oldContract: 'x'.repeat(300),
+79 |     newContract: 'x'.repeat(300),
+80 |   });
+81 |   assert.ok(compact.length < oldForm.length / 2,
+              ^
+AssertionError: the default body must be materially shorter (1125 vs 1331)
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-baz8__6v/tests/amendment-confirm-compact.test.ts:81:10
+      at fn (node:test:215:18)
+(fail) the compact body is measurably smaller than the old five-section form [0.13ms]
