@@ -54,9 +54,19 @@ says "Contract: unchanged" otherwise), clips a long objective to a readable leng
 with an explicit `…` marker while keeping the tail where acceptance clauses live,
 and keeps the consequence line.
 
-**Consent integrity preserved.** The confirm still shows the exact old and new
-objective — the user approves a specific pair — and Confirm/Cancel semantics are
-unchanged. The `cmdTweak` dialog was already compact and was left alone.
+**Consent integrity preserved, and it decided the design.** The objective asked
+for both a compact card AND an exact old→new consent record, which pull against
+each other for a very long objective. Exactness wins: the objective text is
+**never clipped**. The wall was measured to be dominated by the two reprinted
+contracts and five labelled sections, so that is what was removed. A secondary
+contract is shown only when it changed, and may be shortened with an explicit
+`…` marker. Confirm/Cancel semantics are unchanged; the `cmdTweak` dialog was
+already compact and was left alone.
+
+**Known limitation.** `ctx.ui.confirm(title, body)` is title+body only, so a
+literal in-dialog expand/toggle would need a custom UI component. Rather than add
+a new interactive surface for this, the full objective is always rendered, which
+makes the toggle unnecessary on the side that carries consent.
 
 ---
 
