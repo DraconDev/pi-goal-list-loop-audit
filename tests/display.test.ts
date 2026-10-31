@@ -700,7 +700,10 @@ test("standalone main-model recovery remains visible when no goal is active", ()
   } as State;
   const status = buildStatusText(state, null, NOW);
   assert.match(status ?? "", /main-model recovery/);
-  const widget = buildWidgetLines(state, null, NOW)!;
+  // The renderer takes the ownership verdict as ephemeral extras (it must not
+  // import state machinery); goal-ui.ts supplies it via
+  // mainModelRecoveryHasLiveOwner(). A chat-owned marker IS live.
+  const widget = buildWidgetLines(state, null, NOW, undefined, undefined, { recoveryHasLiveOwner: true })!;
   assert.ok(widget.some((line) => line.includes("main-model recovery")), widget.join("\\n"));
   assert.ok(widget.some((line) => line.includes("provider/backup-two")), widget.join("\\n"));
   assert.ok(widget.some((line) => line.includes("provider/primary, provider/backup-one")), widget.join("\\n"));
