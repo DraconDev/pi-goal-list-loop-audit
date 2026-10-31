@@ -82,3 +82,35 @@ test('version comparison is numeric, not lexical', () => {
   // A prerelease suffix must not make an older build look newer.
   assert.ok(compareGllaVersions('0.39.54-beta.1', '0.39.54') <= 0);
 });
+
+/**
+ * End-to-end at the real entry point: session start must surface the warning.
+ * A helper-only test would pass even if nothing ever called it.
+ */
+test('session start surfaces the stale-build warning and still runs', async () => {
+  const { default: activate, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } =
+    await import('../extensions/loops/goal.js');
+  const { MockPi, makeMockCtx } = await import('./harness/mock-pi.js');
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+  const cwd = tmpCwd();
+  // A repo far ahead of the loaded build: the exact note.md mismatch.
+  seedRepoVersion(cwd, '9.9.9');
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `stale-build-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const warned = (ctx.ui as unknown as { notifies: Array<{ message: string; type?: string }> }).notifies
+    .filter((entry) => /older than this repo/.test(entry.message));
+  assert.equal(warned.length, 1, 'session start warns exactly once about the stale build');
+  assert.equal(warned[0]?.type, 'warning', 'it is advisory, not an error');
+
+  // Non-blocking: the session still started and the ledger recorded the fact.
+  const rows = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
+    .split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  assert.ok(rows.some((row) => row.type === 'glla_stale_build'),
+    'the mismatch is durably recorded for later evidence review');
+  assert.ok(rows.some((row) => row.type === 'state'),
+    'session start still wrote its own state — a stale build never blocks the session');
+});
