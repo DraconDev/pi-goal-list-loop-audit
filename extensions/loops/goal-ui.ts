@@ -270,7 +270,9 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
-import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
+import { consumeRecoveryResume,
+  mainModelRecoveryHasLiveOwner,
+} from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import { buildVersionTail, readUpdateCheck } from "../glla-update-check.js"; // v0.38.44 version tail
 import { readGllaVersionInfo } from "../glla-version.js"; // v0.38.44 version tail
 import {
@@ -923,6 +925,9 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
       mainModelFallbacks: fallbackRefs,
       mainModelSameModelRetries: loadSettings(ctx.cwd).mainModelSameModelRetries,
       mainModelRecoveryRuntime: mainModelRecoveryRuntimeStatus(),
+      // v0.39.61: the ownership verdict, computed where the model lives. The
+      // renderer must not import state machinery to answer this.
+      recoveryHasLiveOwner: mainModelRecoveryHasLiveOwner(),
       modelProvenance,
       ...(durableDeferRecommendation ? { durableDeferRecommendation } : {}),
       ...(lastAuditorQuietStretch ? { auditorQuietStretch: lastAuditorQuietStretch } : {}),
