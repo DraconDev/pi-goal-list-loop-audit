@@ -137,7 +137,10 @@ isGoalRevisionCurrent,
 } from "../goal-loop-core.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { refreshUpdateCheck } from "../glla-update-check.js"; // v0.38.44 stale-version nudge
-import { readGllaVersionInfo } from "../glla-version.js";
+import { readGllaVersionInfo,
+  detectStaleBuild,
+  formatStaleBuildWarning,
+} from "../glla-version.js";
 import { configureProgressRuntime } from "../progress-observer.js";
 import {
   createContinuationDispatch,
@@ -1970,6 +1973,20 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     clearPressureAttempt(ctx);
     clearBoundaryCompactionAttempt(ctx);
     retentionSweepAuditJobs(ctx);
+    // v0.39.61 (note.md 2026-10-31): a loaded build older than the repo makes
+    // every observation about this session unreliable, so say so ONCE at start.
+    // Purely informational — it never returns early, never pauses the goal, and
+    // never touches state, so a stale build can still be driven for development.
+    try {
+      const staleBuild = detectStaleBuild(ctx.cwd);
+      const staleLine = formatStaleBuildWarning(staleBuild);
+      if (staleLine) {
+        appendLedger(ctx.cwd, "glla_stale_build", { loaded: staleBuild.loaded, repo: staleBuild.repo });
+        ctx.ui.notify(staleLine, "warning");
+      }
+    } catch {
+      // A version probe must never break session start.
+    }
     // [lifecycle 4/12] rebind reset: capture flags, clear timers, rebind ctx, restore state
     // v0.34.73 (OPEN-ISSUES 1.12): capture the pre-rebind invalidation flags
     // BEFORE the block below clears them — the id_invalidation reason needs
