@@ -1261,6 +1261,25 @@ export function settleApprovedCompletion(
     renderPersisted: persisted,
   });
   notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
+  // v0.39.61 (note.md: "we should be auto continuing no up next"): a CLEAN
+  // completion advances the queue. The list used to print "N queued — /list
+  // next starts it" and wait for the user, so a queue of short items stalled
+  // after every single one.
+  //
+  // Deliberately narrow: this runs only on the settlement path — an APPROVED
+  // audit archiving a completed goal. A paused, blocked, failed, or
+  // infrastructure-parked goal never reaches here, so the existing
+  // hold-for-a-decision gate is untouched for exactly the cases that need it.
+  // A parked loop keeps supervision and must not have its owner replaced.
+  if ((listQueue()?.length ?? 0) > 0 && !isLoopActive()) {
+    const advanced = activateNextListItem(ctx);
+    appendLedger(ctx.cwd, "list_auto_advance", {
+      goalId,
+      via: "completion-settlement",
+      advanced,
+      waiting: listQueue()?.length ?? 0,
+    });
+  }
   return true;
 }
 
