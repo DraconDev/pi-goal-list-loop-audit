@@ -122,7 +122,7 @@ test('the real complete_goal amendment confirm uses the compact body', async () 
   await pi.runTool('complete_goal', {
     completionSummary: 'Outcome: shipped. Changed: feature. Evidence: tests. Tests: pass. Unresolved: none. Next: none.',
     verificationSummary: 'Fixture only',
-    objective: LONG_NEW,
+    newObjective: LONG_NEW,
   }, ctx);
 
   const amendment = seen.find((entry) => /scope amendment/i.test(entry.title));
