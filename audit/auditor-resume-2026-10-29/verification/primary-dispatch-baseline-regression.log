@@ -87,3 +87,6 @@ AssertionError: Expected values to be strictly equal:
  36 pass
  2 fail
 Ran 38 tests across 1 file. [16.81s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-c6RyA1/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-c6RyA1
+[run-tests] finished in 17s (exit 1)
