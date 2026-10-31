@@ -28,7 +28,7 @@ afterEach(() => {
 
 const NOW = Date.parse('2026-10-31T09:22:00Z');
 
-function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal'): unknown {
+function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal', ownerGoalId?: string): unknown {
   // Full MainModelRecovery shape: the renderer reads `attempted` and the other
   // arrays, so a partial fixture would fail for the wrong reason.
   return {
@@ -41,7 +41,7 @@ function recovery(kind: 'goal' | 'loop' | 'chat' = 'goal'): unknown {
     episodes: [],
     firstFailureAt: '2026-10-31T01:40:00Z',
     lastFailureAt: '2026-10-31T01:40:00Z',
-    ...(kind === 'goal' ? { owner: { kind: 'goal', id: 'goal-owner-1', startedAt: '2026-10-31T01:40:00Z' } } : {}),
+    ...(kind === 'goal' && ownerGoalId ? { owner: { kind: 'goal', id: ownerGoalId } } : {}),
   };
 }
 
@@ -99,17 +99,18 @@ test('a terminal goal retires the main-model recovery marker durably', async () 
   await pi.fire('session_start', { reason: 'startup' }, ctx);
   // The owner goal is TERMINAL, exactly as after an archive: the marker has
   // nothing left to act on.
+  const terminalGoal = seedGoal({ status: 'complete', objective: 'Verify the feature' });
   seedState(cwd, {
-    goal: seedGoal({ status: 'complete', objective: 'Verify the feature' }),
+    goal: terminalGoal,
     list: [],
-    mainModelRecovery: recovery(),
+    mainModelRecovery: recovery('goal', String(terminalGoal.id)),
   });
   __testOnlyLoadState(cwd);
   await tick(50);
   assert.ok(readState(cwd).mainModelRecovery, 'the seeded marker is live before retirement');
 
   // The production transition the settlement path now calls.
-  const outcome = retireOrphanedMainModelRecovery(ctx, true);
+  const outcome = retireOrphanedMainModelRecovery(ctx as never, true);
   await tick(50);
   assert.equal(outcome, 'retired', 'a terminal goal retires the marker rather than retaining it');
   assert.equal(readState(cwd).mainModelRecovery, undefined,
@@ -122,18 +123,19 @@ test('a live owner retains its marker — retirement is not blanket-clearing', a
   activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `retain-recovery-${Math.random()}` } });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
+  const liveGoal = seedGoal({ status: 'paused', pauseKind: 'wait', objective: 'Verify the feature' });
   seedState(cwd, {
     // A paused goal is still live work: the wall parked it, it did not finish.
-    goal: seedGoal({ status: 'paused', pauseKind: 'wait', objective: 'Verify the feature' }),
+    goal: liveGoal,
     list: [],
-    mainModelRecovery: recovery(),
+    mainModelRecovery: recovery('goal', String(liveGoal.id)),
   });
   __testOnlyLoadState(cwd);
   await tick(50);
   const before = readState(cwd).mainModelRecovery;
   assert.ok(before, 'the seeded marker is live');
 
-  const outcome = retireOrphanedMainModelRecovery(ctx, true);
+  const outcome = retireOrphanedMainModelRecovery(ctx as never, true);
   await tick(50);
   assert.equal(outcome, 'retained', 'live work keeps its recovery marker');
   assert.ok(readState(cwd).mainModelRecovery, 'retention is durable, not just in memory');
