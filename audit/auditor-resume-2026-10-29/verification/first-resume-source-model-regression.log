@@ -69,3 +69,6 @@ AssertionError: every dispatch records the model it ran on, not only resumed one
  37 pass
  1 fail
 Ran 38 tests across 1 file. [11.74s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-GwaanW/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-GwaanW
+[run-tests] finished in 12s (exit 1)
