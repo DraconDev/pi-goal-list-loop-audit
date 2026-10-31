@@ -58,3 +58,17 @@ AssertionError: an overflow must be classified non-resumable, not provider: exce
 (pass) a resumed verdict captured against a moved goal revision is refused [0.08ms]
 (pass) a stale attempt cannot write to the claim, resumed or not [18.07ms]
 (pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [725.76ms]
+(pass) the first retry after a real primary dispatch refuses a moved revision and a changed tier [654.18ms]
+(pass) a claim with no baseline fails closed instead of resuming blindly [0.19ms]
+(pass) the resume ledger row records the full lineage on a real retry dispatch [52.19ms]
+(pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.15ms]
+
+1 tests failed:
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [6.22ms]
+
+ 37 pass
+ 1 fail
+Ran 38 tests across 1 file. [7.75s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-neEG6V/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-neEG6V
+[run-tests] finished in 8s (exit 1)
