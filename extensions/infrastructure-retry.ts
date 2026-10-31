@@ -1,7 +1,16 @@
 import { safeDiagnostic } from "./safe-diagnostic.js";
+import { AUDITOR_INFRASTRUCTURE_CLASS_VALUES } from "./goal-loop-core.js";
 /** Infrastructure failures end a bounded episode, never the supervision contract.
  * Counts are diagnostic and affect pacing only; admission belongs to the host. */
-export type InfrastructureFailureClass = "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted" | "auth" | "config";
+export type InfrastructureFailureClass =
+  | "no-verdict" | "timeout" | "transport" | "provider" | "context-exhausted"
+  | "auth" | "config";
+
+// The auditor classes are DERIVED from the one shared list; only the two
+// retry-specific classes are added here, so this copy cannot drift stale.
+const INFRASTRUCTURE_FAILURE_CLASSES: ReadonlySet<string> = new Set<string>([
+  ...AUDITOR_INFRASTRUCTURE_CLASS_VALUES, "auth", "config",
+]);
 export interface InfrastructureRetry {
   scopeId: string;
   failureClass: InfrastructureFailureClass;
@@ -24,7 +33,7 @@ export function infrastructureRetryDelay(retry: InfrastructureRetry | undefined,
 export function sanitizeInfrastructureRetry(value: unknown, scopeId: string): InfrastructureRetry | undefined {
   if (!value || typeof value !== "object") return undefined;
   const r = value as InfrastructureRetry;
-  if (r.scopeId !== scopeId || !["no-verdict", "timeout", "transport", "provider", "context-exhausted", "auth", "config"].includes(r.failureClass)
+  if (r.scopeId !== scopeId || !INFRASTRUCTURE_FAILURE_CLASSES.has(r.failureClass)
       || ![r.firstFailureAt, r.lastFailureAt, r.nextRetryAt].every(n => typeof n === "number" && Number.isFinite(n) && n >= 0)
       || r.lastFailureAt < r.firstFailureAt || r.nextRetryAt < r.lastFailureAt) return undefined;
   return { scopeId, failureClass: r.failureClass, ...(safeDiagnostic(r.diagnostic) ? { diagnostic: safeDiagnostic(r.diagnostic) } : {}), failures: Number.isFinite(r.failures) ? Math.min(1_000_000, Math.max(1, Math.floor(r.failures))) : 1,
