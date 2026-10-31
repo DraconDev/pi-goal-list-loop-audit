@@ -1,37 +1,3 @@
 [run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
 [run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
-
-tests/stale-recovery-marker.test.ts:
-58 | }
-59 | 
-60 | test('a completed goal with a leftover recovery marker does NOT render the recovery card', () => {
-61 |   // The exact screenshot state: no goal at all, only a stale marker.
-62 |   const shipped = { goal: null, list: [], mainModelRecovery: recovery() } as unknown as State;
-63 |   assert.equal(standaloneCardShown(shipped, false), false,
-              ^
-AssertionError: the recovery card must not ask the user to retry a chat with nothing wrong; the banner is the note.md complaint
-
-true !== false
-
- generatedMessage: false,
-     actual: true,
-   expected: false,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /tmp/glla-ops-control-4zs6y6lo/tests/stale-recovery-marker.test.ts:63:10
-      at fn (node:test:215:18)
-(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [10.76ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.59ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.10ms]
-(pass) a terminal goal retires the main-model recovery marker durably [2315.89ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [3435.93ms]
-(pass) the real settlement path retires the recovery marker when it archives [1403.88ms]
-
- 5 pass
- 1 fail
-Ran 6 tests across 1 file. [9.81s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QRBswp/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QRBswp
-[run-tests] finished in 10s (exit 1)

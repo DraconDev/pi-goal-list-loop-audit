@@ -6,3 +6,12 @@ tests/stale-recovery-marker.test.ts:
 (pass) a completed goal with a leftover recovery marker does NOT render the recovery card [4.85ms]
 (pass) a live recovery marker still renders its card — the guard is not blanket-hiding [8.73ms]
 (pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.10ms]
+(pass) a terminal goal retires the main-model recovery marker durably [4000.69ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [125.65ms]
+(pass) the real settlement path retires the recovery marker when it archives [577.64ms]
+(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [1763.52ms]
+
+ 7 pass
+ 0 fail
+Ran 7 tests across 1 file. [12.82s]
+[run-tests] finished in 16s (exit 0)
