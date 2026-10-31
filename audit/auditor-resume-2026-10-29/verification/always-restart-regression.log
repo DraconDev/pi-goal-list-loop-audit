@@ -277,3 +277,98 @@ false !== true
 (pass) a resumed verdict captured against a moved goal revision is refused [0.09ms]
 (pass) a stale attempt cannot write to the claim, resumed or not [11.93ms]
 (pass) the PRIMARY complete_goal dispatch stamps the retry baseline on the claim [651.54ms]
+971 |   const moved = resolveAuditorResumeForDispatch({
+972 |     inspection: true, claim: retry, currentAttemptId: retry.attemptId,
+973 |     currentTier: baseTier, currentRevision: baseRevision + 98, cwd,
+974 |   });
+975 |   assert.equal(moved.resume, false, 'a moved revision must restart cold on the FIRST retry');
+976 |   assert.equal(moved.reason, 'revision-moved');
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'failure-class'
+- 'revision-moved'
+
+ generatedMessage: true,
+     actual: "failure-class",
+   expected: "revision-moved",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-045mdmok/tests/auditor-resume.test.ts:976:10
+      at processTicksAndRejections (native:7:39)
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [623.00ms]
+ 996 |     priorClaimAttemptId: 'cl', currentClaimAttemptId: 'cl',
+ 997 |     currentRevision: 99, currentTier: 'light', sessionExists: true,
+ 998 |   });
+ 999 |   assert.equal(decision.resume, false,
+1000 |     'absence of a baseline is not permission: the audit must restart cold');
+1001 |   assert.equal(decision.reason, 'revision-unknown');
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'failure-class'
+- 'revision-unknown'
+
+ generatedMessage: true,
+     actual: "failure-class",
+   expected: "revision-unknown",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-045mdmok/tests/auditor-resume.test.ts:1001:10
+      at fn (node:test:215:18)
+      at done (unknown:1:1)
+      at endTest (node:test:209:13)
+      at processTicksAndRejections (native:7:39)
+(fail) a claim with no baseline fails closed instead of resuming blindly [0.60ms]
+1091 |     assert.equal(v.sourceModel, priorModel, 'the row names the model the PRIOR attempt ran on');
+1092 |     assert.ok(v.resumedOntoModel, 'the row names the model the resumed attempt runs on');
+1093 |     assert.equal(typeof v.resumeCount, 'number', 'the row carries a resume count');
+1094 |     assert.equal(v.tier, 'full', 'the row carries the audit tier');
+1095 |     assert.equal(v.revision, 7, 'the row carries the goal revision');
+1096 |     assert.equal(v.resumed, true, 'this retry genuinely resumed, so the lineage is a resume and not a cold start');
+                  ^
+AssertionError: this retry genuinely resumed, so the lineage is a resume and not a cold start
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-auditor-resume-control-045mdmok/tests/auditor-resume.test.ts:1096:12
+      at processTicksAndRejections (native:7:39)
+      at done (unknown:1:1)
+      at endTest (node:test:209:13)
+      at processTicksAndRejections (native:7:39)
+(fail) the resume ledger row records the full lineage on a real retry dispatch [67.39ms]
+(pass) the auditor infrastructure gate accepts every shared failure class unrewritten [0.11ms]
+
+15 tests failed:
+(fail) a provider failure resumes the prior transcript [1.25ms]
+(fail) a transport failure resumes the prior transcript [0.10ms]
+(fail) a moved goal revision still restarts the audit cold [0.40ms]
+(fail) a replaced claim still restarts the audit cold [0.13ms]
+(fail) a changed audit tier still restarts the audit cold [0.06ms]
+(fail) a vanished transcript still restarts the audit cold [0.07ms]
+(fail) a resumed attempt is still one attempt: identity, tier and challenge are unchanged [0.36ms]
+(fail) production retry wiring: a real rotation resumes instead of reporting claim-replaced [1.58ms]
+(fail) a resume whose retained session is only in the nonce-suffixed dir is found, not missed [0.62ms]
+(fail) context-exhaustion and compaction failures restart cold through the real resolver [2.39ms]
+(fail) an explicit user cancel and a moved revision both restart cold through the resolver [0.85ms]
+(fail) end to end: a rotated claim resolves to the prior transcript and the worker resumes it [0.76ms]
+(fail) the first retry after a real primary dispatch refuses a moved revision and a changed tier [623.00ms]
+(fail) a claim with no baseline fails closed instead of resuming blindly [0.60ms]
+(fail) the resume ledger row records the full lineage on a real retry dispatch [67.39ms]
+
+ 23 pass
+ 15 fail
+Ran 38 tests across 1 file. [3.93s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-o9ls2l/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-o9ls2l
+[run-tests] finished in 4s (exit 1)
