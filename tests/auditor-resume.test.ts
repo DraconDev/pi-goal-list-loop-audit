@@ -1099,3 +1099,25 @@ test('the resume ledger row records the full lineage on a real retry dispatch', 
     fs.writeFileSync(settingsPath, priorSettings);
   }
 });
+
+/**
+ * v0.39.60 (auditor objection 2026-10-31, HIGH #1): the gate in
+ * `goal-loop-auditor-process.ts` used to be a hand-copied
+ * `new Set<AuditorInfrastructureClass>([...])`. An array literal is validated
+ * element-wise, so OMITTING a member was legal TypeScript — the exhaustiveness
+ * guard in the core could not see it, `tsc` exited 0, and the whole suite stayed
+ * green while the classifier rewrote the persisted class to `provider` and the
+ * resolver resumed what should have restarted cold.
+ *
+ * The Set is now derived from the shared list, so a stale copy is not
+ * expressible. This asserts the CONSEQUENCE at runtime — every class in the
+ * shared list must survive the real gate unrewritten — which is the check a
+ * typecheck cannot make and which fails if the derivation is ever undone.
+ */
+test('the auditor infrastructure gate accepts every shared failure class unrewritten', () => {
+  for (const failureClass of AUDITOR_INFRASTRUCTURE_CLASS_VALUES) {
+    const result = auditorResultFailureClass({ infrastructureClass: failureClass } as never);
+    assert.equal(result, failureClass,
+      `${failureClass} must survive the infrastructure gate; a stale hand-copied Set rewrites it to provider and the resolver then resumes`);
+  }
+});
