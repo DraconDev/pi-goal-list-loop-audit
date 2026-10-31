@@ -81,7 +81,13 @@ test('Designer stays off on startup and is registered only when a live goal expl
 test('no-objective resume retires a stale probe marker without inventing a goal or claiming provider health', async () => {
   const { pi, cwd, ctx } = await fixture();
   appendStateSnapshot(cwd, state);
-  const widget = buildWidgetLines(state, null, Date.now(), undefined, 120)!.join('\n');
+  // v0.39.61: the renderer now takes the ownership verdict as ephemeral extras
+  // (it no longer renders a recovery card for a marker with no live owner — that
+  // was the note.md bug). This fixture's marker is an in-flight preferred-primary
+  // probe the user should still be able to see, so supply the live-owner verdict
+  // exactly as goal-ui.ts does. The stale, ownerless case is covered in
+  // tests/stale-recovery-marker.test.ts.
+  const widget = buildWidgetLines(state, null, Date.now(), undefined, 120, { recoveryHasLiveOwner: true })!.join('\n');
   assert.ok(widget.includes("send 'continue'"), widget);
   assert.ok(!widget.includes('work is saved'), widget);
   pi.sent.length = 0;
