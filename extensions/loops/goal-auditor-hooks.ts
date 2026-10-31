@@ -1147,7 +1147,10 @@ export function inspectionSessionExtras(inspectionSessionPath: string | undefine
   return [`• Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
 }
 
-function settleApprovedCompletion(
+// Exported so a test can drive the REAL settlement path: the stale-recovery
+// fix lives in this function, and a test that called the retirement helper
+// directly would not notice if this call site were removed.
+export function settleApprovedCompletion(
   ctx: ExtensionContext,
   opts: {
     goalId: string;
