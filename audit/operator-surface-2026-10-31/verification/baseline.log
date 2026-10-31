@@ -15,3 +15,4 @@ tests/list-auto-advance.test.ts:
 (pass) a cleanly completed item auto-advances the queue without /list next [5105.07ms]
 
 tests/stale-build-warning.test.ts:
+[run-tests] progress: 30s elapsed · 2s since last output · 1 KiB of suite output
