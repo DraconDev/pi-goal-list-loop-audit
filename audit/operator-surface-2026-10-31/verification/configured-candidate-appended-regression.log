@@ -1,0 +1,53 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-model-display.test.ts:
+57 |     'a session-model audit says so plainly instead of looking like a configured pin');
+58 |   // The contract's SECOND half: a configured candidate that was never dispatched
+59 |   // must not be reported at all. Presence-only assertions cannot see a card that
+60 |   // names the real model AND appends the pin, which is the exact forbidden
+61 |   // output — audit round 5 proved such a mutation passed all four tests.
+62 |   assert.equal(text.includes(CONFIGURED), false,
+              ^
+AssertionError: the card must not name the configured candidate that was never dispatched (openai-codex/gpt-6-luna)
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-fg8p83nn/tests/auditor-model-display.test.ts:62:10
+      at fn (node:test:215:18)
+(fail) a session-model audit names the model that ran, not a configured pin [4.77ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.21ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.23ms]
+91 |   // Both refs are recorded and differ: the executed one is shown, the candidate
+92 |   // it outranks is not. Asserting the executed ref alone (or the label alone via
+93 |   // a disjunction) would let the card print both.
+94 |   assert.ok(text.includes(SESSION_MODEL),
+95 |     'the recorded executed model is preferred to the configured retry candidate');
+96 |   assert.equal(text.includes(CONFIGURED), false,
+              ^
+AssertionError: and the configured candidate it outranks is not reported alongside it
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-fg8p83nn/tests/auditor-model-display.test.ts:96:10
+      at fn (node:test:215:18)
+(fail) the recorded executed model outranks the configured candidate [0.23ms]
+
+ 2 pass
+ 2 fail
+Ran 4 tests across 1 file. [369.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-VjAbWk/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-VjAbWk
+[run-tests] finished in 0s (exit 1)

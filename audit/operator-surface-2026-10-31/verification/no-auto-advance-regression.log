@@ -32,3 +32,6 @@ AssertionError: the next list item started on its own — the note asked for exa
  4 pass
  1 fail
 Ran 5 tests across 1 file. [972.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZBHzLB/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZBHzLB
+[run-tests] finished in 1s (exit 1)

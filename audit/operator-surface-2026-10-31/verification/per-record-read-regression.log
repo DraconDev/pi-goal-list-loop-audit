@@ -1,31 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=227s heartbeat=30s
-[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 151s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-wipe-latency.test.ts:
-(pass) the work a wipe performs stays well under a perceptible freeze [894.90ms]
-[run-tests] progress: 30s elapsed · 29s since last output · 0 KiB of suite output
- 95 |   // idle host while not turning contention into a false failure.
- 96 |   const realisticCeiling = scaledBudgetMs(120);
- 97 |   const oversizedCeiling = scaledBudgetMs(200);
- 98 |   assert.ok(realisticMs < realisticCeiling,
- 99 |     `readState took ${realisticMs.toFixed(1)}ms at 200 rows, ceiling ${realisticCeiling}ms — wipe would feel slow`);
-100 |   assert.ok(oversizedMs < oversizedCeiling,
-               ^
-AssertionError: readState took 7350.7ms at 2000 rows, ceiling 262ms — cost grew beyond I/O
- generatedMessage: false,
-     actual: false,
-   expected: true,
-   operator: "==",
-       code: "ERR_ASSERTION"
-
-      at /tmp/glla-ops-control-b_41x86k/tests/glla-wipe-latency.test.ts:100:10
-      at fn (node:test:215:18)
-(fail) a pathologically expensive reader is caught, not just a slow one [37652.77ms]
-
- 1 pass
- 1 fail
-Ran 2 tests across 1 file. [39.10s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-w3uYXc/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-w3uYXc
-[run-tests] finished in 39s (exit 1)
+(pass) the work a wipe performs stays well under a perceptible freeze [662.02ms]

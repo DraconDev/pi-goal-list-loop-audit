@@ -1,11 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=226s heartbeat=30s
-[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 151s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [68.25ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [10.04ms]
-(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [10.76ms]
+(pass) queue items wait while an item is still in flight [44.03ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [4.07ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [5.66ms]
 139 |   // activated and then silently replaced, and the queue drained. The advance
 140 |   // belongs to `archiveCurrentGoal` (goal-orchestrator.ts); settlement must not
 141 |   // advance a second time.
@@ -26,9 +25,9 @@ AssertionError: the IMMEDIATE next item runs — not the one behind it
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-gxafuy_o/tests/list-auto-advance.test.ts:144:10
+      at /tmp/glla-ops-control-e_jimsav/tests/list-auto-advance.test.ts:144:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [364.69ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [299.16ms]
 180 |   });
 181 |   assert.equal(settled, true, 'the approved completion archived');
 182 |   await new Promise((resolve) => setTimeout(resolve, 250));
@@ -49,13 +48,13 @@ AssertionError: exactly one item was consumed, and it is the head
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-gxafuy_o/tests/list-auto-advance.test.ts:185:10
+      at /tmp/glla-ops-control-e_jimsav/tests/list-auto-advance.test.ts:185:10
       at processTicksAndRejections (native:7:39)
-(fail) a standalone goal completing does not skip the queue head (no double advance) [308.61ms]
+(fail) a standalone goal completing does not skip the queue head (no double advance) [267.90ms]
 
  3 pass
  2 fail
-Ran 5 tests across 1 file. [1251.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-qddt0N/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-qddt0N
+Ran 5 tests across 1 file. [979.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QkXMM2/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QkXMM2
 [run-tests] finished in 1s (exit 1)
