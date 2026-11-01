@@ -101,15 +101,25 @@ card; the inference caveat stays, because an informed rejection needs it.
 `buildTweakRationaleBody` holds the full form and **`Show the full rationale`** is
 the expand — an action on the card itself (see below).
 
-**Consent integrity preserved.** Confirm/Cancel semantics are unchanged and the
-exact full text is never lost — it is always in the toggle. For a SHORT objective
-(`TWEAK_VERBATIM_LIMIT` = 180 characters per side) both are printed verbatim. For
-a LONG one the default card shows a **minimal prefix/suffix diff** — the changed
-region with elision markers — instead of reprinting two paragraphs, and states
-that the exact full text is in the expand. Leaving the paragraph in place was the
-audit's third-round finding: the observed note.md objective is a long paragraph,
-so "compact" measured against a short fixture was not compact for the case that
-was actually reported.
+**Consent integrity preserved, at every length.** Confirm/Cancel semantics are
+unchanged, and **both objectives are printed in full on the default card** —
+`tweakObjectiveLines` never truncates, and nothing is elided at any objective
+length. Shortness comes from what is NOT on the card (no reprinted contract, no
+`CURRENT:`/`NEW:` labels, no five-section wall) and from a **bounded, paged
+viewport**: the card renders inside a terminal-height window and the user pages
+the body with `PgUp`/`PgDn`, with a `Review 1–N/M · PgUp/PgDn scroll` line
+appearing whenever the body overflows.
+
+This reverses a third- and fourth-round detour, and the reason is worth keeping:
+a prefix/suffix diff of the changed region above 180 characters is *not* a
+consent record. It was compact, it was informative, and the auditor was right to
+reject it — the contract requires the default card body to carry the exact old
+**and** new objective text, and a diff shows neither in full. Length is handled by
+the viewport, never by dropping consent text. `tests/amendment-confirm-compact.test.ts`
+now asserts the full pair on the default body for a ~350-character objective and
+for a 2.8k-character one, page-throughs the rendered card to prove the exact text
+is reachable rather than merely present, and fails if either objective is
+truncated.
 
 **The expand is an in-dialog toggle (audit round 2).** `TweakConfirmComponent`
 offers `Show the full rationale` / `Hide the full rationale`; the body expands and
@@ -335,7 +345,7 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | item | test | proven to bite |
 | --- | --- | --- |
 | 1 | `tests/stale-recovery-marker.test.ts` | yes — the REAL `chat`/`goal:null`/7h42m fixture re-renders the card when the ownership rule is reverted |
-| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall (`tweak-wall-regression`), a no-op expand (`tweak-toggle-removed-regression`), reprinting a long objective (`tweak-long-objective-regression`) and a missing height at the real call site (`tweak-card-height-regression`) all fail it |
+| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall (`tweak-wall-regression`), a no-op expand (`tweak-toggle-removed-regression`), truncating a long objective (`tweak-long-objective-regression`) and a missing height at the real call site (`tweak-card-height-regression`) all fail it |
 | 3 | `tests/glla-wipe-real-path.test.ts` | yes — drives the real `cmdGllaWipe`; restoring the reviewer's full-history scan fails it with "the wipe performed a full-ledger scan" (`wipe-full-scan-regression`) |
 | 3b | `tests/wipe-ledger-scan.test.ts` | yes — `/list depth`, not wipe: a warm depth read must fold 0 bytes and must not call `scanLedgerRecords` (`ledger-full-scan-regression`) |
 | 3 | `tests/glla-wipe-latency.test.ts` | yes — per-record work blows the ceiling |
