@@ -677,17 +677,25 @@ test("active/in-flight main-model recovery uses one compact card row", () => {
 });
 
 test("standalone main-model recovery remains visible when no goal is active", () => {
+  // v0.39.61 correction (audit round 2): this fixture used to be a chat-owned
+  // marker with `goal: null`, asserted live via `{recoveryHasLiveOwner: true}`.
+  // Production `mainModelRecoveryHasLiveOwner()` returns FALSE for exactly that
+  // state — a chat marker with no goal and no loop is the note.md stale leftover
+  // — so the old case asserted a render the product cannot produce, and its
+  // comment ("a chat-owned marker IS live") stated the opposite of the shipped
+  // rule. The genuinely producible standalone case is a LOOP-owned marker while
+  // a loop is running: no goal slot, real supervised work, ownership
+  // 'retained'. That is what is pinned here.
+  const startedAt = new Date(NOW - 30 * 60_000).toISOString();
   const state = {
     goal: null,
     list: [],
+    loop: {
+      active: true, target: "endless-td audit", iteration: 12, maxIterations: 100,
+      stallCount: 0, plateauWindow: 5, startedAt, history: [],
+    },
     mainModelRecovery: {
-      // v0.39.61: this is the LEGITIMATE standalone case — an ordinary-chat
-      // recovery, which has no goal by definition and must stay visible. The
-      // fixture needs its owner to say so: without one, ownership resolves to
-      // "absent" and the card is correctly suppressed as a stale leftover (the
-      // note.md bug). Both directions are pinned in
-      // tests/stale-recovery-marker.test.ts.
-      owner: { kind: "chat" },
+      owner: { kind: "loop", startedAt },
       primary: "provider/primary",
       active: "provider/backup-one",
       attempted: ["provider/primary", "provider/backup-one"],
@@ -695,20 +703,29 @@ test("standalone main-model recovery remains visible when no goal is active", ()
       retryAt: new Date(NOW + 60_000).toISOString(),
       pendingModelSwitch: "provider/backup-two",
       reason: "account usage limit",
-      kind: "goal",
+      kind: "loop",
     },
   } as State;
   const status = buildStatusText(state, null, NOW);
   assert.match(status ?? "", /main-model recovery/);
   // The renderer takes the ownership verdict as ephemeral extras (it must not
-  // import state machinery); goal-ui.ts supplies it via
-  // mainModelRecoveryHasLiveOwner(). A chat-owned marker IS live.
+  // import state machinery); goal-ui.ts supplies it from
+  // mainModelRecoveryHasLiveOwner(). A loop-owned marker with a live loop is
+  // 'retained', which the real predicate reports as live.
   const widget = buildWidgetLines(state, null, NOW, undefined, undefined, { recoveryHasLiveOwner: true })!;
-  assert.ok(widget.some((line) => line.includes("main-model recovery")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("provider/backup-two")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("provider/primary, provider/backup-one")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("Order: provider/primary")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("provider/backup-two")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("main-model recovery")), widget.join("\n"));
+  assert.ok(widget.some((line) => line.includes("provider/backup-two")), widget.join("\n"));
+  assert.ok(widget.some((line) => line.includes("provider/primary, provider/backup-one")), widget.join("\n"));
+  assert.ok(widget.some((line) => line.includes("Order: provider/primary")), widget.join("\n"));
+
+  // The suppression direction belongs to the REAL predicate, and is asserted
+  // through the renderer for the state that produced the note.md card.
+  const suppressed = buildWidgetLines(
+    { goal: null, list: [], mainModelRecovery: { owner: { kind: "chat" }, kind: "goal", primary: "p", active: "a", attempted: [], attempts: 0, retryAt: new Date(NOW).toISOString(), reason: "x" } } as State,
+    null, NOW, undefined, undefined, { recoveryHasLiveOwner: false },
+  )!;
+  assert.equal(suppressed.some((line) => line.includes("main-model recovery")), false,
+    "a chat-owned marker with no supervised target must not render a card");
 });
 
 test("loop recovery remains visible while the loop is parked", () => {
