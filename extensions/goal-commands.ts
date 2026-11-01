@@ -1226,7 +1226,8 @@ export async function cmdTweak(
     mode,
     currentObjective: sanitizeDisplayText(current.objective),
     newObjective: sanitizeDisplayText(newObjective),
-    inferredNote: inferredNote.replace(/^\(inferred from /, '').replace(/\)$/, '') || undefined,
+    // Keep the caveat's own wording; only the wrapping parens are dropped.
+    inferredNote: inferredNote.trim().replace(/^\(/, '').replace(/\)$/, '') || undefined,
     hasNewContract,
     clearsContract,
     newContract: proposed.verificationContract,

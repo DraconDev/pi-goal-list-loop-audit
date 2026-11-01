@@ -243,7 +243,7 @@ export function buildTweakConfirmBody(input: TweakConfirmInput): string {
   const lines = [
     `From: ${input.currentObjective.trim() || '(none)'}`,
     `To:   ${input.newObjective.trim() || '(none)'}`,
-    ...(inferred ? ['', `Inferred ${inferred} — cancel and re-run with exact wording if this is wrong.`] : []),
+    ...(inferred ? ['', `This replacement was ${inferred}.`] : []),
     '',
     tweakConsequenceLine(input),
     '',

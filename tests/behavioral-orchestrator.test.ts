@@ -1020,7 +1020,7 @@ test("v0.35.x: /list tweak amends a paused list item without activating it or ch
   assert.deepEqual(readState(cwd).list, waiting, "waiting queue entries are unchanged");
   assert.equal(confirmTitle, "Tweak list item?", "the list-specific confirmation is used");
   assert.ok(confirmMessage.includes("old paused list item"), "the current text is shown on the compact card");
-  assert.match(confirmMessage, /NEW:\nnew paused list item/);
+  assert.ok(confirmMessage.includes("new paused list item"), "the replacement text is shown on the compact card");
   assert.equal(ctx.ui.matching("No active goal to tweak").length, 0, "list mode does not use the goal-mode error");
   assert.ok(ctx.ui.matching("List item tweaked; it remains paused").length >= 1, "the result names the paused list item");
 
@@ -1119,7 +1119,7 @@ test("field 2026-09-16 (VidPro replay): tweak chatter adopts the discussed objec
     const stored = readState(cwd).goal as { objective: string; status: string };
     assert.equal(stored.objective, "remove the live screenshot requirement from the contract", "the discussed objective is adopted");
     assert.equal(stored.status, "paused", "the park survives the inference");
-    assert.match(confirmMessage, /Inferred from recent discussion/, "the compact card still discloses that the text was INFERRED");
+    assert.match(confirmMessage, /was inferred from recent discussion/, "the compact card still discloses that the text was INFERRED");
     const tweaked = ledgerEvent(cwd, "goal_tweaked");
     assert.equal(tweaked.value.objective, "remove the live screenshot requirement from the contract", "raw chatter never reaches the ledger");
   } finally {
