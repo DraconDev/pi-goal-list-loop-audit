@@ -1,17 +1,17 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=358s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 239s
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [67.28ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [6.42ms]
-(pass) a paused or blocked item keeps the queue held — auto-advance must not blank it [6.99ms]
-100 | 
-101 |   const after = readState(cwd);
-102 |   // The queue advanced: the next item became the active goal, with no /list next.
-103 |   assert.equal(after.goal?.status, 'active',
-104 |     'the next list item started on its own — the note asked for exactly this');
-105 |   assert.equal(after.goal?.objective, ITEM(2),
+(pass) queue items wait while an item is still in flight [219.99ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [25.49ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [49.32ms]
+132 | 
+133 |   const after = readState(cwd);
+134 |   // The queue advanced: the next item became the active goal, with no /list next.
+135 |   assert.equal(after.goal?.status, 'active',
+136 |     'the next list item started on its own — the note asked for exactly this');
+137 |   assert.equal(after.goal?.objective, ITEM(2),
                ^
 AssertionError: the item that ran is the queue head after the finished one was consumed
 + actual - expected
@@ -26,13 +26,13 @@ AssertionError: the item that ran is the queue head after the finished one was c
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-vjy0oan2/tests/list-auto-advance.test.ts:105:10
+      at /tmp/glla-ops-control-mjzfzojk/tests/list-auto-advance.test.ts:137:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [329.32ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [520.16ms]
 
  3 pass
  1 fail
-Ran 4 tests across 1 file. [962.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-XqSUU1/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-XqSUU1
-[run-tests] finished in 1s (exit 1)
+Ran 4 tests across 1 file. [3.09s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-5gX9GD/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-5gX9GD
+[run-tests] finished in 3s (exit 1)
