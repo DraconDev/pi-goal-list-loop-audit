@@ -409,7 +409,11 @@ export async function confirmCard(ctx: CardConfirmCtx, title: string, body: stri
           () => tui.requestRender(), theme, keybindings, done,
         );
       });
-      if (factoryInvoked) return choice === true;
+      // A host may resolve the card's boolean done() value, or the chosen
+      // action label (some custom-UI hosts map the selection instead of the
+      // callback). Both are affirmative ONLY for the yes action — anything else,
+      // including undefined and the no label, is a refusal.
+      if (factoryInvoked) return choice === true || choice === CARD_CONFIRM_YES;
     } catch (err) {
       // A stale host API is a real failure, not something to paper over with a
       // plain confirm that could silently answer for a dead session.
