@@ -225,8 +225,15 @@ evidence is not evidence of staleness. Version comparison is numeric, so `0.39.9
 
 ## Verification
 
-`npm run check` and `npm run check:inventory` both exit 0. The full
-`npm run release:check` result is recorded in `verification/release-check.log`.
+`npm run check` and `npm run check:inventory` both exit 0. `npm run
+release:check` exits 0: **4540 passed, 1 skipped, 0 failed across 484 files**,
+plus pack smoke — recorded in `verification/release-check.log`.
+
+**A note on how this revision got here.** The first two attempts at the chat
+rule were wrong in opposite directions and the gate caught both. Putting the rule
+inside `recoveryOwnership` broke 19 restore/failover tests, because a chat-owned
+episode is legitimately restored across a reload; the verdict belongs to display
+and retirement, not to ownership. Both are now separated and both covered.
 
 Each item ships with tests that were verified to **fail against the unfixed
 code** in a disposable copy of the tree, so none of them is a passing tautology:
@@ -270,7 +277,7 @@ One control (`ledger-full-scan-regression`) initially exited 0 — the wall-cloc
 ceiling it relied on was marginal, so a full rescan could slip under it on a
 loaded host. That is precisely the weakness a control exists to expose, so the pin
 was replaced with the deterministic assertions above and the control now fails as
-intended.
+intended. Final run: **15/15 as intended** (`verification/controls.json`).
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
 ### Gate history (recorded, not hidden)
