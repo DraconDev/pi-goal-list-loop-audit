@@ -1,10 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=290s heartbeat=30s
-[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 193s
+[run-tests] mode=explicit slow_files=13 stall_timeout=258s heartbeat=30s
+[run-tests] host is 1.4x slower than an idle host — per-test budget raised to 172s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [44.60ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [5.06ms]
+(pass) queue items wait while an item is still in flight [44.92ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [5.19ms]
 89 |       claim: { attemptId: 'attempt-1' } as never,
 90 |       model: 'minimax/MiniMax-M3.1-Flash',
 91 |       origin: 'agent',
@@ -22,14 +22,14 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-k3m0d78h/tests/list-auto-advance.test.ts:94:12
+      at /tmp/glla-ops-control-4mbtvw86/tests/list-auto-advance.test.ts:94:12
       at processTicksAndRejections (native:7:39)
-(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [49.16ms]
-(pass) a cleanly completed item auto-advances the queue without /list next [270.70ms]
+(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [45.39ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [287.28ms]
 
  3 pass
  1 fail
 Ran 4 tests across 1 file. [772.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-8hHmjs/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-8hHmjs
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-NgY3CR/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-NgY3CR
 [run-tests] finished in 1s (exit 1)

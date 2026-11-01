@@ -1,13 +1,6 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=270s heartbeat=30s
-[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 180s
+[run-tests] mode=explicit slow_files=13 stall_timeout=258s heartbeat=30s
+[run-tests] host is 1.4x slower than an idle host — per-test budget raised to 172s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/wipe-ledger-scan.test.ts:
-(pass) the depth read is bounded as ledger history grows (the wipe freeze) [1147.39ms]
-(pass) the indexed read converges to EXACTLY the full-scan answer [224.74ms]
-(pass) the steady state is cheap, so repeated status renders stay responsive [10247.13ms]
-
- 3 pass
- 0 fail
-Ran 3 tests across 1 file. [12.05s]
-[run-tests] finished in 12s (exit 0)
+(pass) the depth read is bounded as ledger history grows (the wipe freeze) [2179.99ms]

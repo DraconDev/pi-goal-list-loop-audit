@@ -1,10 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=290s heartbeat=30s
-[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 193s
+[run-tests] mode=explicit slow_files=13 stall_timeout=236s heartbeat=30s
+[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 157s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [7.14ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.71ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.34ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.46ms]
 120 |   seedState(cwd, observed);
 121 |   __testOnlyLoadState(cwd);
 122 |   const liveVerdict = mainModelRecoveryHasLiveOwner();
@@ -22,9 +22,9 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-9m2w8_oi/tests/stale-recovery-marker.test.ts:125:10
+      at /tmp/glla-ops-control-tasnmprb/tests/stale-recovery-marker.test.ts:125:10
       at processTicksAndRejections (native:7:39)
-(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [37.46ms]
+(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [35.23ms]
 153 |       counts: { steps: 0 },
 154 |     },
 155 |     flags: {},
@@ -45,13 +45,13 @@ AssertionError: the orphan sweep retires the real observed marker, matching /gll
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-9m2w8_oi/tests/stale-recovery-marker.test.ts:158:10
+      at /tmp/glla-ops-control-tasnmprb/tests/stale-recovery-marker.test.ts:158:10
       at processTicksAndRejections (native:7:39)
-(fail) the same real marker is retired, not merely hidden — display and retirement agree [3.73ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [4.06ms]
-(pass) a terminal goal retires the main-model recovery marker durably [138.00ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [113.58ms]
-(pass) the real settlement path retires the recovery marker when it archives [220.40ms]
+(fail) the same real marker is retired, not merely hidden — display and retirement agree [5.63ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [5.57ms]
+(pass) a terminal goal retires the main-model recovery marker durably [136.62ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [118.10ms]
+(pass) the real settlement path retires the recovery marker when it archives [254.04ms]
 303 |   // screenshot marker (owner:chat, kind:goal, goal:null, 7h42m old). Treating it
 304 |   // as live re-renders the exact note.md complaint.
 305 |   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
@@ -69,13 +69,13 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-9m2w8_oi/tests/stale-recovery-marker.test.ts:308:10
+      at /tmp/glla-ops-control-tasnmprb/tests/stale-recovery-marker.test.ts:308:10
       at processTicksAndRejections (native:7:39)
-(fail) the live-owner predicate requires a supervised target for chat-owned markers [36.36ms]
+(fail) the live-owner predicate requires a supervised target for chat-owned markers [44.08ms]
 
  6 pass
  3 fail
-Ran 9 tests across 1 file. [963.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-liiECR/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-liiECR
+Ran 9 tests across 1 file. [1002.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-s8Z3z0/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-s8Z3z0
 [run-tests] finished in 1s (exit 1)
