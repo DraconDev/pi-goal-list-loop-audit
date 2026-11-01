@@ -14,6 +14,7 @@ test('bench: real /glla wipe end to end at the real profile', async () => {
   Object.assign(ctx, { hasUI: true });
   Object.assign(ctx.ui, { confirmImpl: () => Promise.resolve(true) });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
+  await pi.command('status', '', ctx).catch(() => {});
 
   // Where does the time go? Time the candidate costs individually.
   const time = (label: string, fn: () => unknown) => {
