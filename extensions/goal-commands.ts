@@ -9,6 +9,7 @@ import {
   TWEAK_CANCEL_ACTION,
   TWEAK_CONFIRM_ACTION,
   TWEAK_RATIONALE_ACTION,
+  ConfirmDraftComponent,
   buildTweakConfirmBody,
   buildTweakRationaleBody,
   type TweakConfirmInput,
@@ -1223,17 +1224,7 @@ export async function cmdTweak(
   };
   let confirmed = false;
   try {
-    for (;;) {
-      const choice = await ctx.ui.select(
-        mode === "list" ? "Tweak list item?" : "Tweak goal?",
-        [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION],
-        { message: buildTweakConfirmBody(tweakInput) },
-      );
-      if (choice === TWEAK_CONFIRM_ACTION) { confirmed = true; break; }
-      if (choice !== TWEAK_RATIONALE_ACTION) { confirmed = false; break; }
-      // Expand: show the full rationale, then return to the same decision.
-      ctx.ui.notify(buildTweakRationaleBody(tweakInput), "info");
-    }
+    confirmed = await confirmTweak(ctx, mode === "list" ? "Tweak list item?" : "Tweak goal?", tweakInput);
   } catch {
     confirmed = false;
   }
@@ -3844,3 +3835,46 @@ export {
   warnIfAuditorProviderRisky,
   warnOnCommandCollision,
 };
+
+/**
+ * note.md item 2: the tweak confirmation, compact by default with a REAL
+ * expand. Mirrors the proven `confirmDraft` shape (goal-session.ts) — a
+ * `ConfirmDraftComponent` markdown body via `ctx.ui.custom`, plus the
+ * byte-identical select fallback for RPC/headless hosts where the factory is
+ * never invoked. Choosing "Show the full rationale" re-opens the SAME decision
+ * after printing the rationale, so the expand is in-dialog and the
+ * Confirm/Cancel semantics never change.
+ *
+ * Draft auto-accept is deliberately NOT honoured here: an objective amendment
+ * needs per-change consent.
+ */
+async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
+  const body = buildTweakConfirmBody(input);
+  const options = [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION];
+  for (;;) {
+    let choice: string | undefined;
+    if (typeof (ctx.ui as { custom?: unknown }).custom === "function") {
+      let factoryInvoked = false;
+      try {
+        choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
+          factoryInvoked = true;
+          return new ConfirmDraftComponent(
+            { title, body, options, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
+            () => tui.requestRender(), theme as never, keybindings as never, done,
+          );
+        });
+      } catch {
+        choice = undefined;
+      }
+      if (!factoryInvoked) choice = undefined;
+    }
+    if (choice === undefined) {
+      // The body rides in the title on this path: `select` has no body field.
+      choice = await ctx.ui.select(`${title}\n\n${body}`, options);
+    }
+    if (choice === TWEAK_CONFIRM_ACTION) return true;
+    if (choice !== TWEAK_RATIONALE_ACTION) return false;
+    // Expand: the full rationale, then back to the same decision.
+    ctx.ui.notify(buildTweakRationaleBody(input), "info");
+  }
+}
