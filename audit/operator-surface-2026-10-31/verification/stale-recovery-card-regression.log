@@ -46,3 +46,14 @@ true !== false
 (fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [173.99ms]
 (pass) the same real marker is retired, not merely hidden — display and retirement agree [40.82ms]
 (pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [58.08ms]
+(pass) a terminal goal retires the main-model recovery marker durably [191.58ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [126.70ms]
+(pass) the real settlement path retires the recovery marker when it archives [292.33ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [150.28ms]
+
+ 7 pass
+ 2 fail
+Ran 9 tests across 1 file. [2.04s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-EHiG3f/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-EHiG3f
+[run-tests] finished in 2s (exit 1)
