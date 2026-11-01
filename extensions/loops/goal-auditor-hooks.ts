@@ -202,7 +202,7 @@ import {
   tickLengthContinue,
 } from "../length-continue.js";
 import { capProviderRetrySeconds } from "../quota-retry.js";
-import { retireOrphanedMainModelRecovery } from "../goal-recovery.js";
+import { clearStaleMainModelRecovery, retireOrphanedMainModelRecovery } from "../goal-recovery.js";
 import {
   mainModelAutoRetryUntil,
   mainModelRetryDelayMs,
@@ -1280,6 +1280,9 @@ export function settleApprovedCompletion(
   // goal is already archived, and withholding the recap would be worse than a
   // surviving marker. The sweep reports its own warning.
   retireOrphanedMainModelRecovery(ctx, true);
+  // The goal is archived now, so a marker for it has no supervised target. This
+  // is the note.md case: the card rendered six hours after the archive.
+  clearStaleMainModelRecovery(ctx, "completion-settlement");
   notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
   // v0.39.61 (note.md: "we should be auto continuing no up next"): a CLEAN
   // completion advances the queue. The list used to print "N queued — /list

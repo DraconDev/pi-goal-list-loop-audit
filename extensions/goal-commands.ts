@@ -5,6 +5,7 @@
  * arrive via createGoalCommands.
  */
 
+import { clearStaleMainModelRecovery } from "./goal-recovery.js";
 import {
   TWEAK_CANCEL_ACTION,
   TWEAK_CONFIRM_ACTION,
@@ -3082,15 +3083,12 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
     return;
   }
   if (state.mainModelRecovery && !state.goal && !state.loop) {
-    const previous = state.mainModelRecovery;
-    clearMainModelRecoveryTimer();
-    state.mainModelRecovery = undefined;
-    if (persistState(ctx) === false) {
-      state.mainModelRecovery = previous;
+    // Shared predicate with the settlement boundary (goal-recovery.ts) so the
+    // two cannot drift apart.
+    if (!clearStaleMainModelRecovery(ctx, "glla-resume")) {
       ctx.ui.notify("No GLLA objective to resume; the stale recovery marker could not be cleared. Send a normal message to retry this chat.", "warning");
       return;
     }
-    appendLedger(ctx.cwd, "main_model_recovery_retired_no_objective", { via: "glla-resume", reason: "no supervised target; not a provider health verdict" });
     ctx.ui.notify("No GLLA objective is paused. Cleared the old recovery marker, not the chat history. Send 'continue' to retry your ordinary chat; /goal, /list or /loop starts tracked work.", "info");
     return;
   }
