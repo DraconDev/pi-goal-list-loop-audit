@@ -18,7 +18,7 @@ import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
 import { buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
-import { mainModelRecoveryHasLiveOwner, retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
+import { clearStaleMainModelRecovery, mainModelRecoveryHasLiveOwner, retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
 import { settleApprovedCompletion } from '../extensions/loops/goal-auditor-hooks.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
@@ -155,8 +155,8 @@ test('the same real marker is retired, not merely hidden — display and retirem
     flags: {},
   } as unknown as State);
   __testOnlyLoadState(cwd);
-  assert.equal(retireOrphanedMainModelRecovery(ctx as never, true), 'retired',
-    'the orphan sweep retires the real observed marker, matching /glla resume');
+  assert.equal(clearStaleMainModelRecovery(ctx as never, 'test'), true,
+    'the shared /glla-resume predicate retires the real observed marker');
   assert.equal(readState(cwd).mainModelRecovery ?? null, null, 'the marker is gone from persisted state');
 });
 
