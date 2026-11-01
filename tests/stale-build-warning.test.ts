@@ -149,9 +149,11 @@ test('the same version in a foreign manifest still does not warn (name is the ga
 
 test('a real older GLLA checkout still warns with the package name present', () => {
   const cwd = tmpCwd();
+  // Repo AHEAD of what is loaded — the note.md direction.
+  const loaded = loadedGllaVersion();
   fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
     name: 'pi-goal-list-loop-audit',
-    version: '0.0.1',
+    version: `${Number(loaded.split('.')[0]) + 1}.0.0`,
   }));
   const status = detectStaleBuild(cwd);
   assert.equal(status.stale, true, 'the GLLA checkout itself is still detected');
