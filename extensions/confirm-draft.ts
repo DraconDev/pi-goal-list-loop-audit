@@ -402,7 +402,7 @@ export async function confirmCard(ctx: CardConfirmCtx, title: string, body: stri
   if (typeof custom === "function") {
     let factoryInvoked = false;
     try {
-      const choice = await (ctx.ui as { custom: <T>(f: unknown) => Promise<T> }).custom<boolean>((tui: { terminal?: { rows?: number }; requestRender: () => void }, theme: Theme, keybindings: KeybindingsManagerLike, done: (value: boolean) => void) => {
+      const choice = await (ctx.ui as { custom: <T>(f: unknown) => Promise<boolean | string | undefined> }).custom<boolean | string | undefined>((tui: { terminal?: { rows?: number }; requestRender: () => void }, theme: Theme, keybindings: KeybindingsManagerLike, done: (value: boolean) => void) => {
         factoryInvoked = true;
         return new CardConfirmComponent(
           { title, body, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
