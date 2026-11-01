@@ -42,17 +42,34 @@ live goal and no active loop. Such a marker has nothing to resume — which is
 exactly the state `/glla resume` already retires as "no supervised target"
 (`goal-commands.ts:3069`).
 
-**Fix.** `recoveryOwnership` now returns `absent` for a `chat`-owned marker when
-there is no goal and no loop, so display and retirement share one verdict:
-`retireOrphanedMainModelRecovery` retires it (`absent` is already in its retire
-list) and `mainModelRecoveryHasLiveOwner()` returns false, so the card cannot
-render. With a live goal or loop the marker stays `chat` and still renders — the
-guard is not blanket. `settleApprovedCompletion` also runs the orphan sweep at the
-terminal boundary, as the objective required.
+**Fix — and a correction to where it lives (2026-11-01, audit round 2).** An
+earlier revision of this section said `recoveryOwnership` now returns `absent` for
+a chat-owned marker. It does not, and must not:
+`extensions/recovery-ownership.ts:38` still returns `'chat'`, because a
+chat-owned episode is legitimately **restored** across a reload. Pushing the rule
+into ownership broke 19 restore/failover tests, which is how the wrong layer was
+caught.
 
-**Alternative considered.** Hiding `chat`-owned markers in the renderer only. That
-would leave the marker on disk to reappear in `/glla status` and every other
-surface; retiring it from the shared verdict is the durable version.
+The separation is two functions instead:
+
+- `mainModelRecoveryHasLiveOwner()` (`extensions/goal-recovery.ts`) returns false
+  for `chat` when there is no goal and no loop. Ownership still says `chat`; this
+  verdict answers the narrower question "does a card implying action make sense
+  right now".
+- `clearStaleMainModelRecovery()` is the retirement, extracted from the
+  `/glla resume` "no supervised target" predicate so display and retirement cannot
+  drift apart. `settleApprovedCompletion` calls it at the terminal boundary,
+  alongside the existing orphan sweep.
+
+With a live goal or loop the marker stays live and still renders — the guard is
+not blanket.
+
+**Alternative considered and rejected.** Hiding chat-owned markers in the renderer
+only. That would leave the marker on disk to reappear in `/glla status` and every
+other surface, and would leave a card that no longer renders still driving
+recovery state. Retirement is the durable half; display is the visible half. Both
+are needed, which is why the verdict is split from ownership rather than folded
+into it.
 
 ---
 
@@ -99,46 +116,82 @@ tested affordance that keeps one consent primitive and hides nothing.
 
 ---
 
-## 3. `/glla wipe` latency — measured, no defect found
+## 3. `/glla wipe` latency — reproduced at the real profile and fixed
 
 **Observed.** `note.md`: "tying to wipe objective freezes /glla wipe — but it is
 just slow for some reason as after waiting it out everything was normal."
 
-**CORRECTION (2026-11-01).** An earlier revision of this report claimed the
-observation came from a stale build because "the banner showed v0.39.36". That
-claim is **retracted**: I inspected `Screenshot_20261031_092215.png` directly and
-the banner footer reads **`v0.39.54`**, matching `package.json`. The v0.39.36
-figure came from the objective text, not from the evidence. Nothing in item 3
-rests on it.
+**CORRECTION (2026-11-01, audit round 2).** This section previously read
+"measured, no defect found" and the fix it credited was an index on the `/list
+depth` path. Both statements were wrong for this item, and the auditor was right:
 
-**Measured, at the real profile.** Every candidate cost, because the contract
-required measuring before assuming:
+- `cmdGllaWipe` never calls `computeListDepthFromLedger`. Its only caller in the
+  tree is `/list depth` (`extensions/goal-commands.ts:1711`).
+- The wipe **was** slow, and the cost was somewhere neither earlier table
+  measured.
+
+**Measured at the real profile** (`/tmp/wipreal`: 31 ledger segments,
+281,553,674 bytes of history, `active.jsonl` 7.5 MB), driving the real command
+(`pi.command("glla", "wipe", ctx)`) rather than a sub-operation:
 
 | leg | measured |
 | --- | --- |
-| `readState` (live 4.1 MB / 109-row journal) | 3.5 ms |
-| `readState` (artificial 8.9 MB / 1000 rows) | 14.5 ms |
-| `appendLedger` | 0.4 ms |
-| `readQueueFromDisk` | 0.70 ms |
-| `queueItemSidecarCount` | 0.09 ms |
-| `refreshOwnershipStanding(force)` | 0.36 ms |
-| `loadSettings` | 0.01 ms |
-| `renderGoalMarkdown` | 0.20 ms |
-| archive render + write (120 audits) | 0.3 ms |
+| `/glla wipe` end-to-end, before | **912 ms** (repeat runs 653 / 642 ms) |
+| `scanLedgerRecords` over the full 280 MB | **749 ms** |
+| `readState` | 0.2 ms |
+| `ledgerFiles` | 0.1–0.2 ms |
+| `readQueueFromDisk` | 0.2 ms |
+| `appendLedger` (first + warm) | 0.1 / 0.0 ms |
+| `/glla wipe` end-to-end, after | **71 ms** |
+| full-history scans during a wipe, after | **0** |
 
-There is no lock, sleep, retry loop, or network call in the wipe path after
-`warnIfStaleAtEntry`'s ownership recheck.
+**Root cause (traced, not inferred).** Instrumenting `scanLedgerRecords` with a
+stack dump during the real wipe produced one call:
 
-**Conclusion (observed).** The journal-size hypothesis — the one I was about to
-assume — is **wrong**: reading 10× the journal costs ~3×, and even 1000 rows is
-milliseconds. There is no reproducible latency in the current code to fix.
+```
+cmdGllaWipe (goal-commands.ts:2824)
+  → archiveCurrentGoal (goal-orchestrator.ts:1652)
+    → fireReviewer (goal-auditor-hooks.ts:2907)
+      → scanLedgerRecords                       ← one pass over 280 MB
+```
 
-**What shipped instead.** A durable `glla_wipe_timing` ledger row recording the
-real duration of the wipe's own work, plus
-`tests/glla-wipe-latency.test.ts`, which pins a per-leg budget and a scaling
-sanity check. The next report of slowness will carry a number rather than a guess,
-and a genuine regression becomes visible. No behaviour was changed on an unproven
-cause.
+`fireReviewer` streamed the entire multi-month ledger so the reviewer could answer
+two questions that are both bounded to *today*: "did a review fire in the last 5
+minutes" (`REVIEWER_REFIRE_WINDOW_MS`) and "how many fired today"
+(`reviewsToday`, a UTC calendar day). Reading months of history for that is
+unbounded work for a bounded question, and a wipe archives the goal, so it paid
+the cost every time.
+
+**Fix.** `scanLedgerRecordsSince(cwd, sinceMs, onRecord)`
+(`extensions/goal-loop-core.ts`) reads segments **newest first** and stops at the
+first segment that contributes no row at or after `sinceMs`: every older segment
+is older than it, so it cannot contain a qualifying row either. Segments are
+timestamp-prefixed and chronologically ordered, so the early exit is sound. A row
+with no parseable timestamp is delivered rather than dropped — correctness
+outranks the speedup. `fireReviewer` calls it with a 24-hour lookback, which is a
+provable superset of both predicates (the UTC day start is never more than 24
+hours before `now`, and the 5-minute window sits inside that), so no row either
+predicate can observe is skipped.
+
+**Test.** `tests/glla-wipe-real-path.test.ts` drives the real `cmdGllaWipe` against
+a >20 MB historical fixture and pins the cause deterministically — the wipe must
+invoke `scanLedgerRecords` **zero** times — plus a scaled wall-clock ceiling as a
+secondary check. Reverting `fireReviewer` to the full scan fails it with "the wipe
+performed a full-ledger scan". A wall-clock assertion alone is too weak: a loaded
+host can let a rescan slip under a millisecond ceiling, which is exactly how an
+earlier version of this control silently passed.
+
+**The `/list depth` index is a separate fix, and is not this item.** That surface
+genuinely was 3.1–4.8 s on the same profile (32 segments, 287 MB) because
+`computeListDepthFromLedger` scanned all history to answer a per-goal depth
+question; it now uses a durable per-goal finals index with bounded backfill
+(77 ms first read, 11 ms steady state, byte-identical converged answer).
+`tests/wipe-ledger-scan.test.ts` pins it. It is reported here as a distinct
+defect found while measuring item 3 — not as the wipe fix, which it is not.
+
+**What also shipped on the wipe path.** A durable `glla_wipe_timing` ledger row
+recording the wipe's own duration, so the next report of slowness carries a number
+rather than a guess.
 
 ---
 
@@ -292,8 +345,10 @@ diagnosed rather than re-run until green:
   (16 s vs a 6 s wait) and passes standalone at load 91 (11/11) — a
   parallel-contention flake, unchanged by this work.
 
-The final clean run: **4529 pass, 1 skip, 0 fail across 482 files, exit 0**
-(`verification/release-check.log`).
+The recorded gate is **4540 pass, 1 skip, 0 fail across 484 files, exit 0**
+(`verification/release-check.log`). An earlier revision of this page also quoted
+4529/482 from an intermediate run; that pair is superseded and the log is the
+single source of truth.
 
 ### Two weak assertions the controls exposed
 
