@@ -1,19 +1,19 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=332s heartbeat=30s
-[run-tests] host is 1.8x slower than an idle host — per-test budget raised to 221s
+[run-tests] mode=explicit slow_files=13 stall_timeout=231s heartbeat=30s
+[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 154s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.77ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.79ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [795.95ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [165.79ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [322.12ms]
-(pass) a terminal goal retires the main-model recovery marker durably [326.27ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [296.00ms]
-(pass) the real settlement path retires the recovery marker when it archives [402.88ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [160.50ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.87ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.61ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [78.71ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [12.55ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [12.88ms]
+(pass) a terminal goal retires the main-model recovery marker durably [131.20ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [128.11ms]
+(pass) the real settlement path retires the recovery marker when it archives [249.81ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [138.09ms]
 
  9 pass
  0 fail
-Ran 9 tests across 1 file. [3.65s]
-[run-tests] finished in 4s (exit 0)
+Ran 9 tests across 1 file. [1226.00ms]
+[run-tests] finished in 1s (exit 0)
