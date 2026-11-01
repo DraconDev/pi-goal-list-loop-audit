@@ -19,15 +19,15 @@ AssertionError: the wipe performed a full-ledger scan — the reviewer is readin
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-c0w28foj/tests/glla-wipe-real-path.test.ts:96:12
+      at /tmp/glla-ops-control-kh81ib2k/tests/glla-wipe-real-path.test.ts:96:12
       at processTicksAndRejections (native:7:39)
-(fail) /glla wipe does not read the whole ledger history to archive a goal [252.12ms]
-(pass) the bounded scan still finds today's reviewer_fired rows in the live tail [3.77ms]
-(pass) a row with no timestamp is delivered rather than silently dropped [0.36ms]
+(fail) /glla wipe does not read the whole ledger history to archive a goal [247.37ms]
+(pass) the bounded scan still finds today's reviewer_fired rows in the live tail [2.54ms]
+(pass) a row with no timestamp is delivered rather than silently dropped [0.39ms]
 
  2 pass
  1 fail
-Ran 3 tests across 1 file. [606.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-A1cjxB/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-A1cjxB
+Ran 3 tests across 1 file. [674.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-rD8wYW/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-rD8wYW
 [run-tests] finished in 1s (exit 1)

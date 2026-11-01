@@ -2,13 +2,13 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.21ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [2.46ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.33ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.08ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
 (pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.03ms]
-(pass) the real complete_goal amendment confirm uses the compact body [38.57ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
+(pass) the real complete_goal amendment confirm uses the compact body [40.91ms]
 220 |   // cannot move — so this is asserted on the component confirmTweak actually
 221 |   // constructed, not on a fixture.
 222 |   assert.ok(compact.card, 'confirmTweak built a card component');
@@ -23,22 +23,22 @@ AssertionError: the card the real call site built rendered 25 rows — it was bu
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-mrr4hafm/tests/amendment-confirm-compact.test.ts:225:10
+      at /tmp/glla-ops-control-li0wmicf/tests/amendment-confirm-compact.test.ts:225:10
       at processTicksAndRejections (native:7:39)
-(fail) the real /goal tweak card is compact, exact, and expands with --rationale [10.47ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [1.36ms]
+(fail) the real /goal tweak card is compact, exact, and expands with --rationale [10.92ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [1.46ms]
 (pass) cancelling after expanding still changes nothing [0.14ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.14ms]
-(pass) a long objective keeps BOTH objectives in full on the default card [0.08ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [8.61ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [12.07ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.13ms]
+(pass) a long objective keeps BOTH objectives in full on the default card [0.12ms]
+(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [10.43ms]
+(pass) a 400-word objective is exact on the default card and bounded on screen [13.19ms]
 (pass) a short objective is still printed verbatim — the diff never guesses [0.09ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.45ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [2.37ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.70ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.36ms]
 
  16 pass
  1 fail
-Ran 17 tests across 1 file. [432.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-UpnH81/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-UpnH81
-[run-tests] finished in 0s (exit 1)
+Ran 17 tests across 1 file. [461.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-itL7vE/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-itL7vE
+[run-tests] finished in 1s (exit 1)

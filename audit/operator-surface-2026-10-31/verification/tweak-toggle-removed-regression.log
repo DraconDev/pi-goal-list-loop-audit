@@ -2,14 +2,14 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.22ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.06ms]
-(pass) a changed contract IS shown, both sides [0.07ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.09ms]
+(pass) the amendment confirm keeps the exact old and new objective text [5.16ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.12ms]
+(pass) a changed contract IS shown, both sides [0.10ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.12ms]
 (pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.06ms]
-(pass) the real complete_goal amendment confirm uses the compact body [45.88ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [12.56ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.05ms]
+(pass) the real complete_goal amendment confirm uses the compact body [40.87ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [12.15ms]
 265 |   assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION]);
 266 |   assert.equal(resolved, 'unset', 'building the card applies nothing');
 267 | 
@@ -27,10 +27,10 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-fl7pxpmw/tests/amendment-confirm-compact.test.ts:270:10
+      at /tmp/glla-ops-control-e8nh9mxv/tests/amendment-confirm-compact.test.ts:270:10
       at processTicksAndRejections (native:7:39)
-(fail) the tweak card expands the rationale in place and keeps one consent gate [0.88ms]
-(pass) cancelling after expanding still changes nothing [0.17ms]
+(fail) the tweak card expands the rationale in place and keeps one consent gate [1.37ms]
+(pass) cancelling after expanding still changes nothing [0.22ms]
 317 |     () => {}, theme, { matches: () => false } as never, () => {},
 318 |   );
 319 |   const before = card.dialogDeps.body;
@@ -45,19 +45,19 @@ AssertionError: dialogDeps must reflect the expanded state
    operator: "notStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-fl7pxpmw/tests/amendment-confirm-compact.test.ts:322:10
+      at /tmp/glla-ops-control-e8nh9mxv/tests/amendment-confirm-compact.test.ts:322:10
       at processTicksAndRejections (native:7:39)
-(fail) the tweak card reports its CURRENT body to the host after an expand [0.17ms]
-(pass) a long objective keeps BOTH objectives in full on the default card [0.09ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [9.15ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [12.14ms]
-(pass) a short objective is still printed verbatim — the diff never guesses [0.09ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.07ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [1.83ms]
+(fail) the tweak card reports its CURRENT body to the host after an expand [0.20ms]
+(pass) a long objective keeps BOTH objectives in full on the default card [0.11ms]
+(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [11.91ms]
+(pass) a 400-word objective is exact on the default card and bounded on screen [14.26ms]
+(pass) a short objective is still printed verbatim — the diff never guesses [0.14ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.25ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.53ms]
 
  15 pass
  2 fail
-Ran 17 tests across 1 file. [420.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QzdeeA/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QzdeeA
-[run-tests] finished in 0s (exit 1)
+Ran 17 tests across 1 file. [499.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-VFGDYK/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-VFGDYK
+[run-tests] finished in 1s (exit 1)
