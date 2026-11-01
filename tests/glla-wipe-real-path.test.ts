@@ -58,8 +58,6 @@ function seedHistoricalLedger(cwd: string, segments: number, rowsPerSegment: num
     fs.writeFileSync(path.join(dir, name), body);
     bytes += Buffer.byteLength(body);
   }
-  fs.writeFileSync(path.join(cwd, ".pi-glla", "ledger.jsonl"),
-    JSON.stringify({ type: "reviewer_fired", at: new Date().toISOString(), value: { goalId: "live" } }) + "\n");
   return bytes;
 }
 
@@ -77,6 +75,10 @@ test("/glla wipe does not read the whole ledger history to archive a goal", asyn
   const historyBytes = seedHistoricalLedger(cwd, 24, 2000);
   assert.ok(historyBytes > 20_000_000, `fixture should be a real history (got ${historyBytes} bytes)`);
   seedState(cwd, { goal: seedGoal({ policy: "goal", status: "active", objective: "wipe on a heavy ledger" }) });
+  // The live ledger (`active.jsonl`) is the newest file, so today's rows belong
+  // there — this is what makes the bounded newest-first read find them.
+  fs.appendFileSync(path.join(cwd, ".pi-glla", "active.jsonl"),
+    JSON.stringify({ type: "reviewer_fired", at: new Date().toISOString(), value: { goalId: "live" } }) + "\n");
   const ctx = gllaCtx(cwd);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
@@ -107,13 +109,19 @@ test("/glla wipe does not read the whole ledger history to archive a goal", asyn
 test("the bounded scan still finds today's reviewer_fired rows in the live tail", async () => {
   const cwd = tmpCwd();
   seedHistoricalLedger(cwd, 6, 200);
+  fs.writeFileSync(path.join(cwd, ".pi-glla", "active.jsonl"),
+    JSON.stringify({ type: "state", at: new Date(Date.now() - 100 * DAY).toISOString(), value: { goal: null } }) + "\n" +
+    JSON.stringify({ type: "reviewer_fired", at: new Date().toISOString(), value: { goalId: "live" } }) + "\n");
   const { scanLedgerRecordsSince } = await import("../extensions/goal-loop-core.js");
   const seen: string[] = [];
   const segments = scanLedgerRecordsSince(cwd, Date.now() - DAY, (e) => seen.push(e.type));
   assert.ok(seen.includes("reviewer_fired"), "today's reviewer row must not be skipped");
   assert.equal(seen.filter((t) => t === "state").length, 0,
     "rows older than the lookback must not be delivered");
-  assert.ok(segments <= 2, `bounded read touched ${segments} segments; only the tail is relevant`);
+  // The live tail, plus exactly one boundary segment that proves the rest is
+  // older. Never the whole history.
+  assert.ok(segments <= 2,
+    `bounded read touched ${segments} of ${ledgerFiles(cwd).length} segments; only the tail is relevant`);
   assert.ok(ledgerFiles(cwd).length >= 7, "the historical segments are still present — the read was bounded, not the data");
 });
 
@@ -121,7 +129,7 @@ test("a row with no timestamp is delivered rather than silently dropped", async 
   const cwd = tmpCwd();
   const dir = path.join(cwd, ".pi-glla", "ledger-segments");
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(cwd, ".pi-glla", "ledger.jsonl"),
+  fs.writeFileSync(path.join(cwd, ".pi-glla", "active.jsonl"),
     JSON.stringify({ type: "untimestamped" }) + "\n" + JSON.stringify({ type: "reviewer_fired", at: new Date().toISOString() }) + "\n");
   const { scanLedgerRecordsSince } = await import("../extensions/goal-loop-core.js");
   const seen: string[] = [];
