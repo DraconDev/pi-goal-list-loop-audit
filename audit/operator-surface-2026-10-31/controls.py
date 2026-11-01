@@ -104,12 +104,28 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         "  if (ownership === 'chat') return true;",
     ),
 
-    # 8. Auditor objection 2: restore the CURRENT:/NEW: wall in the real
-    #    /goal tweak confirm that the screenshots show.
+    # 8. Auditor round 2, objection 2b: remove the in-dialog expand so the
+    #    rationale is once again reachable only by cancelling and retyping.
+    'tweak-toggle-removed-regression': (
+        'extensions/confirm-draft.ts',
+        '    this.expanded = !this.expanded;\n    this.md = new Markdown(',
+        '    return;\n    this.expanded = !this.expanded;\n    this.md = new Markdown(',
+    ),
+
+    # 8b. The compact card reverts to the CURRENT:/NEW: wall the screenshots
+    #     show, while every other part of the path stays correct.
     'tweak-wall-regression': (
-        'extensions/goal-commands.ts',
-        '  return ctx.ui.confirm(title, input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input));',
-        '  return ctx.ui.confirm(title, `CURRENT:\\n${input.currentObjective}\\n\\nNEW:\\n${input.newObjective}`);',
+        'extensions/confirm-draft.ts',
+        "  const lines = [\n    `From: ${input.currentObjective.trim() || '(none)'}`,",
+        "  const lines = [\n    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,\n    `From: ${input.currentObjective.trim() || '(none)'}`,",
+    ),
+
+    # 8c. Auditor round 2, objection 1: the wipe's reviewer streams the whole
+    #     ledger again instead of the bounded recent read.
+    'wipe-full-scan-regression': (
+        'extensions/loops/goal-auditor-hooks.ts',
+        '      scanLedgerRecordsSince(ctx.cwd, reviewerNowMs - 24 * 60 * 60_000, (entry) => {',
+        '      scanLedgerRecords(ctx.cwd, (entry) => {',
     ),
 
     # 9. Auditor objection 4: remove the settlement status guard so a paused,
