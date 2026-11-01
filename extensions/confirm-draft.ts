@@ -245,6 +245,8 @@ export interface TweakConfirmInput {
   /** Human note about where the replacement text came from, if inferred. */
   inferredNote?: string;
   hasNewContract: boolean;
+  /** Render the full form in the same gate (the `--rationale` expand). */
+  showRationale?: boolean;
   clearsContract: boolean;
   newContract?: string;
 }
@@ -256,6 +258,8 @@ export function buildTweakConfirmBody(input: TweakConfirmInput): string {
     `To:   ${input.newObjective.trim() || '(none)'}`,
     '',
     tweakConsequenceLine(input),
+    '',
+    `Full rationale: re-run with --rationale (or ${input.mode === 'list' ? '/list tweak' : '/goal tweak'} --rationale ${input.mode === 'list' ? '<item>' : '<text>'}).`,
   ];
   return lines.join('\n');
 }

@@ -3849,26 +3849,8 @@ export {
  * needs per-change consent.
  */
 async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
-  const body = buildTweakConfirmBody(input);
-  const options = [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION];
-  // note.md item 2: the compact card IS the consent record, and the full
-  // rationale sits behind a real `Show the full rationale` action in the same
-  // dialog. `select` carries the card in its title (the same shape the proven
-  // confirmDraft fallback uses), so this works identically in interactive pi and
-  // in RPC/headless hosts — no custom-component dependency.
-  if (typeof (ctx.ui as { select?: unknown }).select === "function") {
-    for (;;) {
-      let choice: string | undefined;
-      try {
-        choice = await ctx.ui.select(`${title}\n\n${body}`, options);
-      } catch {
-        choice = undefined;
-      }
-      if (choice === TWEAK_CONFIRM_ACTION) return true;
-      if (choice !== TWEAK_RATIONALE_ACTION) return false;
-      // Expand: the full rationale, then back to the SAME decision.
-      ctx.ui.notify(buildTweakRationaleBody(input), "info");
-    }
-  }
-  return ctx.ui.confirm(title, body);
+  // Consent gate: unchanged Confirm/Cancel semantics. The compact card is the
+  // record; `--rationale` renders the full form in the same gate, so the detail
+  // is one explicit, discoverable flag away instead of dominating the default.
+  return ctx.ui.confirm(title, input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input));
 }
