@@ -112,21 +112,22 @@ test('the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does n
     counts: { steps: 0 },
   } as unknown as State['mainModelRecovery'];
   const observed = { goal: null, list: [], loop: null, mainModelRecovery: observedMarker } as unknown as State;
-  // The live-owner verdict is what the widget is given; it must be FALSE for
-  // this state, and the render must not contain the complaint text.
-  assert.equal(mainModelRecoveryHasLiveOwner(observed), false,
-    'a chat-owned marker with no supervised target has no live owner');
-  // Feed the renderer the verdict the REAL widget feeds it (goal-ui.ts computes
-  // mainModelRecoveryHasLiveOwner() there). Passing no flag would be vacuous:
-  // the renderer is fail-closed and renders nothing either way.
   const cwd = tmpCwd();
   const pi = new MockPi();
   activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `observed-${Math.random()}` } });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
-  seedState(cwd, observed as unknown as State);
+  seedState(cwd, observed);
   __testOnlyLoadState(cwd);
-  assert.equal(standaloneCardShown(observed, mainModelRecoveryHasLiveOwner(observed)), false,
+  const liveVerdict = mainModelRecoveryHasLiveOwner();
+  // The live-owner verdict is what the widget is given; it must be FALSE for
+  // this state, and the render must not contain the complaint text.
+  assert.equal(mainModelRecoveryHasLiveOwner(), false,
+    'a chat-owned marker with no supervised target has no live owner');
+  // Feed the renderer the verdict the REAL widget feeds it (goal-ui.ts:930
+  // computes mainModelRecoveryHasLiveOwner() there). Passing no flag would be
+  // vacuous: the renderer is fail-closed and renders nothing either way.
+  assert.equal(standaloneCardShown(observed, liveVerdict), false,
     'the real observed marker must not render the standalone card');
   const lines = buildWidgetLines(observed, theme()).join('\n');
   assert.equal(/send 'continue' to retry this chat/.test(lines), false,
@@ -159,13 +160,19 @@ test('the same real marker is retired, not merely hidden — display and retirem
   assert.equal(readState(cwd).mainModelRecovery ?? null, null, 'the marker is gone from persisted state');
 });
 
-test('a chat-owned marker WITH a live goal still renders — retirement is not blanket', () => {
+test('a chat-owned marker WITH a live goal still renders — retirement is not blanket', async () => {
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `chat-live-goal-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
   const liveGoal = seedGoal({ status: 'active', objective: 'Verify the feature' });
   const chatOwnedLive = { goal: liveGoal, list: [], mainModelRecovery: recovery('chat') } as unknown as State;
-  assert.equal(mainModelRecoveryHasLiveOwner(chatOwnedLive), true,
+  seedState(cwd, chatOwnedLive);
+  __testOnlyLoadState(cwd);
+  assert.equal(mainModelRecoveryHasLiveOwner(), true,
     'with supervised work in flight the chat-owned marker still describes current work');
-  assert.equal(standaloneCardShown(chatOwnedLive, mainModelRecoveryHasLiveOwner(chatOwnedLive)), true,
-    'and it still renders its card');
+  assert.equal(standaloneCardShown(chatOwnedLive, true), true, 'and it still renders its card');
 });
 
 test('a terminal goal retires the main-model recovery marker durably', async () => {
@@ -278,7 +285,7 @@ test('the real settlement path retires the recovery marker when it archives', as
  *
  * This drives the REAL function for each ownership outcome.
  */
-test('the live-owner predicate keeps chat-owned recoveries and drops ownerless ones', async () => {
+test('the live-owner predicate requires a supervised target for chat-owned markers', async () => {
   const { mainModelRecoveryHasLiveOwner } = await import('../extensions/goal-recovery.js');
   const cwd = tmpCwd();
   const pi = new MockPi();
@@ -286,12 +293,15 @@ test('the live-owner predicate keeps chat-owned recoveries and drops ownerless o
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `owner-predicate-${Math.random()}` } });
   await pi.fire('session_start', { reason: 'startup' }, ctx);
 
-  // chat-owned, no goal: LIVE — an ordinary-chat retry is going to happen.
+  // chat-owned with NO supervised target: NOT live. This is the state
+  // `/glla resume` already retires as "no supervised target", and the real
+  // screenshot marker (owner:chat, kind:goal, goal:null, 7h42m old). Treating it
+  // as live re-renders the exact note.md complaint.
   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
   __testOnlyLoadState(cwd);
   await tick(30);
-  assert.equal(mainModelRecoveryHasLiveOwner(), true,
-    'a chat-owned marker is live work; treating it as dead would hide a real recovery');
+  assert.equal(mainModelRecoveryHasLiveOwner(), false,
+    'a chat-owned marker with no goal or loop has nothing to resume');
 
   // goal-owned but the goal is terminal: NOT live — this is the note.md bug.
   const terminal = seedGoal({ status: 'complete', objective: 'Verify the feature' });
