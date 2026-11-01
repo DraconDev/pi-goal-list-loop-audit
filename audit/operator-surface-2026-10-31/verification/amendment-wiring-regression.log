@@ -1,48 +1,4 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=226s heartbeat=30s
-[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 151s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [3.29ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.15ms]
-(pass) a changed contract IS shown, both sides [0.08ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.09ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-141 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
-142 |   // Consent fidelity: the exact old and new objective both appear.
-143 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
-144 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
-145 |   // Compactness: an unchanged contract is not echoed.
-146 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
-               ^
-AssertionError: the unchanged contract must not be reprinted by the real path
-
-true !== false
-
- generatedMessage: false,
-     actual: true,
-   expected: false,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /tmp/glla-ops-control-qgmrgvmf/tests/amendment-confirm-compact.test.ts:146:10
-      at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [61.44ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [23.89ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [4.52ms]
-(pass) cancelling after expanding still changes nothing [0.42ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.38ms]
-(pass) a long objective keeps BOTH objectives in full on the default card [0.16ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [17.90ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [16.92ms]
-(pass) a short objective is still printed verbatim — the diff never guesses [0.12ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [4.10ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [5.39ms]
-
- 16 pass
- 1 fail
-Ran 17 tests across 1 file. [619.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-UWPq8Q/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-UWPq8Q
-[run-tests] finished in 1s (exit 1)
