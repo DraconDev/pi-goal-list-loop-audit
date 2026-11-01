@@ -73,9 +73,14 @@ makes the toggle unnecessary on the side that carries consent.
 ## 3. `/glla wipe` latency — measured, no defect found
 
 **Observed.** `note.md`: "tying to wipe objective freezes /glla wipe — but it is
-just slow for some reason as after waiting it out everything was normal." The
-banner in the same session showed **v0.39.36** while the repo is **0.39.54**, i.e.
-the observation was made against a stale loaded build (item 6).
+just slow for some reason as after waiting it out everything was normal."
+
+**CORRECTION (2026-11-01).** An earlier revision of this report claimed the
+observation came from a stale build because "the banner showed v0.39.36". That
+claim is **retracted**: I inspected `Screenshot_20261031_092215.png` directly and
+the banner footer reads **`v0.39.54`**, matching `package.json`. The v0.39.36
+figure came from the objective text, not from the evidence. Nothing in item 3
+rests on it.
 
 **Measured, at the real profile.** Every candidate cost, because the contract
 required measuring before assuming:
@@ -153,9 +158,14 @@ never dispatched. Derived from recorded refs, never guessed.
 
 ## 6. Stale-build detection
 
-**Observed.** A banner reported `v0.39.36` while `package.json` is `0.39.54`, so
-behaviour being discussed was not in the source under review — and item 3's
-"wipe is slow" observation came from that session.
+**Observed.** The *objective* records a banner reporting `v0.39.36` against a
+`0.39.54` checkout. That specific figure is **not corroborated by the screenshots
+I can inspect** — `Screenshot_20261029_085207.png` and
+`Screenshot_20261031_092215.png` both show `v0.39.54`. The *class* of defect is
+real and independently reproducible (see the tests), but the report must not
+assert a version mismatch it cannot show. Recorded as: the user reported reading
+behaviour that did not match the source; the screenshots available show matching
+versions.
 
 **Fix.** `detectStaleBuild(cwd)` compares the **loaded** build (this module's own
 manifest, i.e. what is executing) against the checkout's manifest. Only a strictly
