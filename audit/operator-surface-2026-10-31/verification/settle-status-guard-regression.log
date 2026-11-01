@@ -2,3 +2,34 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
+(pass) queue items wait while an item is still in flight [46.51ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [4.82ms]
+89 |       claim: { attemptId: 'attempt-1' } as never,
+90 |       model: 'minimax/MiniMax-M3.1-Flash',
+91 |       origin: 'agent',
+92 |     });
+93 | 
+94 |     assert.equal(settled, false, `${state.label}: settlement must refuse a non-clean item`);
+                ^
+AssertionError: paused: settlement must refuse a non-clean item
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-sd_g2y8f/tests/list-auto-advance.test.ts:94:12
+      at processTicksAndRejections (native:7:39)
+(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [46.01ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [272.84ms]
+(pass) a standalone goal completing does not skip the queue head (no double advance) [270.76ms]
+
+ 4 pass
+ 1 fail
+Ran 5 tests across 1 file. [1061.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-KkUxQq/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-KkUxQq
+[run-tests] finished in 1s (exit 1)
