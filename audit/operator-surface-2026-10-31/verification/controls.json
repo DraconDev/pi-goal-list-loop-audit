@@ -82,6 +82,17 @@
     "expectedResultObserved": true
   },
   {
+    "case": "double-advance-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/list-auto-advance.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "configured-model-wins-regression",
     "command": [
       "node",
@@ -138,6 +149,28 @@
   },
   {
     "case": "tweak-wall-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "tweak-long-objective-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "tweak-card-height-regression",
     "command": [
       "node",
       "scripts/run-tests.mjs",
