@@ -117,14 +117,19 @@ test("goal tweak: supplied clause replaces the stored contract", async () => {
   const { cwd, ctx, confirmMessage } = await goalTweakFixture("old check");
   await pi.command("goal", "tweak new goal objective. Done when: new check", ctx);
   assert.equal(storedContract(cwd), "new check", "replacement contract is stored");
-  assert.match(confirmMessage(), /New contract:\nnew check/);
+  // note.md item 2: the default card states the consequence; the exact contract
+  // text lives in the expandable rationale (asserted in
+  // amendment-confirm-compact.test.ts by driving the expand).
+  assert.match(confirmMessage(), /Replaces the goal objective and its verification contract/);
+  assert.ok(!confirmMessage().includes("new check"),
+    "the contract body is NOT in the default card — that was the wall");
 });
 
 test("goal tweak: omitted clause preserves the stored contract", async () => {
   const { cwd, ctx, confirmMessage } = await goalTweakFixture("old check");
   await pi.command("goal", "tweak new goal objective", ctx);
   assert.equal(storedContract(cwd), "old check", "omitted clause keeps the old contract");
-  assert.match(confirmMessage(), /old contract is kept/);
+  assert.match(confirmMessage(), /its verification contract is kept/);
 });
 
 test("goal tweak: bare 'Done when:' clears the stored contract", async () => {
