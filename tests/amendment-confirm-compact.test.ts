@@ -10,7 +10,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAmendmentConfirmBody } from '../extensions/confirm-draft.js';
+import {
+  buildAmendmentConfirmBody, buildTweakConfirmBody, buildTweakRationaleBody, TweakConfirmComponent,
+} from '../extensions/confirm-draft.js';
 
 const LONG_OBJECTIVE =
   'Make a mid-audit provider failure resume the independent auditor own pi session instead of '
@@ -167,7 +169,7 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
   const NEW = 'Audit the widget surface end to end, record what the user sees, and file the defects';
   const CONTRACT = 'npm run check exits 0';
 
-  async function run(args: string): Promise<{ body: string; applied: boolean; notifies: string[]; options: string[] }> {
+  async function run(args: string): Promise<{ body: string; applied: boolean; notifies: string[]; options: string[]; card: { render: (w: number) => string[]; toggleRationale: () => void } | undefined }> {
     const cwd = tmpCwd();
     const pi = new MockPi();
     activate(pi.api);
@@ -190,6 +192,7 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
       applied: bodies.length > 0,
       notifies: ctx.ui.notifies.map((n: { message: string }) => n.message),
       options: (ctx.ui as { lastCardDeps?: { options: string[] } }).lastCardDeps?.options ?? [],
+      card: (ctx.ui as { lastCard?: unknown }).lastCard as { render: (w: number) => string[]; toggleRationale: () => void } | undefined,
     };
   }
 
@@ -211,6 +214,16 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
     `the real /goal tweak dialog must offer the expand (got ${JSON.stringify(compact.options)})`);
   assert.ok(compact.options.includes('Confirm — apply this tweak'), 'confirm semantics are unchanged');
   assert.ok(compact.options.includes('Cancel — change nothing'), 'cancel semantics are unchanged');
+
+  // The REAL call site passes a height. Without one the component renders with
+  // POSITIVE_INFINITY, pageSize is infinite and the advertised PgUp/PgDn scroll
+  // cannot move — so this is asserted on the component confirmTweak actually
+  // constructed, not on a fixture.
+  assert.ok(compact.card, 'confirmTweak built a card component');
+  compact.card!.toggleRationale();
+  const realRows = compact.card!.render(80);
+  assert.ok(realRows.length <= 20,
+    `the card the real call site built rendered ${realRows.length} rows — it was built without a height`);
 
   // The expand: the same gate, opened expanded via --rationale.
   const expanded = await run(`--rationale ${OLD} and file the defects. Done when: ${CONTRACT}`);

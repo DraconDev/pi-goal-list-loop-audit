@@ -186,6 +186,10 @@ const FAKE_KB = { matches: () => false };
 export class MockUi {
   /** Deps of the last confirm card this mock built (options[0] is Confirm). */
   lastCardDeps: { title: string; body: string; options: string[] } | undefined;
+  /** The component the last custom() factory returned, so a test can inspect
+   * what the REAL call site constructed — e.g. that it passed a height, which
+   * is what makes the advertised PgUp/PgDn scroll functional. */
+  lastCard: unknown;
   notifies: MockNotify[] = [];
   statuses: Record<string, string | undefined> = {};
   widgets: Record<string, unknown> = {};
@@ -230,8 +234,12 @@ export class MockUi {
       const factory = args[0] as ((tui: unknown, theme: unknown, keybindings: unknown, done: (r: unknown) => void) => unknown) | undefined;
       if (typeof factory === "function") {
         try {
-          const built = factory({ requestRender: () => {} }, FAKE_THEME, FAKE_KB, () => {}) as
+          // Emulate interactive pi: expose a terminal height so a call site that
+          // supplies `getHeight: () => (tui.terminal?.rows ?? 24) - 4` sees a
+          // realistic value instead of the ?? 24 fallback.
+          const built = factory({ requestRender: () => {}, terminal: { rows: 24 } }, FAKE_THEME, FAKE_KB, () => {}) as
             { dialogDeps?: { title: string; body: string; options: string[] } } | undefined;
+          if (built) this.lastCard = built;
           if (built?.dialogDeps) this.lastCardDeps = built.dialogDeps;
         } catch {
           // builder errors surface through customImpl's promise in tests that
