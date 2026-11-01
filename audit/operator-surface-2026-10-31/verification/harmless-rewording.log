@@ -1,17 +1,19 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=332s heartbeat=30s
-[run-tests] host is 1.8x slower than an idle host — per-test budget raised to 221s
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [12.15ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [2.32ms]
-(pass) an ordinary-chat recovery keeps its card — the display guard must not hide it [0.10ms]
-(pass) a terminal goal retires the main-model recovery marker durably [215.03ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [118.32ms]
-(pass) the real settlement path retires the recovery marker when it archives [264.49ms]
-(pass) the live-owner predicate keeps chat-owned recoveries and drops ownerless ones [178.44ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [21.80ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [1.08ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [2939.83ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [111.50ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [244.61ms]
+(pass) a terminal goal retires the main-model recovery marker durably [726.39ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [355.05ms]
+(pass) the real settlement path retires the recovery marker when it archives [1971.25ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [486.32ms]
 
- 7 pass
+ 9 pass
  0 fail
-Ran 7 tests across 1 file. [1445.00ms]
-[run-tests] finished in 2s (exit 0)
+Ran 9 tests across 1 file. [12.34s]
+[run-tests] finished in 13s (exit 0)

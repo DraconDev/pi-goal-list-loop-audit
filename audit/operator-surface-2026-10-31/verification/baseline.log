@@ -9,3 +9,45 @@ tests/auditor-model-display.test.ts:
 (pass) the recorded executed model outranks the configured candidate [0.47ms]
 
 tests/list-auto-advance.test.ts:
+(pass) queue items wait while an item is still in flight [8350.05ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [79.93ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [177.83ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [3276.41ms]
+
+tests/stale-build-warning.test.ts:
+(pass) an older loaded build warns and names the reconcile action [3192.84ms]
+(pass) a matching version stays silent — the normal case must not nag [1.32ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.29ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [3.74ms]
+(pass) version comparison is numeric, not lexical [0.20ms]
+(pass) session start surfaces the stale-build warning and still runs [331.37ms]
+(pass) an unrelated project manifest does NOT produce a stale-build warning [0.43ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.19ms]
+(pass) a real older GLLA checkout still warns with the package name present [3.02ms]
+
+tests/stale-recovery-marker.test.ts:
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [4.78ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.76ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [1501.84ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [234.16ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [24.64ms]
+(pass) a terminal goal retires the main-model recovery marker durably [359.75ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [165.15ms]
+(pass) the real settlement path retires the recovery marker when it archives [254.75ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [299.64ms]
+
+tests/amendment-confirm-compact.test.ts:
+[run-tests] progress: 30s elapsed · 0s since last output · 2 KiB of suite output
+(pass) the amendment confirm keeps the exact old and new objective text [0.58ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.09ms]
+(pass) a changed contract IS shown, both sides [0.08ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.59ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.12ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.05ms]
+(pass) the real complete_goal amendment confirm uses the compact body [2130.49ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [705.45ms]
+
+ 34 pass
+ 0 fail
+Ran 34 tests across 5 files. [32.84s]
+[run-tests] finished in 33s (exit 0)
