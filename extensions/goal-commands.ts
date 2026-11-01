@@ -3851,29 +3851,22 @@ export {
 async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
   const body = buildTweakConfirmBody(input);
   const options = [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION];
-  // note.md item 2: the compact card, with the full rationale behind a real
-  // `Show the full rationale` action in the SAME dialog. Interactive pi resolves
-  // `custom` by INVOKING the factory (goal-session.ts v0.34.80); RPC/headless
-  // resolves it WITHOUT invoking, which is the unavailability signal here.
-  if (typeof (ctx.ui as { custom?: unknown }).custom === "function") {
+  // note.md item 2: the compact card IS the consent record, and the full
+  // rationale sits behind a real `Show the full rationale` action in the same
+  // dialog. `select` carries the card in its title (the same shape the proven
+  // confirmDraft fallback uses), so this works identically in interactive pi and
+  // in RPC/headless hosts — no custom-component dependency.
+  if (typeof (ctx.ui as { select?: unknown }).select === "function") {
     for (;;) {
-      let factoryInvoked = false;
       let choice: string | undefined;
       try {
-        choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
-          factoryInvoked = true;
-          return new ConfirmDraftComponent(
-            { title, body, options, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
-            () => tui.requestRender(), theme as never, keybindings as never, done,
-          );
-        });
+        choice = await ctx.ui.select(`${title}\n\n${body}`, options);
       } catch {
         choice = undefined;
       }
-      if (!factoryInvoked) break;
       if (choice === TWEAK_CONFIRM_ACTION) return true;
       if (choice !== TWEAK_RATIONALE_ACTION) return false;
-      // Expand: print the rationale, then re-open the SAME decision.
+      // Expand: the full rationale, then back to the SAME decision.
       ctx.ui.notify(buildTweakRationaleBody(input), "info");
     }
   }

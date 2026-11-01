@@ -215,7 +215,17 @@ export class MockUi {
     return this.confirmImpl ? this.confirmImpl(title, message) : Promise.resolve(true);
   }
   select(title: string, options: string[]): Promise<string | undefined> {
-    return this.selectImpl ? this.selectImpl(title, options) : Promise.resolve(undefined);
+    if (this.selectImpl) return this.selectImpl(title, options);
+    // A case that configured only `confirmImpl` still meant "the user decides
+    // this card": true selects the first (Confirm) action, false cancels. Tests
+    // that care about a specific action (e.g. the rationale expand) set
+    // selectImpl explicitly.
+    if (this.confirmImpl) {
+      const [cardTitle, ...cardBody] = title.split("\n\n");
+      return this.confirmImpl(cardTitle, cardBody.join("\n\n"))
+        .then((ok) => (ok ? options[0] : undefined));
+    }
+    return Promise.resolve(undefined);
   }
   input(title: string, placeholder?: string): Promise<string | undefined> {
     return this.inputImpl ? this.inputImpl(title, placeholder) : Promise.resolve(undefined);
