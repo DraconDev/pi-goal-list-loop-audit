@@ -17,6 +17,7 @@ import { buildAmendmentSummary } from "../extensions/loops/goal-tools.js";
 import type { Task } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLastConfirmDialog } from "../extensions/loops/goal.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { CARD_CONFIRM_NO, CARD_CONFIRM_YES } from '../extensions/confirm-draft.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -188,6 +189,12 @@ test("propose_task_list amendment renders the readable summary, not a JSON dump"
   assert.ok(!body.includes('"version":'), "no JSON version key in the live dialog");
   assert.match(body, /Replacing 3 committed tasks/, "real prior counts drive the headline");
   assert.match(body, /Re-audit pass\s+\[new\]/, "the added task is marked");
+  // note.md "looks fine, except unstyled": the amendment is the STYLED card now,
+  // and its two actions prove it — a revert to the flat confirm leaves only the
+  // earlier draft card here, whose options are the draft's.
+  const amendmentCard = (ctx.ui as unknown as { lastCardDeps?: { options?: string[] } }).lastCardDeps;
+  assert.deepEqual(amendmentCard?.options, [CARD_CONFIRM_YES, CARD_CONFIRM_NO],
+    'the task amendment rendered the styled two-action card, not the flat confirm');
 });
 
 test("propose_task_list aborts an amendment whose target changed during Confirm", async () => {
