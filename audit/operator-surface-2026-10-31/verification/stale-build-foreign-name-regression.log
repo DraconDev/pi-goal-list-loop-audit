@@ -2,12 +2,12 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [35.14ms]
-(pass) a matching version stays silent — the normal case must not nag [0.19ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.17ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.19ms]
-(pass) version comparison is numeric, not lexical [0.09ms]
-(pass) session start surfaces the stale-build warning and still runs [267.70ms]
+(pass) an older loaded build warns and names the reconcile action [30.98ms]
+(pass) a matching version stays silent — the normal case must not nag [0.16ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.12ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.17ms]
+(pass) version comparison is numeric, not lexical [0.07ms]
+(pass) session start surfaces the stale-build warning and still runs [270.36ms]
 131 |   fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
 132 |     name: 'some-unrelated-project',
 133 |     version: '1.0.0',
@@ -25,15 +25,15 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-_bijiehw/tests/stale-build-warning.test.ts:136:10
+      at /tmp/glla-ops-control-_58k3z26/tests/stale-build-warning.test.ts:136:10
       at fn (node:test:215:18)
-(fail) an unrelated project manifest does NOT produce a stale-build warning [0.97ms]
-(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.28ms]
-(pass) a real older GLLA checkout still warns with the package name present [0.16ms]
+(fail) an unrelated project manifest does NOT produce a stale-build warning [1.13ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.22ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.20ms]
 
  8 pass
  1 fail
-Ran 9 tests across 1 file. [659.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-DNY7ll/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-DNY7ll
+Ran 9 tests across 1 file. [668.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-cJf90A/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-cJf90A
 [run-tests] finished in 1s (exit 1)

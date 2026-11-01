@@ -2,8 +2,8 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [6.89ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.59ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.22ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.56ms]
 120 |   seedState(cwd, observed);
 121 |   __testOnlyLoadState(cwd);
 122 |   const liveVerdict = mainModelRecoveryHasLiveOwner();
@@ -21,14 +21,14 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-j8gtoa_d/tests/stale-recovery-marker.test.ts:125:10
+      at /tmp/glla-ops-control-6uw1z56u/tests/stale-recovery-marker.test.ts:125:10
       at processTicksAndRejections (native:7:39)
-(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [53.66ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.96ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [6.24ms]
-(pass) a terminal goal retires the main-model recovery marker durably [120.94ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [115.05ms]
-(pass) the real settlement path retires the recovery marker when it archives [226.41ms]
+(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [39.06ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [5.74ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [4.35ms]
+(pass) a terminal goal retires the main-model recovery marker durably [116.31ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [109.57ms]
+(pass) the real settlement path retires the recovery marker when it archives [225.18ms]
 303 |   // screenshot marker (owner:chat, kind:goal, goal:null, 7h42m old). Treating it
 304 |   // as live re-renders the exact note.md complaint.
 305 |   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
@@ -46,13 +46,13 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-j8gtoa_d/tests/stale-recovery-marker.test.ts:308:10
+      at /tmp/glla-ops-control-6uw1z56u/tests/stale-recovery-marker.test.ts:308:10
       at processTicksAndRejections (native:7:39)
-(fail) the live-owner predicate requires a supervised target for chat-owned markers [35.85ms]
+(fail) the live-owner predicate requires a supervised target for chat-owned markers [36.29ms]
 
  7 pass
  2 fail
-Ran 9 tests across 1 file. [940.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-OEfWxO/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-OEfWxO
+Ran 9 tests across 1 file. [890.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-4OUQlu/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-4OUQlu
 [run-tests] finished in 1s (exit 1)
