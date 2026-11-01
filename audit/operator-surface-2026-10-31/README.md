@@ -310,15 +310,16 @@ never pauses the goal, and never touches goal state, so a stale build can still 
 driven during development.
 
 **Rendered proof.** `verification/tweak-card-render.txt` is the real component's
-`render(76)` output for a LONG objective — the shape the note actually reported.
-The compact card shows the minimal diff (`[-stop there-]` / `[+file each defect…+]`)
-with elision markers, the disclosure that the exact full text is in the expand,
-the single consequence line, and the three actions including `Show the full
-rationale`; after the in-place toggle the SAME dialog shows the exact rationale
-with the new contract and `Hide the full rationale`, and nothing has been applied.
-A real TUI screenshot is not available from this non-interactive environment, so
-the render output is the evidence offered — it is the same `render()` the terminal
-calls.
+`render(76)` output for a ~300-character objective — the long shape the note
+actually reported. The default card opens on `From: <full objective>` and pages
+onward (`Review 1–6/15 · PgUp/PgDn scroll`) to `To: <full objective>`; page 2 of
+the same render shows the tail of the old objective and the whole new one, so the
+exact pair is on the default card and reachable by the advertised keys. Confirm,
+`Show the full rationale` and Cancel stay visible on every page. After the
+in-place toggle the SAME dialog shows the labelled rationale with the new contract
+and `Hide the full rationale`, and nothing has been applied. A real TUI screenshot
+is not available from this non-interactive environment, so the render output is
+the evidence offered — it is the same `render()` the terminal calls.
 
 **Not stale:** a newer loaded build (a published install driving an older
 checkout), equal versions, and an unreadable/missing manifest — absence of
