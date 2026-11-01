@@ -303,8 +303,8 @@ export const TWEAK_CANCEL_ACTION = 'Cancel — change nothing';
  */
 export class TweakConfirmComponent implements Component {
   private readonly input: TweakConfirmInput;
-  private readonly md: Markdown;
-  private readonly selectList: SelectList;
+  private md: Markdown;
+  private selectList: SelectList;
   private readonly requestRender: () => void;
   private readonly theme: Theme;
   private readonly keybindings: KeybindingsManagerLike;
@@ -355,7 +355,11 @@ export class TweakConfirmComponent implements Component {
   toggleRationale(): void {
     this.expanded = !this.expanded;
     this.md = new Markdown(buildConfirmDraftMarkdown(this.input.title ?? 'Tweak objective?', this.bodyText()), 1, 1, markdownTheme(this.theme));
-    this.selectList.setItems(this.items());
+    // The action list changes label in place (expand ↔ collapse), so the
+    // SelectList is rebuilt; nothing is applied and the dialog stays open.
+    this.selectList = new SelectList(this.items(), 3, selectListTheme(this.theme));
+    this.selectList.onSelect = (item) => this.choose(item.value);
+    this.selectList.onCancel = () => this.done(undefined);
     this.selectList.setSelectedIndex(1);
     this.scrollOffset = 0;
     this.requestRender();
