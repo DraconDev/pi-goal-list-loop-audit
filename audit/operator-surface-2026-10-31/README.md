@@ -87,10 +87,13 @@ screenshots, and only the `complete_goal` amendment path had been changed. Both
 paths are handled now, and the test drives `cmdTweak` itself.
 
 **Fix.** `buildAmendmentConfirmBody` (extensions/confirm-draft.ts) renders the
-exact old→new objective, shows the contract only when it actually changes (and
-says "Contract: unchanged" otherwise), clips a long objective to a readable length
-with an explicit `…` marker while keeping the tail where acceptance clauses live,
-and keeps the consequence line.
+exact old→new objective **in full** — objectives are never clipped — shows the
+contract only when it actually changes (and says "Contract: unchanged"
+otherwise), and keeps the consequence line. Only a long **contract** is shortened:
+`clipContract` (extensions/confirm-draft.ts:185) keeps a head and the tail where
+acceptance clauses live, joined by an explicit ` … ` marker, because the contract
+is the part that can run to thousands of characters. A test asserts the objective
+pair contains no `…` even for a multi-kilobyte objective.
 
 **Fix for the tweak path.** `buildTweakConfirmBody` renders `From:` / `To:`
 with the exact old and new objective and a single consequence line
@@ -243,10 +246,12 @@ after it archives. `settleApprovedCompletion` calls that archive and **must not
 advance again** — the settlement path performs no `activateNextListItem` call of
 its own and ledgers no `list_auto_advance` row. An earlier revision of this
 report claimed otherwise (it described a settlement-side advance with
-`via: "completion-settlement"` that no longer exists); `grep` for
-`activateNextListItem` in `extensions/loops/goal-auditor-hooks.ts` returns
-nothing, and `tests/list-auto-advance.test.ts` asserts **zero** `list_auto_advance`
-rows in the settlement path, so the report now matches the code.
+`via: "completion-settlement"` that no longer exists). `activateNextListItem` has
+**no call site** in `extensions/loops/goal-auditor-hooks.ts` — the only match for
+that name is an explanatory comment at `goal-auditor-hooks.ts:1290` recording why
+advancing there twice was wrong — and `tests/list-auto-advance.test.ts` asserts
+**zero** `list_auto_advance` rows in the settlement path, so the report now
+matches the code.
 
 **Gap found while proving the negative direction (2026-11-01).** "Never reaches
 settlement" was an assumption, not a guarantee: `settleApprovedCompletion` had no
