@@ -348,6 +348,62 @@ evidence is not evidence of staleness. Version comparison is numeric, so `0.39.9
 
 ---
 
+## 7. Amendment confirmations are styled (note.md "looks fine, except unstyled")
+
+**Observed.** `Screenshot_20261029_151933.png`, read directly rather than
+described: the "Confirm committed task amendment" dialog — `Goal: … Contract:
+unchanged (10 checks)`, `Replacing 6 committed tasks (6 complete) with 6:`, the
+per-task `[new]` / `[was: complete]` rows, a `Dropped:` block, `Approve?` — renders
+as **flat body text**. No card border, no title treatment, and the footer is the
+host's raw `↑↓ navigate  enter select  escape/ctrl+c cancel`. The neighbouring
+goal card in the same frame has a border and a title. The note's own words are
+"this question looks fine, except unstyled", which is exactly right: the copy was
+already good, only the chrome was missing.
+
+**Root cause (observed).** `extensions/loops/goal-tools.ts` called
+`liveCtx.ui.confirm(title, body)` for the task amendment, and
+`extensions/loops/goal-tools.ts` called it again for the completion scope
+amendment, and `respec-builder-runtime.ts` reached the same flat primitive through
+the `confirmAmendment` hook. `ctx.ui.confirm` is title+body text by definition —
+it cannot draw a border or theme a title. The tweak confirmation had moved to
+`ctx.ui.custom` in item 2, so these three were the last amendment dialogs still on
+the flat path. Ten `ctx.ui.confirm` sites existed overall; **three** were
+amendments.
+
+**Fix.** A shared `CardConfirmComponent` (`extensions/confirm-draft.ts`) renders an
+amendment in the same bordered card shape the tweak confirmation uses: title row,
+Markdown body, a dim-keyed `↑↓ choose · enter select · PgUp/PgDn scroll · esc
+cancel` help line, and a two-action decision in place of the host's footer. A
+long amendment body pages inside a terminal-height window (`getHeight`) instead of
+pushing `Yes`/`No` off screen. `confirmCard(ctx, title, body)` mirrors
+`confirmTweak`'s host discipline: a `custom` that never invokes the factory (RPC /
+noOp stub) falls through to the plain confirm rather than being read as "No", and
+a stale-session API error is **re-raised** rather than answered by a dialog the
+host cannot show.
+
+The body text is untouched — the caller's exact string is what the card carries
+(`card.dialogDeps.body === BODY` is asserted), so nothing the user agreed to
+changed. Yes/No semantics are unchanged, the decision stays two-way, and draft
+auto-accept still does **not** apply: an amendment needs per-change consent.
+
+**Deliberately narrow.** Only the three amendment sites move. The heavier
+`ctx.ui.confirm` sites (wipe, audit-ended-without-verdict "complete without
+audit", the settings editors) keep the primitive they were tested against, so a
+consent path cannot be silently re-shaped by this change.
+
+**Evidence.** `tests/amendment-confirm-styling.test.ts` (5 cases) proves the card
+is styled, the body is byte-identical, No/cancel refuse, the RPC stub falls
+through, a stale API re-raises, and a long body pages with the decision still
+visible. `tests/amendment-summary.test.ts` drives the **real** `propose_task_list`
+amendment and asserts the rendered card's actions are the card's own — reverting
+the call site to `ctx.ui.confirm` fails it with "the task amendment rendered the
+styled two-action card, not the flat confirm" (`amendment-flat-confirm-regression`
+in the controls). The full-amendment-path tests that previously answered the
+dialog with a string now answer through the card's own resolution, which is what
+the host does.
+
+---
+
 ## Verification
 
 `npm run check` and `npm run check:inventory` both exit 0. `npm run
@@ -374,7 +430,7 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — dropping the package-name check makes an unrelated project warn |
 
-## Isolated controls (21/21 as intended)
+## Isolated controls (22/22 as intended)
 
 `controls.py` mutates a disposable copy of the tree once per case and runs only
 the suite that should notice. The baseline and a **harmless rewording** must exit
@@ -397,6 +453,7 @@ behaviour. Every regression case must exit non-zero.
 | `tweak-long-objective-regression` | fail | exit 1 |
 | `tweak-card-height-regression` | fail | exit 1 |
 | `configured-candidate-appended-regression` | fail | exit 1 |
+| `amendment-flat-confirm-regression` | fail | exit 1 |
 | `no-auto-advance-regression` | fail | exit 1 |
 | `settle-status-guard-regression` | fail | exit 1 |
 | `configured-model-wins-regression` | fail | exit 1 |
@@ -409,7 +466,7 @@ One control (`ledger-full-scan-regression`) initially exited 0 — the wall-cloc
 ceiling it relied on was marginal, so a full rescan could slip under it on a
 loaded host. That is precisely the weakness a control exists to expose, so the pin
 was replaced with the deterministic assertions above and the control now fails as
-intended. Final run: **21/21 as intended** (`verification/controls.json`).
+intended. Final run: **22/22 as intended** (`verification/controls.json`).
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
 ### Gate history (recorded, not hidden)

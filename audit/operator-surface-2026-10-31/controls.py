@@ -142,6 +142,14 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         "    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,\n    ...tweakObjectiveLines(input.currentObjective, input.newObjective),",
     ),
 
+    # 7. note.md "looks fine, except unstyled": the task amendment reverts to
+    #    the flat confirm, losing the card chrome the note asked for.
+    'amendment-flat-confirm-regression': (
+        'extensions/loops/goal-tools.ts',
+        '            ? await confirmCard(liveCtx as never, "Confirm committed task amendment", buildAmendmentSummary({',
+        '            ? await liveCtx.ui.confirm("Confirm committed task amendment", buildAmendmentSummary({',
+    ),
+
     # 8d. audit round 3 [MED]: the default card reprints the whole long
     #     objective again instead of showing the changed region.
     'tweak-long-objective-regression': (
@@ -205,6 +213,7 @@ SUITES: dict[str, list[str]] = {
     'double-advance-regression': ['tests/list-auto-advance.test.ts'],
     'tweak-long-objective-regression': ['tests/amendment-confirm-compact.test.ts'],
     'tweak-card-height-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'amendment-flat-confirm-regression': ['tests/amendment-summary.test.ts'],
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
     'configured-candidate-appended-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
