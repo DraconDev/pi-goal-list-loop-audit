@@ -377,6 +377,7 @@ import {
 import {
   ConfirmDraftComponent,
   buildAmendmentConfirmBody,
+  confirmCard,
 } from "../confirm-draft.js";
 import {
   applyMeasurement,
@@ -708,7 +709,10 @@ function registerAgentTools(pi: any): void {
     completed: (ctx, id, summary) => deliverTerminalSummary(ctx, pi, "goal-event", id, summary),
     finished: ctx => announceQueuedListAfterLoopEnd(ctx),
     confirmAmendment: async (ctx, title, body) => {
-      try { return await ctx.ui.confirm(title, body); } catch { return false; }
+      // note.md "but this question looks fine, except unstyled": same subject,
+      // same Yes/No semantics, now in the styled card the rest of GLLA uses.
+      // Hosts without `custom` still get the plain confirm.
+      try { return await confirmCard(ctx as never, title, body); } catch { return false; }
     },
     confirm: async (ctx, title, body) => {
       if (loadSettings(ctx.cwd).autoAcceptDrafts === true) {
@@ -897,7 +901,8 @@ function registerAgentTools(pi: any): void {
             // prints the EXACT old→new objective pair. The full contracts are
             // only shown when one actually changes, because an unchanged
             // contract is not part of the decision and was most of the wall.
-            confirmed = await ctx.ui.confirm(
+            confirmed = await confirmCard(
+              ctx as never,
               "Confirm completion scope amendment",
               buildAmendmentConfirmBody({
                 oldObjective, newObjective: cleanObj,
