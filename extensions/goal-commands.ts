@@ -5,6 +5,14 @@
  * arrive via createGoalCommands.
  */
 
+import {
+  TWEAK_CANCEL_ACTION,
+  TWEAK_CONFIRM_ACTION,
+  TWEAK_RATIONALE_ACTION,
+  buildTweakConfirmBody,
+  buildTweakRationaleBody,
+  type TweakConfirmInput,
+} from "./confirm-draft.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -1200,17 +1208,32 @@ export async function cmdTweak(
     ctx.ui.notify("Tweak cancelled — objective and contract are unchanged; nothing was amended.", "info");
     return false;
   }
+  // note.md item 2: the default card is the exact consent pair plus one
+  // consequence line. The rationale (labels, contract semantics, inference
+  // caveat) is one explicit action away, in the SAME dialog. Confirm/Cancel
+  // semantics are unchanged: Confirm applies, Cancel changes nothing.
+  const tweakInput: TweakConfirmInput = {
+    mode,
+    currentObjective: sanitizeDisplayText(current.objective),
+    newObjective: sanitizeDisplayText(newObjective),
+    inferredNote: inferredNote.replace(/^\(inferred from /, '').replace(/\)$/, '') || undefined,
+    hasNewContract,
+    clearsContract,
+    newContract: proposed.verificationContract,
+  };
   let confirmed = false;
   try {
-    confirmed = await ctx.ui.confirm(
-      mode === "list" ? "Tweak list item?" : "Tweak goal?",
-      `CURRENT:\n${sanitizeDisplayText(current.objective)}\n\nNEW${inferredNote}:\n${sanitizeDisplayText(newObjective)}` +
-      (hasNewContract
-        ? `\n\nNew contract:\n${sanitizeDisplayText(proposed.verificationContract)}`
-        : clearsContract
-          ? "\n\n(Empty 'Done when:' — the verification contract is cleared.)"
-          : "\n\n(New text carries no contract; the old contract is kept.)"),
-    );
+    for (;;) {
+      const choice = await ctx.ui.select(
+        mode === "list" ? "Tweak list item?" : "Tweak goal?",
+        [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION],
+        { message: buildTweakConfirmBody(tweakInput) },
+      );
+      if (choice === TWEAK_CONFIRM_ACTION) { confirmed = true; break; }
+      if (choice !== TWEAK_RATIONALE_ACTION) { confirmed = false; break; }
+      // Expand: show the full rationale, then return to the same decision.
+      ctx.ui.notify(buildTweakRationaleBody(tweakInput), "info");
+    }
   } catch {
     confirmed = false;
   }
