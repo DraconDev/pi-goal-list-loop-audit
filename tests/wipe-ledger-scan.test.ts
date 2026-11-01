@@ -14,6 +14,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  __testOnlyLedgerIndexReadBytes as ledgerIndexReadBytes,
+  __testOnlyResetLedgerIndexReadBytes as resetLedgerIndexReadBytes,
   computeListDepth, computeListDepthFromLedger, scanLedgerRecords,
 } from '../extensions/goal-loop-core.js';
 import { scaledBudgetMs } from '../scripts/host-contention.mjs';
@@ -87,13 +89,21 @@ test('the indexed read converges to EXACTLY the full-scan answer', () => {
   assert.deepEqual(got, reference, 'the indexed read must not lose or invent samples');
 });
 
-test('the steady state is cheap, so repeated status renders stay responsive', () => {
+test('a warm read folds ZERO ledger bytes — it never rescans history', () => {
   const cwd = tmpCwd();
   bigLedger(cwd, 12, 8_000);
-  for (let i = 0; i < 200; i++) computeListDepthFromLedger(queue, cwd, NOW); // warm the index
-  const budget = scaledBudgetMs(200);
-  const started = Date.now();
+  // Warm the index: bounded slices until full coverage.
+  for (let i = 0; i < 200; i++) computeListDepthFromLedger(queue, cwd, NOW);
+
+  // Deterministic pin: the cause was re-reading ledger bytes, so once warm the
+  // read must touch none. A wall-clock ceiling alone is a weak pin — a loaded
+  // host can slip under it while the full rescan is still happening.
+  resetLedgerIndexReadBytes();
+  computeListDepthFromLedger(queue, cwd, NOW);
+  assert.equal(ledgerIndexReadBytes(), 0,
+    'a warm depth read folded ledger bytes — the unbounded rescan is back');
+
+  // And repeated reads stay at zero, so a status render cannot creep.
   for (let i = 0; i < 5; i++) computeListDepthFromLedger(queue, cwd, NOW);
-  const elapsed = Date.now() - started;
-  assert.ok(elapsed < budget, `5 warm reads took ${elapsed}ms, budget ${budget}ms`);
+  assert.equal(ledgerIndexReadBytes(), 0, 'repeated warm reads must stay at zero bytes');
 });

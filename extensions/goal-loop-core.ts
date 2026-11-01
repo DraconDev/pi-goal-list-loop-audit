@@ -5236,8 +5236,20 @@ export function indexListDepthStateRow(cwd: string, value: unknown): void {
   writeListDepthIndex(cwd, index);
 }
 
+/** Bytes the last indexed read actually folded. A warm read must fold ZERO:
+ * that is the deterministic statement of "this read does not rescan history"
+ * (wall-clock alone is a weak pin — a loaded host can pass it). */
+let lastLedgerIndexReadBytes = 0;
+export function __testOnlyLedgerIndexReadBytes(): number {
+  return lastLedgerIndexReadBytes;
+}
+export function __testOnlyResetLedgerIndexReadBytes(): void {
+  lastLedgerIndexReadBytes = 0;
+}
+
 /** The indexed finals plus one bounded backfill slice of unread history. */
 export function scanIndexedLedgerStateFinals(cwd: string): Array<{ type: string; value?: any }> {
+  lastLedgerIndexReadBytes = 0;
   const index = readListDepthIndex(cwd);
   let files: string[];
   try { files = ledgerFiles(cwd); } catch { return Object.values(index.finals).map((f) => ({ type: "state", value: { goal: f } })); }
@@ -5268,6 +5280,7 @@ export function scanIndexedLedgerStateFinals(cwd: string): Array<{ type: string;
     const complete = text.slice(0, lastNewline + 1);
     for (const line of complete.split("\n")) foldStateLineIntoIndex(index, line);
     index.consumed[name] = from + Buffer.byteLength(complete, "utf8");
+    lastLedgerIndexReadBytes += take;
     budget -= take;
     changed = true;
   }
