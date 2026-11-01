@@ -227,10 +227,14 @@ export interface TweakConfirmInput {
   /** Human note about where the replacement text came from, if inferred. */
   inferredNote?: string;
   hasNewContract: boolean;
-  /** Render the full form in the same gate (the `--rationale` expand). */
+  /** Open the card already expanded (`--rationale`). The in-dialog affordance
+   * exists regardless; this only changes the initial state. */
   showRationale?: boolean;
   clearsContract: boolean;
   newContract?: string;
+  /** Optional: the dialog title (defaults to the standard tweak title). */
+  title?: string;
+  getHeight?: () => number;
 }
 
 /** The default card: exact consent text, nothing else. */
@@ -246,8 +250,6 @@ export function buildTweakConfirmBody(input: TweakConfirmInput): string {
     ...(inferred ? ['', `This replacement was ${inferred}.`] : []),
     '',
     tweakConsequenceLine(input),
-    '',
-    `Full rationale: re-run with --rationale (or ${input.mode === 'list' ? '/list tweak' : '/goal tweak'} --rationale ${input.mode === 'list' ? '<item>' : '<text>'}).`,
   ];
   return lines.join('\n');
 }
@@ -282,7 +284,128 @@ export function buildTweakRationaleBody(input: TweakConfirmInput): string {
 }
 
 /** Dialog actions for the tweak confirmation. Confirm/Cancel semantics are
- * unchanged; `Show full rationale` is the expand affordance. */
+ * unchanged; the rationale action is the in-dialog expand affordance. */
 export const TWEAK_CONFIRM_ACTION = 'Confirm — apply this tweak';
 export const TWEAK_RATIONALE_ACTION = 'Show the full rationale';
+export const TWEAK_COLLAPSE_ACTION = 'Hide the full rationale';
 export const TWEAK_CANCEL_ACTION = 'Cancel — change nothing';
+
+/**
+ * note.md 2026-10-31 item 2, audit round 2: the compact card must keep the full
+ * rationale *reachable from that same card*. A `--rationale` flag that requires
+ * cancelling and re-typing the command is not reachable — it is a re-run.
+ *
+ * This is the same dialog with the same Confirm/Cancel semantics; the only
+ * addition is a `Show the full rationale` action that expands the body in place
+ * and offers to collapse it again. Consent text is unchanged: the compact body
+ * always carries the exact old and new objective, and the expanded body is the
+ * pre-existing rationale text.
+ */
+export class TweakConfirmComponent implements Component {
+  private readonly input: TweakConfirmInput;
+  private readonly md: Markdown;
+  private readonly selectList: SelectList;
+  private readonly requestRender: () => void;
+  private readonly theme: Theme;
+  private readonly keybindings: KeybindingsManagerLike;
+  private readonly getHeight: (() => number) | undefined;
+  private readonly done: (value: string | undefined) => void;
+  private expanded: boolean;
+  private scrollOffset = 0;
+  private pageSize = 8;
+
+  constructor(
+    input: TweakConfirmInput,
+    requestRender: () => void,
+    theme: Theme,
+    keybindings: KeybindingsManagerLike,
+    done: (value: string | undefined) => void,
+  ) {
+    this.input = input;
+    this.requestRender = requestRender;
+    this.getHeight = input.getHeight;
+    this.done = done;
+    this.theme = theme;
+    this.keybindings = keybindings;
+    this.expanded = input.showRationale === true;
+    this.md = new Markdown(buildConfirmDraftMarkdown(input.title ?? 'Tweak objective?', this.bodyText()), 1, 1, markdownTheme(theme));
+    this.selectList = new SelectList(this.items(), 3, selectListTheme(theme));
+    this.selectList.onSelect = (item) => this.choose(item.value);
+    this.selectList.onCancel = () => done(undefined);
+  }
+
+  /** The body currently on screen. Public so tests assert what the user saw. */
+  bodyText(): string {
+    return this.expanded ? buildTweakRationaleBody(this.input) : buildTweakConfirmBody(this.input);
+  }
+
+  isExpanded(): boolean {
+    return this.expanded;
+  }
+
+  private items(): SelectItem[] {
+    return [
+      { value: TWEAK_CONFIRM_ACTION, label: TWEAK_CONFIRM_ACTION },
+      { value: this.expanded ? TWEAK_COLLAPSE_ACTION : TWEAK_RATIONALE_ACTION, label: this.expanded ? TWEAK_COLLAPSE_ACTION : TWEAK_RATIONALE_ACTION },
+      { value: TWEAK_CANCEL_ACTION, label: TWEAK_CANCEL_ACTION },
+    ];
+  }
+
+  /** Toggle in place — the dialog stays open, nothing is applied. */
+  toggleRationale(): void {
+    this.expanded = !this.expanded;
+    this.md = new Markdown(buildConfirmDraftMarkdown(this.input.title ?? 'Tweak objective?', this.bodyText()), 1, 1, markdownTheme(this.theme));
+    this.selectList.setItems(this.items());
+    this.selectList.setSelectedIndex(1);
+    this.scrollOffset = 0;
+    this.requestRender();
+  }
+
+  private choose(value: string): void {
+    if (value === TWEAK_CONFIRM_ACTION) this.done(TWEAK_CONFIRM_ACTION);
+    else if (value === TWEAK_CANCEL_ACTION) this.done(undefined);
+    else this.toggleRationale();
+  }
+
+  render(width: number): string[] {
+    const border = new DynamicBorder((text: string) => this.theme.fg("borderAccent", text)).render(width);
+    const body = this.md.render(width);
+    const decisions = this.selectList.render(width);
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    // The affordance is stated in the help line so the expand is discoverable
+    // without selecting it first.
+    const help = new Text(this.theme.fg("dim", this.expanded
+      ? "↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel"
+      : `↑↓ choose · enter select · esc cancel · "${TWEAK_RATIONALE_ACTION}" expands without applying`), 1, 0).render(width);
+    const gaps = height < 14 ? [] : [""];
+    const contentBudget = Math.max(0, height - border.length * 2 - decisions.length - help.length - gaps.length * 2);
+    const bodyRows = body.length > contentBudget ? Math.max(0, contentBudget - 1) : contentBudget;
+    this.pageSize = Math.max(1, bodyRows);
+    this.scrollOffset = Math.min(this.scrollOffset, Math.max(0, body.length - bodyRows));
+    const scrollInfo = body.length > bodyRows && contentBudget > 0
+      ? [this.theme.fg("dim", `Review ${this.scrollOffset + 1}–${Math.min(body.length, this.scrollOffset + bodyRows)}/${body.length} · PgUp/PgDn scroll`)] : [];
+    return [...border, ...body.slice(this.scrollOffset, this.scrollOffset + bodyRows), ...scrollInfo, ...gaps, ...decisions, ...gaps, ...help, ...border]
+      .map((line) => truncateToWidth(line, Math.max(0, width), "…"));
+  }
+
+  invalidate(): void {
+    this.md.invalidate();
+    this.selectList.invalidate();
+    this.requestRender();
+  }
+
+  handleInput(data: string): void {
+    if (this.keybindings.matches(data, "tui.select.pageUp") || data === "\x1b[5~") this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
+    else if (this.keybindings.matches(data, "tui.select.pageDown") || data === "\x1b[6~") this.scrollOffset += this.pageSize;
+    else if (this.keybindings.matches(data, "tui.select.confirm")) {
+      const selected = this.selectList.getSelectedItem()?.value;
+      if (selected) this.choose(selected);
+    } else if (this.keybindings.matches(data, "tui.select.cancel")) this.done(undefined);
+    else this.selectList.handleInput(data);
+    this.requestRender();
+  }
+
+  getSelectedItem(): string | null {
+    return this.selectList.getSelectedItem()?.value ?? null;
+  }
+}
