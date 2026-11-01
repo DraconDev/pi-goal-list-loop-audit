@@ -55,6 +55,12 @@ test('a session-model audit names the model that ran, not a configured pin', () 
     'the card must name the model that actually ran');
   assert.ok(/session model/i.test(text),
     'a session-model audit says so plainly instead of looking like a configured pin');
+  // The contract's SECOND half: a configured candidate that was never dispatched
+  // must not be reported at all. Presence-only assertions cannot see a card that
+  // names the real model AND appends the pin, which is the exact forbidden
+  // output — audit round 5 proved such a mutation passed all four tests.
+  assert.equal(text.includes(CONFIGURED), false,
+    `the card must not name the configured candidate that was never dispatched (${CONFIGURED})`);
 });
 
 test('a configured-pin audit is NOT mislabelled as the session model', () => {
@@ -82,6 +88,11 @@ test('the recorded executed model outranks the configured candidate', () => {
     auditState({ auditorSourceModel: SESSION_MODEL, auditorRetryCandidateRef: CONFIGURED }),
     undefined,
   );
-  assert.ok(text.includes(SESSION_MODEL) || text.includes('session model'),
+  // Both refs are recorded and differ: the executed one is shown, the candidate
+  // it outranks is not. Asserting the executed ref alone (or the label alone via
+  // a disjunction) would let the card print both.
+  assert.ok(text.includes(SESSION_MODEL),
     'the recorded executed model is preferred to the configured retry candidate');
+  assert.equal(text.includes(CONFIGURED), false,
+    'and the configured candidate it outranks is not reported alongside it');
 });
