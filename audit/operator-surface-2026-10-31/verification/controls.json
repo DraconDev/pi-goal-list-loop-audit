@@ -170,6 +170,17 @@
     "expectedResultObserved": true
   },
   {
+    "case": "amendment-flat-confirm-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-summary.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "tweak-long-objective-regression",
     "command": [
       "node",
