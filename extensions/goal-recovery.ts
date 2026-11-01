@@ -726,11 +726,39 @@ export function mainModelRecoveryHasLiveOwner(): boolean {
   const ownership = recoveryOwnership(
     recovery.owner, recovery.kind, { goal: state.goal ?? undefined, loop: state.loop ?? undefined }, true,
   );
-  // `chat` is a LIVE owner: an ordinary-chat retry has its own recovery and its
-  // card is legitimate. Only a marker whose owner is gone (`terminal`, `absent`,
-  // `replaced`) has nothing left to act on. Treating `chat` as dead would hide
-  // real recoveries — the opposite defect.
-  return ownership === 'retained' || ownership === 'restore-pending' || ownership === 'chat';
+  // Ownership alone is not enough for `chat`. The REAL observed marker is
+  // `owner:{kind:"chat"}, kind:"goal", goal:null` with a 7h42m-old episode, and
+  // the standalone card it rendered ("no GLLA objective · send 'continue' to
+  // retry this chat") was the note.md complaint. A chat-owned marker has no
+  // supervised target by construction, so with no goal and no loop there is
+  // nothing to resume — the same state `/glla resume` already retires as "no
+  // supervised target". It is not a live owner for display purposes.
+  // Restore still retains it (see recoveryOwnership); this verdict is about what
+  // merits an action-implying card now.
+  if (ownership === 'chat') return !!(state.goal || state.loop);
+  return ownership === 'retained' || ownership === 'restore-pending';
+}
+
+/**
+ * Retire a main-model recovery marker that has outlived its work: the exact
+ * predicate `/glla resume` already uses (`a marker, but no goal and no loop`).
+ * Extracted so the terminal-settlement boundary and `/glla resume` cannot drift
+ * apart — the screenshot case was a marker surviving in that state and still
+ * rendering a card hours later.
+ */
+export function clearStaleMainModelRecovery(ctx: ExtensionContext, via: string): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery || state.goal || state.loop) return false;
+  clearMainModelRecoveryTimer();
+  state.mainModelRecovery = undefined;
+  if (persistState(ctx) === false) {
+    state.mainModelRecovery = recovery;
+    return false;
+  }
+  appendLedger(ctx.cwd, 'main_model_recovery_retired_no_objective', {
+    via, reason: 'no supervised target; not a provider health verdict',
+  });
+  return true;
 }
 
 export function mainModelFallbackRefs(ctx: ExtensionContext): string[] {

@@ -29,17 +29,13 @@ export function recoveryOwnership(
   restoreComplete: boolean,
 ): RecoveryOwnership {
   if (!restoreComplete) return 'restore-pending';
-  if (owner?.kind === 'chat') {
-    // note.md item 1: `chat` records WHERE the episode was raised, not that a
-    // supervised target survives. An ordinary-chat episode with no goal and no
-    // loop has nothing to resume, and that is exactly the state `/glla resume`
-    // already retires as "no supervised target". Retire it from the same
-    // verdict instead of letting the marker outlive the work and render a
-    // standalone "send 'continue'" card hours later. With a live goal or loop
-    // the chat-owned marker stays live: it still describes current work.
-    if (!work.goal && !work.loop) return 'absent';
-    return 'chat';
-  }
+  // `chat` is a RESTORE-retained ownership: an ordinary-chat recovery episode is
+  // restored across a reload like any other. Whether it should still be SHOWN as
+  // a standalone "send 'continue'" card, or retired as outliving its work, is a
+  // display/retirement question and is decided by mainModelRecoveryHasLiveOwner()
+  // and clearStaleMainModelRecovery() — not here (deciding it here broke restore
+  // and failover, which legitimately keep chat ownership).
+  if (owner?.kind === 'chat') return 'chat';
   if (owner?.kind === 'loop' || (!owner && legacyKind === 'loop')) {
     if (!work.loop) return 'absent';
     if (owner?.kind === 'loop' && owner.startedAt !== work.loop.startedAt) return 'replaced';
