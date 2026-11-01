@@ -16,11 +16,11 @@ AssertionError: the card must name the model that actually ran
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-xwfe6wf1/tests/auditor-model-display.test.ts:54:10
+      at /tmp/glla-ops-control-ss1o1lc6/tests/auditor-model-display.test.ts:54:10
       at fn (node:test:215:18)
-(fail) a session-model audit names the model that ran, not a configured pin [9.15ms]
-(pass) a configured-pin audit is NOT mislabelled as the session model [0.28ms]
-(pass) the configured ref is only used when nothing recorded an executed model [0.22ms]
+(fail) a session-model audit names the model that ran, not a configured pin [5.79ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.33ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.23ms]
 89 |     undefined,
 90 |   );
 91 |   // Both refs are recorded and differ: the executed one is shown, the candidate
@@ -35,13 +35,13 @@ AssertionError: the recorded executed model is preferred to the configured retry
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-xwfe6wf1/tests/auditor-model-display.test.ts:94:10
+      at /tmp/glla-ops-control-ss1o1lc6/tests/auditor-model-display.test.ts:94:10
       at fn (node:test:215:18)
-(fail) the recorded executed model outranks the configured candidate [0.16ms]
+(fail) the recorded executed model outranks the configured candidate [0.18ms]
 
  2 pass
  2 fail
-Ran 4 tests across 1 file. [376.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-4oO3A6/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-4oO3A6
-[run-tests] finished in 0s (exit 1)
+Ran 4 tests across 1 file. [481.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-c3gp82/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-c3gp82
+[run-tests] finished in 1s (exit 1)
