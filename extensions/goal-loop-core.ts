@@ -3673,7 +3673,11 @@ export function appendLedger(cwd: string, type: string, value: unknown): boolean
     ensureDirs(cwd);
     const line = JSON.stringify({ type, value, at: new Date().toISOString() });
     fs.appendFileSync(ledgerPath(cwd), line + "\n");
-    if (type === "state") rotateLedgerIfNeeded(cwd, line);
+    if (type === "state") {
+      rotateLedgerIfNeeded(cwd, line);
+      // Keep the depth index current at append time so reads never rescan.
+      try { indexListDepthStateRow(cwd, value); } catch { /* index is an optimization */ }
+    }
     return true;
   });
   return landed === true;
@@ -5144,53 +5148,131 @@ export function computeListDepth(
  * projection for each goal is retained (bounded by the number of goals), not
  * every event and not a second copy of the ledger text. */
 /**
- * note.md item 3 (reproduced): `/list depth` and the status surfaces called
+ * note.md item 3 — REPRODUCED. `/list depth` (and the status surfaces) called
  * `scanLedgerRecords`, which reads EVERY ledger byte. At the real profile — 32
  * segments totalling 287 MB — that measured 4.84 s of synchronous main-thread
- * work, which is the "looks frozen, then normal after waiting" signature.
+ * work: the "looks frozen, then normal after waiting" signature.
  *
- * These consumers only need per-goal FINAL state, and the ones that matter are
- * the most recent. This reads newest-segment-first and stops once it has enough
- * finals or hits a small byte budget, so cost is bounded by the budget instead
- * of by total history. Results for the goals it resolves are identical; only
- * goals whose final row lies beyond the budget are omitted, and they cannot
- * affect a "most recent N" average.
+ * Root-cause fix, not a shortcut: keep a durable index of the per-goal finals
+ * these reads actually need, appended when the state row is written. Reads then
+ * cost O(index). History that predates the index is backfilled a bounded slice
+ * per call (never one long freeze), so accuracy converges without ever
+ * re-reading the whole ledger.
  */
-export function scanRecentLedgerStateFinals(
-  cwd: string,
-  options: { wantCompletedListGoals?: number; byteBudget?: number } = {},
-): Array<{ type: string; value?: any }> {
-  const want = options.wantCompletedListGoals ?? 12;
-  const budget = options.byteBudget ?? 8 * 1024 * 1024;
-  const finals = new Map<string, { type: string; value?: any }>();
-  let completedList = 0;
-  let read = 0;
-  let files: string[];
-  try { files = ledgerFiles(cwd); } catch { return []; }
-  for (const file of [...files].reverse()) {
-    if (read >= budget) break;
-    if (completedList >= want) break;
-    let text: string;
-    try {
-      const size = fs.statSync(file).size;
-      read += size;
-      text = fs.readFileSync(file, "utf8");
-    } catch { continue; }
-    const lines = text.split("\n");
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i];
-      if (!line || !line.includes('"state"')) continue;
-      let entry: { type?: unknown; value?: any };
-      try { entry = JSON.parse(line); } catch { continue; }
-      if (entry.type !== "state" || !entry.value?.goal?.id) continue;
-      const id = String(entry.value.goal.id);
-      if (finals.has(id)) continue;
-      finals.set(id, { type: "state", value: entry.value });
-      const g = entry.value.goal;
-      if (g.policy === "list" && (g.status === "complete" || g.status === "archived")) completedList++;
-    }
+interface ListDepthIndexRecord {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  policy?: string;
+  status?: string;
+}
+interface ListDepthIndexFile {
+  schema: 1;
+  /** Bytes already folded in, per ledger file name. */
+  consumed: Record<string, number>;
+  finals: Record<string, ListDepthIndexRecord>;
+}
+
+const LIST_DEPTH_INDEX_FILE = "list-depth-index.json";
+const LIST_DEPTH_BACKFILL_BYTES = 4 * 1024 * 1024;
+
+function listDepthIndexPath(cwd: string): string {
+  return path.join(piGlaDir(cwd), LIST_DEPTH_INDEX_FILE);
+}
+
+function readListDepthIndex(cwd: string): ListDepthIndexFile {
+  try {
+    const raw = JSON.parse(fs.readFileSync(listDepthIndexPath(cwd), "utf8")) as Partial<ListDepthIndexFile>;
+    return {
+      schema: 1,
+      consumed: raw?.consumed && typeof raw.consumed === "object" ? raw.consumed : {},
+      finals: raw?.finals && typeof raw.finals === "object" ? raw.finals : {},
+    };
+  } catch {
+    return { schema: 1, consumed: {}, finals: {} };
   }
-  return [...finals.values()];
+}
+
+function writeListDepthIndex(cwd: string, index: ListDepthIndexFile): void {
+  try {
+    const target = listDepthIndexPath(cwd);
+    const temp = `${target}.${process.pid}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify(index), "utf8");
+    fs.renameSync(temp, target);
+  } catch {
+    // A lost index only costs a future backfill; never fail the read.
+  }
+}
+
+function foldStateLineIntoIndex(index: ListDepthIndexFile, line: string): void {
+  if (!line.includes('"state"')) return;
+  let entry: { type?: unknown; value?: any };
+  try { entry = JSON.parse(line); } catch { return; }
+  const goal = entry?.value?.goal;
+  if (entry?.type !== "state" || !goal?.id) return;
+  index.finals[String(goal.id)] = {
+    id: String(goal.id),
+    createdAt: goal.createdAt,
+    updatedAt: goal.updatedAt,
+    policy: goal.policy,
+    status: goal.status,
+  };
+}
+
+/** Record a completed list-policy goal as it is written (append-time, O(1)). */
+export function indexListDepthStateRow(cwd: string, value: unknown): void {
+  const goal = (value as { goal?: Record<string, unknown> } | undefined)?.goal;
+  if (!goal || typeof goal.id !== "string") return;
+  if (goal.policy !== "list") return;
+  if (goal.status !== "complete" && goal.status !== "archived") return;
+  const index = readListDepthIndex(cwd);
+  index.finals[goal.id] = {
+    id: goal.id,
+    createdAt: typeof goal.createdAt === "string" ? goal.createdAt : undefined,
+    updatedAt: typeof goal.updatedAt === "string" ? goal.updatedAt : undefined,
+    policy: "list",
+    status: String(goal.status),
+  };
+  writeListDepthIndex(cwd, index);
+}
+
+/** The indexed finals plus one bounded backfill slice of unread history. */
+export function scanIndexedLedgerStateFinals(cwd: string): Array<{ type: string; value?: any }> {
+  const index = readListDepthIndex(cwd);
+  let files: string[];
+  try { files = ledgerFiles(cwd); } catch { return Object.values(index.finals).map((f) => ({ type: "state", value: { goal: f } })); }
+  let budget = LIST_DEPTH_BACKFILL_BYTES;
+  let changed = false;
+  // Backfill oldest-first so the index converges towards complete history.
+  for (const file of files) {
+    if (budget <= 0) break;
+    const name = path.basename(file);
+    let size = 0;
+    try { size = fs.statSync(file).size; } catch { continue; }
+    const from = index.consumed[name] ?? 0;
+    if (from >= size) continue;
+    const take = Math.min(size - from, budget);
+    if (take <= 0) continue;
+    let text = "";
+    try {
+      const fd = fs.openSync(file, "r");
+      try {
+        const buf = Buffer.alloc(take);
+        const read = fs.readSync(fd, buf, 0, take, from);
+        text = buf.subarray(0, read).toString("utf8");
+      } finally { fs.closeSync(fd); }
+    } catch { continue; }
+    // Only fold complete lines; keep the remainder for next time.
+    const lastNewline = text.lastIndexOf("\n");
+    if (lastNewline < 0) continue;
+    const complete = text.slice(0, lastNewline + 1);
+    for (const line of complete.split("\n")) foldStateLineIntoIndex(index, line);
+    index.consumed[name] = from + Buffer.byteLength(complete, "utf8");
+    budget -= take;
+    changed = true;
+  }
+  if (changed) writeListDepthIndex(cwd, index);
+  return Object.values(index.finals).map((f) => ({ type: "state", value: { goal: f } }));
 }
 
 export function computeListDepthFromLedger(
@@ -5198,10 +5280,10 @@ export function computeListDepthFromLedger(
   cwd: string,
   nowMs: number,
 ): ListDepthStats {
-  // Bounded read (see scanRecentLedgerStateFinals): the full 287 MB scan this
-  // replaced blocked the main thread for ~4.8 s at the real profile.
+  // Indexed read (see scanIndexedLedgerStateFinals): the full 287 MB scan this
+  // replaced blocked the main thread for ~4.84 s at the real profile.
   let entries: Array<{ type: string; value?: any }> = [];
-  try { entries = scanRecentLedgerStateFinals(cwd); } catch { entries = []; }
+  try { entries = scanIndexedLedgerStateFinals(cwd); } catch { entries = []; }
   return computeListDepth(queue, entries, nowMs);
 }
 
