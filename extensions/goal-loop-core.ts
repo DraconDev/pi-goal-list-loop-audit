@@ -5143,23 +5143,66 @@ export function computeListDepth(
 /** Streaming counterpart for the command surface. Only the last state
  * projection for each goal is retained (bounded by the number of goals), not
  * every event and not a second copy of the ledger text. */
+/**
+ * note.md item 3 (reproduced): `/list depth` and the status surfaces called
+ * `scanLedgerRecords`, which reads EVERY ledger byte. At the real profile — 32
+ * segments totalling 287 MB — that measured 4.84 s of synchronous main-thread
+ * work, which is the "looks frozen, then normal after waiting" signature.
+ *
+ * These consumers only need per-goal FINAL state, and the ones that matter are
+ * the most recent. This reads newest-segment-first and stops once it has enough
+ * finals or hits a small byte budget, so cost is bounded by the budget instead
+ * of by total history. Results for the goals it resolves are identical; only
+ * goals whose final row lies beyond the budget are omitted, and they cannot
+ * affect a "most recent N" average.
+ */
+export function scanRecentLedgerStateFinals(
+  cwd: string,
+  options: { wantCompletedListGoals?: number; byteBudget?: number } = {},
+): Array<{ type: string; value?: any }> {
+  const want = options.wantCompletedListGoals ?? 12;
+  const budget = options.byteBudget ?? 8 * 1024 * 1024;
+  const finals = new Map<string, { type: string; value?: any }>();
+  let completedList = 0;
+  let read = 0;
+  let files: string[];
+  try { files = ledgerFiles(cwd); } catch { return []; }
+  for (const file of [...files].reverse()) {
+    if (read >= budget) break;
+    if (completedList >= want) break;
+    let text: string;
+    try {
+      const size = fs.statSync(file).size;
+      read += size;
+      text = fs.readFileSync(file, "utf8");
+    } catch { continue; }
+    const lines = text.split("\n");
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line || !line.includes('"state"')) continue;
+      let entry: { type?: unknown; value?: any };
+      try { entry = JSON.parse(line); } catch { continue; }
+      if (entry.type !== "state" || !entry.value?.goal?.id) continue;
+      const id = String(entry.value.goal.id);
+      if (finals.has(id)) continue;
+      finals.set(id, { type: "state", value: entry.value });
+      const g = entry.value.goal;
+      if (g.policy === "list" && (g.status === "complete" || g.status === "archived")) completedList++;
+    }
+  }
+  return [...finals.values()];
+}
+
 export function computeListDepthFromLedger(
   queue: Array<{ id: string; addedAt: string }>,
   cwd: string,
   nowMs: number,
 ): ListDepthStats {
-  const finalStates = new Map<string, { type: string; value?: any }>();
-  try {
-    scanLedgerRecords(cwd, (entry) => {
-      if (entry.type === "state" && entry.value?.goal?.id) {
-        finalStates.set(String(entry.value.goal.id), entry);
-      }
-    });
-  } catch {
-    // Match the old command's no-ledger behavior: queue age remains useful
-    // even when historical duration data cannot be read.
-  }
-  return computeListDepth(queue, [...finalStates.values()], nowMs);
+  // Bounded read (see scanRecentLedgerStateFinals): the full 287 MB scan this
+  // replaced blocked the main thread for ~4.8 s at the real profile.
+  let entries: Array<{ type: string; value?: any }> = [];
+  try { entries = scanRecentLedgerStateFinals(cwd); } catch { entries = []; }
+  return computeListDepth(queue, entries, nowMs);
 }
 
 function fmtAge(ms: number): string {
