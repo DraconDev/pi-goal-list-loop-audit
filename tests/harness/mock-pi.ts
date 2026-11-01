@@ -385,25 +385,3 @@ export function seedLoop(overrides: Record<string, unknown> = {}): Record<string
 export function tick(ms = 150): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-/**
- * Answer the GLLA confirm card the way interactive pi does. The mock's
- * `custom()` already invokes the factory (so the component builds for real);
- * this supplies the user's choice. Use together with
- * `__testOnlyLastConfirmDraftDeps()` to assert on the rendered body.
- */
-export function answerCustomDialog(ctx: MockCtx, choice: string | undefined): void {
-  ctx.ui.customImpl = async () => choice;
-}
-
-/** Reset the GLLA confirm-card body seam between cases. */
-export async function resetConfirmDraftSeam(): Promise<void> {
-  const mod = await import('../../extensions/confirm-draft.js');
-  mod.__testOnlyResetConfirmDraftDeps();
-}
-
-/** The body the last real GLLA confirm card rendered. */
-export async function lastConfirmDraftBody(): Promise<string> {
-  const mod = await import('../../extensions/confirm-draft.js');
-  return mod.__testOnlyLastConfirmDraftDeps()?.body ?? "";
-}

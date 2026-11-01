@@ -15,8 +15,7 @@ import * as fs from "node:fs";
 
 import { readState } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
-import { MockPi, answerCustomDialog, lastConfirmDraftBody, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
-import { TWEAK_CONFIRM_ACTION } from "../extensions/confirm-draft.js";
+import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 function setGlobalAutoResume(v: boolean): void {

@@ -80,23 +80,7 @@ function selectListTheme(theme: Theme): SelectListTheme {
  * three-choice SelectList, and a help line. Exported so tests can construct
  * it with a fake theme and assert the rendered lines.
  */
-/**
- * The most recently constructed dialog's deps. Tests drive the REAL dialog (the
- * mock invokes the factory exactly as interactive pi does), and this seam lets
- * them assert on the body actually rendered instead of scraping a notify.
- */
-let lastDraftDeps: ConfirmDraftFactoryDeps | undefined;
-export function __testOnlyLastConfirmDraftDeps(): ConfirmDraftFactoryDeps | undefined {
-  return lastDraftDeps;
-}
-export function __testOnlyResetConfirmDraftDeps(): void {
-  lastDraftDeps = undefined;
-}
-
 export class ConfirmDraftComponent implements Component {
-  /** The card this component renders. Public so a host/mock that builds the
-   * dialog can read what the user was shown without scraping internals. */
-  readonly dialogDeps: ConfirmDraftFactoryDeps;
   private readonly md: Markdown;
   private readonly selectList: SelectList;
   private readonly requestRender: () => void;
@@ -115,8 +99,6 @@ export class ConfirmDraftComponent implements Component {
     keybindings: KeybindingsManagerLike,
     done: (value: string | undefined) => void,
   ) {
-    lastDraftDeps = deps;
-    this.dialogDeps = deps;
     this.requestRender = requestRender;
     this.getHeight = deps.getHeight;
     this.options = deps.options;
