@@ -235,9 +235,15 @@ export interface TweakConfirmInput {
 
 /** The default card: exact consent text, nothing else. */
 export function buildTweakConfirmBody(input: TweakConfirmInput): string {
+  // The inference caveat STAYS on the default card: it is consent context
+  // ("this text was inferred — cancel and re-run with exact wording"), not
+  // rationale. Only the reference labels, the contract body and the caveat
+  // paragraph move behind the expand.
+  const inferred = input.inferredNote?.trim();
   const lines = [
     `From: ${input.currentObjective.trim() || '(none)'}`,
     `To:   ${input.newObjective.trim() || '(none)'}`,
+    ...(inferred ? ['', `Inferred ${inferred} — cancel and re-run with exact wording if this is wrong.`] : []),
     '',
     tweakConsequenceLine(input),
     '',
