@@ -3,8 +3,11 @@
                                                                             
  Tweak goal?                                                                
                                                                             
- From: Audit the widget surface                                             
- To:   Audit the widget surface and file the defects                        
+ From: …Audit the whole …very card, then[-stop there-].…                    
+ To:   …Audit the whole …very card, then[+file each defect as a tracked     
+ item with its own reproduction+].…                                         
+ (long objective — showing the changed region; the exact full text is in    
+ "Show the full rationale")                                                 
                                                                             
  Replaces the goal objective and its verification contract.                 
                                                                             
@@ -22,10 +25,15 @@
  Tweak goal?                                                                
                                                                             
  CURRENT:                                                                   
- Audit the widget surface                                                   
+ Audit the whole GLLA operator surface end to end and record exactly what   
+ the user sees in the widget, the footer, the settings menu and every       
+ recovery card, then stop there.                                            
                                                                             
  NEW:                                                                       
- Audit the widget surface and file the defects                              
+ Audit the whole GLLA operator surface end to end and record exactly what   
+ the user sees in the widget, the footer, the settings menu and every       
+ recovery card, then file each defect as a tracked item with its own        
+ reproduction.                                                              
                                                                             
  Replaces the goal objective and its verification contract.                 
                                                                             
