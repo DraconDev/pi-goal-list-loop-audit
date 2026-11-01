@@ -57,6 +57,50 @@
   in free text no longer resumes past the stale objective.
 
 
+## 0.39.61 — the operator surface stops asking you to act on nothing (2026-11-01)
+
+Six complaints recorded in `note.md`, each diagnosed against the running code
+before it was changed; the tracked report is
+`audit/operator-surface-2026-10-31/README.md`, with observed and inferred kept
+apart per item.
+
+- **A finished goal leaves no recovery marker.** `settleApprovedCompletion`
+  archived the goal but never cleared `state.mainModelRecovery`, so six hours
+  after the last archive the widget still showed "no GLLA objective · send
+  'continue' to retry this chat" for work that no longer existed. Terminal
+  goals now retire the marker, and the standalone recovery card renders only
+  when a marker has a live owner.
+- **The tweak confirmation is a card, not a wall.** The default body is the
+  exact old→new objective pair plus one consequence line; the reprinted
+  contract, the labelled sections and the caveat paragraph moved behind an
+  in-dialog `Show the full rationale` toggle. Both objectives print in full at
+  any length — length is handled by a terminal-height viewport with
+  `PgUp`/`PgDn`, never by eliding consent text. Confirm/Cancel semantics are
+  unchanged.
+- **`/glla wipe` no longer looks frozen.** The wipe's reviewer scanned the whole
+  ledger history (280 MB) to archive one goal. Measured 912 ms → 71 ms on the
+  same state profile, with zero full-history scans; a regression test fails if
+  the full scan returns.
+- **A cleanly completed list item starts the next one.** Previously the widget
+  waited for `/list next`. The advance lives in exactly one place —
+  `archiveCurrentGoal` — and settlement performs no second advance, so no queue
+  item is activated and then skipped. Paused, blocked and failed items still
+  hold for a decision, asserted in both directions.
+- **The audit card names the model that actually ran.** It used to prefer the
+  configured candidate ref, so a session-model audit was labelled with a pin
+  that was never dispatched. Recorded lineage (`auditorSourceModel`,
+  `resumedOntoModel`) now wins, and the session case says `· session model`
+  plainly. The tests assert both halves: the executed model appears **and** an
+  undispatched configured candidate does not.
+- **A stale loaded build says so.** A banner reporting `v0.39.36` against a
+  `0.39.54` tree sent a reader to behaviour that was not in the source. Session
+  start now compares the loaded build with the repo manifest and warns with the
+  reload action, non-blocking, and stays silent when they match.
+
+Also in this revision: the manifest catches up with the source. Code has been
+annotated with change versions through `v0.39.61` while `package.json` still said
+`0.39.54` — the same class of drift the stale-build warning exists to catch.
+
 ## 0.39.54 — an interrupted terminalization no longer fences a goal forever (2026-10-25)
 
 ### The field deadlock (eve)
