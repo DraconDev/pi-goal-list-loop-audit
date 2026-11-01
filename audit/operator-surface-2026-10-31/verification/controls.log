@@ -7,6 +7,7 @@
 {"case": "no-auto-advance-regression", "command": ["node", "scripts/run-tests.mjs", "tests/list-auto-advance.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "double-advance-regression", "command": ["node", "scripts/run-tests.mjs", "tests/list-auto-advance.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "configured-model-wins-regression", "command": ["node", "scripts/run-tests.mjs", "tests/auditor-model-display.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
+{"case": "configured-candidate-appended-regression", "command": ["node", "scripts/run-tests.mjs", "tests/auditor-model-display.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "per-record-read-regression", "command": ["node", "scripts/run-tests.mjs", "tests/glla-wipe-latency.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "stale-build-silent-regression", "command": ["node", "scripts/run-tests.mjs", "tests/stale-build-warning.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "chat-owner-orphan-regression", "command": ["node", "scripts/run-tests.mjs", "tests/stale-recovery-marker.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
