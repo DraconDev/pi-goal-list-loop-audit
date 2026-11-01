@@ -1,38 +1,37 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=230s heartbeat=30s
-[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 153s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [123.48ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [10.90ms]
-(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [15.44ms]
-132 | 
-133 |   const after = readState(cwd);
-134 |   // The queue advanced: the next item became the active goal, with no /list next.
-135 |   assert.equal(after.goal?.status, 'active',
-136 |     'the next list item started on its own — the note asked for exactly this');
-137 |   assert.equal(after.goal?.objective, ITEM(2),
+(pass) queue items wait while an item is still in flight [56.79ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [3.40ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [4.84ms]
+137 |   // audit round 3 (2026-11-01): this assertion used to expect ITEM(2), which
+138 |   // enshrined a double advance that skipped ITEM(1) entirely — the item was
+139 |   // activated and then silently replaced, and the queue drained. The advance
+140 |   // belongs to `archiveCurrentGoal` (goal-orchestrator.ts); settlement must not
+141 |   // advance a second time.
+142 |   assert.equal(after.goal?.status, 'active',
                ^
-AssertionError: the item that ran is the queue head after the finished one was consumed
+AssertionError: the next list item started on its own — the note asked for exactly this
 + actual - expected
 
-+ 'Short task 1'
-- 'Short task 2'
-              ^
++ undefined
+- 'active'
 
  generatedMessage: false,
-     actual: "Short task 1",
-   expected: "Short task 2",
+     actual: undefined,
+   expected: "active",
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-5gp5d2ao/tests/list-auto-advance.test.ts:137:10
+      at /tmp/glla-ops-control-pf4lx9j_/tests/list-auto-advance.test.ts:142:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [330.37ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [288.15ms]
+(pass) a standalone goal completing does not skip the queue head (no double advance) [276.60ms]
 
- 3 pass
+ 4 pass
  1 fail
-Ran 4 tests across 1 file. [1126.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZpDxIK/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZpDxIK
+Ran 5 tests across 1 file. [1005.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-VzWWda/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-VzWWda
 [run-tests] finished in 1s (exit 1)

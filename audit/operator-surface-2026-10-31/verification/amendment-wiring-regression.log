@@ -1,20 +1,20 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=230s heartbeat=30s
-[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 153s
+[run-tests] mode=explicit slow_files=13 stall_timeout=196s heartbeat=30s
+[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 131s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [4.87ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [5.76ms]
-(pass) a changed contract IS shown, both sides [0.15ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.15ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.07ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.06ms]
-139 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
-140 |   // Consent fidelity: the exact old and new objective both appear.
-141 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
-142 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
-143 |   // Compactness: an unchanged contract is not echoed.
-144 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
+(pass) the amendment confirm keeps the exact old and new objective text [1.66ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.08ms]
+(pass) a changed contract IS shown, both sides [0.09ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.12ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.05ms]
+141 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
+142 |   // Consent fidelity: the exact old and new objective both appear.
+143 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
+144 |   assert.ok(amendment!.body.includes(LONG_NEW), 'the exact proposed objective is shown');
+145 |   // Compactness: an unchanged contract is not echoed.
+146 |   assert.equal(amendment!.body.includes(SAME_CONTRACT), false,
                ^
 AssertionError: the unchanged contract must not be reprinted by the real path
 
@@ -26,17 +26,21 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-6cxw4f04/tests/amendment-confirm-compact.test.ts:144:10
+      at /tmp/glla-ops-control-s3f73q3f/tests/amendment-confirm-compact.test.ts:146:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [75.96ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [11.51ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [6.03ms]
-(pass) cancelling after expanding still changes nothing [0.44ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.17ms]
+(fail) the real complete_goal amendment confirm uses the compact body [62.72ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [13.05ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [1.63ms]
+(pass) cancelling after expanding still changes nothing [0.48ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.23ms]
+(pass) a long objective stays compact on the default card, and says what it elided [0.23ms]
+(pass) a short objective is still printed verbatim — the diff never guesses [0.04ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.82ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [3.20ms]
 
- 10 pass
+ 14 pass
  1 fail
-Ran 11 tests across 1 file. [741.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-GdiWyS/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-GdiWyS
+Ran 15 tests across 1 file. [519.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-e8VXJ7/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-e8VXJ7
 [run-tests] finished in 1s (exit 1)
