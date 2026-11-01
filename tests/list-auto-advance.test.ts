@@ -17,6 +17,8 @@ import fs from 'node:fs';
 import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { readState } from '../extensions/goal-loop-core.js';
 import { settleApprovedCompletion } from '../extensions/loops/goal-auditor-hooks.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
@@ -63,14 +65,45 @@ test('a completed item leaves the queue readable for the completion path to adva
   assert.equal(queue[0]?.objective, ITEM(1), 'the next item is the head, not lost');
 });
 
-test('a paused or blocked item keeps the queue held — auto-advance must not blank it', async () => {
-  // The safety direction: a pause is a DECISION for the user. The queue must
-  // remain exactly as it was so the item can be resumed, not skipped past.
-  for (const status of ['paused', 'blocked'] as const) {
-    const { cwd } = await setup({ status, pauseKind: status === 'blocked' ? 'blocked' : 'wait' }, [ITEM(1), ITEM(2)]);
-    const queue = queueOf(cwd);
-    assert.equal(queue.length, 2, `${status}: the queue is preserved for a decision, not advanced`);
-    assert.equal(queue[0]?.objective, ITEM(1), `${status}: the head is unchanged`);
+test('a paused, blocked, or failed item does NOT advance — driven through real settlement', async () => {
+  // The auditor's objection: an earlier version of this file only SEEDED the
+  // paused/blocked state and read the queue back, so a blanket advance anywhere
+  // in the completion path would still have passed. This drives the real
+  // `settleApprovedCompletion` entry for each non-clean state and asserts it
+  // refuses to archive and never advances the queue.
+  const states = [
+    { status: 'paused' as const, pauseKind: 'wait' as const, label: 'paused' },
+    { status: 'blocked' as const, pauseKind: 'blocked' as const, label: 'blocked' },
+    { status: 'failed' as const, label: 'failed' },
+  ];
+  for (const state of states) {
+    const { cwd, ctx } = await setup(
+      { status: state.status, ...(state.pauseKind ? { pauseKind: state.pauseKind } : {}) },
+      [ITEM(1), ITEM(2)],
+    );
+    const goalId = String(readState(cwd).goal!.id);
+    const before = readState(cwd).goal!;
+
+    const settled = settleApprovedCompletion(ctx as never, {
+      goalId,
+      generation: 1,
+      claim: { attemptId: 'attempt-1' } as never,
+      model: 'minimax/MiniMax-M3.1-Flash',
+      origin: 'agent',
+    });
+
+    assert.equal(settled, false, `${state.label}: settlement must refuse a non-clean item`);
+    const after = readState(cwd);
+    assert.equal(after.goal?.status, before.status, `${state.label}: the item keeps its status`);
+    assert.equal(after.list?.length, 2, `${state.label}: the queue is preserved for a decision, not advanced`);
+    assert.equal(after.list?.[0]?.objective, ITEM(1), `${state.label}: the head is unchanged`);
+    // The advance ledger row is the hook's own fingerprint: its absence proves
+    // the auto-advance code path never ran for this state.
+    const ledger = fs.existsSync(path.join(cwd, '.pi-glla', 'ledger.jsonl'))
+      ? fs.readFileSync(path.join(cwd, '.pi-glla', 'ledger.jsonl'), 'utf8')
+      : '';
+    assert.equal(ledger.includes('list_auto_advance'), false,
+      `${state.label}: the auto-advance hook must not have fired`);
   }
 });
 
