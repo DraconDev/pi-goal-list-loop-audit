@@ -15,7 +15,8 @@ import * as fs from "node:fs";
 
 import { readState } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
-import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
+import { MockPi, answerCustomDialog, lastConfirmDraftBody, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
+import { TWEAK_CONFIRM_ACTION } from "../extensions/confirm-draft.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 function setGlobalAutoResume(v: boolean): void {
@@ -72,13 +73,13 @@ test("bug (note 2026-08-07): bare /list tweak launches the update-proposal flow 
     inputPlaceholder = placeholder ?? "";
     return "new list objective";
   };
-  let confirmMessage = "";
-  ctx.ui.confirmImpl = async (_title, message) => {
-    confirmMessage = message;
-    return true;
-  };
+  // note.md item 2: the tweak card is a real in-dialog Confirm/Expand/Cancel
+  // component now, so the choice arrives through `custom`, and the body is read
+  // from the card that actually rendered.
+  answerCustomDialog(ctx, TWEAK_CONFIRM_ACTION);
 
   await pi.command("list", "tweak", ctx); // bare — no replacement text
+  const confirmMessage = await lastConfirmDraftBody();
 
   // The flow surfaced the current item text: notify preview + input pre-fill.
   assert.ok(ctx.ui.matching("Tweak list item — current: old list objective").length >= 1, "current text previewed in a notify");
