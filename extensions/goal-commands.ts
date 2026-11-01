@@ -9,8 +9,8 @@ import { clearStaleMainModelRecovery } from "./goal-recovery.js";
 import {
   TWEAK_CANCEL_ACTION,
   TWEAK_CONFIRM_ACTION,
-  TWEAK_RATIONALE_ACTION,
-  ConfirmDraftComponent,
+  TWEAK_CONFIRM_ACTION,
+  TweakConfirmComponent,
   buildTweakConfirmBody,
   buildTweakRationaleBody,
   type TweakConfirmInput,
@@ -3846,19 +3846,36 @@ export {
 
 /**
  * note.md item 2: the tweak confirmation, compact by default with a REAL
- * expand. Mirrors the proven `confirmDraft` shape (goal-session.ts) — a
- * `ConfirmDraftComponent` markdown body via `ctx.ui.custom`, plus the
- * byte-identical select fallback for RPC/headless hosts where the factory is
- * never invoked. Choosing "Show the full rationale" re-opens the SAME decision
- * after printing the rationale, so the expand is in-dialog and the
- * Confirm/Cancel semantics never change.
+ * in-dialog expand. Mirrors the proven `confirmDraft` shape (goal-session.ts) —
+ * a markdown body via `ctx.ui.custom`, plus the byte-identical confirm fallback
+ * for RPC/headless hosts where the factory is never invoked.
+ *
+ * `Show the full rationale` expands the body IN PLACE and offers to collapse it
+ * again; the dialog stays open and nothing is applied. Confirm/Cancel semantics
+ * are unchanged, and the compact body always carries the exact old and new
+ * objective text, so consent stays exact.
  *
  * Draft auto-accept is deliberately NOT honoured here: an objective amendment
  * needs per-change consent.
  */
 async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
-  // Consent gate: unchanged Confirm/Cancel semantics. The compact card is the
-  // record; `--rationale` renders the full form in the same gate, so the detail
-  // is one explicit, discoverable flag away instead of dominating the default.
+  const full: TweakConfirmInput = { ...input, title };
+  const custom = (ctx.ui as { custom?: unknown }).custom;
+  if (typeof custom === "function") {
+    let factoryInvoked = false;
+    try {
+      const choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
+        factoryInvoked = true;
+        return new TweakConfirmComponent(full, () => tui.requestRender(), theme as any, keybindings as any, done);
+      });
+      if (factoryInvoked) return choice === TWEAK_CONFIRM_ACTION;
+      // Real RPC/noOp stub: `custom` resolves WITHOUT invoking the factory, so
+      // the dialog never rendered and there is no answer to read. Fall through
+      // to the plain confirm below rather than treating that as "cancel".
+    } catch (err) {
+      if (isStaleApiError(err)) throw err;
+      // A non-stale custom failure degrades to the plain confirm path.
+    }
+  }
   return ctx.ui.confirm(title, input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input));
 }
