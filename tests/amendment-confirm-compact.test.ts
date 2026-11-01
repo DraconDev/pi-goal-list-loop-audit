@@ -157,8 +157,9 @@ test('the real complete_goal amendment confirm uses the compact body', async () 
  */
 test('the real /goal tweak card is compact, exact, and expands with --rationale', async () => {
   const { cmdTweak } = await import('../extensions/goal-commands.js');
+  const goalMod = await import('../extensions/loops/goal.js');
   const { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } = await import('./harness/mock-pi.js');
-  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+  goalMod.__testOnlyResetOwnerSession(); goalMod.__testOnlyResetStaleFlag(); goalMod.__testOnlyResetTerminalFlags();
 
   const OLD = 'Audit the widget surface end to end and record what the user sees';
   const NEW = 'Audit the widget surface end to end, record what the user sees, and file the defects';
