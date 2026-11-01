@@ -28,3 +28,13 @@ false !== true
       at processTicksAndRejections (native:7:39)
 (fail) a chat-owned marker WITH a live goal still renders — retirement is not blanket [145.83ms]
 (pass) a terminal goal retires the main-model recovery marker durably [121.85ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [120.44ms]
+(pass) the real settlement path retires the recovery marker when it archives [301.83ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [154.33ms]
+
+ 8 pass
+ 1 fail
+Ran 9 tests across 1 file. [1.82s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-83YsMn/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-83YsMn
+[run-tests] finished in 2s (exit 1)

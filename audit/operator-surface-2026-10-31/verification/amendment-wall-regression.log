@@ -1,8 +1,9 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=228s heartbeat=30s
+[run-tests] host is 1.3x slower than an idle host — per-test budget raised to 152s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.82ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.56ms]
 34 |     oldObjective: 'Ship the feature',
 35 |     newObjective: 'Ship the feature and its tests',
 36 |     oldContract: contract,
@@ -20,12 +21,12 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-zw164_88/tests/amendment-confirm-compact.test.ts:39:10
+      at /tmp/glla-ops-control-48p5gpcz/tests/amendment-confirm-compact.test.ts:39:10
       at fn (node:test:215:18)
-(fail) an unchanged contract is NOT reprinted — that was most of the wall [0.61ms]
-(pass) a changed contract IS shown, both sides [0.05ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.06ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
+(fail) an unchanged contract is NOT reprinted — that was most of the wall [2.61ms]
+(pass) a changed contract IS shown, both sides [0.13ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.15ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.10ms]
 86 |     oldObjective: LONG_OBJECTIVE,
 87 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
 88 |     oldContract: 'x'.repeat(300),
@@ -40,9 +41,9 @@ AssertionError: the default body must be materially shorter (1144 vs 1331)
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-zw164_88/tests/amendment-confirm-compact.test.ts:91:10
+      at /tmp/glla-ops-control-48p5gpcz/tests/amendment-confirm-compact.test.ts:91:10
       at fn (node:test:215:18)
-(fail) the compact body is measurably smaller than the old five-section form [0.08ms]
+(fail) the compact body is measurably smaller than the old five-section form [0.20ms]
 139 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
 140 |   // Consent fidelity: the exact old and new objective both appear.
 141 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
@@ -60,17 +61,17 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-zw164_88/tests/amendment-confirm-compact.test.ts:144:10
+      at /tmp/glla-ops-control-48p5gpcz/tests/amendment-confirm-compact.test.ts:144:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [46.16ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [5.67ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [4.52ms]
-(pass) cancelling after expanding still changes nothing [0.16ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.16ms]
+(fail) the real complete_goal amendment confirm uses the compact body [112.71ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [21.75ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [15.06ms]
+(pass) cancelling after expanding still changes nothing [0.24ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.17ms]
 
  8 pass
  3 fail
-Ran 11 tests across 1 file. [394.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-sA5rPc/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-sA5rPc
-[run-tests] finished in 0s (exit 1)
+Ran 11 tests across 1 file. [911.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-YAhrpu/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-YAhrpu
+[run-tests] finished in 1s (exit 1)
