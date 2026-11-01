@@ -382,6 +382,43 @@ export class CardConfirmComponent implements Component {
   }
 }
 
+/** Minimal slice of ExtensionContext this helper needs, so callers stay free
+ * of a hard dependency on the host type. */
+export interface CardConfirmCtx {
+  ui: {
+    confirm: (title: string, body: string) => Promise<boolean>;
+    custom?: unknown;
+  };
+}
+
+/**
+ * Show an amendment confirmation in the styled card, degrading to the host's
+ * plain confirm when `custom` is unavailable. Mirrors `confirmTweak`: a stubbed
+ * or RPC `custom` resolves WITHOUT invoking the factory, so that case falls
+ * through to the plain confirm instead of being read as "No".
+ */
+export async function confirmCard(ctx: CardConfirmCtx, title: string, body: string): Promise<boolean> {
+  const custom = (ctx.ui as { custom?: unknown }).custom;
+  if (typeof custom === "function") {
+    let factoryInvoked = false;
+    try {
+      const choice = await (ctx.ui as { custom: <T>(f: unknown) => Promise<T> }).custom<boolean>((tui: { terminal?: { rows?: number }; requestRender: () => void }, theme: Theme, keybindings: KeybindingsManagerLike, done: (value: boolean) => void) => {
+        factoryInvoked = true;
+        return new CardConfirmComponent(
+          { title, body, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
+          () => tui.requestRender(), theme, keybindings, done,
+        );
+      });
+      if (factoryInvoked) return choice === true;
+    } catch (err) {
+      // A stale host API is a real failure, not something to paper over with a
+      // plain confirm that could silently answer for a dead session.
+      if (err instanceof Error && err.message.includes("stale after session replacement")) throw err;
+    }
+  }
+  return ctx.ui.confirm(title, body);
+}
+
 /** One line: the single most important consequence of this tweak. */
 export function tweakConsequenceLine(input: TweakConfirmInput): string {
   const target = input.mode === 'list' ? 'list item' : 'goal';
