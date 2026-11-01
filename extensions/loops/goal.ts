@@ -29,6 +29,7 @@ import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettleme
 import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
 import { __testOnlyResetCompactor } from "../goal-compactor.js";
 import { __testOnlyResetInvalidSettingReports } from "../goal-settings.js";
+import { __testOnlyResetLedgerIndexReadBytes, __testOnlyResetLedgerScanRecordsCalls } from "../goal-loop-core.js";
 import { __testOnlyResetOwnerHeartbeat, __testOnlyResetStandDownNotice } from "../state-root-owner.js";
 
 import {
@@ -271,6 +272,8 @@ export function __testOnlySetLastMainModelRecoveryResumeAt(at: number | null): v
  * (files re-seed/restore that from their own cwd). Never called by
  * production code. */
 export function __testOnlyResetProcessState(): void {
+  __testOnlyResetLedgerIndexReadBytes();
+  __testOnlyResetLedgerScanRecordsCalls();
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
   __testOnlyResetTerminalFlags();
