@@ -3,3 +3,56 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [1.30ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.08ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.08ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
+(pass) the real complete_goal amendment confirm uses the compact body [96.86ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [12.86ms]
+252 |   assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION]);
+253 |   assert.equal(resolved, 'unset', 'building the card applies nothing');
+254 | 
+255 |   // Expanding is a no-op on the decision: same dialog, same gate, still open.
+256 |   card.toggleRationale();
+257 |   assert.equal(card.isExpanded(), true);
+               ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-2jp9mgnb/tests/amendment-confirm-compact.test.ts:257:10
+      at processTicksAndRejections (native:7:39)
+(fail) the tweak card expands the rationale in place and keeps one consent gate [2.20ms]
+(pass) cancelling after expanding still changes nothing [0.32ms]
+304 |     () => {}, theme, { matches: () => false } as never, () => {},
+305 |   );
+306 |   const before = card.dialogDeps.body;
+307 |   card.toggleRationale();
+308 |   const after = card.dialogDeps.body;
+309 |   assert.notEqual(before, after, 'dialogDeps must reflect the expanded state');
+               ^
+AssertionError: dialogDeps must reflect the expanded state
+ generatedMessage: false,
+     actual: "From: a\nTo:   b\n\nReplaces the goal objective and its verification contract.",
+   expected: "From: a\nTo:   b\n\nReplaces the goal objective and its verification contract.",
+   operator: "notStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-2jp9mgnb/tests/amendment-confirm-compact.test.ts:309:10
+      at processTicksAndRejections (native:7:39)
+(fail) the tweak card reports its CURRENT body to the host after an expand [0.43ms]
+
+ 9 pass
+ 2 fail
+Ran 11 tests across 1 file. [814.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-6ZVW85/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-6ZVW85
+[run-tests] finished in 1s (exit 1)

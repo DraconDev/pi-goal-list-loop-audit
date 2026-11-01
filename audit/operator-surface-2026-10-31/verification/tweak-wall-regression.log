@@ -1,20 +1,42 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=292s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 195s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [1.13ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.06ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.08ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-(pass) the real complete_goal amendment confirm uses the compact body [40.71ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [5.34ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [4.73ms]
-(pass) cancelling after expanding still changes nothing [0.18ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.18ms]
+(pass) the amendment confirm keeps the exact old and new objective text [3.57ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.09ms]
+(pass) a changed contract IS shown, both sides [0.10ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.12ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.09ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.06ms]
+(pass) the real complete_goal amendment confirm uses the compact body [97.06ms]
+197 |   const compact = await run(`${OLD} and file the defects. Done when: ${CONTRACT}`);
+198 |   assert.ok(compact.applied, 'the real tweak path opened its confirmation');
+199 |   assert.ok(compact.body.includes(OLD), 'the exact previous objective is shown');
+200 |   assert.ok(compact.body.includes(NEW) || compact.body.includes(`${OLD} and file the defects`),
+201 |     'the exact proposed objective is shown');
+202 |   assert.equal(compact.body.includes('CURRENT:'), false, 'the old CURRENT/NEW wall is gone');
+               ^
+AssertionError: the old CURRENT/NEW wall is gone
 
- 11 pass
- 0 fail
-Ran 11 tests across 1 file. [382.00ms]
-[run-tests] finished in 0s (exit 0)
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-374ca5j_/tests/amendment-confirm-compact.test.ts:202:10
+      at processTicksAndRejections (native:7:39)
+(fail) the real /goal tweak card is compact, exact, and expands with --rationale [12.62ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [9.13ms]
+(pass) cancelling after expanding still changes nothing [1.34ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.35ms]
+
+ 10 pass
+ 1 fail
+Ran 11 tests across 1 file. [726.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-SewsTD/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-SewsTD
+[run-tests] finished in 1s (exit 1)

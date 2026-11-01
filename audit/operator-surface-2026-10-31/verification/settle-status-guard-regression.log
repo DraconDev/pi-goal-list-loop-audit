@@ -1,9 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=181s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=287s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 192s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [39.02ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [4.04ms]
+(pass) queue items wait while an item is still in flight [110.20ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [6.17ms]
 89 |       claim: { attemptId: 'attempt-1' } as never,
 90 |       model: 'minimax/MiniMax-M3.1-Flash',
 91 |       origin: 'agent',
@@ -21,14 +22,14 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-t2ai4g1w/tests/list-auto-advance.test.ts:94:12
+      at /tmp/glla-ops-control-y_75s31l/tests/list-auto-advance.test.ts:94:12
       at processTicksAndRejections (native:7:39)
-(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [41.05ms]
-(pass) a cleanly completed item auto-advances the queue without /list next [275.23ms]
+(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [96.04ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [292.20ms]
 
  3 pass
  1 fail
-Ran 4 tests across 1 file. [701.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-DzXFBz/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-DzXFBz
+Ran 4 tests across 1 file. [1195.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-I7aFrx/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-I7aFrx
 [run-tests] finished in 1s (exit 1)

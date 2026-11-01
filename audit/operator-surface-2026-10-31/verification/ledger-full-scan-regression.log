@@ -1,33 +1,7 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=297s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 198s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/wipe-ledger-scan.test.ts:
-(pass) the depth read is bounded as ledger history grows (the wipe freeze) [1036.95ms]
-(pass) the indexed read converges to EXACTLY the full-scan answer [242.05ms]
-105 |   computeListDepthFromLedger(queue, cwd, NOW);
-106 |   assert.equal(ledgerIndexReadBytes(), 0,
-107 |     'a warm depth read folded ledger bytes — the unbounded rescan is back');
-108 |   // The direct statement of the cause: the depth read must not invoke the
-109 |   // full-history scanner at all.
-110 |   assert.equal(scanRecordsCalls(), 0,
-               ^
-AssertionError: the depth read called scanLedgerRecords — the unbounded rescan is back
-
-1 !== 0
-
- generatedMessage: false,
-     actual: 1,
-   expected: 0,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /tmp/glla-ops-control-agdkbgzi/tests/wipe-ledger-scan.test.ts:110:10
-      at fn (node:test:215:18)
-(fail) a warm read folds ZERO ledger bytes — it never rescans history [10568.06ms]
-
- 2 pass
- 1 fail
-Ran 3 tests across 1 file. [12.22s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-hGjjfT/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-hGjjfT
-[run-tests] finished in 12s (exit 1)
+(pass) the depth read is bounded as ledger history grows (the wipe freeze) [2994.20ms]
+(pass) the indexed read converges to EXACTLY the full-scan answer [509.84ms]
