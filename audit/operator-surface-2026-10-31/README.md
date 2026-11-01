@@ -2,8 +2,9 @@
 
 Six items recorded in `note.md`, each diagnosed against the running code before
 being changed. Where a display symptom had a state cause, the state cause is what
-was fixed. One item (wipe latency) produced **no reproducible defect** — that is
-recorded as measured rather than papered over with an invented fix.
+was fixed. All six items produced a real defect; item 3's was located only after
+two earlier reports of it were wrong (see the corrections in that section), and
+the trail is kept rather than smoothed over.
 
 Observed vs inferred is marked per item.
 
@@ -95,24 +96,35 @@ and keeps the consequence line.
 with the exact old and new objective and a single consequence line
 ("Replaces the list item objective and its verification contract", "… and CLEARS
 its verification contract", or "… its verification contract is kept"). The
-`CURRENT:`/`NEW:` labels, the contract body and the inference caveat are gone from
-the default card. `buildTweakRationaleBody` holds the full form, and the compact
-card names its own expand: **`--rationale`**. `cmdTweak` accepts that flag and
-renders the full form in the same consent gate.
+`CURRENT:`/`NEW:` labels and the reprinted contract are gone from the default
+card; the inference caveat stays, because an informed rejection needs it.
+`buildTweakRationaleBody` holds the full form and **`Show the full rationale`** is
+the expand — an action on the card itself (see below).
 
-**Consent integrity preserved, and it decided the design.** The objective asked
-for both a compact card AND an exact old→new consent record, which pull against
-each other for a very long objective. Exactness wins: the objective text is
-**never clipped** in either view. What was removed is duplication — the two
-reprinted contracts and five labelled sections. Confirm/Cancel semantics are
-unchanged on both paths.
+**Consent integrity preserved.** Confirm/Cancel semantics are unchanged and the
+exact full text is never lost — it is always in the toggle. For a SHORT objective
+(`TWEAK_VERBATIM_LIMIT` = 180 characters per side) both are printed verbatim. For
+a LONG one the default card shows a **minimal prefix/suffix diff** — the changed
+region with elision markers — instead of reprinting two paragraphs, and states
+that the exact full text is in the expand. Leaving the paragraph in place was the
+audit's third-round finding: the observed note.md objective is a long paragraph,
+so "compact" measured against a short fixture was not compact for the case that
+was actually reported.
 
-**Why `--rationale` rather than a component toggle.** Three attempts at an
-in-dialog component toggle were tried and rejected: `ctx.ui.confirm` is
-title+body only, and a `ctx.ui.custom` + `ConfirmDraftComponent` dialog changed
-the consent primitive for every caller (25 confirm sites across 8 test files),
-which risked silently weakening existing consent coverage. The flag is a real,
-tested affordance that keeps one consent primitive and hides nothing.
+**The expand is an in-dialog toggle (audit round 2).** `TweakConfirmComponent`
+offers `Show the full rationale` / `Hide the full rationale`; the body expands and
+collapses in place, nothing is applied, and the dialog stays open. An earlier
+revision shipped only a `--rationale` flag, which is not an expand — it makes the
+user cancel and retype the command. The flag still works (it opens the card
+already expanded), and `confirmTweak` drives `ctx.ui.custom` with the same
+factory-not-invoked / stale-API fallback `confirmDraft` uses, so RPC and headless
+hosts degrade to the plain confirm instead of silently cancelling.
+
+The call site also passes `getHeight: () => (tui.terminal?.rows ?? 24) - 4`.
+Without a height `render()` uses `POSITIVE_INFINITY`, `pageSize` becomes
+infinite, and the advertised `PgUp/PgDn` scroll cannot move the view — a real
+defect on the long rationale, pinned by a test that documents both the working
+and the height-less behaviour.
 
 ---
 
@@ -200,9 +212,20 @@ rather than a guess.
 **Observed.** `note.md`: "we should be auto continuing no up next". After a list
 item completed, the widget printed "N queued · up next: …" and waited for
 `/list next`. The `complete_goal` flow even promises the opposite in its own text
-("It activates when the current goal completes"). Auto-advance already existed on
-the impossible-drop and draft-activation paths — only the **clean completion**
-path did not advance.
+("It activates when the current goal completes").
+
+**CORRECTION (audit round 3).** An earlier revision claimed "only the clean
+completion path did not advance". That was wrong in the other direction:
+`archiveCurrentGoal` (`extensions/loops/goal-orchestrator.ts:1620`) already
+advances on every archive, including the settlement archive this item is about.
+The settlement path needed **no advance of its own** — the extra
+`activateNextListItem` I added there advanced a second time, so the immediate
+next item was activated and then replaced by the one behind it. That item never
+ran and the queue drained: skipped work, caught by the auditor and now pinned by
+a dedicated no-double-advance test. The delivered behaviour is the advance that
+`archiveCurrentGoal` performs, and the narrow guard at the top of
+`settleApprovedCompletion` is what keeps paused, blocked and failed items
+holding.
 
 **Fix.** `settleApprovedCompletion` advances the queue after the archive, and
 ledgers `list_auto_advance` with `via: "completion-settlement"`. This runs only on
@@ -303,11 +326,11 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | item | test | proven to bite |
 | --- | --- | --- |
 | 1 | `tests/stale-recovery-marker.test.ts` | yes — the REAL `chat`/`goal:null`/7h42m fixture re-renders the card when the ownership rule is reverted |
-| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall (`tweak-wall-regression`) and a no-op expand (`tweak-toggle-removed-regression`) both fail it |
+| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall (`tweak-wall-regression`), a no-op expand (`tweak-toggle-removed-regression`), reprinting a long objective (`tweak-long-objective-regression`) and a missing height at the real call site (`tweak-card-height-regression`) all fail it |
 | 3 | `tests/glla-wipe-real-path.test.ts` | yes — drives the real `cmdGllaWipe`; restoring the reviewer's full-history scan fails it with "the wipe performed a full-ledger scan" (`wipe-full-scan-regression`) |
 | 3b | `tests/wipe-ledger-scan.test.ts` | yes — `/list depth`, not wipe: a warm depth read must fold 0 bytes and must not call `scanLedgerRecords` (`ledger-full-scan-regression`) |
 | 3 | `tests/glla-wipe-latency.test.ts` | yes — per-record work blows the ceiling |
-| 4 | `tests/list-auto-advance.test.ts` | yes — both directions, including real settlement for paused/blocked/failed; removing the guard archives them and fails |
+| 4 | `tests/list-auto-advance.test.ts` | yes — both directions through real settlement: removing the real archive advance fails the clean case (`no-auto-advance-regression`), re-adding the settlement duplicate fails the immediate-next-item and standalone-goal cases (`double-advance-regression`), and removing the guard archives paused/blocked/failed (`settle-status-guard-regression`) |
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — dropping the package-name check makes an unrelated project warn |
 
@@ -330,6 +353,9 @@ behaviour. Every regression case must exit non-zero.
 | `tweak-wall-regression` | fail | exit 1 |
 | `tweak-toggle-removed-regression` | fail | exit 1 |
 | `wipe-full-scan-regression` | fail | exit 1 |
+| `double-advance-regression` | fail | exit 1 |
+| `tweak-long-objective-regression` | fail | exit 1 |
+| `tweak-card-height-regression` | fail | exit 1 |
 | `no-auto-advance-regression` | fail | exit 1 |
 | `settle-status-guard-regression` | fail | exit 1 |
 | `configured-model-wins-regression` | fail | exit 1 |
@@ -342,7 +368,7 @@ One control (`ledger-full-scan-regression`) initially exited 0 — the wall-cloc
 ceiling it relied on was marginal, so a full rescan could slip under it on a
 loaded host. That is precisely the weakness a control exists to expose, so the pin
 was replaced with the deterministic assertions above and the control now fails as
-intended. Final run: **17/17 as intended** (`verification/controls.json`).
+intended. Final run: **20/20 as intended** (`verification/controls.json`).
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
 ### Gate history (recorded, not hidden)

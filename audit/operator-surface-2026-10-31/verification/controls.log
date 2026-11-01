@@ -5,12 +5,15 @@
 {"case": "amendment-wall-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "amendment-wiring-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "no-auto-advance-regression", "command": ["node", "scripts/run-tests.mjs", "tests/list-auto-advance.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
+{"case": "double-advance-regression", "command": ["node", "scripts/run-tests.mjs", "tests/list-auto-advance.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "configured-model-wins-regression", "command": ["node", "scripts/run-tests.mjs", "tests/auditor-model-display.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "per-record-read-regression", "command": ["node", "scripts/run-tests.mjs", "tests/glla-wipe-latency.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "stale-build-silent-regression", "command": ["node", "scripts/run-tests.mjs", "tests/stale-build-warning.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "chat-owner-orphan-regression", "command": ["node", "scripts/run-tests.mjs", "tests/stale-recovery-marker.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "tweak-toggle-removed-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "tweak-wall-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
+{"case": "tweak-long-objective-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
+{"case": "tweak-card-height-regression", "command": ["node", "scripts/run-tests.mjs", "tests/amendment-confirm-compact.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "wipe-full-scan-regression", "command": ["node", "scripts/run-tests.mjs", "tests/glla-wipe-real-path.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "settle-status-guard-regression", "command": ["node", "scripts/run-tests.mjs", "tests/list-auto-advance.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
 {"case": "stale-build-foreign-name-regression", "command": ["node", "scripts/run-tests.mjs", "tests/stale-build-warning.test.ts"], "exitCode": 1, "expectedFailure": true, "expectedResultObserved": true}
