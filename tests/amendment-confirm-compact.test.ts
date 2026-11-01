@@ -331,7 +331,7 @@ const LONG_COMMON = 'Audit the whole GLLA operator surface end to end, covering 
 const LONG_CURRENT = `${LONG_COMMON} stop there.`;
 const LONG_NEXT = `${LONG_COMMON} file each defect as a tracked item with its own reproduction.`;
 
-test('a long objective stays compact on the default card, and says what it elided', () => {
+test('a long objective keeps BOTH objectives in full on the default card', () => {
   const input = {
     currentObjective: LONG_CURRENT,
     newObjective: LONG_NEXT,
@@ -342,55 +342,99 @@ test('a long objective stays compact on the default card, and says what it elide
   };
   const body = buildTweakConfirmBody(input);
 
-  // Absolute bound, not a relative one: the whole default body must fit a
-  // normal terminal without becoming the wall again.
-  assert.ok(body.length <= 700,
-    `the default card is ${body.length} chars for a ${LONG_CURRENT.length}-char objective — still a wall`);
-  assert.ok(body.split('\n').length <= 10,
-    `the default card is ${body.split('\n').length} lines`);
+  // The consent record is exact, on the default card, for the long objective the
+  // note actually reported. An elided diff is not a consent record.
+  assert.ok(body.includes(LONG_CURRENT), 'the FULL previous objective is on the default card');
+  assert.ok(body.includes(LONG_NEXT), 'the FULL proposed objective is on the default card');
+  assert.equal(body.includes('…'), false, 'nothing in the objective pair is elided');
+  assert.equal(/\[-|\[\+/.test(body), false, 'no diff markers on the consent pair');
 
-  // It is a DIFF, not a reprint: the unchanged paragraph is not duplicated.
-  assert.equal(body.split(LONG_COMMON).length - 1, 0,
-    'the unchanged common text is not reprinted on the compact card');
-  assert.ok(body.includes('-]') || body.includes('[-'), 'the removed region is marked');
-  assert.ok(body.includes('file each defect as a tracked item'), 'the ADDED text is what the card shows');
-  assert.ok(body.includes('stop there'), 'and the REMOVED text');
+  // Shortness comes from what is NOT on the card, not from dropping consent
+  // text: no duplicated contract, no reference labels, no five-section wall.
+  assert.equal(body.includes('CURRENT:'), false, 'the CURRENT: label belongs to the expand');
+  assert.equal(body.includes('NEW:'), false, 'the NEW: label belongs to the expand');
+  assert.equal(body.includes('Verification contract:'), false, 'the contract body belongs to the expand');
+  assert.ok(body.split('\n').length <= 5,
+    `the default body is the pair plus one consequence line, got ${body.split('\n').length} lines`);
 
-  // Elision is disclosed, and it points at the exact text.
-  assert.match(body, /showing the changed region/);
-  assert.match(body, /exact full text is in "Show the full rationale"/);
-
-  // The toggle carries the EXACT full text — nothing is lost, only deferred.
+  // And the rationale still carries everything, reachable from this same card.
   const rationale = buildTweakRationaleBody(input);
-  assert.ok(rationale.includes(LONG_CURRENT), 'the exact previous objective is in the toggle');
-  assert.ok(rationale.includes(LONG_NEXT), 'the exact proposed objective is in the toggle');
+  assert.ok(rationale.includes(LONG_CURRENT) && rationale.includes(LONG_NEXT));
+  assert.ok(rationale.includes('CURRENT:'), 'the expand is what carries the labelled form');
 });
 
-test('a 400-word objective is still compact — the bound does not depend on length', () => {
+test('a long objective is bounded on screen by paging, and paging reveals the whole exact text', () => {
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (d: string, key: string) => d === key };
+  const rows = 20;
+  const card = new TweakConfirmComponent(
+    {
+      currentObjective: LONG_CURRENT, newObjective: LONG_NEXT,
+      hasNewContract: false, clearsContract: false, mode: 'goal', title: 'Tweak goal?',
+      getHeight: () => rows - 4,
+    },
+    () => {}, theme, kb as never, () => {},
+  );
+
+  // On screen the card fits the terminal at a normal width, with the actions
+  // and the paging affordance visible.
+  const first = card.render(80);
+  assert.ok(first.length <= rows, `the card fits the terminal: ${first.length} rows`);
+  assert.ok(first.some((l) => l.includes('Confirm — apply this tweak')), 'Confirm visible');
+  assert.ok(first.some((l) => l.includes('Cancel — change nothing')), 'Cancel visible');
+  assert.ok(first.some((l) => l.includes('PgUp/PgDn scroll')), 'the overflow is disclosed with a paging hint');
+
+  // Page through the whole card at a width that does not truncate rows, and
+  // prove the exact pair appears in full across the pages. This is why a
+  // bounded viewport is compatible with exactness: nothing is dropped, it is
+  // only paged.
+  const pages: string[] = [...card.render(2000)];
+  let guard = 0;
+  let previous = pages.length;
+  while (guard++ < 200) {
+    const before = card.render(2000);
+    card.handleInput('tui.select.pageDown');
+    const after = card.render(2000);
+    if (after.join('\n') === before.join('\n')) break;
+    pages.push(...after.slice(0, Math.max(0, after.length - previous)));
+    previous = after.length;
+  }
+  const paged = pages.join('\n');
+  assert.ok(paged.includes(LONG_CURRENT), 'paging reveals the whole previous objective verbatim');
+  assert.ok(paged.includes(LONG_NEXT), 'paging reveals the whole proposed objective verbatim');
+});
+
+test('a 400-word objective is exact on the default card and bounded on screen', () => {
   // The auditor measured the observed case specifically: a 400-word objective
-  // produced a 4,079-character body (~50 rows at 80 columns). The diff path
-  // bounds the change region and the surrounding context, so the body length is
-  // independent of the objective length — this proves that rather than assuming
-  // it from a 353-character fixture.
+  // produced a 4,079-character body. That size must not buy elision — it must
+  // page.
   const filler = 'and confirm that every surface keeps reporting the same facts in the same order so a reader can compare them without re-reading the whole document ';
   const base = `Audit the whole GLLA operator surface end to end. ${filler.repeat(20)}`;
   const current = `${base}Stop there.`;
   const next = `${base}File each defect as a tracked item.`;
-  assert.ok(current.length > 2000, `fixture should be a genuinely long objective (${current.length} chars)`);
+  assert.ok(current.length > 2000, `fixture should be genuinely long (${current.length} chars)`);
 
   const body = buildTweakConfirmBody({
     currentObjective: current, newObjective: next,
     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
   });
-  assert.ok(body.length <= 700, `a ${current.length}-char objective produced ${body.length} chars`);
-  assert.ok(body.split('\n').length <= 10, `and ${body.split('\n').length} lines`);
-  assert.match(body, /showing the changed region/);
-  // The exact text is preserved in the toggle, not lost.
-  const rationale = buildTweakRationaleBody({
-    currentObjective: current, newObjective: next,
-    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
-  });
-  assert.ok(rationale.includes(current) && rationale.includes(next), 'the exact full text survives in the expand');
+  assert.ok(body.includes(current) && body.includes(next),
+    'both full objectives are on the default card, however long they are');
+
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (d: string, key: string) => d === key };
+  const rows = 20;
+  const card = new TweakConfirmComponent(
+    {
+      currentObjective: current, newObjective: next,
+      hasNewContract: false, clearsContract: false, mode: 'goal', title: 'Tweak goal?',
+      getHeight: () => rows - 4,
+    },
+    () => {}, theme, kb as never, () => {},
+  );
+  const rendered = card.render(80);
+  assert.ok(rendered.length <= rows, `the screen stays bounded for a ${current.length}-char objective: ${rendered.length} rows`);
+  assert.ok(rendered.some((l) => l.includes('PgUp/PgDn scroll')), 'and it tells the user the body is paged');
 });
 
 test('a short objective is still printed verbatim — the diff never guesses', () => {
