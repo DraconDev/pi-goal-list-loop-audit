@@ -8,7 +8,8 @@
       "tests/amendment-confirm-compact.test.ts",
       "tests/list-auto-advance.test.ts",
       "tests/auditor-model-display.test.ts",
-      "tests/stale-build-warning.test.ts"
+      "tests/stale-build-warning.test.ts",
+      "tests/glla-wipe-real-path.test.ts"
     ],
     "exitCode": 0,
     "expectedFailure": false,
@@ -131,9 +132,9 @@
       "scripts/run-tests.mjs",
       "tests/amendment-confirm-compact.test.ts"
     ],
-    "exitCode": 1,
+    "exitCode": 0,
     "expectedFailure": true,
-    "expectedResultObserved": true
+    "expectedResultObserved": false
   },
   {
     "case": "settle-status-guard-regression",
