@@ -1,14 +1,15 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-summary.test.ts:
-(pass) amendment summary never renders a JSON blob [3.70ms]
-(pass) amendment summary shows the replacement counts and every proposed title with prior status [0.24ms]
-(pass) amendment summary states the contract is unchanged instead of re-printing it [0.10ms]
-(pass) amendment summary flags a contract change as a revision boundary [0.10ms]
-(pass) amendment summary lists dropped tasks rather than silently losing them [0.09ms]
-(pass) amendment summary keeps a long objective to one readable line [0.12ms]
-(pass) amendment summary handles a first-time commit with no prior tasks [0.07ms]
+(pass) amendment summary never renders a JSON blob [2.06ms]
+(pass) amendment summary shows the replacement counts and every proposed title with prior status [0.74ms]
+(pass) amendment summary states the contract is unchanged instead of re-printing it [0.12ms]
+(pass) amendment summary flags a contract change as a revision boundary [0.12ms]
+(pass) amendment summary lists dropped tasks rather than silently losing them [0.11ms]
+(pass) amendment summary keeps a long objective to one readable line [0.15ms]
+(pass) amendment summary handles a first-time commit with no prior tasks [0.08ms]
 191 |   assert.match(body, /Re-audit pass\s+\[new\]/, "the added task is marked");
 192 |   // note.md "looks fine, except unstyled": the amendment is the STYLED card now,
 193 |   // and its two actions prove it — a revert to the flat confirm leaves only the
@@ -31,14 +32,14 @@ AssertionError: the task amendment rendered the styled two-action card, not the 
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rqn4r3cg/tests/amendment-summary.test.ts:196:10
+      at /tmp/glla-ops-control-rgvkr97z/tests/amendment-summary.test.ts:196:10
       at processTicksAndRejections (native:7:39)
-(fail) propose_task_list amendment renders the readable summary, not a JSON dump [202.18ms]
-(pass) propose_task_list aborts an amendment whose target changed during Confirm [160.50ms]
+(fail) propose_task_list amendment renders the readable summary, not a JSON dump [321.28ms]
+(pass) propose_task_list aborts an amendment whose target changed during Confirm [182.64ms]
 
  8 pass
  1 fail
-Ran 9 tests across 1 file. [784.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-WeN2nm/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-WeN2nm
-[run-tests] finished in 1s (exit 1)
+Ran 9 tests across 1 file. [1.69s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-JRKwGr/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-JRKwGr
+[run-tests] finished in 2s (exit 1)
