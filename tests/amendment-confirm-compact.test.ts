@@ -196,12 +196,105 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
     'the exact proposed objective is shown');
   assert.equal(compact.body.includes('CURRENT:'), false, 'the old CURRENT/NEW wall is gone');
   assert.equal(compact.body.includes(CONTRACT), false, 'the contract body is not in the default card');
-  assert.match(compact.body, /Full rationale: re-run with --rationale/, 'the card names its own expand');
+  // The expand is IN THE DIALOG, so the compact body carries no "re-run with a
+  // flag" instruction — the action is on the card (asserted below).
+  assert.equal(/re-run with --rationale/.test(compact.body), false,
+    'the card does not ask the user to cancel and retype the command');
 
-  // The expand: the same gate, with the full form.
+  // The expand: the same gate, opened expanded via --rationale.
   const expanded = await run(`--rationale ${OLD} and file the defects. Done when: ${CONTRACT}`);
   assert.ok(expanded.applied, 'the expanded card is still the same consent gate');
   assert.ok(expanded.body.includes('CURRENT:'), 'the full form carries the reference labels');
   assert.ok(expanded.body.includes(CONTRACT), 'the full contract text is reachable through the expand');
   assert.ok(expanded.body.length > compact.body.length, 'the expand is genuinely richer than the default');
+});
+
+// The audit-round-2 requirement: the rationale must be reachable FROM THE CARD.
+// A `--rationale` flag that needs the user to cancel and retype the command is a
+// re-run, not an expand. These cases drive the real component the real dialog
+// builds, so they cannot pass by a flag alone.
+test('the tweak card expands the rationale in place and keeps one consent gate', async () => {
+  const {
+    TweakConfirmComponent, TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION,
+    TWEAK_COLLAPSE_ACTION, TWEAK_CANCEL_ACTION, buildTweakConfirmBody, buildTweakRationaleBody,
+  } = await import('../extensions/confirm-draft.js');
+
+  const input = {
+    currentObjective: 'Audit the widget surface',
+    newObjective: 'Audit the widget surface and file the defects',
+    hasNewContract: true,
+    newContract: 'npm run check exits 0',
+    clearsContract: false,
+    mode: 'goal' as const,
+    title: 'Tweak goal?',
+  };
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (_d: string, key: string) => key === 'tui.select.confirm' };
+  let resolved: string | undefined | 'unset' = 'unset';
+  let renders = 0;
+
+  const card = new TweakConfirmComponent(input, () => { renders++; }, theme, kb as never, (v) => { resolved = v; });
+
+  // Opens compact, with all three actions on offer.
+  assert.equal(card.isExpanded(), false);
+  assert.equal(card.bodyText(), buildTweakConfirmBody(input));
+  assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION]);
+  assert.equal(resolved, 'unset', 'building the card applies nothing');
+
+  // Expanding is a no-op on the decision: same dialog, same gate, still open.
+  card.toggleRationale();
+  assert.equal(card.isExpanded(), true);
+  assert.equal(card.bodyText(), buildTweakRationaleBody(input), 'the expanded body is the pre-existing rationale text');
+  assert.ok(card.bodyText().includes('npm run check exits 0'), 'the full rationale carries the contract');
+  assert.equal(resolved, 'unset', 'expanding never answers the question');
+  assert.ok(renders > 0, 'the expand re-renders the open dialog rather than closing it');
+
+  // The action itself now reads as a collapse, so the toggle works both ways.
+  assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_COLLAPSE_ACTION, TWEAK_CANCEL_ACTION]);
+  assert.match(card.render(80).join('\n'), /Hide the full rationale/);
+  card.toggleRationale();
+  assert.equal(card.isExpanded(), false, 'the expand toggles back');
+  assert.equal(resolved, 'unset');
+
+  // Confirm from the expanded state still records the exact consent: a card
+  // opened expanded (the --rationale form) confirms with the same action.
+  let confirmedExpanded: string | undefined | 'unset' = 'unset';
+  const openedExpanded = new TweakConfirmComponent(
+    { ...input, showRationale: true }, () => {}, theme, kb as never, (v) => { confirmedExpanded = v; },
+  );
+  assert.equal(openedExpanded.isExpanded(), true, '--rationale opens the card already expanded');
+  assert.equal(openedExpanded.dialogDeps.options[0], TWEAK_CONFIRM_ACTION, 'confirm stays the first action');
+  openedExpanded.handleInput('tui.select.confirm');
+  assert.equal(confirmedExpanded, TWEAK_CONFIRM_ACTION, 'confirming from the expanded card applies the tweak');
+});
+
+test('cancelling after expanding still changes nothing', async () => {
+  const { TweakConfirmComponent } = await import('../extensions/confirm-draft.js');
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (_d: string, key: string) => key === 'tui.select.cancel' };
+  let resolved: string | undefined | 'unset' = 'unset';
+  const card = new TweakConfirmComponent(
+    { currentObjective: 'a', newObjective: 'b', hasNewContract: false, clearsContract: false },
+    () => {}, theme, kb as never, (v) => { resolved = v; },
+  );
+  card.toggleRationale();
+  card.handleInput('tui.select.cancel');
+  assert.equal(resolved, undefined, 'esc after expanding is still a cancel');
+});
+
+test('the tweak card reports its CURRENT body to the host after an expand', async () => {
+  // The host reads dialogDeps to know what the user was shown. A snapshot taken
+  // at construction would report the compact body even while the expanded one is
+  // on screen — the exact confusion this round is about.
+  const { TweakConfirmComponent } = await import('../extensions/confirm-draft.js');
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const card = new TweakConfirmComponent(
+    { currentObjective: 'a', newObjective: 'b', hasNewContract: true, newContract: 'gate', clearsContract: false, title: 'Tweak goal?' },
+    () => {}, theme, { matches: () => false } as never, () => {},
+  );
+  const before = card.dialogDeps.body;
+  card.toggleRationale();
+  const after = card.dialogDeps.body;
+  assert.notEqual(before, after, 'dialogDeps must reflect the expanded state');
+  assert.ok(after.includes('gate'), 'the host sees the rationale it is displaying');
 });
