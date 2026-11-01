@@ -336,7 +336,7 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — dropping the package-name check makes an unrelated project warn |
 
-## Isolated controls (15/15 as intended)
+## Isolated controls (20/20 as intended)
 
 `controls.py` mutates a disposable copy of the tree once per case and runs only
 the suite that should notice. The baseline and a **harmless rewording** must exit
