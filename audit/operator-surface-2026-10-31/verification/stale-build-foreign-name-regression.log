@@ -7,3 +7,33 @@ tests/stale-build-warning.test.ts:
 (pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.18ms]
 (pass) a missing or unreadable repo manifest proves nothing and stays silent [0.20ms]
 (pass) version comparison is numeric, not lexical [0.07ms]
+(pass) session start surfaces the stale-build warning and still runs [274.69ms]
+131 |   fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
+132 |     name: 'some-unrelated-project',
+133 |     version: '1.0.0',
+134 |   }));
+135 |   const status = detectStaleBuild(cwd);
+136 |   assert.equal(status.stale, false, 'a foreign package is not the GLLA source checkout');
+               ^
+AssertionError: a foreign package is not the GLLA source checkout
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-egeebb49/tests/stale-build-warning.test.ts:136:10
+      at fn (node:test:215:18)
+(fail) an unrelated project manifest does NOT produce a stale-build warning [0.90ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.14ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.15ms]
+
+ 8 pass
+ 1 fail
+Ran 9 tests across 1 file. [702.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-StSoIk/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-StSoIk
+[run-tests] finished in 1s (exit 1)
