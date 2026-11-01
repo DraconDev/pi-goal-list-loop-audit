@@ -2,7 +2,7 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.93ms]
+(pass) the amendment confirm keeps the exact old and new objective text [1.00ms]
 36 |     oldObjective: 'Ship the feature',
 37 |     newObjective: 'Ship the feature and its tests',
 38 |     oldContract: contract,
@@ -20,12 +20,12 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-vh6y0_vg/tests/amendment-confirm-compact.test.ts:41:10
+      at /tmp/glla-ops-control-lmxfx5qp/tests/amendment-confirm-compact.test.ts:41:10
       at fn (node:test:215:18)
-(fail) an unchanged contract is NOT reprinted — that was most of the wall [0.79ms]
+(fail) an unchanged contract is NOT reprinted — that was most of the wall [0.89ms]
 (pass) a changed contract IS shown, both sides [0.09ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.11ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.07ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.12ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.09ms]
 88 |     oldObjective: LONG_OBJECTIVE,
 89 |     newObjective: `${LONG_OBJECTIVE} Additionally record lineage.`,
 90 |     oldContract: 'x'.repeat(300),
@@ -40,9 +40,9 @@ AssertionError: the default body must be materially shorter (1144 vs 1331)
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-vh6y0_vg/tests/amendment-confirm-compact.test.ts:93:10
+      at /tmp/glla-ops-control-lmxfx5qp/tests/amendment-confirm-compact.test.ts:93:10
       at fn (node:test:215:18)
-(fail) the compact body is measurably smaller than the old five-section form [0.16ms]
+(fail) the compact body is measurably smaller than the old five-section form [0.17ms]
 141 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
 142 |   // Consent fidelity: the exact old and new objective both appear.
 143 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
@@ -60,23 +60,23 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-vh6y0_vg/tests/amendment-confirm-compact.test.ts:146:10
+      at /tmp/glla-ops-control-lmxfx5qp/tests/amendment-confirm-compact.test.ts:146:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [36.70ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [10.95ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [1.44ms]
-(pass) cancelling after expanding still changes nothing [0.13ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.12ms]
+(fail) the real complete_goal amendment confirm uses the compact body [35.36ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [11.83ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [1.29ms]
+(pass) cancelling after expanding still changes nothing [0.12ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.13ms]
 (pass) a long objective keeps BOTH objectives in full on the default card [0.07ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [10.09ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [13.08ms]
+(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [8.39ms]
+(pass) a 400-word objective is exact on the default card and bounded on screen [11.78ms]
 (pass) a short objective is still printed verbatim — the diff never guesses [0.12ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.28ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [2.81ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.57ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.11ms]
 
  14 pass
  3 fail
-Ran 17 tests across 1 file. [432.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-d4LJti/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-d4LJti
+Ran 17 tests across 1 file. [425.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-h5RzVQ/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-h5RzVQ
 [run-tests] finished in 0s (exit 1)
