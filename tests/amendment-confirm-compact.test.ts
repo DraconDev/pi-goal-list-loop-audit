@@ -158,6 +158,8 @@ test('the real complete_goal amendment confirm uses the compact body', async () 
 test('the real /goal tweak card is compact, exact, and expands with --rationale', async () => {
   const { cmdTweak } = await import('../extensions/goal-commands.js');
   const goalMod = await import('../extensions/loops/goal.js');
+  const activate = goalMod.default;
+  const __testOnlyLoadState = goalMod.__testOnlyLoadState;
   const { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } = await import('./harness/mock-pi.js');
   goalMod.__testOnlyResetOwnerSession(); goalMod.__testOnlyResetStaleFlag(); goalMod.__testOnlyResetTerminalFlags();
 
@@ -182,7 +184,7 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
       confirmImpl: (title: string, body: string) => { bodies.push(body); return Promise.resolve(false); },
       selectImpl: undefined,
     });
-    await cmdTweak(args, ctx, 'goal');
+    await cmdTweak(args, ctx as never, 'goal');
     return { body: bodies[0] ?? '', applied: bodies.length > 0, notifies: ctx.ui.notifies.map((n: { message: string }) => n.message) };
   }
 
