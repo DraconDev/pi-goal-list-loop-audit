@@ -1,19 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=205s heartbeat=30s
+[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 137s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [9.95ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.65ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [2978.38ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [55.45ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [45.02ms]
-(pass) a terminal goal retires the main-model recovery marker durably [183.60ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [467.20ms]
-(pass) the real settlement path retires the recovery marker when it archives [1100.52ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [504.28ms]
-
- 9 pass
- 0 fail
-Ran 9 tests across 1 file. [6.85s]
-[run-tests] finished in 7s (exit 0)
