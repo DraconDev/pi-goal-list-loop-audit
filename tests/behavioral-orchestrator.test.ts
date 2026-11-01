@@ -1140,7 +1140,9 @@ test("audit 2026-09-16: inferred tweak rejection leaves objective and ledger unc
     await tick();
     let asked = false;
     ctx.ui.confirmImpl = async (_title, message) => {
-      assert.match(message, /NEW \(inferred from recent discussion/);
+      // The inference disclosure stays on the compact card: a rejection must be
+      // an informed one.
+      assert.match(message, /was inferred from recent discussion/);
       assert.match(message, /Fix the flaky login test/);
       asked = true;
       return false;
