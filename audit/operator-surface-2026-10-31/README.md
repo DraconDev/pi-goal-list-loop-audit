@@ -227,14 +227,21 @@ a dedicated no-double-advance test. The delivered behaviour is the advance that
 `settleApprovedCompletion` is what keeps paused, blocked and failed items
 holding.
 
-**Fix.** `settleApprovedCompletion` advances the queue after the archive, and
-ledgers `list_auto_advance` with `via: "completion-settlement"`. This runs only on
-the settlement path — an **approved** audit archiving a completed goal.
+**Fix.** The advance lives in exactly ONE place: `archiveCurrentGoal`
+(`extensions/loops/goal-orchestrator.ts:1620`) calls `activateNextListItem(ctx)`
+after it archives. `settleApprovedCompletion` calls that archive and **must not
+advance again** — the settlement path performs no `activateNextListItem` call of
+its own and ledgers no `list_auto_advance` row. An earlier revision of this
+report claimed otherwise (it described a settlement-side advance with
+`via: "completion-settlement"` that no longer exists); `grep` for
+`activateNextListItem` in `extensions/loops/goal-auditor-hooks.ts` returns
+nothing, and `tests/list-auto-advance.test.ts` asserts **zero** `list_auto_advance`
+rows in the settlement path, so the report now matches the code.
 
 **Gap found while proving the negative direction (2026-11-01).** "Never reaches
 settlement" was an assumption, not a guarantee: `settleApprovedCompletion` had no
-status check, so calling it for a paused goal archived the item and the advance
-hook then skipped past a decision the user still owed. A guard now refuses unless
+status check, so calling it for a paused goal archived the item and the archive's
+advance skipped past a decision the user still owed. A guard now refuses unless
 the goal is `auditing` or holds a settling claim (the legitimate refused-archive
 recovery). The negative test drives the real settlement entry for paused, blocked
 **and failed** items and asserts refusal, unchanged status, an unchanged queue, and

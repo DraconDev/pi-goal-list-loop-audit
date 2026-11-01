@@ -129,16 +129,16 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     #     show, while every other part of the path stays correct.
     'tweak-wall-regression': (
         'extensions/confirm-draft.ts',
-        "    ...compactObjectiveLines(input.currentObjective, input.newObjective),",
-        "    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,",
+        "    ...tweakObjectiveLines(input.currentObjective, input.newObjective),",
+        "    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,\n    ...tweakObjectiveLines(input.currentObjective, input.newObjective),",
     ),
 
     # 8d. audit round 3 [MED]: the default card reprints the whole long
     #     objective again instead of showing the changed region.
     'tweak-long-objective-regression': (
         'extensions/confirm-draft.ts',
-        'export const TWEAK_VERBATIM_LIMIT = 180;',
-        'export const TWEAK_VERBATIM_LIMIT = 100000;',
+        "    `From: ${current.trim() || '(none)'}`,",
+        "    `From: ${(current.trim() || '(none)').slice(0, 180)}…`,",
     ),
 
     # 8e. audit round 3 [MED]: the real call site stops passing a height, so the
