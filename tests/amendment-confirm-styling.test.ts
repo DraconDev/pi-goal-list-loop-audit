@@ -22,7 +22,7 @@ import {
   CARD_CONFIRM_NO,
   CARD_CONFIRM_YES,
   CardConfirmComponent,
-  buildAmendmentSummary,
+  buildAmendmentConfirmBody,
   confirmCard,
 } from '../extensions/confirm-draft.js';
 
@@ -32,16 +32,11 @@ const FAKE_THEME = {
 } as never;
 const FAKE_KB = { matches: (data: string, key: string) => data === key };
 
-const BODY = buildAmendmentSummary({
-  objective: 'Repair the sweep record so its live-CWS evidence is internally consistent',
-  contract: 'Done when: counts agree\nDone when: totals match',
-  priorContract: 'Done when: counts agree\nDone when: totals match',
-  priorTasks: [
-    { id: '1', title: 'Persist sweep tooling and artifacts', status: 'complete' },
-    { id: '2', title: 'Write verify_sweep.py', status: 'complete' },
-    { id: '3', title: 'Validate the whole document', status: 'complete' },
-  ] as never,
-  proposedTitles: ['Persist sweep tooling and artifacts', 'Write verify_sweep.py', 'Run the final sweep'],
+const BODY = buildAmendmentConfirmBody({
+  oldObjective: 'Repair the sweep record so its live-CWS evidence is internally consistent',
+  newObjective: 'Validate the whole document and the tree scope',
+  oldContract: 'Done when: counts agree\nDone when: totals match',
+  newContract: 'Done when: counts agree\nDone when: totals match\nDone when: tree scope matches',
 });
 
 /** A ctx whose custom() behaves like interactive pi: it invokes the factory and
@@ -97,7 +92,9 @@ test('an amendment is confirmed through the styled card, not the flat confirm', 
 
   // The exact body the user is agreeing to is carried through unchanged.
   assert.equal(card.dialogDeps.body, BODY, 'the amendment body is byte-identical to the caller’s text');
-  assert.ok(BODY.includes('Replacing 3 committed tasks'), 'fixture is the real amendment shape');
+  assert.ok(BODY.includes('From: Repair the sweep record'), 'fixture is the real amendment shape');
+  assert.ok(BODY.includes('This changes what the independent auditor will judge.'),
+    'and carries the consequence line the caller produced');
   const paged = rows.join('\n');
   assert.ok(paged.length > 0);
 });
