@@ -141,7 +141,7 @@ CASES: dict[str, tuple[str, str, str] | None] = {
 SUITES: dict[str, list[str]] = {
     'baseline': ['tests/stale-recovery-marker.test.ts', 'tests/amendment-confirm-compact.test.ts',
                  'tests/list-auto-advance.test.ts', 'tests/auditor-model-display.test.ts',
-                 'tests/stale-build-warning.test.ts'],
+                 'tests/stale-build-warning.test.ts', 'tests/glla-wipe-real-path.test.ts'],
     'harmless-rewording': ['tests/stale-recovery-marker.test.ts'],
     'stale-recovery-card-regression': ['tests/stale-recovery-marker.test.ts'],
     'chat-recovery-hidden-regression': ['tests/stale-recovery-marker.test.ts'],
@@ -153,6 +153,8 @@ SUITES: dict[str, list[str]] = {
     'per-record-read-regression': ['tests/glla-wipe-latency.test.ts'],
     'chat-owner-orphan-regression': ['tests/stale-recovery-marker.test.ts'],
     'tweak-wall-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'tweak-toggle-removed-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'wipe-full-scan-regression': ['tests/glla-wipe-real-path.test.ts'],
     'settle-status-guard-regression': ['tests/list-auto-advance.test.ts'],
     'stale-build-foreign-name-regression': ['tests/stale-build-warning.test.ts'],
     'ledger-full-scan-regression': ['tests/wipe-ledger-scan.test.ts'],

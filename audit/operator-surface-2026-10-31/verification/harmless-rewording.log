@@ -2,17 +2,17 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [4.32ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.55ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [40.59ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.84ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [5.17ms]
-(pass) a terminal goal retires the main-model recovery marker durably [117.44ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [109.31ms]
-(pass) the real settlement path retires the recovery marker when it archives [229.77ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [129.76ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [4.64ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.57ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [39.70ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.61ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [4.67ms]
+(pass) a terminal goal retires the main-model recovery marker durably [115.64ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [107.04ms]
+(pass) the real settlement path retires the recovery marker when it archives [222.23ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [158.91ms]
 
  9 pass
  0 fail
-Ran 9 tests across 1 file. [1021.00ms]
+Ran 9 tests across 1 file. [1019.00ms]
 [run-tests] finished in 1s (exit 0)
