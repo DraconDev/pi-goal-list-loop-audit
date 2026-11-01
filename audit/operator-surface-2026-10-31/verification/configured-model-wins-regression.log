@@ -1,5 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
-[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
+[run-tests] mode=explicit slow_files=13 stall_timeout=352s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 235s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-model-display.test.ts:
@@ -17,11 +17,11 @@ AssertionError: the card must name the model that actually ran
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rt1qu3_u/tests/auditor-model-display.test.ts:54:10
+      at /tmp/glla-ops-control-zsxi20xc/tests/auditor-model-display.test.ts:54:10
       at fn (node:test:215:18)
-(fail) a session-model audit names the model that ran, not a configured pin [13.53ms]
-(pass) a configured-pin audit is NOT mislabelled as the session model [0.36ms]
-(pass) the configured ref is only used when nothing recorded an executed model [0.32ms]
+(fail) a session-model audit names the model that ran, not a configured pin [8.60ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.27ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.24ms]
 80 |   // that produced the note.md observation.
 81 |   const text = cardText(
 82 |     auditState({ auditorSourceModel: SESSION_MODEL, auditorRetryCandidateRef: CONFIGURED }),
@@ -36,13 +36,13 @@ AssertionError: the recorded executed model is preferred to the configured retry
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rt1qu3_u/tests/auditor-model-display.test.ts:85:10
+      at /tmp/glla-ops-control-zsxi20xc/tests/auditor-model-display.test.ts:85:10
       at fn (node:test:215:18)
-(fail) the recorded executed model outranks the configured candidate [0.49ms]
+(fail) the recorded executed model outranks the configured candidate [0.18ms]
 
  2 pass
  2 fail
-Ran 4 tests across 1 file. [1.64s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-ZqvifV/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZqvifV
-[run-tests] finished in 2s (exit 1)
+Ran 4 tests across 1 file. [782.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-TywUZQ/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-TywUZQ
+[run-tests] finished in 1s (exit 1)
