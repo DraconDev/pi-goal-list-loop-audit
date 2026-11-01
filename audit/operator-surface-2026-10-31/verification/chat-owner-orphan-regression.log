@@ -27,3 +27,33 @@ true !== false
 (fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [75.41ms]
 (pass) the same real marker is retired, not merely hidden — display and retirement agree [22.65ms]
 (pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [9.29ms]
+(pass) a terminal goal retires the main-model recovery marker durably [153.27ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [114.67ms]
+(pass) the real settlement path retires the recovery marker when it archives [325.40ms]
+303 |   // screenshot marker (owner:chat, kind:goal, goal:null, 7h42m old). Treating it
+304 |   // as live re-renders the exact note.md complaint.
+305 |   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
+306 |   __testOnlyLoadState(cwd);
+307 |   await tick(30);
+308 |   assert.equal(mainModelRecoveryHasLiveOwner(), false,
+               ^
+AssertionError: a chat-owned marker with no goal or loop has nothing to resume
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-h6585wji/tests/stale-recovery-marker.test.ts:308:10
+      at processTicksAndRejections (native:7:39)
+(fail) the live-owner predicate requires a supervised target for chat-owned markers [40.49ms]
+
+ 7 pass
+ 2 fail
+Ran 9 tests across 1 file. [1.59s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-xFPhin/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-xFPhin
+[run-tests] finished in 2s (exit 1)
