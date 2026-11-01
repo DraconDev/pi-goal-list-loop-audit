@@ -360,15 +360,12 @@ goal card in the same frame has a border and a title. The note's own words are
 "this question looks fine, except unstyled", which is exactly right: the copy was
 already good, only the chrome was missing.
 
-**Root cause (observed).** Three amendment sites called the flat primitive:
-`extensions/loops/goal-tools.ts:4576` for the task amendment (the dialog in the
-screenshot), `extensions/loops/goal-tools.ts:900` for the completion scope
-amendment, and `extensions/loops/goal-tools.ts:711` via the `confirmAmendment`
-hook that `extensions/respec-builder-runtime.ts:342` consumes. `ctx.ui.confirm` is title+body text by definition —
-it cannot draw a border or theme a title. The tweak confirmation had moved to
-`ctx.ui.custom` in item 2, so these three were the last amendment dialogs still on
-the flat path. Ten `ctx.ui.confirm` sites existed overall; **three** were
-amendments.
+**Root cause (observed).** `extensions/loops/goal-tools.ts:4576` called
+`liveCtx.ui.confirm("Confirm committed task amendment", buildAmendmentSummary(…))`.
+`ctx.ui.confirm` is title+body text by definition — it cannot draw a border or
+theme a title — so the dialog could never look like the cards around it. The tweak
+confirmation had moved to `ctx.ui.custom` in item 2; this was the last
+amendment-class dialog the note photographed.
 
 **Fix.** A shared `CardConfirmComponent` (`extensions/confirm-draft.ts`) renders an
 amendment in the same bordered card shape the tweak confirmation uses: title row,
@@ -386,10 +383,24 @@ The body text is untouched — the caller's exact string is what the card carrie
 changed. Yes/No semantics are unchanged, the decision stays two-way, and draft
 auto-accept still does **not** apply: an amendment needs per-change consent.
 
-**Deliberately narrow.** Only the three amendment sites move. The heavier
-`ctx.ui.confirm` sites (wipe, audit-ended-without-verdict "complete without
-audit", the settings editors) keep the primitive they were tested against, so a
-consent path cannot be silently re-shaped by this change.
+**Deliberately narrow — one site, not three.** An earlier revision of this fix
+also routed the respec `confirmAmendment` hook
+(`extensions/loops/goal-tools.ts:711`, consumed by
+`extensions/respec-builder-runtime.ts:342`) and the completion scope amendment
+(`extensions/loops/goal-tools.ts:900`) through the card. That broke two consent
+tests, and the breakage was informative: those two paths' tests bind to the flat
+primitive end-to-end (one of them asserts the exact body a mid-`Confirm` mutation
+must be raced against), so re-shaping them converts a tested consent path into an
+untested one for no gain the note asked for. Both are reverted to
+`ctx.ui.confirm`; only the task-amendment dialog moves. The heavier sites (wipe,
+audit-ended-without-verdict "complete without audit", the settings editors) stay
+put for the same reason.
+
+Falling back was also fixed while proving this: `confirmCard` used to fall through
+to the plain confirm when the custom path threw, which asked the **same** decision
+twice (observed as two `confirm` calls for one amendment). Once the factory has
+run the dialog has been shown and the user has answered, so a non-stale error now
+refuses instead of re-prompting.
 
 **Evidence.** `tests/amendment-confirm-styling.test.ts` (5 cases) proves the card
 is styled, the body is byte-identical, No/cancel refuse, the RPC stub falls
