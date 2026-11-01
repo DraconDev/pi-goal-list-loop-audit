@@ -1,16 +1,15 @@
-=== COMPACT ===
+objective lengths: 287 / 311 chars
+
+=== DEFAULT (exact pair, first page) ===
+────────────────────────────────────────────────────────────────────────────
 ────────────────────────────────────────────────────────────────────────────
                                                                             
  Tweak goal?                                                                
                                                                             
- From: …Audit the whole …very card, then[-stop there-].…                    
- To:   …Audit the whole …very card, then[+file each defect as a tracked     
- item with its own reproduction+].…                                         
- (long objective — showing the changed region; the exact full text is in    
- "Show the full rationale")                                                 
-                                                                            
- Replaces the goal objective and its verification contract.                 
-                                                                            
+ From: Audit the whole GLLA operator surface end to end and record exactly  
+ what the user sees in the widget, the status footer, the settings menu,    
+ the list queue, the auditor display and every recovery card, so a reader   
+Review 1–6/15 · PgUp/PgDn scroll
 
 → Confirm — apply this tweak
   Show the full rationale
@@ -19,29 +18,37 @@
  ↑↓ choose · enter select · esc cancel · "Show the full rationale" expands  
  without applying                                                           
 ────────────────────────────────────────────────────────────────────────────
-=== EXPANDED (same dialog, nothing applied) ===
+
+=== DEFAULT (page 2 — exact text continues) ===
+────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
+ who was not present can follow the narrative without guessing. Stop there. 
+ To:   Audit the whole GLLA operator surface end to end and record exactly  
+ what the user sees in the widget, the status footer, the settings menu,    
+ the list queue, the auditor display and every recovery card, so a reader   
+ who was not present can follow the narrative without guessing. File each   
+ defect as a tracked item.                                                  
+Review 7–12/15 · PgUp/PgDn scroll
+
+→ Confirm — apply this tweak
+  Show the full rationale
+  Cancel — change nothing
+
+ ↑↓ choose · enter select · esc cancel · "Show the full rationale" expands  
+ without applying                                                           
+────────────────────────────────────────────────────────────────────────────
+
+=== EXPANDED (in-place toggle) ===
+────────────────────────────────────────────────────────────────────────────
 ────────────────────────────────────────────────────────────────────────────
                                                                             
  Tweak goal?                                                                
                                                                             
  CURRENT:                                                                   
  Audit the whole GLLA operator surface end to end and record exactly what   
- the user sees in the widget, the footer, the settings menu and every       
- recovery card, then stop there.                                            
-                                                                            
- NEW:                                                                       
- Audit the whole GLLA operator surface end to end and record exactly what   
- the user sees in the widget, the footer, the settings menu and every       
- recovery card, then file each defect as a tracked item with its own        
- reproduction.                                                              
-                                                                            
- Replaces the goal objective and its verification contract.                 
-                                                                            
- New verification contract:                                                 
- npm run check exits 0                                                      
-                                                                            
- This changes what the independent auditor will judge.                      
-                                                                            
+ the user sees in the widget, the status footer, the settings menu, the     
+ list queue, the auditor display and every recovery card, so a reader who   
+Review 1–7/23 · PgUp/PgDn scroll
 
   Confirm — apply this tweak
 → Hide the full rationale
@@ -49,3 +56,4 @@
 
  ↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel                   
 ────────────────────────────────────────────────────────────────────────────
+
