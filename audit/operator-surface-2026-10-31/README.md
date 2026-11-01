@@ -27,26 +27,46 @@ ownership. A marker had simply outlived its owner.
 rather than an earlier episode: the recovery record's `firstFailureAt` is the
 only evidence and it is not tied to a goal id in the retained rows.
 
-**Fix.** The renderer takes the ownership verdict as ephemeral extras
-(`recoveryHasLiveOwner`, supplied by `goal-ui.ts` from
-`mainModelRecoveryHasLiveOwner()`), so it never imports state machinery. The
-verdict treats `retained`, `restore-pending` **and `chat`** as live — `chat` is an
-ordinary-chat recovery with no goal by definition, and treating it as dead would
-hide a real recovery, the opposite defect.
+**Root cause, second pass (2026-11-01 — the first fix was wrong).** An earlier
+revision of this report said "treat `chat` as live" and then reused a synthetic
+marker in the test. The auditor inspected the REAL persisted state and found:
+`owner: {kind:"chat"}`, `kind:"goal"`, `goal:null`, `firstFailureAt
+2026-10-31T01:39:23.410Z`, episode age 7h42m. The screenshot footer confirms
+`v0.39.54` and `episode age 7h 42m`. So the marker I had to make disappear was a
+`chat`-owned one, and my rule deliberately kept it visible — the fix did not fix
+the observed state.
 
-**Not done, deliberately.** I first added a settlement-side clear and then
-removed it: `archiveCurrentGoal` already clears a goal-owned marker
-(`goal-orchestrator.ts:1469-1474`), and removing my call left the probe result
-unchanged. Shipping it would have been a duplicate. The renderer-side gate also
-covers state files written by older builds, which a settlement-only fix cannot.
+`chat` records **where the episode was raised**, not that supervised work
+survives: `currentRecoveryOwner()` returns `{kind:'chat'}` whenever there is no
+live goal and no active loop. Such a marker has nothing to resume — which is
+exactly the state `/glla resume` already retires as "no supervised target"
+(`goal-commands.ts:3069`).
+
+**Fix.** `recoveryOwnership` now returns `absent` for a `chat`-owned marker when
+there is no goal and no loop, so display and retirement share one verdict:
+`retireOrphanedMainModelRecovery` retires it (`absent` is already in its retire
+list) and `mainModelRecoveryHasLiveOwner()` returns false, so the card cannot
+render. With a live goal or loop the marker stays `chat` and still renders — the
+guard is not blanket. `settleApprovedCompletion` also runs the orphan sweep at the
+terminal boundary, as the objective required.
+
+**Alternative considered.** Hiding `chat`-owned markers in the renderer only. That
+would leave the marker on disk to reappear in `/glla status` and every other
+surface; retiring it from the shared verdict is the durable version.
 
 ---
 
 ## 2. Tweak-confirm wall of text
 
-**Observed.** The completion scope-amendment confirm body printed five labelled
-sections and reprinted **both** full contracts, including the contract when it had
-not changed at all. With a long objective that is a wall above the decision.
+**Observed.** `Screenshot_20261029_165336.png` and `Screenshot_20261029_112819.png`
+show `/goal tweak` rendering a `CURRENT:` objective and a `NEW:` objective as two
+long labelled blocks — the wall note.md points at. I inspected both images
+directly. The completion scope-amendment confirm had the same shape.
+
+**Correction (2026-11-01).** An earlier revision said "the `cmdTweak` dialog was
+already compact and was left alone". That was false: it was the dialog in the
+screenshots, and only the `complete_goal` amendment path had been changed. Both
+paths are handled now, and the test drives `cmdTweak` itself.
 
 **Fix.** `buildAmendmentConfirmBody` (extensions/confirm-draft.ts) renders the
 exact old→new objective, shows the contract only when it actually changes (and
@@ -54,19 +74,28 @@ says "Contract: unchanged" otherwise), clips a long objective to a readable leng
 with an explicit `…` marker while keeping the tail where acceptance clauses live,
 and keeps the consequence line.
 
+**Fix for the tweak path.** `buildTweakConfirmBody` renders `From:` / `To:`
+with the exact old and new objective and a single consequence line
+("Replaces the list item objective and its verification contract", "… and CLEARS
+its verification contract", or "… its verification contract is kept"). The
+`CURRENT:`/`NEW:` labels, the contract body and the inference caveat are gone from
+the default card. `buildTweakRationaleBody` holds the full form, and the compact
+card names its own expand: **`--rationale`**. `cmdTweak` accepts that flag and
+renders the full form in the same consent gate.
+
 **Consent integrity preserved, and it decided the design.** The objective asked
 for both a compact card AND an exact old→new consent record, which pull against
 each other for a very long objective. Exactness wins: the objective text is
-**never clipped**. The wall was measured to be dominated by the two reprinted
-contracts and five labelled sections, so that is what was removed. A secondary
-contract is shown only when it changed, and may be shortened with an explicit
-`…` marker. Confirm/Cancel semantics are unchanged; the `cmdTweak` dialog was
-already compact and was left alone.
+**never clipped** in either view. What was removed is duplication — the two
+reprinted contracts and five labelled sections. Confirm/Cancel semantics are
+unchanged on both paths.
 
-**Known limitation.** `ctx.ui.confirm(title, body)` is title+body only, so a
-literal in-dialog expand/toggle would need a custom UI component. Rather than add
-a new interactive surface for this, the full objective is always rendered, which
-makes the toggle unnecessary on the side that carries consent.
+**Why `--rationale` rather than a component toggle.** Three attempts at an
+in-dialog component toggle were tried and rejected: `ctx.ui.confirm` is
+title+body only, and a `ctx.ui.custom` + `ConfirmDraftComponent` dialog changed
+the consent primitive for every caller (25 confirm sites across 8 test files),
+which risked silently weakening existing consent coverage. The flag is a real,
+tested affordance that keeps one consent primitive and hides nothing.
 
 ---
 
@@ -126,6 +155,15 @@ path did not advance.
 ledgers `list_auto_advance` with `via: "completion-settlement"`. This runs only on
 the settlement path — an **approved** audit archiving a completed goal.
 
+**Gap found while proving the negative direction (2026-11-01).** "Never reaches
+settlement" was an assumption, not a guarantee: `settleApprovedCompletion` had no
+status check, so calling it for a paused goal archived the item and the advance
+hook then skipped past a decision the user still owed. A guard now refuses unless
+the goal is `auditing` or holds a settling claim (the legitimate refused-archive
+recovery). The negative test drives the real settlement entry for paused, blocked
+**and failed** items and asserts refusal, unchanged status, an unchanged queue, and
+no `list_auto_advance` ledger row — so a blanket advance cannot pass.
+
 **Deliberately narrow.** A paused, blocked, failed, or infrastructure-parked goal
 never reaches settlement, so the hold-for-a-decision gate is untouched for exactly
 the cases that need it. A parked loop keeps supervision and is not replaced. Both
@@ -168,7 +206,11 @@ behaviour that did not match the source; the screenshots available show matching
 versions.
 
 **Fix.** `detectStaleBuild(cwd)` compares the **loaded** build (this module's own
-manifest, i.e. what is executing) against the checkout's manifest. Only a strictly
+manifest, i.e. what is executing) against the checkout's manifest, and reads that
+manifest **only when its `name` is this package** — an unrelated project at 1.0.0
+made GLLA warn in every session opened there (`stale:true, loaded 0.39.54, repo
+1.0.0`), which is noise about someone else's version. A foreign manifest is not
+evidence about the GLLA source. Only a strictly
 older loaded build warns; `session_start` emits one advisory warning naming the
 reload/reinstall action and ledgers `glla_stale_build`. It never returns early,
 never pauses the goal, and never touches goal state, so a stale build can still be
