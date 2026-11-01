@@ -1,0 +1,43 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=191s heartbeat=30s
+[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 127s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/amendment-confirm-compact.test.ts:
+(pass) the amendment confirm keeps the exact old and new objective text [0.26ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.07ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.08ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
+(pass) the real complete_goal amendment confirm uses the compact body [42.98ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [10.19ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [1.19ms]
+(pass) cancelling after expanding still changes nothing [0.14ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.12ms]
+342 |   };
+343 |   const body = buildTweakConfirmBody(input);
+344 | 
+345 |   // Absolute bound, not a relative one: the whole default body must fit a
+346 |   // normal terminal without becoming the wall again.
+347 |   assert.ok(body.length <= 700,
+               ^
+AssertionError: the default card is 834 chars for a 353-char objective — still a wall
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-50fuamqa/tests/amendment-confirm-compact.test.ts:347:10
+      at fn (node:test:215:18)
+(fail) a long objective stays compact on the default card, and says what it elided [0.29ms]
+(pass) a short objective is still printed verbatim — the diff never guesses [0.04ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.40ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.74ms]
+
+ 14 pass
+ 1 fail
+Ran 15 tests across 1 file. [435.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-CPIzqL/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-CPIzqL
+[run-tests] finished in 1s (exit 1)

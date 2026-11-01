@@ -1,5 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=287s heartbeat=30s
-[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 192s
+[run-tests] mode=explicit slow_files=13 stall_timeout=191s heartbeat=30s
+[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 127s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-wipe-real-path.test.ts:
@@ -20,15 +20,15 @@ AssertionError: the wipe performed a full-ledger scan — the reviewer is readin
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-6qi1w7nm/tests/glla-wipe-real-path.test.ts:96:12
+      at /tmp/glla-ops-control-clbgpqm_/tests/glla-wipe-real-path.test.ts:96:12
       at processTicksAndRejections (native:7:39)
-(fail) /glla wipe does not read the whole ledger history to archive a goal [869.65ms]
-(pass) the bounded scan still finds today's reviewer_fired rows in the live tail [9.22ms]
-(pass) a row with no timestamp is delivered rather than silently dropped [0.60ms]
+(fail) /glla wipe does not read the whole ledger history to archive a goal [276.58ms]
+(pass) the bounded scan still finds today's reviewer_fired rows in the live tail [4.77ms]
+(pass) a row with no timestamp is delivered rather than silently dropped [0.48ms]
 
  2 pass
  1 fail
-Ran 3 tests across 1 file. [1.51s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-HrCNp0/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-HrCNp0
-[run-tests] finished in 2s (exit 1)
+Ran 3 tests across 1 file. [638.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-3dpBRw/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-3dpBRw
+[run-tests] finished in 1s (exit 1)

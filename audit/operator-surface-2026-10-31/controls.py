@@ -129,8 +129,8 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     #     show, while every other part of the path stays correct.
     'tweak-wall-regression': (
         'extensions/confirm-draft.ts',
-        "  const lines = [\n    `From: ${input.currentObjective.trim() || '(none)'}`,",
-        "  const lines = [\n    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,\n    `From: ${input.currentObjective.trim() || '(none)'}`,",
+        "    ...compactObjectiveLines(input.currentObjective, input.newObjective),",
+        "    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,",
     ),
 
     # 8d. audit round 3 [MED]: the default card reprints the whole long

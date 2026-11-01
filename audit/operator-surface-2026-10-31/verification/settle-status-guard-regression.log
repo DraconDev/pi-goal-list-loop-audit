@@ -1,10 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=287s heartbeat=30s
-[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 192s
+[run-tests] mode=explicit slow_files=13 stall_timeout=191s heartbeat=30s
+[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 127s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [110.20ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [6.17ms]
+(pass) queue items wait while an item is still in flight [49.86ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [6.93ms]
 89 |       claim: { attemptId: 'attempt-1' } as never,
 90 |       model: 'minimax/MiniMax-M3.1-Flash',
 91 |       origin: 'agent',
@@ -22,14 +22,15 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-y_75s31l/tests/list-auto-advance.test.ts:94:12
+      at /tmp/glla-ops-control-ly7hsql8/tests/list-auto-advance.test.ts:94:12
       at processTicksAndRejections (native:7:39)
-(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [96.04ms]
-(pass) a cleanly completed item auto-advances the queue without /list next [292.20ms]
+(fail) a paused, blocked, or failed item does NOT advance — driven through real settlement [50.43ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [266.24ms]
+(pass) a standalone goal completing does not skip the queue head (no double advance) [265.60ms]
 
- 3 pass
+ 4 pass
  1 fail
-Ran 4 tests across 1 file. [1195.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-I7aFrx/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-I7aFrx
+Ran 5 tests across 1 file. [1003.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-dnZviI/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-dnZviI
 [run-tests] finished in 1s (exit 1)
