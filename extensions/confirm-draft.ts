@@ -94,6 +94,9 @@ export function __testOnlyResetConfirmDraftDeps(): void {
 }
 
 export class ConfirmDraftComponent implements Component {
+  /** The card this component renders. Public so a host/mock that builds the
+   * dialog can read what the user was shown without scraping internals. */
+  readonly dialogDeps: ConfirmDraftFactoryDeps;
   private readonly md: Markdown;
   private readonly selectList: SelectList;
   private readonly requestRender: () => void;
@@ -113,8 +116,7 @@ export class ConfirmDraftComponent implements Component {
     done: (value: string | undefined) => void,
   ) {
     lastDraftDeps = deps;
-    // Mirror for the test mock only; production never reads this.
-    (globalThis as { __gllaLastConfirmDraftDeps?: ConfirmDraftFactoryDeps }).__gllaLastConfirmDraftDeps = deps;
+    this.dialogDeps = deps;
     this.requestRender = requestRender;
     this.getHeight = deps.getHeight;
     this.options = deps.options;

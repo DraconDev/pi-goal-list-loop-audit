@@ -184,6 +184,8 @@ const FAKE_THEME = { fg: (_c: string, t: string) => t, bold: (t: string) => t } 
 const FAKE_KB = { matches: () => false };
 
 export class MockUi {
+  /** Deps of the last confirm card this mock built (options[0] is Confirm). */
+  lastCardDeps: { title: string; body: string; options: string[] } | undefined;
   notifies: MockNotify[] = [];
   statuses: Record<string, string | undefined> = {};
   widgets: Record<string, unknown> = {};
@@ -223,7 +225,9 @@ export class MockUi {
       const factory = args[0] as ((tui: unknown, theme: unknown, keybindings: unknown, done: (r: unknown) => void) => unknown) | undefined;
       if (typeof factory === "function") {
         try {
-          factory({ requestRender: () => {} }, FAKE_THEME, FAKE_KB, () => {});
+          const built = factory({ requestRender: () => {} }, FAKE_THEME, FAKE_KB, () => {}) as
+            { dialogDeps?: { title: string; body: string; options: string[] } } | undefined;
+          if (built?.dialogDeps) this.lastCardDeps = built.dialogDeps;
         } catch {
           // builder errors surface through customImpl's promise in tests that
           // opt into them — never let the emulated TUI mask the resolver.
@@ -237,7 +241,7 @@ export class MockUi {
     // first (the Confirm action), false/undefined cancels. Tests that care about
     // a specific action (e.g. the expand) set customImpl explicitly.
     if (this.confirmImpl) {
-      const deps = lastConfirmDraftDepsForMock();
+      const deps = this.lastCardDeps;
       const options = deps?.options ?? [];
       const title = deps?.title ?? "";
       const body = deps?.body ?? "";
@@ -254,11 +258,6 @@ export class MockUi {
     const needle = substr.toLowerCase();
     return this.notifies.filter((n) => n.message.toLowerCase().includes(needle));
   }
-}
-
-/** The deps of the last GLLA confirm card the mock built, if any. */
-function lastConfirmDraftDepsForMock(): { title: string; body: string; options: string[] } | undefined {
-  return (globalThis as { __gllaLastConfirmDraftDeps?: { title: string; body: string; options: string[] } }).__gllaLastConfirmDraftDeps;
 }
 
 export type MockCtx = Omit<ExtensionContext, "ui"> & { ui: MockUi };
