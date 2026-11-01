@@ -294,8 +294,9 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | item | test | proven to bite |
 | --- | --- | --- |
 | 1 | `tests/stale-recovery-marker.test.ts` | yes — the REAL `chat`/`goal:null`/7h42m fixture re-renders the card when the ownership rule is reverted |
-| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall and an unwired call site both fail it |
-| 3 | `tests/wipe-ledger-scan.test.ts` | yes — deterministic: a warm depth read must fold 0 bytes and must not call `scanLedgerRecords`; reintroducing the rescan fails it |
+| 2 | `tests/amendment-confirm-compact.test.ts` | yes — drives `cmdTweak` and `complete_goal`; the `CURRENT:`/`NEW:` wall (`tweak-wall-regression`) and a no-op expand (`tweak-toggle-removed-regression`) both fail it |
+| 3 | `tests/glla-wipe-real-path.test.ts` | yes — drives the real `cmdGllaWipe`; restoring the reviewer's full-history scan fails it with "the wipe performed a full-ledger scan" (`wipe-full-scan-regression`) |
+| 3b | `tests/wipe-ledger-scan.test.ts` | yes — `/list depth`, not wipe: a warm depth read must fold 0 bytes and must not call `scanLedgerRecords` (`ledger-full-scan-regression`) |
 | 3 | `tests/glla-wipe-latency.test.ts` | yes — per-record work blows the ceiling |
 | 4 | `tests/list-auto-advance.test.ts` | yes — both directions, including real settlement for paused/blocked/failed; removing the guard archives them and fails |
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
@@ -318,6 +319,8 @@ behaviour. Every regression case must exit non-zero.
 | `amendment-wall-regression` | fail | exit 1 |
 | `amendment-wiring-regression` | fail | exit 1 |
 | `tweak-wall-regression` | fail | exit 1 |
+| `tweak-toggle-removed-regression` | fail | exit 1 |
+| `wipe-full-scan-regression` | fail | exit 1 |
 | `no-auto-advance-regression` | fail | exit 1 |
 | `settle-status-guard-regression` | fail | exit 1 |
 | `configured-model-wins-regression` | fail | exit 1 |
@@ -330,7 +333,7 @@ One control (`ledger-full-scan-regression`) initially exited 0 — the wall-cloc
 ceiling it relied on was marginal, so a full rescan could slip under it on a
 loaded host. That is precisely the weakness a control exists to expose, so the pin
 was replaced with the deterministic assertions above and the control now fails as
-intended. Final run: **15/15 as intended** (`verification/controls.json`).
+intended. Final run: **17/17 as intended** (`verification/controls.json`).
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
 ### Gate history (recorded, not hidden)

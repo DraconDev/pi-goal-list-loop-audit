@@ -126,15 +126,37 @@
     "expectedResultObserved": true
   },
   {
+    "case": "tweak-toggle-removed-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "tweak-wall-regression",
     "command": [
       "node",
       "scripts/run-tests.mjs",
       "tests/amendment-confirm-compact.test.ts"
     ],
-    "exitCode": 0,
+    "exitCode": 1,
     "expectedFailure": true,
-    "expectedResultObserved": false
+    "expectedResultObserved": true
+  },
+  {
+    "case": "wipe-full-scan-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/glla-wipe-real-path.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
   },
   {
     "case": "settle-status-guard-regression",
