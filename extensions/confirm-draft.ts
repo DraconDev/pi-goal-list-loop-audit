@@ -278,6 +278,99 @@ export function buildTweakConfirmBody(input: TweakConfirmInput): string {
   return lines.join('\n');
 }
 
+/* ------------------------------------------------------------------ */
+/* Styled card for AMENDMENT confirmations                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * note.md 2026-10-29 ("but this question looks fine, except unstyled"): the
+ * task-amendment and scope-amendment dialogs rendered through plain
+ * `ctx.ui.confirm` — flat body text, no border, no title treatment, and the
+ * host's raw `↑↓ navigate enter select escape/ctrl+c cancel` footer. The copy
+ * had already been made compact; only the chrome was missing.
+ *
+ * This is the SAME card shape the tweak confirmation uses, reduced to a
+ * two-choice decision. It deliberately does NOT add a third option: these are
+ * yes/no consent records and auto-accept must never apply to them.
+ */
+export const CARD_CONFIRM_YES = 'Yes — apply this amendment';
+export const CARD_CONFIRM_NO = 'No — change nothing';
+
+export class CardConfirmComponent implements Component {
+  private readonly title: string;
+  private readonly body: string;
+  private md: Markdown;
+  private selectList: SelectList;
+  private readonly requestRender: () => void;
+  private readonly theme: Theme;
+  private readonly getHeight: (() => number) | undefined;
+  private readonly done: (value: boolean) => void;
+  private scrollOffset = 0;
+  private pageSize = 8;
+
+  constructor(
+    input: { title: string; body: string; getHeight?: () => number },
+    requestRender: () => void,
+    theme: Theme,
+    _keybindings: unknown,
+    done: (value: boolean) => void,
+  ) {
+    this.title = input.title;
+    this.body = input.body;
+    this.requestRender = requestRender;
+    this.theme = theme;
+    this.getHeight = input.getHeight;
+    this.done = done;
+    this.md = new Markdown(buildConfirmDraftMarkdown(this.title, this.body), 1, 1, markdownTheme(theme));
+    this.selectList = new SelectList(this.items(), 2, selectListTheme(theme));
+    this.selectList.onSelect = (item) => this.done(item.value === CARD_CONFIRM_YES);
+    this.selectList.onCancel = () => this.done(false);
+  }
+
+  /** What this card is showing. Public so tests assert what the user saw. */
+  get dialogDeps(): ConfirmDraftFactoryDeps {
+    return { title: this.title, body: this.body, options: this.items().map((i) => i.value) };
+  }
+
+  private items(): SelectItem[] {
+    return [
+      { value: CARD_CONFIRM_YES, label: CARD_CONFIRM_YES },
+      { value: CARD_CONFIRM_NO, label: CARD_CONFIRM_NO },
+    ];
+  }
+
+  render(width: number): string[] {
+    const border = new DynamicBorder((text: string) => this.theme.fg('borderAccent', text)).render(width);
+    const body = this.md.render(width);
+    const decisions = this.selectList.render(width);
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    const help = new Text(this.theme.fg('dim', '↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel'), 1, 0).render(width);
+    const gaps = height < 14 ? [] : [''];
+    const contentBudget = Math.max(0, height - border.length * 2 - decisions.length - help.length - gaps.length * 2);
+    const bodyRows = body.length > contentBudget ? Math.max(0, contentBudget - 1) : contentBudget;
+    this.pageSize = Math.max(1, bodyRows);
+    this.scrollOffset = Math.min(this.scrollOffset, Math.max(0, body.length - bodyRows));
+    const scrollInfo = body.length > bodyRows && contentBudget > 0
+      ? [this.theme.fg('dim', `Review ${this.scrollOffset + 1}–${Math.min(body.length, this.scrollOffset + bodyRows)}/${body.length} · PgUp/PgDn scroll`)] : [];
+    return [...border, ...body.slice(this.scrollOffset, this.scrollOffset + bodyRows), ...scrollInfo, ...gaps, ...decisions, ...gaps, ...help, ...border]
+      .map((line) => truncateToWidth(line, Math.max(0, width), '…'));
+  }
+
+  handleInput(data: string): void {
+    const before = this.scrollOffset;
+    this.selectList.handleInput(data);
+    // SelectList owns ↑↓/enter/esc; paging is ours so a long amendment body is
+    // readable without leaving the decision.
+    if (data === 'tui.select.pageDown') this.scrollOffset = Math.min(this.scrollOffset + this.pageSize, Math.max(0, this.scrollOffset + this.pageSize));
+    if (data === 'tui.select.pageUp') this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
+    if (this.scrollOffset !== before) this.requestRender();
+  }
+
+  invalidate(): void {
+    this.md.invalidate?.();
+  }
+}
+
 /** One line: the single most important consequence of this tweak. */
 export function tweakConsequenceLine(input: TweakConfirmInput): string {
   const target = input.mode === 'list' ? 'list item' : 'goal';
