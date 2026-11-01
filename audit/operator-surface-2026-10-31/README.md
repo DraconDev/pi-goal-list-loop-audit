@@ -269,6 +269,15 @@ reload/reinstall action and ledgers `glla_stale_build`. It never returns early,
 never pauses the goal, and never touches goal state, so a stale build can still be
 driven during development.
 
+**Rendered proof of the toggle.** `verification/tweak-card-render.txt` is the real
+component's `render(76)` output in both states: the compact card shows `From:` /
+`To:` with the exact objectives, `Replaces the goal objective and its verification
+contract.`, and the three actions including `Show the full rationale`; after the
+in-place toggle the SAME dialog shows the rationale with the new contract,
+`Hide the full rationale`, and nothing has been applied. A real TUI screenshot is
+not available from this non-interactive environment, so the render output is the
+evidence offered — it is the same `render()` the terminal calls.
+
 **Not stale:** a newer loaded build (a published install driving an older
 checkout), equal versions, and an unreadable/missing manifest — absence of
 evidence is not evidence of staleness. Version comparison is numeric, so `0.39.9`

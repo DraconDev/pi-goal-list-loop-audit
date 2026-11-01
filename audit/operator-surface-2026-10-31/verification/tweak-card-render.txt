@@ -1,0 +1,43 @@
+=== COMPACT ===
+────────────────────────────────────────────────────────────────────────────
+                                                                            
+ Tweak goal?                                                                
+                                                                            
+ From: Audit the widget surface                                             
+ To:   Audit the widget surface and file the defects                        
+                                                                            
+ Replaces the goal objective and its verification contract.                 
+                                                                            
+
+→ Confirm — apply this tweak
+  Show the full rationale
+  Cancel — change nothing
+
+ ↑↓ choose · enter select · esc cancel · "Show the full rationale" expands  
+ without applying                                                           
+────────────────────────────────────────────────────────────────────────────
+=== EXPANDED (same dialog, nothing applied) ===
+────────────────────────────────────────────────────────────────────────────
+                                                                            
+ Tweak goal?                                                                
+                                                                            
+ CURRENT:                                                                   
+ Audit the widget surface                                                   
+                                                                            
+ NEW:                                                                       
+ Audit the widget surface and file the defects                              
+                                                                            
+ Replaces the goal objective and its verification contract.                 
+                                                                            
+ New verification contract:                                                 
+ npm run check exits 0                                                      
+                                                                            
+ This changes what the independent auditor will judge.                      
+                                                                            
+
+  Confirm — apply this tweak
+→ Hide the full rationale
+  Cancel — change nothing
+
+ ↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel                   
+────────────────────────────────────────────────────────────────────────────
