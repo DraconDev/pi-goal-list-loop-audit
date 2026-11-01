@@ -1285,25 +1285,14 @@ export function settleApprovedCompletion(
   // is the note.md case: the card rendered six hours after the archive.
   clearStaleMainModelRecovery(ctx, "completion-settlement");
   notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
-  // v0.39.61 (note.md: "we should be auto continuing no up next"): a CLEAN
-  // completion advances the queue. The list used to print "N queued — /list
-  // next starts it" and wait for the user, so a queue of short items stalled
-  // after every single one.
-  //
-  // Deliberately narrow: this runs only on the settlement path — an APPROVED
-  // audit archiving a completed goal. A paused, blocked, failed, or
-  // infrastructure-parked goal never reaches here, so the existing
-  // hold-for-a-decision gate is untouched for exactly the cases that need it.
-  // A parked loop keeps supervision and must not have its owner replaced.
-  if ((listQueue()?.length ?? 0) > 0 && !isLoopActive()) {
-    const advanced = activateNextListItem(ctx);
-    appendLedger(ctx.cwd, "list_auto_advance", {
-      goalId,
-      via: "completion-settlement",
-      advanced,
-      waiting: listQueue()?.length ?? 0,
-    });
-  }
+  // v0.39.61 (audit round 3): the auto-advance lives in `archiveCurrentGoal`
+  // (goal-orchestrator.ts), which this settlement already called above. Calling
+  // `activateNextListItem` again here advanced TWICE: the first item was taken
+  // from the queue and activated, then immediately replaced by the next one, so
+  // the item that should have run was silently skipped and the queue drained.
+  // Skipped work, not a cosmetic defect — and the settlement path needs no
+  // second advance of its own. The narrow `auditing`/settling-claim guard at the
+  // top of this function is what keeps paused, blocked and failed items holding.
   return true;
 }
 
