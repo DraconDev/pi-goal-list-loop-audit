@@ -285,7 +285,7 @@ test('cancelling after expanding still changes nothing', async () => {
   const kb = { matches: (_d: string, key: string) => key === 'tui.select.cancel' };
   let resolved: string | undefined | 'unset' = 'unset';
   const card = new TweakConfirmComponent(
-    { currentObjective: 'a', newObjective: 'b', hasNewContract: false, clearsContract: false },
+    { currentObjective: 'a', newObjective: 'b', hasNewContract: false, clearsContract: false, mode: 'goal' as const },
     () => {}, theme, kb as never, (v) => { resolved = v; },
   );
   card.toggleRationale();
@@ -300,7 +300,7 @@ test('the tweak card reports its CURRENT body to the host after an expand', asyn
   const { TweakConfirmComponent } = await import('../extensions/confirm-draft.js');
   const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
   const card = new TweakConfirmComponent(
-    { currentObjective: 'a', newObjective: 'b', hasNewContract: true, newContract: 'gate', clearsContract: false, title: 'Tweak goal?' },
+    { currentObjective: 'a', newObjective: 'b', hasNewContract: true, newContract: 'gate', clearsContract: false, mode: 'goal' as const, title: 'Tweak goal?' },
     () => {}, theme, { matches: () => false } as never, () => {},
   );
   const before = card.dialogDeps.body;

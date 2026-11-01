@@ -692,7 +692,7 @@ test("standalone main-model recovery remains visible when no goal is active", ()
     list: [],
     loop: {
       active: true, target: "endless-td audit", iteration: 12, maxIterations: 100,
-      stallCount: 0, plateauWindow: 5, startedAt, history: [],
+      stallCount: 0, plateauWindow: 5, startedAt, history: [], bestValue: null, lastValue: null,
     },
     mainModelRecovery: {
       owner: { kind: "loop", startedAt },
@@ -705,9 +705,13 @@ test("standalone main-model recovery remains visible when no goal is active", ()
       reason: "account usage limit",
       kind: "loop",
     },
-  } as State;
+  } as unknown as State;
+  // While a loop is actually running the footer belongs to the loop; the
+  // recovery card is the standalone surface. Pinning that split stops this test
+  // from silently depending on a status line it was never about.
   const status = buildStatusText(state, null, NOW);
-  assert.match(status ?? "", /main-model recovery/);
+  assert.match(status ?? "", /LOOP endless-td audit · iter 12\/100/);
+  assert.equal(/main-model recovery/.test(status ?? ""), false, "the loop owns the footer while it runs");
   // The renderer takes the ownership verdict as ephemeral extras (it must not
   // import state machinery); goal-ui.ts supplies it from
   // mainModelRecoveryHasLiveOwner(). A loop-owned marker with a live loop is
