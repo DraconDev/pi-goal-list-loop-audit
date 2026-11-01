@@ -309,3 +309,111 @@ test('the tweak card reports its CURRENT body to the host after an expand', asyn
   assert.notEqual(before, after, 'dialogDeps must reflect the expanded state');
   assert.ok(after.includes('gate'), 'the host sees the rationale it is displaying');
 });
+
+// audit round 3 [MED]: the observed note.md objective is a long paragraph, and
+// every earlier case here used a short one. For a 400-word objective the old
+// body was ~4,079 characters (~50 rows at 80 columns) — still the wall. These
+// cases use the real shape and the real component.
+const LONG_COMMON = 'Audit the whole GLLA operator surface end to end, covering the widget, the status footer, the settings menu, the list queue, the auditor display and every recovery card, then record precisely what the user sees in each of those places so that a reader who was not present can follow the narrative without guessing at any step of the way, and';
+const LONG_CURRENT = `${LONG_COMMON} stop there.`;
+const LONG_NEXT = `${LONG_COMMON} file each defect as a tracked item with its own reproduction.`;
+
+test('a long objective stays compact on the default card, and says what it elided', () => {
+  const input = {
+    currentObjective: LONG_CURRENT,
+    newObjective: LONG_NEXT,
+    hasNewContract: false,
+    clearsContract: false,
+    mode: 'goal' as const,
+    title: 'Tweak goal?',
+  };
+  const body = buildTweakConfirmBody(input);
+
+  // Absolute bound, not a relative one: the whole default body must fit a
+  // normal terminal without becoming the wall again.
+  assert.ok(body.length <= 700,
+    `the default card is ${body.length} chars for a ${LONG_CURRENT.length}-char objective — still a wall`);
+  assert.ok(body.split('\n').length <= 10,
+    `the default card is ${body.split('\n').length} lines`);
+
+  // It is a DIFF, not a reprint: the unchanged paragraph is not duplicated.
+  assert.equal(body.split(LONG_COMMON).length - 1, 0,
+    'the unchanged common text is not reprinted on the compact card');
+  assert.ok(body.includes('-]') || body.includes('[-'), 'the removed region is marked');
+  assert.ok(body.includes('file each defect as a tracked item'), 'the ADDED text is what the card shows');
+  assert.ok(body.includes('stop there'), 'and the REMOVED text');
+
+  // Elision is disclosed, and it points at the exact text.
+  assert.match(body, /showing the changed region/);
+  assert.match(body, /exact full text is in "Show the full rationale"/);
+
+  // The toggle carries the EXACT full text — nothing is lost, only deferred.
+  const rationale = buildTweakRationaleBody(input);
+  assert.ok(rationale.includes(LONG_CURRENT), 'the exact previous objective is in the toggle');
+  assert.ok(rationale.includes(LONG_NEXT), 'the exact proposed objective is in the toggle');
+});
+
+test('a short objective is still printed verbatim — the diff never guesses', () => {
+  const input = {
+    currentObjective: 'Audit the widget surface',
+    newObjective: 'Audit the widget surface and file the defects',
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+  };
+  const body = buildTweakConfirmBody(input);
+  assert.ok(body.includes('From: Audit the widget surface\n'), body);
+  assert.ok(body.includes('To:   Audit the widget surface and file the defects'), body);
+  assert.equal(/showing the changed region/.test(body), false, 'nothing is elided, so nothing is disclosed as elided');
+});
+
+test('the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible', () => {
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (d: string, key: string) => d === key };
+  const rows = 20;
+  const card = new TweakConfirmComponent(
+    {
+      currentObjective: LONG_CURRENT, newObjective: LONG_NEXT,
+      hasNewContract: true, newContract: 'npm run release:check exits 0', clearsContract: false,
+      mode: 'goal', title: 'Tweak goal?',
+      // The real call site passes exactly this (goal-commands.ts confirmTweak).
+      getHeight: () => rows - 4,
+    },
+    () => {}, theme, kb as never, () => {},
+  );
+  card.toggleRationale();
+
+  const first = card.render(80);
+  assert.ok(first.length <= rows, `the card fits the terminal: ${first.length} rows`);
+  assert.ok(first.some((l) => l.includes('Confirm — apply this tweak')), 'Confirm stays visible');
+  assert.ok(first.some((l) => l.includes('Cancel — change nothing')), 'Cancel stays visible');
+  assert.ok(first.some((l) => l.includes('PgUp/PgDn')), 'the scroll hint is shown because the body overflows');
+
+  // Page down, and prove the window actually moved (different body rows).
+  card.handleInput('tui.select.pageDown');
+  const second = card.render(80);
+  assert.notDeepEqual(second, first, 'PgDn moved the body window');
+  assert.ok(second.some((l) => l.includes('Confirm — apply this tweak')), 'Confirm still visible after scrolling');
+  assert.ok(second.some((l) => l.includes('Cancel — change nothing')), 'Cancel still visible after scrolling');
+
+  // And back up.
+  card.handleInput('tui.select.pageUp');
+  assert.deepEqual(card.render(80), first, 'PgUp returns to the first window');
+});
+
+test('without a height the card cannot scroll — which is why the call site passes one', () => {
+  // Pins the defect that made PgUp/PgDn decorative: an unset height makes
+  // pageSize infinite, so the advertised scroll is a no-op and the body renders
+  // unbounded. The real call site (confirmTweak) always supplies getHeight; this
+  // case documents the failure mode so the omission cannot come back silently.
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (d: string, key: string) => d === key };
+  const card = new TweakConfirmComponent(
+    { currentObjective: LONG_CURRENT, newObjective: LONG_NEXT, hasNewContract: false, clearsContract: false, mode: 'goal' },
+    () => {}, theme, kb as never, () => {},
+  );
+  card.toggleRationale();
+  const before = card.render(80);
+  card.handleInput('tui.select.pageDown');
+  assert.deepEqual(card.render(80), before,
+    'with no height the page-down cannot move the view — this is the bug the call site fixes');
+  assert.ok(before.length > 20, `and the body renders unbounded (${before.length} rows)`);
+});

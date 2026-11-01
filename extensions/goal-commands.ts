@@ -3865,7 +3865,13 @@ async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakCo
     try {
       const choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
         factoryInvoked = true;
-        return new TweakConfirmComponent(full, () => tui.requestRender(), theme as any, keybindings as any, done);
+        // Height is what makes PgUp/PgDn real: without it `render` uses
+        // POSITIVE_INFINITY, pageSize becomes infinite, and the advertised
+        // scroll cannot move the view. Mirrors confirmDraft's shape.
+        return new TweakConfirmComponent(
+          { ...full, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
+          () => tui.requestRender(), theme as any, keybindings as any, done,
+        );
       });
       if (factoryInvoked) return choice === TWEAK_CONFIRM_ACTION;
       // Real RPC/noOp stub: `custom` resolves WITHOUT invoking the factory, so

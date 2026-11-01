@@ -237,6 +237,62 @@ export interface TweakConfirmInput {
   getHeight?: () => number;
 }
 
+/**
+ * Per-side length below which the exact objective is already compact enough to
+ * print verbatim. Above it the card shows the CHANGED REGION of a minimal
+ * prefix/suffix diff instead of reprinting two long paragraphs — the observed
+ * note.md objective is a long paragraph, and printing it twice is precisely the
+ * wall this item exists to remove. The exact full text is always in the
+ * toggle, and the card says so whenever it elides anything.
+ */
+export const TWEAK_VERBATIM_LIMIT = 180;
+
+/** Collapse whitespace and elide the middle, so the change stays readable. */
+function elideMiddle(text: string, max: number): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  if (max <= 1) return "…";
+  const head = Math.ceil((max - 1) / 2);
+  const tail = Math.floor((max - 1) / 2);
+  return `${t.slice(0, head)}…${t.slice(-tail)}`;
+}
+
+/** Minimal common prefix/suffix between two objectives: the part that changed. */
+export function objectiveDiff(current: string, next: string): { prefix: string; removed: string; added: string; suffix: string } {
+  const a = current.trim();
+  const b = next.trim();
+  let p = 0;
+  const maxPrefix = Math.min(a.length, b.length);
+  while (p < maxPrefix && a[p] === b[p]) p++;
+  let s = 0;
+  const maxSuffix = Math.min(a.length - p, b.length - p);
+  while (s < maxSuffix && a[a.length - 1 - s] === b[b.length - 1 - s]) s++;
+  return {
+    prefix: a.slice(0, p),
+    removed: a.slice(p, a.length - s),
+    added: b.slice(p, b.length - s),
+    suffix: a.slice(a.length - s),
+  };
+}
+
+/** The From:/To: pair, verbatim when short and a bounded change view when not. */
+export function compactObjectiveLines(current: string, next: string): string[] {
+  const cur = current.trim();
+  const nxt = next.trim();
+  if (cur.length <= TWEAK_VERBATIM_LIMIT && nxt.length <= TWEAK_VERBATIM_LIMIT) {
+    return [`From: ${cur || '(none)'}`, `To:   ${nxt || '(none)'}`];
+  }
+  const d = objectiveDiff(cur, nxt);
+  const head = elideMiddle(d.prefix, 32);
+  const tail = elideMiddle(d.suffix, 24);
+  const lead = head ? `…${head}` : '';
+  const trail = tail ? `${tail}…` : '';
+  return [
+    `From: ${lead}[-${elideMiddle(d.removed, 80) || 'nothing removed'}-]${trail}`,
+    `To:   ${lead}[+${elideMiddle(d.added, 80) || 'nothing added'}+]${trail}`,
+  ];
+}
+
 /** The default card: exact consent text, nothing else. */
 export function buildTweakConfirmBody(input: TweakConfirmInput): string {
   // The inference caveat STAYS on the default card: it is consent context
@@ -244,9 +300,13 @@ export function buildTweakConfirmBody(input: TweakConfirmInput): string {
   // rationale. Only the reference labels, the contract body and the caveat
   // paragraph move behind the expand.
   const inferred = input.inferredNote?.trim();
+  const elided = input.currentObjective.trim().length > TWEAK_VERBATIM_LIMIT
+    || input.newObjective.trim().length > TWEAK_VERBATIM_LIMIT;
   const lines = [
-    `From: ${input.currentObjective.trim() || '(none)'}`,
-    `To:   ${input.newObjective.trim() || '(none)'}`,
+    ...compactObjectiveLines(input.currentObjective, input.newObjective),
+    // When anything is elided the card says so and names where the exact text
+    // lives. Consent text is never silently shortened.
+    ...(elided ? ['(long objective — showing the changed region; the exact full text is in "Show the full rationale")'] : []),
     ...(inferred ? ['', `This replacement was ${inferred}.`] : []),
     '',
     tweakConsequenceLine(input),
