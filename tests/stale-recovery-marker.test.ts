@@ -18,7 +18,7 @@ import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
 import { buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
-import { retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
+import { mainModelRecoveryHasLiveOwner, retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
 import { settleApprovedCompletion } from '../extensions/loops/goal-auditor-hooks.js';
 import { readState, type State } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
@@ -95,14 +95,77 @@ test('a live recovery marker still renders its card — the guard is not blanket
   assert.ok(loopLines && loopLines.length > 0, 'a parked loop still explains its recovery');
 });
 
-test('an ordinary-chat recovery keeps its card — the display guard must not hide it', () => {
-  // A chat-owned marker is LIVE work: the ordinary chat is going to be retried.
-  // `recoveryOwnership` returns 'chat' for it, and the live-owner verdict must
-  // include that case; treating it as dead would hide a real recovery, which is
-  // the opposite of the bug being fixed.
-  const chatOwned = { goal: null, list: [], mainModelRecovery: recovery('chat') } as unknown as State;
-  assert.equal(standaloneCardShown(chatOwned, true), true,
-    'a chat-owned recovery still renders its card');
+test('the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card', async () => {
+  // This is the exact persisted state from the screenshot project, not a
+  // synthetic marker: `owner` is {kind:"chat"}, the marker's legacy kind is
+  // "goal", the goal is gone, and the episode was raised 7h42m before the card
+  // was captured. An earlier revision of this file treated plain `chat` as a
+  // live owner and so re-rendered the complaint verbatim; that is the defect.
+  const firstFailureAt = new Date(Date.parse('2026-10-31T01:39:23.410Z')).toISOString();
+  const observedMarker = {
+    kind: 'goal',
+    owner: { kind: 'chat' },
+    primary: 'minimax/MiniMax-M3.1-Flash',
+    active: 'minimax/MiniMax-M3.1-Flash',
+    attempted: ['minimax/MiniMax-M3.1-Flash'],
+    firstFailureAt,
+    counts: { steps: 0 },
+  } as unknown as State['mainModelRecovery'];
+  const observed = { goal: null, list: [], loop: null, mainModelRecovery: observedMarker } as unknown as State;
+  // The live-owner verdict is what the widget is given; it must be FALSE for
+  // this state, and the render must not contain the complaint text.
+  assert.equal(mainModelRecoveryHasLiveOwner(observed), false,
+    'a chat-owned marker with no supervised target has no live owner');
+  // Feed the renderer the verdict the REAL widget feeds it (goal-ui.ts computes
+  // mainModelRecoveryHasLiveOwner() there). Passing no flag would be vacuous:
+  // the renderer is fail-closed and renders nothing either way.
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `observed-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  seedState(cwd, observed as unknown as State);
+  __testOnlyLoadState(cwd);
+  assert.equal(standaloneCardShown(observed, mainModelRecoveryHasLiveOwner(observed)), false,
+    'the real observed marker must not render the standalone card');
+  const lines = buildWidgetLines(observed, theme()).join('\n');
+  assert.equal(/send 'continue' to retry this chat/.test(lines), false,
+    'the exact complaint text must be gone');
+});
+
+test('the same real marker is retired, not merely hidden — display and retirement agree', async () => {
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `real-marker-${Math.random()}` } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  seedState(cwd, {
+    goal: null,
+    list: [],
+    mainModelRecovery: {
+      kind: 'goal',
+      owner: { kind: 'chat' },
+      primary: 'minimax/MiniMax-M3.1-Flash',
+      active: 'minimax/MiniMax-M3.1-Flash',
+      attempted: ['minimax/MiniMax-M3.1-Flash'],
+      firstFailureAt: '2026-10-31T01:39:23.410Z',
+      counts: { steps: 0 },
+    },
+    flags: {},
+  } as unknown as State);
+  __testOnlyLoadState(cwd);
+  assert.equal(retireOrphanedMainModelRecovery(ctx, true), 'retired',
+    'the orphan sweep retires the real observed marker, matching /glla resume');
+  assert.equal(readState(cwd).mainModelRecovery ?? null, null, 'the marker is gone from persisted state');
+});
+
+test('a chat-owned marker WITH a live goal still renders — retirement is not blanket', () => {
+  const liveGoal = seedGoal({ status: 'active', objective: 'Verify the feature' });
+  const chatOwnedLive = { goal: liveGoal, list: [], mainModelRecovery: recovery('chat') } as unknown as State;
+  assert.equal(mainModelRecoveryHasLiveOwner(chatOwnedLive), true,
+    'with supervised work in flight the chat-owned marker still describes current work');
+  assert.equal(standaloneCardShown(chatOwnedLive, mainModelRecoveryHasLiveOwner(chatOwnedLive)), true,
+    'and it still renders its card');
 });
 
 test('a terminal goal retires the main-model recovery marker durably', async () => {
