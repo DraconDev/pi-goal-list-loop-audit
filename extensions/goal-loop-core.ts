@@ -2996,6 +2996,7 @@ export function parseLedgerRecord(line: string): LedgerRecord | undefined {
  * into bounded maps/counters rather than retaining the records. */
 export function scanLedgerRecords(cwd: string, onRecord: (entry: LedgerRecord) => void): void {
   ledgerScanRecordsCalls++;
+  if (process.env.TRACE_LEDGER_SCAN) console.error('LEDGER_SCAN_AT', new Error('x').stack?.split('\n').slice(1, 6).join(' <- '));
   for (const file of ledgerFiles(cwd)) {
     scanLedgerLines(file, (line) => {
       const entry = parseLedgerRecord(line);

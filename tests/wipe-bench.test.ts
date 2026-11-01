@@ -27,7 +27,9 @@ test('bench: real /glla wipe end to end at the real profile', async () => {
   time('appendLedger x1 (warm)', () => core.appendLedger(cwd, 'bench_probe', { a: 2 }));
   time('persistState-like write', () => fs.appendFileSync(`${cwd}/.pi-glla/active.jsonl`, JSON.stringify({ type: 'bench' }) + '\n'));
 
+  core.__testOnlyResetLedgerScanRecordsCalls();
   const t = performance.now();
   await pi.command('glla', 'wipe', ctx);
   console.log(`WIPE_E2E_MS=${(performance.now() - t).toFixed(1)}`);
+  console.log(`SCAN_CALLS_DURING_WIPE=${core.__testOnlyLedgerScanRecordsCalls()}`);
 });
