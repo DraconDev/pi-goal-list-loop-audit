@@ -112,5 +112,60 @@
     "exitCode": 1,
     "expectedFailure": true,
     "expectedResultObserved": true
+  },
+  {
+    "case": "chat-owner-orphan-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-recovery-marker.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "tweak-wall-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/amendment-confirm-compact.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "settle-status-guard-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/list-auto-advance.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "stale-build-foreign-name-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/stale-build-warning.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
+    "case": "ledger-full-scan-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/wipe-ledger-scan.test.ts"
+    ],
+    "exitCode": 0,
+    "expectedFailure": true,
+    "expectedResultObserved": false
   }
 ]
