@@ -184,10 +184,36 @@ export function compareGllaVersions(a: string, b: string): number {
   return 0;
 }
 
+/** The GLLA package name — the only manifest this comparison may read. */
+const GLLA_PACKAGE_NAME = "pi-goal-list-loop-audit";
+
+/**
+ * Read `<dir>/package.json` ONLY when it is this package. Comparing the loaded
+ * GLLA build against an arbitrary project's version is meaningless and worse
+ * than useless: an unrelated project at 1.0.0 made GLLA warn "loaded build
+ * v0.39.54 is older than this repo (v1.0.0)" in every session opened there
+ * (audit finding 5). A foreign manifest is not evidence about the GLLA source.
+ */
+function readGllaManifestVersion(dir: string): string | undefined {
+  const manifestPath = path.join(dir, "package.json");
+  try {
+    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (typeof parsed !== "object" || parsed === null) return undefined;
+    const manifest = parsed as Record<string, unknown>;
+    if (manifest.name !== GLLA_PACKAGE_NAME) return undefined;
+    const version = manifest.version;
+    if (typeof version === "string" && /^\d+\.\d+\.\d+/.test(version.trim())) return version.trim();
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
 export function detectStaleBuild(cwd: string | undefined): StaleBuildStatus {
   const loaded = readVersionAt(PACKAGE_JSON_PATH);
   if (!cwd) return { stale: false, loaded };
-  const repo = readVersionAt(path.join(cwd, "package.json"));
+  // Scoped to the GLLA source checkout / package only.
+  const repo = readGllaManifestVersion(cwd);
   if (!loaded || !repo) return { stale: false, loaded, repo };
   return { stale: compareGllaVersions(loaded, repo) < 0, loaded, repo };
 }
