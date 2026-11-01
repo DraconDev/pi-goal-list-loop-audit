@@ -129,7 +129,7 @@ test('the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does n
   // vacuous: the renderer is fail-closed and renders nothing either way.
   assert.equal(standaloneCardShown(observed, liveVerdict), false,
     'the real observed marker must not render the standalone card');
-  const lines = buildWidgetLines(observed, theme()).join('\n');
+  const lines = (buildWidgetLines(observed, null, NOW, undefined, undefined, { recoveryHasLiveOwner: liveVerdict }) ?? []).join('\n');
   assert.equal(/send 'continue' to retry this chat/.test(lines), false,
     'the exact complaint text must be gone');
 });
@@ -155,7 +155,7 @@ test('the same real marker is retired, not merely hidden — display and retirem
     flags: {},
   } as unknown as State);
   __testOnlyLoadState(cwd);
-  assert.equal(retireOrphanedMainModelRecovery(ctx, true), 'retired',
+  assert.equal(retireOrphanedMainModelRecovery(ctx as never, true), 'retired',
     'the orphan sweep retires the real observed marker, matching /glla resume');
   assert.equal(readState(cwd).mainModelRecovery ?? null, null, 'the marker is gone from persisted state');
 });
@@ -172,7 +172,12 @@ test('a chat-owned marker WITH a live goal still renders — retirement is not b
   __testOnlyLoadState(cwd);
   assert.equal(mainModelRecoveryHasLiveOwner(), true,
     'with supervised work in flight the chat-owned marker still describes current work');
-  assert.equal(standaloneCardShown(chatOwnedLive, true), true, 'and it still renders its card');
+  // The STANDALONE card is correctly absent here for a different reason: there
+  // is an objective, so the goal card owns the recovery and the "no GLLA
+  // objective" wording would be false. What must hold is that the verdict stays
+  // live, so retirement is not a blanket clear.
+  assert.equal(standaloneCardShown(chatOwnedLive, true), false,
+    'with a live objective the standalone banner must not claim there is none');
 });
 
 test('a terminal goal retires the main-model recovery marker durably', async () => {
