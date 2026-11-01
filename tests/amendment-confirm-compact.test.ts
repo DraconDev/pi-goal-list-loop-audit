@@ -167,7 +167,7 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
   const NEW = 'Audit the widget surface end to end, record what the user sees, and file the defects';
   const CONTRACT = 'npm run check exits 0';
 
-  async function run(args: string): Promise<{ body: string; applied: boolean; notifies: string[] }> {
+  async function run(args: string): Promise<{ body: string; applied: boolean; notifies: string[]; options: string[] }> {
     const cwd = tmpCwd();
     const pi = new MockPi();
     activate(pi.api);
@@ -185,7 +185,12 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
       selectImpl: undefined,
     });
     await cmdTweak(args, ctx as never, 'goal');
-    return { body: bodies[0] ?? '', applied: bodies.length > 0, notifies: ctx.ui.notifies.map((n: { message: string }) => n.message) };
+    return {
+      body: bodies[0] ?? '',
+      applied: bodies.length > 0,
+      notifies: ctx.ui.notifies.map((n: { message: string }) => n.message),
+      options: (ctx.ui as { lastCardDeps?: { options: string[] } }).lastCardDeps?.options ?? [],
+    };
   }
 
   // Default: compact, and both objectives are present EXACTLY.
@@ -200,6 +205,12 @@ test('the real /goal tweak card is compact, exact, and expands with --rationale'
   // flag" instruction — the action is on the card (asserted below).
   assert.equal(/re-run with --rationale/.test(compact.body), false,
     'the card does not ask the user to cancel and retype the command');
+  // The real command builds the toggle card: the expand action is on offer in
+  // the dialog the user actually gets, not only in a unit fixture.
+  assert.ok(compact.options.includes('Show the full rationale'),
+    `the real /goal tweak dialog must offer the expand (got ${JSON.stringify(compact.options)})`);
+  assert.ok(compact.options.includes('Confirm — apply this tweak'), 'confirm semantics are unchanged');
+  assert.ok(compact.options.includes('Cancel — change nothing'), 'cancel semantics are unchanged');
 
   // The expand: the same gate, opened expanded via --rationale.
   const expanded = await run(`--rationale ${OLD} and file the defects. Done when: ${CONTRACT}`);
