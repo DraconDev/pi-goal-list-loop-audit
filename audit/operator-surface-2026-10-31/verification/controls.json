@@ -104,6 +104,17 @@
     "expectedResultObserved": true
   },
   {
+    "case": "configured-candidate-appended-regression",
+    "command": [
+      "node",
+      "scripts/run-tests.mjs",
+      "tests/auditor-model-display.test.ts"
+    ],
+    "exitCode": 1,
+    "expectedFailure": true,
+    "expectedResultObserved": true
+  },
+  {
     "case": "per-record-read-regression",
     "command": [
       "node",
