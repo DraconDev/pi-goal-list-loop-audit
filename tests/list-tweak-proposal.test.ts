@@ -84,9 +84,12 @@ test("bug (note 2026-08-07): bare /list tweak launches the update-proposal flow 
   assert.ok(ctx.ui.matching("Tweak list item — current: old list objective").length >= 1, "current text previewed in a notify");
   assert.match(inputTitle, /update the list item into/, "input asks what to update the item into");
   assert.equal(inputPlaceholder, "old list objective", "current text pre-filled into the input");
-  // The proposal shows old→new.
-  assert.match(confirmMessage, /CURRENT:\nold list objective/, "proposal shows the CURRENT text");
-  assert.match(confirmMessage, /NEW:\nnew list objective/, "proposal shows the NEW text");
+  // The proposal shows the exact old→new pair (note.md item 2: the compact
+  // card keeps the consent text exact and drops the CURRENT/NEW wall labels).
+  assert.ok(confirmMessage.includes("old list objective"), "proposal shows the current text");
+  assert.ok(confirmMessage.includes("new list objective"), "proposal shows the new text");
+  assert.match(confirmMessage, /^From: /m, "the old text is labelled plainly");
+  assert.match(confirmMessage, /^To: /m, "the new text is labelled plainly");
   // Applied: ledger + persisted state; still paused; revision bumped once.
   const applied = readState(cwd).goal as { objective: string; status: string; policy: string; revision: number };
   assert.equal(applied.objective, "new list objective");
@@ -143,7 +146,10 @@ test("bare /list tweak input carrying a 'Done when:' clause applies the new cont
 
   await pi.command("list", "tweak", ctx);
 
-  assert.match(confirmMessage, /New contract:\nnew check/, "proposal surfaces the new contract");
+  // The compact card states the consequence; the contract body itself is in the
+  // expandable rationale (buildTweakRationaleBody), not the default card.
+  assert.match(confirmMessage, /Replaces the list item objective and its verification contract/,
+    "the compact card names the contract consequence");
   assert.equal(
     (readState(cwd).goal as { verificationContract?: string }).verificationContract,
     "new check",
