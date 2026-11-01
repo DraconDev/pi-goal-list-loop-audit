@@ -1090,6 +1090,14 @@ export async function cmdTweak(
 ): Promise<boolean> {
   options.cancelled = false;
   if (warnIfStaleAtEntry(ctx, mode === "list" ? "/list tweak" : "/goal tweak")) return false;
+  // note.md item 2: `--rationale` is the expand. The default card is compact;
+  // this flag renders the full form in the same consent gate, so nothing is
+  // hidden and nothing dominates by default.
+  let showRationale = false;
+  if (/\s--rationale\b/.test(args) || /^--rationale\b/.test(args.trim())) {
+    showRationale = true;
+    args = args.replace(/(^|\s)--rationale\b/g, " ").trim();
+  }
   const current = state.goal;
   const liveListConflict = mode === "list"
     && options.allowLiveList === true
@@ -1221,6 +1229,7 @@ export async function cmdTweak(
     hasNewContract,
     clearsContract,
     newContract: proposed.verificationContract,
+    showRationale,
   };
   let confirmed = false;
   try {
