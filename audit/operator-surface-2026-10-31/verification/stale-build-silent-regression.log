@@ -1,13 +1,12 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=278s heartbeat=30s
-[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 185s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [510.81ms]
-(pass) a matching version stays silent — the normal case must not nag [0.72ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.22ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.26ms]
-(pass) version comparison is numeric, not lexical [0.12ms]
+(pass) an older loaded build warns and names the reconcile action [133.83ms]
+(pass) a matching version stays silent — the normal case must not nag [0.16ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.13ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.21ms]
+(pass) version comparison is numeric, not lexical [0.11ms]
 101 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
 102 |   await new Promise((resolve) => setTimeout(resolve, 250));
 103 | 
@@ -25,16 +24,16 @@ AssertionError: session start warns exactly once about the stale build
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-6i8__5dq/tests/stale-build-warning.test.ts:106:10
+      at /tmp/glla-ops-control-vjyd3zjz/tests/stale-build-warning.test.ts:106:10
       at processTicksAndRejections (native:7:39)
-(fail) session start surfaces the stale-build warning and still runs [512.66ms]
-(pass) an unrelated project manifest does NOT produce a stale-build warning [0.29ms]
-(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.13ms]
-(pass) a real older GLLA checkout still warns with the package name present [0.18ms]
+(fail) session start surfaces the stale-build warning and still runs [427.36ms]
+(pass) an unrelated project manifest does NOT produce a stale-build warning [0.36ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.19ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.17ms]
 
  8 pass
  1 fail
-Ran 9 tests across 1 file. [1.63s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-objsGh/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-objsGh
-[run-tests] finished in 2s (exit 1)
+Ran 9 tests across 1 file. [882.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-AVWtzE/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-AVWtzE
+[run-tests] finished in 1s (exit 1)
