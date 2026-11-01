@@ -359,7 +359,7 @@ code** in a disposable copy of the tree, so none of them is a passing tautology:
 | 5 | `tests/auditor-model-display.test.ts` | yes — 2 cases fail with the old precedence, reproducing the note.md observation |
 | 6 | `tests/stale-build-warning.test.ts` | yes — dropping the package-name check makes an unrelated project warn |
 
-## Isolated controls (20/20 as intended)
+## Isolated controls (21/21 as intended)
 
 `controls.py` mutates a disposable copy of the tree once per case and runs only
 the suite that should notice. The baseline and a **harmless rewording** must exit
@@ -381,6 +381,7 @@ behaviour. Every regression case must exit non-zero.
 | `double-advance-regression` | fail | exit 1 |
 | `tweak-long-objective-regression` | fail | exit 1 |
 | `tweak-card-height-regression` | fail | exit 1 |
+| `configured-candidate-appended-regression` | fail | exit 1 |
 | `no-auto-advance-regression` | fail | exit 1 |
 | `settle-status-guard-regression` | fail | exit 1 |
 | `configured-model-wins-regression` | fail | exit 1 |
@@ -393,7 +394,7 @@ One control (`ledger-full-scan-regression`) initially exited 0 — the wall-cloc
 ceiling it relied on was marginal, so a full rescan could slip under it on a
 loaded host. That is precisely the weakness a control exists to expose, so the pin
 was replaced with the deterministic assertions above and the control now fails as
-intended. Final run: **20/20 as intended** (`verification/controls.json`).
+intended. Final run: **21/21 as intended** (`verification/controls.json`).
 | 6 | `tests/stale-build-warning.test.ts` | yes — warns at session start, silent when matching/newer |
 
 ### Gate history (recorded, not hidden)
