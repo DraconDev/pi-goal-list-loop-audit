@@ -15,6 +15,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   __testOnlyLedgerIndexReadBytes as ledgerIndexReadBytes,
+  __testOnlyLedgerScanRecordsCalls as scanRecordsCalls,
+  __testOnlyResetLedgerScanRecordsCalls as resetScanRecordsCalls,
   __testOnlyResetLedgerIndexReadBytes as resetLedgerIndexReadBytes,
   computeListDepth, computeListDepthFromLedger, scanLedgerRecords,
 } from '../extensions/goal-loop-core.js';
@@ -99,11 +101,17 @@ test('a warm read folds ZERO ledger bytes — it never rescans history', () => {
   // read must touch none. A wall-clock ceiling alone is a weak pin — a loaded
   // host can slip under it while the full rescan is still happening.
   resetLedgerIndexReadBytes();
+  resetScanRecordsCalls();
   computeListDepthFromLedger(queue, cwd, NOW);
   assert.equal(ledgerIndexReadBytes(), 0,
     'a warm depth read folded ledger bytes — the unbounded rescan is back');
+  // The direct statement of the cause: the depth read must not invoke the
+  // full-history scanner at all.
+  assert.equal(scanRecordsCalls(), 0,
+    'the depth read called scanLedgerRecords — the unbounded rescan is back');
 
   // And repeated reads stay at zero, so a status render cannot creep.
   for (let i = 0; i < 5; i++) computeListDepthFromLedger(queue, cwd, NOW);
   assert.equal(ledgerIndexReadBytes(), 0, 'repeated warm reads must stay at zero bytes');
+  assert.equal(scanRecordsCalls(), 0, 'repeated warm reads must never rescan');
 });

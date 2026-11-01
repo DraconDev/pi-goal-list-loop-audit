@@ -2995,6 +2995,7 @@ export function parseLedgerRecord(line: string): LedgerRecord | undefined {
  * rotated segments are included before the live tail. Callers should reduce
  * into bounded maps/counters rather than retaining the records. */
 export function scanLedgerRecords(cwd: string, onRecord: (entry: LedgerRecord) => void): void {
+  ledgerScanRecordsCalls++;
   for (const file of ledgerFiles(cwd)) {
     scanLedgerLines(file, (line) => {
       const entry = parseLedgerRecord(line);
@@ -5239,6 +5240,13 @@ export function indexListDepthStateRow(cwd: string, value: unknown): void {
 /** Bytes the last indexed read actually folded. A warm read must fold ZERO:
  * that is the deterministic statement of "this read does not rescan history"
  * (wall-clock alone is a weak pin — a loaded host can pass it). */
+let ledgerScanRecordsCalls = 0;
+export function __testOnlyLedgerScanRecordsCalls(): number {
+  return ledgerScanRecordsCalls;
+}
+export function __testOnlyResetLedgerScanRecordsCalls(): void {
+  ledgerScanRecordsCalls = 0;
+}
 let lastLedgerIndexReadBytes = 0;
 export function __testOnlyLedgerIndexReadBytes(): number {
   return lastLedgerIndexReadBytes;
