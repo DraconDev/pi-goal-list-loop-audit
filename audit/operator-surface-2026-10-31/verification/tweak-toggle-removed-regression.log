@@ -1,16 +1,15 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=262s heartbeat=30s
-[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 174s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [2.88ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.22ms]
 (pass) an unchanged contract is NOT reprinted — that was most of the wall [0.06ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.04ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-(pass) the real complete_goal amendment confirm uses the compact body [129.01ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [97.08ms]
+(pass) a changed contract IS shown, both sides [0.07ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.09ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.06ms]
+(pass) the real complete_goal amendment confirm uses the compact body [45.88ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [12.56ms]
 265 |   assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION]);
 266 |   assert.equal(resolved, 'unset', 'building the card applies nothing');
 267 | 
@@ -28,10 +27,10 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-fk00imvw/tests/amendment-confirm-compact.test.ts:270:10
+      at /tmp/glla-ops-control-fl7pxpmw/tests/amendment-confirm-compact.test.ts:270:10
       at processTicksAndRejections (native:7:39)
-(fail) the tweak card expands the rationale in place and keeps one consent gate [2.98ms]
-(pass) cancelling after expanding still changes nothing [0.34ms]
+(fail) the tweak card expands the rationale in place and keeps one consent gate [0.88ms]
+(pass) cancelling after expanding still changes nothing [0.17ms]
 317 |     () => {}, theme, { matches: () => false } as never, () => {},
 318 |   );
 319 |   const before = card.dialogDeps.body;
@@ -46,19 +45,19 @@ AssertionError: dialogDeps must reflect the expanded state
    operator: "notStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-fk00imvw/tests/amendment-confirm-compact.test.ts:322:10
+      at /tmp/glla-ops-control-fl7pxpmw/tests/amendment-confirm-compact.test.ts:322:10
       at processTicksAndRejections (native:7:39)
-(fail) the tweak card reports its CURRENT body to the host after an expand [0.27ms]
-(pass) a long objective keeps BOTH objectives in full on the default card [0.17ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [18.10ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [17.65ms]
-(pass) a short objective is still printed verbatim — the diff never guesses [0.14ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.22ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [7.12ms]
+(fail) the tweak card reports its CURRENT body to the host after an expand [0.17ms]
+(pass) a long objective keeps BOTH objectives in full on the default card [0.09ms]
+(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [9.15ms]
+(pass) a 400-word objective is exact on the default card and bounded on screen [12.14ms]
+(pass) a short objective is still printed verbatim — the diff never guesses [0.09ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.07ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [1.83ms]
 
  15 pass
  2 fail
-Ran 17 tests across 1 file. [865.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-sHO8n6/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-sHO8n6
-[run-tests] finished in 1s (exit 1)
+Ran 17 tests across 1 file. [420.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QzdeeA/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QzdeeA
+[run-tests] finished in 0s (exit 1)

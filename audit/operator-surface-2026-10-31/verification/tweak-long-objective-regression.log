@@ -1,19 +1,18 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=262s heartbeat=30s
-[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 174s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [3.06ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.09ms]
-(pass) a changed contract IS shown, both sides [0.08ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.08ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.79ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.05ms]
+(pass) a changed contract IS shown, both sides [0.06ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.06ms]
 (pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
 (pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-(pass) the real complete_goal amendment confirm uses the compact body [71.94ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [27.92ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [7.06ms]
-(pass) cancelling after expanding still changes nothing [1.04ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.28ms]
+(pass) the real complete_goal amendment confirm uses the compact body [41.86ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [10.12ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [1.16ms]
+(pass) cancelling after expanding still changes nothing [0.14ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.13ms]
 342 |   };
 343 |   const body = buildTweakConfirmBody(input);
 344 | 
@@ -28,9 +27,9 @@ AssertionError: the FULL previous objective is on the default card
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-jth9vday/tests/amendment-confirm-compact.test.ts:347:10
+      at /tmp/glla-ops-control-elk9_tdr/tests/amendment-confirm-compact.test.ts:347:10
       at fn (node:test:215:18)
-(fail) a long objective keeps BOTH objectives in full on the default card [0.54ms]
+(fail) a long objective keeps BOTH objectives in full on the default card [0.28ms]
 398 |     if (after.join('\n') === before.join('\n')) break;
 399 |     pages.push(...after.slice(0, Math.max(0, after.length - previous)));
 400 |     previous = after.length;
@@ -45,9 +44,9 @@ AssertionError: paging reveals the whole previous objective verbatim
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-jth9vday/tests/amendment-confirm-compact.test.ts:403:10
+      at /tmp/glla-ops-control-elk9_tdr/tests/amendment-confirm-compact.test.ts:403:10
       at fn (node:test:215:18)
-(fail) a long objective is bounded on screen by paging, and paging reveals the whole exact text [47.19ms]
+(fail) a long objective is bounded on screen by paging, and paging reveals the whole exact text [9.07ms]
 416 | 
 417 |   const body = buildTweakConfirmBody({
 418 |     currentObjective: current, newObjective: next,
@@ -62,9 +61,9 @@ AssertionError: both full objectives are on the default card, however long they 
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-jth9vday/tests/amendment-confirm-compact.test.ts:421:10
+      at /tmp/glla-ops-control-elk9_tdr/tests/amendment-confirm-compact.test.ts:421:10
       at fn (node:test:215:18)
-(fail) a 400-word objective is exact on the default card and bounded on screen [0.55ms]
+(fail) a 400-word objective is exact on the default card and bounded on screen [0.21ms]
 442 |     currentObjective: 'Audit the widget surface',
 443 |     newObjective: 'Audit the widget surface and file the defects',
 444 |     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
@@ -82,15 +81,15 @@ Replaces the goal objective; its verification contract is kept.
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-jth9vday/tests/amendment-confirm-compact.test.ts:447:10
+      at /tmp/glla-ops-control-elk9_tdr/tests/amendment-confirm-compact.test.ts:447:10
       at fn (node:test:215:18)
-(fail) a short objective is still printed verbatim — the diff never guesses [0.69ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [7.63ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [4.94ms]
+(fail) a short objective is still printed verbatim — the diff never guesses [0.09ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.73ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.48ms]
 
  13 pass
  4 fail
-Ran 17 tests across 1 file. [805.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-nN0iJU/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-nN0iJU
-[run-tests] finished in 1s (exit 1)
+Ran 17 tests across 1 file. [410.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-jrwXcx/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-jrwXcx
+[run-tests] finished in 0s (exit 1)
