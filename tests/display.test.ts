@@ -676,60 +676,53 @@ test("active/in-flight main-model recovery uses one compact card row", () => {
   assert.doesNotMatch(widget.join("\\n"), /Order:|Current:|Pending switch:|Attempted:|Skipped:/);
 });
 
-test("standalone main-model recovery remains visible when no goal is active", () => {
-  // v0.39.61 correction (audit round 2): this fixture used to be a chat-owned
-  // marker with `goal: null`, asserted live via `{recoveryHasLiveOwner: true}`.
-  // Production `mainModelRecoveryHasLiveOwner()` returns FALSE for exactly that
-  // state — a chat marker with no goal and no loop is the note.md stale leftover
-  // — so the old case asserted a render the product cannot produce, and its
-  // comment ("a chat-owned marker IS live") stated the opposite of the shipped
-  // rule. The genuinely producible standalone case is a LOOP-owned marker while
-  // a loop is running: no goal slot, real supervised work, ownership
-  // 'retained'. That is what is pinned here.
-  const startedAt = new Date(NOW - 30 * 60_000).toISOString();
-  const state = {
-    goal: null,
-    list: [],
-    loop: {
-      active: true, target: "endless-td audit", iteration: 12, maxIterations: 100,
-      stallCount: 0, plateauWindow: 5, startedAt, history: [], bestValue: null, lastValue: null,
-    },
-    mainModelRecovery: {
-      owner: { kind: "loop", startedAt },
-      primary: "provider/primary",
-      active: "provider/backup-one",
-      attempted: ["provider/primary", "provider/backup-one"],
-      attempts: 2,
-      retryAt: new Date(NOW + 60_000).toISOString(),
-      pendingModelSwitch: "provider/backup-two",
-      reason: "account usage limit",
-      kind: "loop",
-    },
-  } as unknown as State;
-  // While a loop is actually running the footer belongs to the loop; the
-  // recovery card is the standalone surface. Pinning that split stops this test
-  // from silently depending on a status line it was never about.
-  const status = buildStatusText(state, null, NOW);
-  assert.match(status ?? "", /loop ∞ iter 12\/100/);
-  assert.equal(/main-model recovery/.test(status ?? ""), false, "the loop owns the footer while it runs");
-  // The renderer takes the ownership verdict as ephemeral extras (it must not
-  // import state machinery); goal-ui.ts supplies it from
-  // mainModelRecoveryHasLiveOwner(). A loop-owned marker with a live loop is
-  // 'retained', which the real predicate reports as live.
-  const widget = buildWidgetLines(state, null, NOW, undefined, undefined, { recoveryHasLiveOwner: true })!;
-  assert.ok(widget.some((line) => line.includes("main-model recovery")), widget.join("\n"));
-  assert.ok(widget.some((line) => line.includes("provider/backup-two")), widget.join("\n"));
-  assert.ok(widget.some((line) => line.includes("provider/primary, provider/backup-one")), widget.join("\n"));
-  assert.ok(widget.some((line) => line.includes("Order: provider/primary")), widget.join("\n"));
+test("the standalone recovery card obeys the ownership verdict, not the marker alone", () => {
+  // Audit round 2 correction. This case used to be titled "standalone
+  // main-model recovery remains visible when no goal is active" and passed
+  // `{recoveryHasLiveOwner: true}` for a chat-owned marker with `goal: null`,
+  // while production `mainModelRecoveryHasLiveOwner()` returns FALSE for that
+  // exact state. It therefore asserted a render the product cannot produce, and
+  // its comment ("a chat-owned marker IS live") stated the opposite of the
+  // shipped rule.
+  //
+  // What this file can honestly pin is the RENDERER contract: the card is drawn
+  // from the ownership verdict the caller supplies, and a marker with no live
+  // owner draws nothing. Whether a given state HAS a live owner is decided by
+  // the real predicate and is pinned in tests/stale-recovery-marker.test.ts.
+  // As a consequence of the note.md fix, the standalone card is now unreachable
+  // when there is no goal and no loop — that state has no live owner — which is
+  // the point of the fix, not a gap in this test.
+  const marker = {
+    owner: { kind: "chat" },
+    primary: "provider/primary",
+    active: "provider/backup-one",
+    attempted: ["provider/primary", "provider/backup-one"],
+    attempts: 2,
+    retryAt: new Date(NOW + 60_000).toISOString(),
+    pendingModelSwitch: "provider/backup-two",
+    reason: "account usage limit",
+    kind: "goal",
+  };
 
-  // The suppression direction belongs to the REAL predicate, and is asserted
-  // through the renderer for the state that produced the note.md card.
-  const suppressed = buildWidgetLines(
-    { goal: null, list: [], mainModelRecovery: { owner: { kind: "chat" }, kind: "goal", primary: "p", active: "a", attempted: [], attempts: 0, retryAt: new Date(NOW).toISOString(), reason: "x" } } as State,
+  // Live verdict → the caller is asserting supervised work still waits on this
+  // marker, so the card renders in full.
+  const live = buildWidgetLines(
+    { goal: null, list: [], mainModelRecovery: marker } as unknown as State,
+    null, NOW, undefined, undefined, { recoveryHasLiveOwner: true },
+  )!;
+  assert.ok(live.some((line) => line.includes("main-model recovery")), live.join("\n"));
+  assert.ok(live.some((line) => line.includes("provider/backup-two")), live.join("\n"));
+  assert.ok(live.some((line) => line.includes("provider/primary, provider/backup-one")), live.join("\n"));
+  assert.ok(live.some((line) => line.includes("Order: provider/primary")), live.join("\n"));
+
+  // Dead verdict → exactly the note.md state (chat marker, no goal, no loop).
+  const dead = buildWidgetLines(
+    { goal: null, list: [], mainModelRecovery: marker } as unknown as State,
     null, NOW, undefined, undefined, { recoveryHasLiveOwner: false },
   )!;
-  assert.equal(suppressed.some((line) => line.includes("main-model recovery")), false,
-    "a chat-owned marker with no supervised target must not render a card");
+  assert.equal(dead.some((line) => line.includes("main-model recovery")), false,
+    "a marker without a live owner must not render an action-implying card");
+  assert.equal(dead.length, 0, "and it renders nothing else either — the state is empty");
 });
 
 test("loop recovery remains visible while the loop is parked", () => {
