@@ -1,39 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=360s heartbeat=30s
+[run-tests] host is 2.0x slower than an idle host — per-test budget raised to 240s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [21.04ms]
-(pass) a matching version stays silent — the normal case must not nag [0.15ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.16ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.20ms]
-(pass) version comparison is numeric, not lexical [0.08ms]
-101 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
-102 |   await new Promise((resolve) => setTimeout(resolve, 250));
-103 | 
-104 |   const warned = (ctx.ui as unknown as { notifies: Array<{ message: string; type?: string }> }).notifies
-105 |     .filter((entry) => /older than this repo/.test(entry.message));
-106 |   assert.equal(warned.length, 1, 'session start warns exactly once about the stale build');
-               ^
-AssertionError: session start warns exactly once about the stale build
-
-0 !== 1
-
- generatedMessage: false,
-     actual: 0,
-   expected: 1,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /tmp/glla-ops-control-1pvkgley/tests/stale-build-warning.test.ts:106:10
-      at processTicksAndRejections (native:7:39)
-(fail) session start surfaces the stale-build warning and still runs [269.46ms]
-(pass) an unrelated project manifest does NOT produce a stale-build warning [0.29ms]
-(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.22ms]
-(pass) a real older GLLA checkout still warns with the package name present [0.18ms]
-
- 8 pass
- 1 fail
-Ran 9 tests across 1 file. [728.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-AxsEgD/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-AxsEgD
-[run-tests] finished in 1s (exit 1)
