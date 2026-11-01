@@ -339,6 +339,18 @@ export class TweakConfirmComponent implements Component {
     return this.expanded ? buildTweakRationaleBody(this.input) : buildTweakConfirmBody(this.input);
   }
 
+  /** What this card is showing right now — title, body and the actions on offer.
+   * A live getter (not a snapshot) because the toggle changes all three in
+   * place, and a host/test reading it after an expand must see the expanded
+   * state rather than the opening one. */
+  get dialogDeps(): ConfirmDraftFactoryDeps {
+    return {
+      title: this.input.title ?? 'Tweak objective?',
+      body: this.bodyText(),
+      options: this.items().map((item) => item.value),
+    };
+  }
+
   isExpanded(): boolean {
     return this.expanded;
   }
