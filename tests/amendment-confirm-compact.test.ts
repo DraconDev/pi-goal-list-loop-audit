@@ -366,6 +366,33 @@ test('a long objective stays compact on the default card, and says what it elide
   assert.ok(rationale.includes(LONG_NEXT), 'the exact proposed objective is in the toggle');
 });
 
+test('a 400-word objective is still compact — the bound does not depend on length', () => {
+  // The auditor measured the observed case specifically: a 400-word objective
+  // produced a 4,079-character body (~50 rows at 80 columns). The diff path
+  // bounds the change region and the surrounding context, so the body length is
+  // independent of the objective length — this proves that rather than assuming
+  // it from a 353-character fixture.
+  const filler = 'and confirm that every surface keeps reporting the same facts in the same order so a reader can compare them without re-reading the whole document ';
+  const base = `Audit the whole GLLA operator surface end to end. ${filler.repeat(20)}`;
+  const current = `${base}Stop there.`;
+  const next = `${base}File each defect as a tracked item.`;
+  assert.ok(current.length > 2000, `fixture should be a genuinely long objective (${current.length} chars)`);
+
+  const body = buildTweakConfirmBody({
+    currentObjective: current, newObjective: next,
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+  });
+  assert.ok(body.length <= 700, `a ${current.length}-char objective produced ${body.length} chars`);
+  assert.ok(body.split('\n').length <= 10, `and ${body.split('\n').length} lines`);
+  assert.match(body, /showing the changed region/);
+  // The exact text is preserved in the toggle, not lost.
+  const rationale = buildTweakRationaleBody({
+    currentObjective: current, newObjective: next,
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+  });
+  assert.ok(rationale.includes(current) && rationale.includes(next), 'the exact full text survives in the expand');
+});
+
 test('a short objective is still printed verbatim — the diff never guesses', () => {
   const input = {
     currentObjective: 'Audit the widget surface',
