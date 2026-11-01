@@ -2996,13 +2996,62 @@ export function parseLedgerRecord(line: string): LedgerRecord | undefined {
  * into bounded maps/counters rather than retaining the records. */
 export function scanLedgerRecords(cwd: string, onRecord: (entry: LedgerRecord) => void): void {
   ledgerScanRecordsCalls++;
-  if (process.env.TRACE_LEDGER_SCAN) console.error('LEDGER_SCAN_AT', new Error('x').stack?.split('\n').slice(1, 6).join(' <- '));
   for (const file of ledgerFiles(cwd)) {
     scanLedgerLines(file, (line) => {
       const entry = parseLedgerRecord(line);
       if (entry) onRecord(entry);
     });
   }
+}
+
+/**
+ * Stream only the ledger records that can still matter for a time-bounded
+ * predicate: rows older than `sinceMs` are not delivered.
+ *
+ * note.md item 3 root cause: `/glla wipe` spent ~750 ms of its own wall time in
+ * `scanLedgerRecords` re-parsing 280 MB of multi-month history so the reviewer
+ * could answer two questions that are both bounded to *today* — "did a review
+ * fire in the last 5 minutes" and "how many fired today". Reading months of
+ * history to answer that is unbounded work for a bounded question.
+ *
+ * Segments are named with a leading millisecond timestamp and chronologically
+ * ordered, so they are visited NEWEST FIRST and reading stops at the first
+ * segment that contributes no qualifying row: every older segment is older than
+ * it, so it cannot contain a row at or after `sinceMs` either. Newest-first
+ * order also visits the live tail last, so a caller that needs chronological
+ * order should sort its retained rows.
+ *
+ * Returns the number of segments actually read, for tests and telemetry.
+ */
+export function scanLedgerRecordsSince(
+  cwd: string,
+  sinceMs: number,
+  onRecord: (entry: LedgerRecord) => void,
+): number {
+  const files = ledgerFiles(cwd);
+  let segmentsRead = 0;
+  for (let i = files.length - 1; i >= 0; i--) {
+    segmentsRead++;
+    let sawQualifying = false;
+    const file = files[i];
+    if (!file) continue;
+    scanLedgerLines(file, (line) => {
+      const entry = parseLedgerRecord(line);
+      if (!entry) return;
+      const at = entry.at ? Date.parse(entry.at) : NaN;
+      // A row with no parseable timestamp cannot be excluded safely: deliver it
+      // and let the caller's predicate decide. Correctness over speed.
+      if (!Number.isFinite(at) || at >= sinceMs) {
+        sawQualifying = true;
+        onRecord(entry);
+      }
+    });
+    // Only a segment we read completely and found nothing qualifying in is
+    // proof that the older ones are irrelevant. A short read (seen > 0
+    // qualifying) means the boundary may be inside the previous segment.
+    if (!sawQualifying) break;
+  }
+  return segmentsRead;
 }
 
 /** Read at most `limit` matching records from the newest end of all ledger

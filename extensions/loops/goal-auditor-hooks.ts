@@ -69,6 +69,7 @@ extractPendingTasks,
   formatGoalAuditHistory,
   readAuditLogForGoal,
   scanLedgerRecords,
+  scanLedgerRecordsSince,
   bumpGoalRevision,
   stripThinkBlocks,
   type AuditLogEntry,
@@ -2899,12 +2900,20 @@ function fireReviewer(
     // only curated auditor reports.
     const sources = buildReviewerSources(archiveText, auditTexts, !!opts.manual);
     const ledgerEntries: Array<{ type: string; at?: string; value?: any }> = [];
+    const reviewerNowMs = Date.now();
     try {
-      // Reviewer cadence only needs reviewer_fired timestamps. Stream the
-      // ledger (including rotated segments) and retain that small predicate
-      // set instead of materialising every lifecycle event in the main pi
-      // process.
-      scanLedgerRecords(ctx.cwd, (entry) => {
+      // Reviewer cadence only needs reviewer_fired timestamps, and BOTH of the
+      // questions it asks are bounded to the recent past: "did one fire in the
+      // last 5 minutes" (REVIEWER_REFIRE_WINDOW_MS) and "how many fired today"
+      // (UTC calendar day, start at most 24h before now). Reading the entire
+      // multi-month ledger to answer them is unbounded work for a bounded
+      // question — it was ~750ms of a ~650-900ms `/glla wipe`, because the wipe
+      // archives through this same path.
+      //
+      // A 24h lookback is a provable superset of both predicates: the day start
+      // is never more than 24h before `now`, and the 5-minute window is inside
+      // that. So no row either predicate can observe is skipped.
+      scanLedgerRecordsSince(ctx.cwd, reviewerNowMs - 24 * 60 * 60_000, (entry) => {
         if (entry.type === "reviewer_fired") ledgerEntries.push(entry);
       });
     } catch {
