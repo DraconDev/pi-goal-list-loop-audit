@@ -1,11 +1,12 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=278s heartbeat=30s
+[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 185s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [4.31ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.55ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [29.64ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.67ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [5.41ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [1.78ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [173.29ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [56.15ms]
 168 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
 169 |   const liveGoal = seedGoal({ status: 'active', objective: 'Verify the feature' });
 170 |   const chatOwnedLive = { goal: liveGoal, list: [], mainModelRecovery: recovery('chat') } as unknown as State;
@@ -23,17 +24,17 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-79z13n9f/tests/stale-recovery-marker.test.ts:173:10
+      at /tmp/glla-ops-control-4as2schj/tests/stale-recovery-marker.test.ts:173:10
       at processTicksAndRejections (native:7:39)
-(fail) a chat-owned marker WITH a live goal still renders — retirement is not blanket [3.74ms]
-(pass) a terminal goal retires the main-model recovery marker durably [120.23ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [107.74ms]
-(pass) the real settlement path retires the recovery marker when it archives [220.76ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [128.99ms]
+(fail) a chat-owned marker WITH a live goal still renders — retirement is not blanket [9.78ms]
+(pass) a terminal goal retires the main-model recovery marker durably [437.43ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [246.51ms]
+(pass) the real settlement path retires the recovery marker when it archives [358.21ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [199.81ms]
 
  8 pass
  1 fail
-Ran 9 tests across 1 file. [939.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-f2CaEH/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-f2CaEH
-[run-tests] finished in 1s (exit 1)
+Ran 9 tests across 1 file. [2.29s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-82tuJj/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-82tuJj
+[run-tests] finished in 2s (exit 1)

@@ -1,18 +1,19 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=264s heartbeat=30s
+[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 176s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [1.97ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.41ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [28.11ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.64ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [4.26ms]
-(pass) a terminal goal retires the main-model recovery marker durably [115.90ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [107.75ms]
-(pass) the real settlement path retires the recovery marker when it archives [220.72ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [129.18ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [5.53ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [1.18ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [73.10ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [8.25ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [11.18ms]
+(pass) a terminal goal retires the main-model recovery marker durably [168.88ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [117.67ms]
+(pass) the real settlement path retires the recovery marker when it archives [370.84ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [158.80ms]
 
  9 pass
  0 fail
-Ran 9 tests across 1 file. [994.00ms]
-[run-tests] finished in 1s (exit 0)
+Ran 9 tests across 1 file. [1.50s]
+[run-tests] finished in 2s (exit 0)

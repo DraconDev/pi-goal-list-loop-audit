@@ -1,4 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=323s heartbeat=30s
+[run-tests] host is 1.8x slower than an idle host — per-test budget raised to 216s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-model-display.test.ts:
@@ -19,11 +20,11 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rbb44f8j/tests/auditor-model-display.test.ts:62:10
+      at /tmp/glla-ops-control-918b8nj4/tests/auditor-model-display.test.ts:62:10
       at fn (node:test:215:18)
-(fail) a session-model audit names the model that ran, not a configured pin [10.17ms]
-(pass) a configured-pin audit is NOT mislabelled as the session model [0.30ms]
-(pass) the configured ref is only used when nothing recorded an executed model [0.24ms]
+(fail) a session-model audit names the model that ran, not a configured pin [44.56ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.59ms]
+(pass) the configured ref is only used when nothing recorded an executed model [0.47ms]
 91 |   // Both refs are recorded and differ: the executed one is shown, the candidate
 92 |   // it outranks is not. Asserting the executed ref alone (or the label alone via
 93 |   // a disjunction) would let the card print both.
@@ -41,13 +42,13 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rbb44f8j/tests/auditor-model-display.test.ts:96:10
+      at /tmp/glla-ops-control-918b8nj4/tests/auditor-model-display.test.ts:96:10
       at fn (node:test:215:18)
-(fail) the recorded executed model outranks the configured candidate [0.22ms]
+(fail) the recorded executed model outranks the configured candidate [0.31ms]
 
  2 pass
  2 fail
-Ran 4 tests across 1 file. [450.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-AnXNwh/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-AnXNwh
+Ran 4 tests across 1 file. [642.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-sE3AbM/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-sE3AbM
 [run-tests] finished in 1s (exit 1)

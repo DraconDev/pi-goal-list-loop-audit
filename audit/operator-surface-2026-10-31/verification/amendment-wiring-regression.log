@@ -1,13 +1,14 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=290s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 194s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.97ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.07ms]
-(pass) a changed contract IS shown, both sides [0.07ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.08ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.05ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
+(pass) the amendment confirm keeps the exact old and new objective text [8.08ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.11ms]
+(pass) a changed contract IS shown, both sides [0.09ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.11ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.08ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.05ms]
 141 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
 142 |   // Consent fidelity: the exact old and new objective both appear.
 143 |   assert.ok(amendment!.body.includes(LONG_OLD), 'the exact previous objective is shown');
@@ -25,23 +26,23 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-txy64tlk/tests/amendment-confirm-compact.test.ts:146:10
+      at /tmp/glla-ops-control-2ra_bvn0/tests/amendment-confirm-compact.test.ts:146:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [36.09ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [12.55ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [1.61ms]
-(pass) cancelling after expanding still changes nothing [0.13ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.14ms]
-(pass) a long objective keeps BOTH objectives in full on the default card [0.08ms]
-(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [12.49ms]
-(pass) a 400-word objective is exact on the default card and bounded on screen [13.41ms]
-(pass) a short objective is still printed verbatim — the diff never guesses [0.34ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.94ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [2.33ms]
+(fail) the real complete_goal amendment confirm uses the compact body [600.14ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [114.45ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [11.55ms]
+(pass) cancelling after expanding still changes nothing [3.31ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.46ms]
+(pass) a long objective keeps BOTH objectives in full on the default card [0.17ms]
+(pass) a long objective is bounded on screen by paging, and paging reveals the whole exact text [55.13ms]
+(pass) a 400-word objective is exact on the default card and bounded on screen [26.31ms]
+(pass) a short objective is still printed verbatim — the diff never guesses [0.81ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [6.73ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [4.33ms]
 
  16 pass
  1 fail
-Ran 17 tests across 1 file. [472.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-psQ1rY/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-psQ1rY
-[run-tests] finished in 1s (exit 1)
+Ran 17 tests across 1 file. [1.83s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-CH51EC/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-CH51EC
+[run-tests] finished in 2s (exit 1)

@@ -1,10 +1,11 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=311s heartbeat=30s
+[run-tests] host is 1.7x slower than an idle host — per-test budget raised to 208s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [41.77ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [4.58ms]
-(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [7.37ms]
+(pass) queue items wait while an item is still in flight [74.71ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [6.28ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [10.68ms]
 137 |   // audit round 3 (2026-11-01): this assertion used to expect ITEM(2), which
 138 |   // enshrined a double advance that skipped ITEM(1) entirely — the item was
 139 |   // activated and then silently replaced, and the queue drained. The advance
@@ -24,14 +25,14 @@ AssertionError: the next list item started on its own — the note asked for exa
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-oyufkm4g/tests/list-auto-advance.test.ts:142:10
+      at /tmp/glla-ops-control-4mqyqf4o/tests/list-auto-advance.test.ts:142:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [300.29ms]
-(pass) a standalone goal completing does not skip the queue head (no double advance) [272.04ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [316.63ms]
+(pass) a standalone goal completing does not skip the queue head (no double advance) [451.41ms]
 
  4 pass
  1 fail
-Ran 5 tests across 1 file. [1071.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-gnialr/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-gnialr
-[run-tests] finished in 1s (exit 1)
+Ran 5 tests across 1 file. [1423.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-CqmNg8/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-CqmNg8
+[run-tests] finished in 2s (exit 1)
