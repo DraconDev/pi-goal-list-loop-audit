@@ -156,13 +156,18 @@ test("propose_task_list amendment renders the readable summary, not a JSON dump"
   const ctx = await freshSession(cwd, "reload");
   await tick();
   const bodies: string[] = [];
+  // The amendment renders the styled card; the mock's card fallback answers
+  // through confirmImpl with the CARD's body, which is what the user reads.
   ctx.ui.confirmImpl = async (_t: string, body: string) => { bodies.push(body); return true; };
   ctx.ui.selectImpl = async () => "Yes";
-  // `replacing` requires an existing plan, so commit one first.
+  // `replacing` requires an existing plan, so commit one first. The initial
+  // proposal is a plain draft (confirmDraft), which the mock answers directly;
+  // the amendment below is the card under test, so customImpl is cleared for it.
   ctx.ui.customImpl = async () => "Yes";
   const r1 = await pi.runTool("propose_task_list", {
     tasks: [{ title: "Release/CI hardening" }, { title: "Model-selection parity" }, { title: "Durable projection" }],
   }, ctx);
+  ctx.ui.customImpl = undefined;
   const committed1 = ((readState(cwd) as { goal?: { taskList?: { tasks?: unknown[] } } }).goal?.taskList?.tasks?.length) ?? 0;
   assert.equal(committed1, 3, `first proposal committed a plan; tool said: ${(r1 as any)?.content?.[0]?.text}`);
   await pi.runTool("propose_task_list", {
@@ -203,6 +208,9 @@ test("propose_task_list aborts an amendment whose target changed during Confirm"
   ctx.ui.selectImpl = async () => "Yes";
   ctx.ui.customImpl = async () => "Yes";
   const r0 = await pi.runTool("propose_task_list", { tasks: [{ title: "First committed task" }] }, ctx);
+  // The amendment is the styled card; let it resolve through confirmImpl so the
+  // mid-dialog mutation below lands while the decision is open.
+  ctx.ui.customImpl = undefined;
   const before = readState(cwd) as { goal?: { revision?: number; taskList?: { tasks?: Array<{ title: string }> } } };
   assert.equal(before.goal?.taskList?.tasks?.length, 1, `a plan is committed before the race; tool said: ${(r0 as any)?.content?.[0]?.text}`);
   const titlesBefore = (before.goal?.taskList?.tasks ?? []).map((t) => t.title).join("|");
