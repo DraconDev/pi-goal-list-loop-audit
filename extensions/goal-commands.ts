@@ -3849,34 +3849,7 @@ export {
  * needs per-change consent.
  */
 async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
-  const body = buildTweakConfirmBody(input);
-  const options = [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION];
-  // Interactive pi resolves `custom` by INVOKING the factory (goal-session.ts
-  // v0.34.80). RPC/headless resolves it WITHOUT invoking, so a false
-  // `factoryInvoked` is the unavailability signal — not `typeof custom`.
-  if (typeof (ctx.ui as { custom?: unknown }).custom === "function") {
-    for (;;) {
-      let factoryInvoked = false;
-      let choice: string | undefined;
-      try {
-        choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
-          factoryInvoked = true;
-          return new ConfirmDraftComponent(
-            { title, body, options, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },
-            () => tui.requestRender(), theme as never, keybindings as never, done,
-          );
-        });
-      } catch {
-        choice = undefined;
-      }
-      if (!factoryInvoked) break; // custom unavailable here — use the confirm gate
-      if (choice === TWEAK_CONFIRM_ACTION) return true;
-      if (choice !== TWEAK_RATIONALE_ACTION) return false;
-      // Expand: print the rationale, then re-open the SAME decision.
-      ctx.ui.notify(buildTweakRationaleBody(input), "info");
-    }
-  }
-  // Body in the dialog where the host supports one; the compact card is the
-  // consent record either way, and Confirm/Cancel semantics are unchanged.
-  return ctx.ui.confirm(title, body);
+  // Consent gate: unchanged Confirm/Cancel semantics, compact body. The exact
+  // old→new pair is the record; everything else moved to the rationale.
+  return ctx.ui.confirm(title, buildTweakConfirmBody(input));
 }
