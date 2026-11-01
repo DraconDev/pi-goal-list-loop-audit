@@ -95,6 +95,46 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         '        ctx.ui.notify(staleLine, "warning");',
         '        void staleLine;',
     ),
+    # 7. Auditor objection 1: revert the chat-with-no-supervised-target rule so
+    #    the REAL screenshot marker (owner:chat, kind:goal, goal:null) is live
+    #    again and renders the complaint card.
+    'chat-owner-orphan-regression': (
+        'extensions/recovery-ownership.ts',
+        "    if (!work.goal && !work.loop) return 'absent';\n    return 'chat';",
+        "    return 'chat';",
+    ),
+
+    # 8. Auditor objection 2: restore the CURRENT:/NEW: wall in the real
+    #    /goal tweak confirm that the screenshots show.
+    'tweak-wall-regression': (
+        'extensions/goal-commands.ts',
+        '  return ctx.ui.confirm(title, input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input));',
+        '  return ctx.ui.confirm(title, `CURRENT:\\n${input.currentObjective}\\n\\nNEW:\\n${input.newObjective}`);',
+    ),
+
+    # 9. Auditor objection 4: remove the settlement status guard so a paused,
+    #    blocked, or failed item is archived and advances past the decision.
+    'settle-status-guard-regression': (
+        'extensions/loops/goal-auditor-hooks.ts',
+        '  if (settleGoal.status !== "auditing" && !isSettlingClaim(settleGoal.pendingCompletion)) return false;\n',
+        '',
+    ),
+
+    # 10. Auditor objection 5: drop the package-name check so a foreign project
+    #     manifest produces a false stale-build warning.
+    'stale-build-foreign-name-regression': (
+        'extensions/glla-version.ts',
+        '    if (manifest.name !== GLLA_PACKAGE_NAME) return undefined;',
+        '    void GLLA_PACKAGE_NAME;',
+    ),
+
+    # 11. Auditor objection 3: restore the unbounded full-ledger rescan that
+    #     froze the surface for ~4.8 s at the real profile.
+    'ledger-full-scan-regression': (
+        'extensions/goal-loop-core.ts',
+        '  try { entries = scanIndexedLedgerStateFinals(cwd); } catch { entries = []; }',
+        '  try { const f = new Map<string, { type: string; value?: any }>(); scanLedgerRecords(cwd, (e) => { if (e.type === "state" && e.value?.goal?.id) f.set(String(e.value.goal.id), e); }); entries = [...f.values()]; } catch { entries = []; }',
+    ),
 }
 
 # case name -> suite(s) the mutation must be caught by
@@ -111,6 +151,11 @@ SUITES: dict[str, list[str]] = {
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
     'per-record-read-regression': ['tests/glla-wipe-latency.test.ts'],
+    'chat-owner-orphan-regression': ['tests/stale-recovery-marker.test.ts'],
+    'tweak-wall-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'settle-status-guard-regression': ['tests/list-auto-advance.test.ts'],
+    'stale-build-foreign-name-regression': ['tests/stale-build-warning.test.ts'],
+    'ledger-full-scan-regression': ['tests/wipe-ledger-scan.test.ts'],
 }
 
 results = []

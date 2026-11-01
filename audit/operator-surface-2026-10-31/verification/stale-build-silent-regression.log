@@ -3,11 +3,11 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [109.77ms]
-(pass) a matching version stays silent — the normal case must not nag [0.25ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.18ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [2.25ms]
-(pass) version comparison is numeric, not lexical [0.40ms]
+(pass) an older loaded build warns and names the reconcile action [459.25ms]
+(pass) a matching version stays silent — the normal case must not nag [0.34ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.20ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [1.30ms]
+(pass) version comparison is numeric, not lexical [0.49ms]
 101 |   await pi.fire('session_start', { reason: 'startup' }, ctx);
 102 |   await new Promise((resolve) => setTimeout(resolve, 250));
 103 | 
@@ -25,13 +25,16 @@ AssertionError: session start warns exactly once about the stale build
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-pgp2dnoz/tests/stale-build-warning.test.ts:106:10
+      at /tmp/glla-ops-control-28n6ur2z/tests/stale-build-warning.test.ts:106:10
       at processTicksAndRejections (native:7:39)
-(fail) session start surfaces the stale-build warning and still runs [282.69ms]
+(fail) session start surfaces the stale-build warning and still runs [797.58ms]
+(pass) an unrelated project manifest does NOT produce a stale-build warning [0.53ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.23ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.28ms]
 
- 5 pass
+ 8 pass
  1 fail
-Ran 6 tests across 1 file. [2.14s]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-QNugW0/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-QNugW0
-[run-tests] finished in 2s (exit 1)
+Ran 9 tests across 1 file. [4.96s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-cECNbm/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-cECNbm
+[run-tests] finished in 5s (exit 1)
