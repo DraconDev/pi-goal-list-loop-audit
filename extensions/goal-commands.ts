@@ -3851,10 +3851,13 @@ export {
 async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakConfirmInput): Promise<boolean> {
   const body = buildTweakConfirmBody(input);
   const options = [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION];
-  for (;;) {
-    let choice: string | undefined;
-    if (typeof (ctx.ui as { custom?: unknown }).custom === "function") {
+  // Interactive pi resolves `custom` by INVOKING the factory (goal-session.ts
+  // v0.34.80). RPC/headless resolves it WITHOUT invoking, so a false
+  // `factoryInvoked` is the unavailability signal — not `typeof custom`.
+  if (typeof (ctx.ui as { custom?: unknown }).custom === "function") {
+    for (;;) {
       let factoryInvoked = false;
+      let choice: string | undefined;
       try {
         choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
           factoryInvoked = true;
@@ -3866,15 +3869,14 @@ async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakCo
       } catch {
         choice = undefined;
       }
-      if (!factoryInvoked) choice = undefined;
+      if (!factoryInvoked) break; // custom unavailable here — use the confirm gate
+      if (choice === TWEAK_CONFIRM_ACTION) return true;
+      if (choice !== TWEAK_RATIONALE_ACTION) return false;
+      // Expand: print the rationale, then re-open the SAME decision.
+      ctx.ui.notify(buildTweakRationaleBody(input), "info");
     }
-    if (choice === undefined) {
-      // The body rides in the title on this path: `select` has no body field.
-      choice = await ctx.ui.select(`${title}\n\n${body}`, options);
-    }
-    if (choice === TWEAK_CONFIRM_ACTION) return true;
-    if (choice !== TWEAK_RATIONALE_ACTION) return false;
-    // Expand: the full rationale, then back to the same decision.
-    ctx.ui.notify(buildTweakRationaleBody(input), "info");
   }
+  // Body in the dialog where the host supports one; the compact card is the
+  // consent record either way, and Confirm/Cancel semantics are unchanged.
+  return ctx.ui.confirm(title, body);
 }
