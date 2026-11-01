@@ -719,10 +719,9 @@ test("the standalone recovery card obeys the ownership verdict, not the marker a
   const dead = buildWidgetLines(
     { goal: null, list: [], mainModelRecovery: marker } as unknown as State,
     null, NOW, undefined, undefined, { recoveryHasLiveOwner: false },
-  )!;
-  assert.equal(dead.some((line) => line.includes("main-model recovery")), false,
-    "a marker without a live owner must not render an action-implying card");
-  assert.equal(dead.length, 0, "and it renders nothing else either — the state is empty");
+  );
+  assert.equal(dead, undefined,
+    "a marker without a live owner renders no card at all — the empty state stays empty");
 });
 
 test("loop recovery remains visible while the loop is parked", () => {
