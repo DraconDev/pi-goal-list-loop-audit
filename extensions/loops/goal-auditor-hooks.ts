@@ -1166,6 +1166,16 @@ export function settleApprovedCompletion(
   const goal = state.goal;
   if (!goal || goal.id !== goalId) return false;
   if (refuseUnfinishedCompletion(ctx)) return false;
+  // Only an APPROVED audit settles a goal. `auditing` is the normal gate; a
+  // settling claim is the legitimate recovery case (a refused archive that left
+  // the claim mid-settle). A paused, blocked, or failed goal must never be
+  // archived by the completion path — without this guard a caller could archive
+  // a parked item and the auto-advance hook below would then skip past a
+  // decision the user still owes. Refusing here keeps the hold-for-a-decision
+  // gate real instead of incidental.
+  const settleGoal = state.goal;
+  if (!settleGoal || settleGoal.id !== goalId) return false;
+  if (settleGoal.status !== "auditing" && !isSettlingClaim(settleGoal.pendingCompletion)) return false;
   // v0.34.91: capture the recap BEFORE archiveCurrentGoal (it mutates
   // state.goal). The end-of-goal message says WHAT HAPPENED, not
   // "auditor approved" — that's process, not information (the field

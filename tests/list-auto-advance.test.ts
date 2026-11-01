@@ -17,8 +17,6 @@ import fs from 'node:fs';
 import activate, {
   __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags,
 } from '../extensions/loops/goal.js';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { readState } from '../extensions/goal-loop-core.js';
 import { settleApprovedCompletion } from '../extensions/loops/goal-auditor-hooks.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
