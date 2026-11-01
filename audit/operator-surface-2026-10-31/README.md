@@ -418,7 +418,7 @@ the host does.
 ## Verification
 
 `npm run check` and `npm run check:inventory` both exit 0. `npm run
-release:check` exits 0: **4552 passed, 1 skipped, 0 failed across 484 files**,
+release:check` exits 0: **4557 passed, 1 skipped, 0 failed across 485 files**,
 plus pack smoke — recorded in `verification/release-check.log`.
 
 **A note on how this revision got here.** The first two attempts at the chat
@@ -492,7 +492,7 @@ diagnosed rather than re-run until green:
   (16 s vs a 6 s wait) and passes standalone at load 91 (11/11) — a
   parallel-contention flake, unchanged by this work.
 
-The recorded gate is **4552 pass, 1 skip, 0 fail across 484 files, exit 0**.
+The recorded gate is **4557 pass, 1 skip, 0 fail across 485 files, exit 0**.
 
 One earlier full-gate attempt on this host recorded a single failure
 (`busy complete_goal stages admission … ` in `tests/pre-audit-compaction.test.ts`,
