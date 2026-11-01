@@ -1,18 +1,18 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=181s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [5.82ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.58ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [37.95ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.61ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [4.23ms]
-(pass) a terminal goal retires the main-model recovery marker durably [118.54ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [109.42ms]
-(pass) the real settlement path retires the recovery marker when it archives [223.09ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [129.62ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [3.89ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [1.03ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [39.80ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [6.50ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [5.09ms]
+(pass) a terminal goal retires the main-model recovery marker durably [123.28ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [108.08ms]
+(pass) the real settlement path retires the recovery marker when it archives [224.20ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [129.61ms]
 
  9 pass
  0 fail
-Ran 9 tests across 1 file. [984.00ms]
+Ran 9 tests across 1 file. [1012.00ms]
 [run-tests] finished in 1s (exit 0)
