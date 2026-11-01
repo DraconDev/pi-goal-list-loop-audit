@@ -4573,7 +4573,10 @@ function registerAgentTools(pi: any): void {
       } else {
         try {
           confirmed = replacing
-            ? await liveCtx.ui.confirm("Confirm committed task amendment", buildAmendmentSummary({
+            // The exact dialog the note photographed ("Replacing N committed
+            // tasks … Approve?") — same body, same Yes/No, now in the styled
+            // card instead of flat text with the host's raw select footer.
+            ? await confirmCard(liveCtx as never, "Confirm committed task amendment", buildAmendmentSummary({
                 objective: proposalObjective,
                 contract: proposalContract,
                 priorContract: proposalContract,
