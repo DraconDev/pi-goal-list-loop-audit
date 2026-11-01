@@ -192,7 +192,12 @@ export class MockUi {
   confirmImpl: ((title: string, message: string) => Promise<boolean>) | undefined = async () => true;
   selectImpl: ((title: string, options: string[]) => Promise<string | undefined>) | undefined = async () => undefined;
   inputImpl: ((title: string, placeholder?: string) => Promise<string | undefined>) | undefined = async () => undefined;
-  customImpl: ((...args: unknown[]) => Promise<unknown>) | undefined = async () => undefined;
+  // Default undefined so `custom()` reaches its own documented fallback: with no
+  // explicit answer configured the card is decided from `confirmImpl` (true =
+  // the first action, false/undefined = cancel). A default resolver here would
+  // make that fallback dead code and silently answer every custom dialog with
+  // undefined (i.e. cancel) whatever the case intended.
+  customImpl: ((...args: unknown[]) => Promise<unknown>) | undefined = undefined;
   // v0.34.80: real interactive pi INVOKES the custom factory (the builder
   // runs, then the component's done() resolves the dialog). The old mock
   // never invoked it — which accidentally emulated the RPC/noOp stub shape
