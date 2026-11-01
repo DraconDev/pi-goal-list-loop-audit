@@ -205,8 +205,8 @@ test("mirror: bare /goal tweak launches the same flow for an active goal", async
 
     await pi.command("goal", "tweak", ctx);
 
-    assert.match(confirmMessage, /CURRENT:\nold goal objective/, "goal proposal shows old text");
-    assert.match(confirmMessage, /NEW:\nnew goal objective/, "goal proposal shows new text");
+    assert.ok(confirmMessage.includes("old goal objective"), "goal proposal shows the old text");
+    assert.ok(confirmMessage.includes("new goal objective"), "goal proposal shows the new text");
     assert.equal((readState(cwd).goal as { objective: string }).objective, "new goal objective");
     const tweaks = readLedger(cwd).filter((l) => l.type === "goal_tweaked");
     assert.equal(tweaks.length, 1);

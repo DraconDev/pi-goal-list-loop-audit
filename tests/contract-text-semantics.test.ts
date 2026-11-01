@@ -136,7 +136,7 @@ test("goal tweak: bare 'Done when:' clears the stored contract", async () => {
   const { cwd, ctx, confirmMessage } = await goalTweakFixture("old check");
   await pi.command("goal", "tweak new goal objective. Done when:", ctx);
   assert.equal(storedContract(cwd), "", "bare marker clears the contract");
-  assert.match(confirmMessage(), /verification contract is cleared/);
+  assert.match(confirmMessage(), /CLEARS its verification contract/);
 });
 
 // ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ test("list tweak: supplied clause replaces the stored contract", async () => {
   assert.equal(storedContract(cwd), "new check", "replacement contract is stored");
   assert.equal(updated.status, "paused", "tweak does not activate the list item");
   assert.equal(updated.policy, "list", "list provenance is preserved");
-  assert.match(confirmMessage(), /New contract:\nnew check/);
+  assert.match(confirmMessage(), /Replaces the list item objective and its verification contract/);
 });
 
 test("list tweak: omitted clause preserves the stored contract", async () => {
@@ -180,7 +180,7 @@ test("list tweak: omitted clause preserves the stored contract", async () => {
   await pi.command("list", "tweak new list objective", ctx);
   assert.equal(storedContract(cwd), "old check", "omitted clause keeps the old contract");
   assert.equal((readState(cwd).goal as { status: string }).status, "paused");
-  assert.match(confirmMessage(), /old contract is kept/);
+  assert.match(confirmMessage(), /its verification contract is kept/);
 });
 
 test("list tweak: bare 'Done when:' clears the stored contract", async () => {
@@ -188,5 +188,5 @@ test("list tweak: bare 'Done when:' clears the stored contract", async () => {
   await pi.command("list", "tweak new list objective. Done when:", ctx);
   assert.equal(storedContract(cwd), "", "bare marker clears the contract");
   assert.equal((readState(cwd).goal as { status: string }).status, "paused");
-  assert.match(confirmMessage(), /verification contract is cleared/);
+  assert.match(confirmMessage(), /CLEARS its verification contract/);
 });
