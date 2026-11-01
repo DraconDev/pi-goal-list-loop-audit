@@ -290,6 +290,21 @@ executed model is not among the claim's configured candidates it is labelled
 `· session model`, so a session audit says so instead of naming a pin that was
 never dispatched. Derived from recorded refs, never guessed.
 
+**The test gap the auditor found (round 5).** The first version of these tests
+asserted only *presence* — the card names the executed model, and the session case
+says `session model`. A card that named the executed model **and appended** the
+configured candidate (`… · session model · configured openai-codex/gpt-6-luna`)
+therefore passed all four tests, which is exactly the output the contract forbids
+("does not report a configured candidate that was never dispatched"). The
+assertions are now two-sided: the session-model case and the
+recorded-executed-model case both assert `text.includes(CONFIGURED) === false`,
+and the recorded-executed-model case no longer passes via an `||` disjunction that
+the `session model` label alone could satisfy. Proven in a disposable copy:
+appending `· configured openai-codex/gpt-6-luna` now fails two tests
+(`configured-candidate-appended-regression` in the controls), while appending a
+harmless `· max` thinking suffix still passes — the check is about the candidate,
+not the formatting.
+
 ---
 
 ## 6. Stale-build detection
