@@ -418,6 +418,10 @@ export async function confirmCard(ctx: CardConfirmCtx, title: string, body: stri
       // A stale host API is a real failure, not something to paper over with a
       // plain confirm that could silently answer for a dead session.
       if (err instanceof Error && err.message.includes("stale after session replacement")) throw err;
+      // The dialog WAS shown (the factory ran), so the user has already been
+      // asked. Re-asking through the plain confirm would put the same decision
+      // in front of them twice and can double-count a consent. Refuse instead.
+      if (factoryInvoked) return false;
     }
   }
   return ctx.ui.confirm(title, body);

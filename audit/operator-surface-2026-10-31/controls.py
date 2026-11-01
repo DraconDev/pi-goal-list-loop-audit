@@ -62,8 +62,8 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     #     that proves the suite drives the real path, not just the helper.
     'amendment-wiring-regression': (
         'extensions/loops/goal-tools.ts',
-        '              buildAmendmentConfirmBody({',
-        '              [oldObjective, amendmentContract, cleanObj, proposedContract].join("\\n") || buildAmendmentConfirmBody({',
+        '            confirmed = await ctx.ui.confirm(\n              "Confirm completion scope amendment",\n              buildAmendmentConfirmBody({',
+        '            confirmed = await ctx.ui.confirm(\n              "Confirm completion scope amendment",\n              [oldObjective, amendmentContract, cleanObj, proposedContract].join("\\n") || buildAmendmentConfirmBody({',
     ),
 
     # 4. List auto-advance: remove the REAL advance, which lives in
