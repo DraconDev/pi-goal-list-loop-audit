@@ -3,3 +3,32 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-wipe-real-path.test.ts:
+91 |     const notified = ctx.ui.notifies.map((n) => n.message).join("\n");
+92 |     assert.match(notified, /glla wipe done/);
+93 |     assert.match(notified, /archived as aborted/);
+94 | 
+95 |     // The pin: the unbounded full-history scan must not run during a wipe.
+96 |     assert.equal(__testOnlyLedgerScanRecordsCalls(), 0,
+                ^
+AssertionError: the wipe performed a full-ledger scan — the reviewer is reading all history again
+
+1 !== 0
+
+ generatedMessage: false,
+     actual: 1,
+   expected: 0,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-v_ei9ssg/tests/glla-wipe-real-path.test.ts:96:12
+      at processTicksAndRejections (native:7:39)
+(fail) /glla wipe does not read the whole ledger history to archive a goal [992.33ms]
+(pass) the bounded scan still finds today's reviewer_fired rows in the live tail [8.50ms]
+(pass) a row with no timestamp is delivered rather than silently dropped [4.54ms]
+
+ 2 pass
+ 1 fail
+Ran 3 tests across 1 file. [1.93s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-5zinUS/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-5zinUS
+[run-tests] finished in 2s (exit 1)
