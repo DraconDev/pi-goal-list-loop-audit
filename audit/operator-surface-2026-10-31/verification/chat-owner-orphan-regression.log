@@ -1,0 +1,56 @@
+[run-tests] mode=explicit slow_files=13 stall_timeout=284s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 189s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/stale-recovery-marker.test.ts:
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [7.54ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.49ms]
+120 |   seedState(cwd, observed);
+121 |   __testOnlyLoadState(cwd);
+122 |   const liveVerdict = mainModelRecoveryHasLiveOwner();
+123 |   // The live-owner verdict is what the widget is given; it must be FALSE for
+124 |   // this state, and the render must not contain the complaint text.
+125 |   assert.equal(mainModelRecoveryHasLiveOwner(), false,
+               ^
+AssertionError: a chat-owned marker with no supervised target has no live owner
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-s0c2_dwx/tests/stale-recovery-marker.test.ts:125:10
+      at processTicksAndRejections (native:7:39)
+(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [101.96ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [74.27ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [277.51ms]
+(pass) a terminal goal retires the main-model recovery marker durably [752.69ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [299.93ms]
+(pass) the real settlement path retires the recovery marker when it archives [1502.05ms]
+303 |   // screenshot marker (owner:chat, kind:goal, goal:null, 7h42m old). Treating it
+304 |   // as live re-renders the exact note.md complaint.
+305 |   seedState(cwd, { goal: null, list: [], mainModelRecovery: recovery('chat') });
+306 |   __testOnlyLoadState(cwd);
+307 |   await tick(30);
+308 |   assert.equal(mainModelRecoveryHasLiveOwner(), false,
+               ^
+AssertionError: a chat-owned marker with no goal or loop has nothing to resume
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-s0c2_dwx/tests/stale-recovery-marker.test.ts:308:10
+      at processTicksAndRejections (native:7:39)
+(fail) the live-owner predicate requires a supervised target for chat-owned markers [39.64ms]
+
+ 7 pass
+ 2 fail
+Ran 9 tests across 1 file. [4.55s]
