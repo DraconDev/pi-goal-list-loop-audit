@@ -304,6 +304,7 @@ export class CardConfirmComponent implements Component {
   private readonly requestRender: () => void;
   private readonly theme: Theme;
   private readonly getHeight: (() => number) | undefined;
+  private readonly keybindings: KeybindingsManagerLike;
   private readonly done: (value: boolean) => void;
   private scrollOffset = 0;
   private pageSize = 8;
@@ -312,11 +313,12 @@ export class CardConfirmComponent implements Component {
     input: { title: string; body: string; getHeight?: () => number },
     requestRender: () => void,
     theme: Theme,
-    _keybindings: unknown,
+    keybindings: KeybindingsManagerLike,
     done: (value: boolean) => void,
   ) {
     this.title = input.title;
     this.body = input.body;
+    this.keybindings = keybindings;
     this.requestRender = requestRender;
     this.theme = theme;
     this.getHeight = input.getHeight;
@@ -357,13 +359,22 @@ export class CardConfirmComponent implements Component {
   }
 
   handleInput(data: string): void {
-    const before = this.scrollOffset;
-    this.selectList.handleInput(data);
-    // SelectList owns ↑↓/enter/esc; paging is ours so a long amendment body is
-    // readable without leaving the decision.
-    if (data === 'tui.select.pageDown') this.scrollOffset = Math.min(this.scrollOffset + this.pageSize, Math.max(0, this.scrollOffset + this.pageSize));
-    if (data === 'tui.select.pageUp') this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
-    if (this.scrollOffset !== before) this.requestRender();
+    // Paging is ours so a long amendment body is readable without leaving the
+    // decision; everything else belongs to the SelectList, which keeps the
+    // ↑↓/enter/esc semantics the host had before this card existed.
+    if (this.keybindings.matches(data, 'tui.select.pageUp') || data === '\x1b[5~') {
+      this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
+    } else if (this.keybindings.matches(data, 'tui.select.pageDown') || data === '\x1b[6~') {
+      this.scrollOffset += this.pageSize;
+    } else if (this.keybindings.matches(data, 'tui.select.confirm')) {
+      const selected = this.selectList.getSelectedItem()?.value;
+      if (selected) this.done(selected === CARD_CONFIRM_YES);
+    } else if (this.keybindings.matches(data, 'tui.select.cancel')) {
+      this.done(false);
+    } else {
+      this.selectList.handleInput(data);
+    }
+    this.requestRender();
   }
 
   invalidate(): void {
