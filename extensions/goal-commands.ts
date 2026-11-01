@@ -7,8 +7,6 @@
 
 import { clearStaleMainModelRecovery } from "./goal-recovery.js";
 import {
-  TWEAK_CANCEL_ACTION,
-  TWEAK_CONFIRM_ACTION,
   TWEAK_CONFIRM_ACTION,
   TweakConfirmComponent,
   buildTweakConfirmBody,
@@ -30,6 +28,7 @@ import {
   visibleListPosition, visibleListPositions,
   writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
   releaseLoadHoldDurably, stateRootPending, readGoalStateTransaction, isPersistenceDegraded, isForbiddenModel, recheckPersistenceAfterRepair,
+  isStaleApiError,
 } from "./goal-loop-core.js";
 // v0.38.99: the status surfaces name the durable audit lifecycle from the one
 // projection the widget uses.
