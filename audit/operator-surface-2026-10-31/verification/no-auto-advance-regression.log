@@ -5,3 +5,33 @@ tests/list-auto-advance.test.ts:
 (pass) queue items wait while an item is still in flight [41.77ms]
 (pass) a completed item leaves the queue readable for the completion path to advance [4.58ms]
 (pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [7.37ms]
+137 |   // audit round 3 (2026-11-01): this assertion used to expect ITEM(2), which
+138 |   // enshrined a double advance that skipped ITEM(1) entirely — the item was
+139 |   // activated and then silently replaced, and the queue drained. The advance
+140 |   // belongs to `archiveCurrentGoal` (goal-orchestrator.ts); settlement must not
+141 |   // advance a second time.
+142 |   assert.equal(after.goal?.status, 'active',
+               ^
+AssertionError: the next list item started on its own — the note asked for exactly this
++ actual - expected
+
++ undefined
+- 'active'
+
+ generatedMessage: false,
+     actual: undefined,
+   expected: "active",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-oyufkm4g/tests/list-auto-advance.test.ts:142:10
+      at processTicksAndRejections (native:7:39)
+(fail) a cleanly completed item auto-advances the queue without /list next [300.29ms]
+(pass) a standalone goal completing does not skip the queue head (no double advance) [272.04ms]
+
+ 4 pass
+ 1 fail
+Ran 5 tests across 1 file. [1071.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-gnialr/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-gnialr
+[run-tests] finished in 1s (exit 1)
