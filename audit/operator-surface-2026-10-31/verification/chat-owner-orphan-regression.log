@@ -54,3 +54,6 @@ true !== false
  7 pass
  2 fail
 Ran 9 tests across 1 file. [4.55s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-deIzi3/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-deIzi3
+[run-tests] finished in 6s (exit 1)

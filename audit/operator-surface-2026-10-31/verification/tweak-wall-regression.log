@@ -1,15 +1,15 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=191s heartbeat=30s
-[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 127s
+[run-tests] mode=explicit slow_files=13 stall_timeout=273s heartbeat=30s
+[run-tests] host is 1.5x slower than an idle host — per-test budget raised to 182s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [2.29ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.05ms]
-(pass) a changed contract IS shown, both sides [0.05ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.06ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-(pass) the real complete_goal amendment confirm uses the compact body [45.32ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.24ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.06ms]
+(pass) a changed contract IS shown, both sides [0.06ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.04ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.03ms]
+(pass) the real complete_goal amendment confirm uses the compact body [591.32ms]
 200 |   const compact = await run(`${OLD} and file the defects. Done when: ${CONTRACT}`);
 201 |   assert.ok(compact.applied, 'the real tweak path opened its confirmation');
 202 |   assert.ok(compact.body.includes(OLD), 'the exact previous objective is shown');
@@ -27,12 +27,12 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-3q1i422s/tests/amendment-confirm-compact.test.ts:205:10
+      at /tmp/glla-ops-control-g12v6lo8/tests/amendment-confirm-compact.test.ts:205:10
       at processTicksAndRejections (native:7:39)
-(fail) the real /goal tweak card is compact, exact, and expands with --rationale [5.48ms]
-(pass) the tweak card expands the rationale in place and keeps one consent gate [4.65ms]
-(pass) cancelling after expanding still changes nothing [0.16ms]
-(pass) the tweak card reports its CURRENT body to the host after an expand [0.15ms]
+(fail) the real /goal tweak card is compact, exact, and expands with --rationale [7.01ms]
+(pass) the tweak card expands the rationale in place and keeps one consent gate [7.78ms]
+(pass) cancelling after expanding still changes nothing [0.23ms]
+(pass) the tweak card reports its CURRENT body to the host after an expand [0.14ms]
 342 |   };
 343 |   const body = buildTweakConfirmBody(input);
 344 | 
@@ -47,15 +47,32 @@ AssertionError: the default card is 935 chars for a 353-char objective — still
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-3q1i422s/tests/amendment-confirm-compact.test.ts:347:10
+      at /tmp/glla-ops-control-g12v6lo8/tests/amendment-confirm-compact.test.ts:347:10
       at fn (node:test:215:18)
-(fail) a long objective stays compact on the default card, and says what it elided [0.18ms]
-371 |     currentObjective: 'Audit the widget surface',
-372 |     newObjective: 'Audit the widget surface and file the defects',
-373 |     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
-374 |   };
-375 |   const body = buildTweakConfirmBody(input);
-376 |   assert.ok(body.includes('From: Audit the widget surface\n'), body);
+(fail) a long objective stays compact on the default card, and says what it elided [0.19ms]
+380 | 
+381 |   const body = buildTweakConfirmBody({
+382 |     currentObjective: current, newObjective: next,
+383 |     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+384 |   });
+385 |   assert.ok(body.length <= 700, `a ${current.length}-char objective produced ${body.length} chars`);
+               ^
+AssertionError: a 3001-char objective produced 6205 chars
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-ops-control-g12v6lo8/tests/amendment-confirm-compact.test.ts:385:10
+      at fn (node:test:215:18)
+(fail) a 400-word objective is still compact — the bound does not depend on length [0.14ms]
+398 |     currentObjective: 'Audit the widget surface',
+399 |     newObjective: 'Audit the widget surface and file the defects',
+400 |     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+401 |   };
+402 |   const body = buildTweakConfirmBody(input);
+403 |   assert.ok(body.includes('From: Audit the widget surface\n'), body);
                ^
 AssertionError: CURRENT:
 Audit the widget surface
@@ -69,15 +86,15 @@ Replaces the goal objective; its verification contract is kept.
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-3q1i422s/tests/amendment-confirm-compact.test.ts:376:10
+      at /tmp/glla-ops-control-g12v6lo8/tests/amendment-confirm-compact.test.ts:403:10
       at fn (node:test:215:18)
-(fail) a short objective is still printed verbatim — the diff never guesses [0.07ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.69ms]
-(pass) without a height the card cannot scroll — which is why the call site passes one [2.15ms]
+(fail) a short objective is still printed verbatim — the diff never guesses [0.09ms]
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.20ms]
+(pass) without a height the card cannot scroll — which is why the call site passes one [2.63ms]
 
  12 pass
- 3 fail
-Ran 15 tests across 1 file. [414.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-EgVOaw/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-EgVOaw
-[run-tests] finished in 0s (exit 1)
+ 4 fail
+Ran 16 tests across 1 file. [973.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-4t3fkp/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-4t3fkp
+[run-tests] finished in 1s (exit 1)

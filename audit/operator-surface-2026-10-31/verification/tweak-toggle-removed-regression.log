@@ -1,16 +1,16 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=191s heartbeat=30s
-[run-tests] host is 1.1x slower than an idle host — per-test budget raised to 127s
+[run-tests] mode=explicit slow_files=13 stall_timeout=288s heartbeat=30s
+[run-tests] host is 1.6x slower than an idle host — per-test budget raised to 192s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.79ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.05ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.04ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.03ms]
-(pass) the real complete_goal amendment confirm uses the compact body [44.76ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [11.26ms]
+(pass) the amendment confirm keeps the exact old and new objective text [1.09ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.11ms]
+(pass) a changed contract IS shown, both sides [0.08ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.11ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.06ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
+(pass) the real complete_goal amendment confirm uses the compact body [863.57ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [198.23ms]
 265 |   assert.deepEqual(card.dialogDeps.options, [TWEAK_CONFIRM_ACTION, TWEAK_RATIONALE_ACTION, TWEAK_CANCEL_ACTION]);
 266 |   assert.equal(resolved, 'unset', 'building the card applies nothing');
 267 | 
@@ -28,9 +28,9 @@ false !== true
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-n_kan9tx/tests/amendment-confirm-compact.test.ts:270:10
+      at /tmp/glla-ops-control-imtkczc7/tests/amendment-confirm-compact.test.ts:270:10
       at processTicksAndRejections (native:7:39)
-(fail) the tweak card expands the rationale in place and keeps one consent gate [0.85ms]
+(fail) the tweak card expands the rationale in place and keeps one consent gate [2.57ms]
 (pass) cancelling after expanding still changes nothing [0.15ms]
 317 |     () => {}, theme, { matches: () => false } as never, () => {},
 318 |   );
@@ -46,18 +46,19 @@ AssertionError: dialogDeps must reflect the expanded state
    operator: "notStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-n_kan9tx/tests/amendment-confirm-compact.test.ts:322:10
+      at /tmp/glla-ops-control-imtkczc7/tests/amendment-confirm-compact.test.ts:322:10
       at processTicksAndRejections (native:7:39)
 (fail) the tweak card reports its CURRENT body to the host after an expand [0.17ms]
-(pass) a long objective stays compact on the default card, and says what it elided [0.17ms]
+(pass) a long objective stays compact on the default card, and says what it elided [0.20ms]
+(pass) a 400-word objective is still compact — the bound does not depend on length [0.22ms]
 (pass) a short objective is still printed verbatim — the diff never guesses [0.03ms]
-(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [2.39ms]
-426 |   card.toggleRationale();
-427 |   const before = card.render(80);
-428 |   card.handleInput('tui.select.pageDown');
-429 |   assert.deepEqual(card.render(80), before,
-430 |     'with no height the page-down cannot move the view — this is the bug the call site fixes');
-431 |   assert.ok(before.length > 20, `and the body renders unbounded (${before.length} rows)`);
+(pass) the expanded rationale scrolls: PgUp/PgDn move the view and Confirm/Cancel stay visible [3.60ms]
+453 |   card.toggleRationale();
+454 |   const before = card.render(80);
+455 |   card.handleInput('tui.select.pageDown');
+456 |   assert.deepEqual(card.render(80), before,
+457 |     'with no height the page-down cannot move the view — this is the bug the call site fixes');
+458 |   assert.ok(before.length > 20, `and the body renders unbounded (${before.length} rows)`);
                ^
 AssertionError: and the body renders unbounded (20 rows)
  generatedMessage: false,
@@ -66,13 +67,13 @@ AssertionError: and the body renders unbounded (20 rows)
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-n_kan9tx/tests/amendment-confirm-compact.test.ts:431:10
+      at /tmp/glla-ops-control-imtkczc7/tests/amendment-confirm-compact.test.ts:458:10
       at fn (node:test:215:18)
-(fail) without a height the card cannot scroll — which is why the call site passes one [1.43ms]
+(fail) without a height the card cannot scroll — which is why the call site passes one [1.75ms]
 
- 12 pass
+ 13 pass
  3 fail
-Ran 15 tests across 1 file. [414.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-EiCaZi/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-EiCaZi
-[run-tests] finished in 0s (exit 1)
+Ran 16 tests across 1 file. [9.80s]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-w5iecR/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-w5iecR
+[run-tests] finished in 10s (exit 1)

@@ -1,13 +1,14 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=183s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=261s heartbeat=30s
+[run-tests] host is 1.4x slower than an idle host — per-test budget raised to 174s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [47.47ms]
-(pass) a matching version stays silent — the normal case must not nag [0.20ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.16ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.25ms]
-(pass) version comparison is numeric, not lexical [0.14ms]
-(pass) session start surfaces the stale-build warning and still runs [276.28ms]
+(pass) an older loaded build warns and names the reconcile action [42.85ms]
+(pass) a matching version stays silent — the normal case must not nag [0.29ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.18ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.23ms]
+(pass) version comparison is numeric, not lexical [0.10ms]
+(pass) session start surfaces the stale-build warning and still runs [338.40ms]
 131 |   fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
 132 |     name: 'some-unrelated-project',
 133 |     version: '1.0.0',
@@ -25,15 +26,15 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-rw6c05ap/tests/stale-build-warning.test.ts:136:10
+      at /tmp/glla-ops-control-99ior5wg/tests/stale-build-warning.test.ts:136:10
       at fn (node:test:215:18)
-(fail) an unrelated project manifest does NOT produce a stale-build warning [1.33ms]
-(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.20ms]
-(pass) a real older GLLA checkout still warns with the package name present [0.20ms]
+(fail) an unrelated project manifest does NOT produce a stale-build warning [1.00ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.16ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.17ms]
 
  8 pass
  1 fail
-Ran 9 tests across 1 file. [681.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-T0YrVS/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-T0YrVS
+Ran 9 tests across 1 file. [789.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-7JfbCR/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-7JfbCR
 [run-tests] finished in 1s (exit 1)
