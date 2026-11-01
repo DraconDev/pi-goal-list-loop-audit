@@ -113,6 +113,8 @@ export class ConfirmDraftComponent implements Component {
     done: (value: string | undefined) => void,
   ) {
     lastDraftDeps = deps;
+    // Mirror for the test mock only; production never reads this.
+    (globalThis as { __gllaLastConfirmDraftDeps?: ConfirmDraftFactoryDeps }).__gllaLastConfirmDraftDeps = deps;
     this.requestRender = requestRender;
     this.getHeight = deps.getHeight;
     this.options = deps.options;

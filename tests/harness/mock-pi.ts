@@ -230,7 +230,20 @@ export class MockUi {
         }
       }
     }
-    return this.customImpl ? this.customImpl(...args) : Promise.resolve(undefined);
+    if (this.customImpl) return this.customImpl(...args);
+    // No explicit answer configured: fall back to the test's confirm answer so a
+    // card is decided the way the case intended. `custom()` has already invoked
+    // the factory, so the card's own deps describe the options; true selects the
+    // first (the Confirm action), false/undefined cancels. Tests that care about
+    // a specific action (e.g. the expand) set customImpl explicitly.
+    if (this.confirmImpl) {
+      const deps = lastConfirmDraftDepsForMock();
+      const options = deps?.options ?? [];
+      const title = deps?.title ?? "";
+      const body = deps?.body ?? "";
+      return this.confirmImpl(title, body).then((ok) => (ok && options.length > 0 ? options[0] : undefined));
+    }
+    return Promise.resolve(undefined);
   }
   get theme(): undefined {
     return undefined;
@@ -241,6 +254,11 @@ export class MockUi {
     const needle = substr.toLowerCase();
     return this.notifies.filter((n) => n.message.toLowerCase().includes(needle));
   }
+}
+
+/** The deps of the last GLLA confirm card the mock built, if any. */
+function lastConfirmDraftDepsForMock(): { title: string; body: string; options: string[] } | undefined {
+  return (globalThis as { __gllaLastConfirmDraftDeps?: { title: string; body: string; options: string[] } }).__gllaLastConfirmDraftDeps;
 }
 
 export type MockCtx = Omit<ExtensionContext, "ui"> & { ui: MockUi };
