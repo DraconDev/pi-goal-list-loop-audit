@@ -4,3 +4,4 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/wipe-ledger-scan.test.ts:
 (pass) the depth read is bounded as ledger history grows (the wipe freeze) [2179.99ms]
+(pass) the indexed read converges to EXACTLY the full-scan answer [429.49ms]
