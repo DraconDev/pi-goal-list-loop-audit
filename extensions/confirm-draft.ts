@@ -206,3 +206,73 @@ export function buildAmendmentConfirmBody(input: {
   lines.push("", "This changes what the independent auditor will judge.");
   return lines.join("\n");
 }
+
+/**
+ * note.md item 2 (Screenshot_20261029_165336, Screenshot_20261029_112819): the
+ * `/goal tweak` and `/list tweak` confirmation printed a four-section wall —
+ * CURRENT, the whole old objective, NEW, the whole new objective, plus contract
+ * caveats. The consent itself is only the objective pair; everything else is
+ * rationale the user needs ON DEMAND, not by default.
+ *
+ * These two builders split exactly that way. The compact body carries the exact
+ * old→new text (consent fidelity is non-negotiable) and one consequence line.
+ * The rationale body carries the contract semantics, the inference caveat and
+ * the reference labels, and is reachable from the same dialog through a real
+ * `Show full rationale` action.
+ */
+export interface TweakConfirmInput {
+  mode: 'goal' | 'list';
+  currentObjective: string;
+  newObjective: string;
+  /** Human note about where the replacement text came from, if inferred. */
+  inferredNote?: string;
+  hasNewContract: boolean;
+  clearsContract: boolean;
+  newContract?: string;
+}
+
+/** The default card: exact consent text, nothing else. */
+export function buildTweakConfirmBody(input: TweakConfirmInput): string {
+  const lines = [
+    `From: ${input.currentObjective.trim() || '(none)'}`,
+    `To:   ${input.newObjective.trim() || '(none)'}`,
+    '',
+    tweakConsequenceLine(input),
+  ];
+  return lines.join('\n');
+}
+
+/** One line: the single most important consequence of this tweak. */
+export function tweakConsequenceLine(input: TweakConfirmInput): string {
+  const target = input.mode === 'list' ? 'list item' : 'goal';
+  if (input.hasNewContract) return `Replaces the ${target} objective and its verification contract.`;
+  if (input.clearsContract) return `Replaces the ${target} objective and CLEARS its verification contract.`;
+  return `Replaces the ${target} objective; its verification contract is kept.`;
+}
+
+/** The full rationale, reachable from the compact card by explicit request. */
+export function buildTweakRationaleBody(input: TweakConfirmInput): string {
+  const lines = [
+    `CURRENT:\n${input.currentObjective.trim() || '(none)'}`,
+    '',
+    `NEW${input.inferredNote ? ` (inferred)` : ''}:\n${input.newObjective.trim() || '(none)'}`,
+    '',
+    tweakConsequenceLine(input),
+  ];
+  if (input.inferredNote) lines.push('', `Where the new text came from: ${input.inferredNote.trim()}`);
+  if (input.hasNewContract) {
+    lines.push('', `New verification contract:\n${(input.newContract ?? '').trim() || '(none)'}`);
+  } else if (input.clearsContract) {
+    lines.push('', "Empty 'Done when:' — the verification contract is cleared.");
+  } else {
+    lines.push('', 'The new text carries no contract clause, so the old contract is kept.');
+  }
+  lines.push('', 'This changes what the independent auditor will judge.');
+  return lines.join('\n');
+}
+
+/** Dialog actions for the tweak confirmation. Confirm/Cancel semantics are
+ * unchanged; `Show full rationale` is the expand affordance. */
+export const TWEAK_CONFIRM_ACTION = 'Confirm — apply this tweak';
+export const TWEAK_RATIONALE_ACTION = 'Show the full rationale';
+export const TWEAK_CANCEL_ACTION = 'Cancel — change nothing';
