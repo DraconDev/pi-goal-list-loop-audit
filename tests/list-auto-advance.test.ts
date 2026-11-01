@@ -131,15 +131,58 @@ test('a cleanly completed item auto-advances the queue without /list next', asyn
   await new Promise((resolve) => setTimeout(resolve, 250));
 
   const after = readState(cwd);
-  // The queue advanced: the next item became the active goal, with no /list next.
+  // The queue advanced by EXACTLY ONE: the immediate next item runs, and the one
+  // behind it stays queued.
+  //
+  // audit round 3 (2026-11-01): this assertion used to expect ITEM(2), which
+  // enshrined a double advance that skipped ITEM(1) entirely — the item was
+  // activated and then silently replaced, and the queue drained. The advance
+  // belongs to `archiveCurrentGoal` (goal-orchestrator.ts); settlement must not
+  // advance a second time.
   assert.equal(after.goal?.status, 'active',
     'the next list item started on its own — the note asked for exactly this');
-  assert.equal(after.goal?.objective, ITEM(2),
-    'the item that ran is the queue head after the finished one was consumed');
+  assert.equal(after.goal?.objective, ITEM(1),
+    'the IMMEDIATE next item runs — not the one behind it');
+  assert.deepEqual(queueOf(cwd).map((item) => item.objective), [ITEM(2)],
+    'the remaining item still waits; the queue is not drained');
 
+  // The durable record is the archive's own settle-armed row, which names the
+  // item it activated. A second `list_auto_advance` row here would be the
+  // duplicate this test now forbids.
   const rows = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8')
-    .split('\n').filter(Boolean).map((line) => JSON.parse(line))
-    .filter((row) => row.type === 'list_auto_advance');
-  assert.equal(rows.length, 1, 'the advance is recorded once, durably');
-  assert.equal(rows[0].value.via, 'completion-settlement', 'the ledger names the path that advanced');
+    .split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  const armed = rows.filter((row) => row.type === 'list_completion_settle_armed');
+  assert.equal(armed.length, 1, 'the advance is recorded once, durably');
+  assert.equal(armed[0].value.nextObjective, ITEM(1), 'the ledger names the item that actually started');
+  assert.equal(rows.filter((row) => row.type === 'list_auto_advance').length, 0,
+    'settlement must not advance a second time — archiveCurrentGoal already did');
+});
+
+test('a standalone goal completing does not skip the queue head (no double advance)', async () => {
+  // audit round 3: the double advance was most visible here — a queue with two
+  // waiting items, a completed goal that was NOT a list item. Advancing once
+  // starts ITEM(1); advancing twice starts ITEM(1) and replaces it with ITEM(2),
+  // so ITEM(1) never runs and the queue ends empty.
+  const { cwd, ctx } = await setup({ status: 'auditing', policy: 'goal', verificationContract: 'Inspect the behavior' }, [ITEM(1), ITEM(2), ITEM(3)]);
+  const goalId = String(readState(cwd).goal!.id);
+  assert.equal(readState(cwd).list?.length, 3, 'three items are waiting');
+
+  const settled = settleApprovedCompletion(ctx as never, {
+    goalId,
+    generation: 0,
+    claim: {
+      at: new Date().toISOString(), attemptId: 'audit-standalone-advance', claimLineageId: 'claim-standalone-advance',
+      completionSummary: 'Outcome: done. Changed: behavior. Evidence: tests. Tests: pass. Unresolved: none. Next: none.',
+      verificationSummary: 'Fixture only', phase: 'starting',
+    } as never,
+    model: 'test/auditor-model',
+    origin: 'provider-retry',
+  });
+  assert.equal(settled, true, 'the approved completion archived');
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const after = readState(cwd);
+  assert.equal(after.goal?.objective, ITEM(1), 'exactly one item was consumed, and it is the head');
+  assert.deepEqual(queueOf(cwd).map((item) => item.objective), [ITEM(2), ITEM(3)],
+    'the rest of the queue is intact — nothing was skipped or dropped');
 });
