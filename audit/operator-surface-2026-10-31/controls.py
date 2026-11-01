@@ -93,6 +93,15 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         '  const executed = undefined as string | undefined;',
     ),
 
+    # 5b. audit round 5: the card names the executed model AND appends the
+    #     configured candidate that was never dispatched. Presence-only assertions
+    #     cannot see this; the negative assertion added in round 5 can.
+    'configured-candidate-appended-regression': (
+        'extensions/goal-loop-display.ts',
+        '  return truncate(isSessionModel ? `${ref} · session model` : ref, 56);',
+        '  return truncate(`${isSessionModel ? `${ref} · session model` : ref} · configured openai-codex/gpt-6-luna`, 200);',
+    ),
+
     # 3. Wipe latency: add per-record work to the reader. This models the real
     #    regression the budget guards (replaying every historical record with
     #    work per record) and is quadratic, so it cannot hide inside I/O cost.
@@ -197,6 +206,7 @@ SUITES: dict[str, list[str]] = {
     'tweak-long-objective-regression': ['tests/amendment-confirm-compact.test.ts'],
     'tweak-card-height-regression': ['tests/amendment-confirm-compact.test.ts'],
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
+    'configured-candidate-appended-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
     'per-record-read-regression': ['tests/glla-wipe-latency.test.ts'],
     'chat-owner-orphan-regression': ['tests/stale-recovery-marker.test.ts'],
