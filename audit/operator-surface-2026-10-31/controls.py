@@ -66,11 +66,24 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         '            confirmed = await ctx.ui.confirm(\n              "Confirm completion scope amendment",\n              [oldObjective, amendmentContract, cleanObj, proposedContract].join("\\n") || buildAmendmentConfirmBody({',
     ),
 
-    # 4. List auto-advance: remove the settlement advance.
+    # 4. List auto-advance: remove the REAL advance, which lives in
+    #    archiveCurrentGoal (goal-orchestrator.ts). audit round 3: this control
+    #    used to mutate a duplicate advance in the settlement path — the very
+    #    double advance that skipped a queue item — so it reported the CORRECT
+    #    single advance as a failure while protecting the bug.
     'no-auto-advance-regression': (
+        'extensions/loops/goal-orchestrator.ts',
+        '    postCompletionSettleUntil = Date.now() + LIST_COMPLETION_SETTLE_MS;\n    const advanced = activateNextListItem(ctx);',
+        '    postCompletionSettleUntil = Date.now() + LIST_COMPLETION_SETTLE_MS;\n    const advanced = false;',
+    ),
+
+    # 4b. The double advance: settlement advances AGAIN after the archive already
+    #     did, so the immediate next item is activated and then replaced — it
+    #     never runs and the queue drains.
+    'double-advance-regression': (
         'extensions/loops/goal-auditor-hooks.ts',
-        "  if ((listQueue()?.length ?? 0) > 0 && !isLoopActive()) {",
-        "  if (false) {",
+        '  // top of this function is what keeps paused, blocked and failed items holding.\n  return true;',
+        '  // top of this function is what keeps paused, blocked and failed items holding.\n  if ((listQueue()?.length ?? 0) > 0 && !isLoopActive()) activateNextListItem(ctx);\n  return true;',
     ),
 
     # 5. Auditor model display: restore the old precedence (configured ref won).
@@ -120,6 +133,22 @@ CASES: dict[str, tuple[str, str, str] | None] = {
         "  const lines = [\n    `CURRENT:\\n${input.currentObjective.trim() || '(none)'}`,\n    `NEW:\\n${input.newObjective.trim() || '(none)'}`,\n    `From: ${input.currentObjective.trim() || '(none)'}`,",
     ),
 
+    # 8d. audit round 3 [MED]: the default card reprints the whole long
+    #     objective again instead of showing the changed region.
+    'tweak-long-objective-regression': (
+        'extensions/confirm-draft.ts',
+        'export const TWEAK_VERBATIM_LIMIT = 180;',
+        'export const TWEAK_VERBATIM_LIMIT = 100000;',
+    ),
+
+    # 8e. audit round 3 [MED]: the real call site stops passing a height, so the
+    #     advertised PgUp/PgDn scroll cannot move and the body renders unbounded.
+    'tweak-card-height-regression': (
+        'extensions/goal-commands.ts',
+        '          { ...full, getHeight: () => (tui.terminal?.rows ?? 24) - 4 },',
+        '          full,',
+    ),
+
     # 8c. Auditor round 2, objection 1: the wipe's reviewer streams the whole
     #     ledger again instead of the bounded recent read.
     'wipe-full-scan-regression': (
@@ -164,6 +193,9 @@ SUITES: dict[str, list[str]] = {
     'amendment-wall-regression': ['tests/amendment-confirm-compact.test.ts'],
     'amendment-wiring-regression': ['tests/amendment-confirm-compact.test.ts'],
     'no-auto-advance-regression': ['tests/list-auto-advance.test.ts'],
+    'double-advance-regression': ['tests/list-auto-advance.test.ts'],
+    'tweak-long-objective-regression': ['tests/amendment-confirm-compact.test.ts'],
+    'tweak-card-height-regression': ['tests/amendment-confirm-compact.test.ts'],
     'configured-model-wins-regression': ['tests/auditor-model-display.test.ts'],
     'stale-build-silent-regression': ['tests/stale-build-warning.test.ts'],
     'per-record-read-regression': ['tests/glla-wipe-latency.test.ts'],
