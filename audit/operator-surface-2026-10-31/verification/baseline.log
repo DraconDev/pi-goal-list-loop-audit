@@ -2,50 +2,50 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/auditor-model-display.test.ts:
-(pass) a session-model audit names the model that ran, not a configured pin [9.18ms]
-(pass) a configured-pin audit is NOT mislabelled as the session model [0.22ms]
+(pass) a session-model audit names the model that ran, not a configured pin [8.03ms]
+(pass) a configured-pin audit is NOT mislabelled as the session model [0.23ms]
 (pass) the configured ref is only used when nothing recorded an executed model [0.22ms]
 (pass) the recorded executed model outranks the configured candidate [0.14ms]
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [43.34ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [3.44ms]
-(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [4.83ms]
-(pass) a cleanly completed item auto-advances the queue without /list next [299.98ms]
+(pass) queue items wait while an item is still in flight [45.46ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [3.63ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [4.89ms]
+(pass) a cleanly completed item auto-advances the queue without /list next [306.87ms]
 
 tests/stale-build-warning.test.ts:
-(pass) an older loaded build warns and names the reconcile action [25.37ms]
+(pass) an older loaded build warns and names the reconcile action [31.40ms]
 (pass) a matching version stays silent — the normal case must not nag [0.14ms]
-(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.12ms]
-(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.13ms]
-(pass) version comparison is numeric, not lexical [0.05ms]
-(pass) session start surfaces the stale-build warning and still runs [257.40ms]
-(pass) an unrelated project manifest does NOT produce a stale-build warning [0.31ms]
-(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.15ms]
-(pass) a real older GLLA checkout still warns with the package name present [0.20ms]
+(pass) a NEWER loaded build is not stale — a published install driving an old checkout [0.13ms]
+(pass) a missing or unreadable repo manifest proves nothing and stays silent [0.16ms]
+(pass) version comparison is numeric, not lexical [0.07ms]
+(pass) session start surfaces the stale-build warning and still runs [260.79ms]
+(pass) an unrelated project manifest does NOT produce a stale-build warning [0.42ms]
+(pass) the same version in a foreign manifest still does not warn (name is the gate, not version) [0.26ms]
+(pass) a real older GLLA checkout still warns with the package name present [0.49ms]
 
 tests/stale-recovery-marker.test.ts:
-(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.03ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.48ms]
-(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [41.91ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [4.11ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [3.45ms]
-(pass) a terminal goal retires the main-model recovery marker durably [110.55ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [125.04ms]
-(pass) the real settlement path retires the recovery marker when it archives [225.97ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [134.63ms]
+(pass) a completed goal with a leftover recovery marker does NOT render the recovery card [2.02ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.46ms]
+(pass) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [30.01ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [3.68ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [3.65ms]
+(pass) a terminal goal retires the main-model recovery marker durably [111.82ms]
+(pass) a live owner retains its marker — retirement is not blanket-clearing [113.02ms]
+(pass) the real settlement path retires the recovery marker when it archives [222.72ms]
+(pass) the live-owner predicate requires a supervised target for chat-owned markers [131.31ms]
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [0.30ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.05ms]
-(pass) a changed contract IS shown, both sides [0.05ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.06ms]
+(pass) the amendment confirm keeps the exact old and new objective text [0.34ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.07ms]
+(pass) a changed contract IS shown, both sides [0.06ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
 (pass) a very long CONTRACT is shortened with a visible marker [0.04ms]
-(pass) the compact body is measurably smaller than the old five-section form [0.04ms]
-(pass) the real complete_goal amendment confirm uses the compact body [40.20ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [4.78ms]
+(pass) the compact body is measurably smaller than the old five-section form [0.03ms]
+(pass) the real complete_goal amendment confirm uses the compact body [35.82ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [5.24ms]
 
  34 pass
  0 fail
-Ran 34 tests across 5 files. [2.37s]
+Ran 34 tests across 5 files. [2.40s]
 [run-tests] finished in 2s (exit 0)

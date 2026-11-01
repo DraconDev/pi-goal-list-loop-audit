@@ -46,8 +46,8 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     #     would hide a legitimate ordinary-chat recovery (the opposite defect).
     'chat-recovery-hidden-regression': (
         'extensions/goal-recovery.ts',
-        "return ownership === 'retained' || ownership === 'restore-pending' || ownership === 'chat';",
-        "return ownership === 'retained' || ownership === 'restore-pending';",
+        "  if (ownership === 'chat') return !!(state.goal || state.loop);",
+        "  if (ownership === 'chat') return false;",
     ),
 
     # 2. Tweak-confirm: restore full contracts in the body even when unchanged.
@@ -99,9 +99,9 @@ CASES: dict[str, tuple[str, str, str] | None] = {
     #    the REAL screenshot marker (owner:chat, kind:goal, goal:null) is live
     #    again and renders the complaint card.
     'chat-owner-orphan-regression': (
-        'extensions/recovery-ownership.ts',
-        "    if (!work.goal && !work.loop) return 'absent';\n    return 'chat';",
-        "    return 'chat';",
+        'extensions/goal-recovery.ts',
+        "  if (ownership === 'chat') return !!(state.goal || state.loop);",
+        "  if (ownership === 'chat') return true;",
     ),
 
     # 8. Auditor objection 2: restore the CURRENT:/NEW: wall in the real

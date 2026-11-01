@@ -1,13 +1,12 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=223s heartbeat=30s
-[run-tests] host is 1.2x slower than an idle host — per-test budget raised to 148s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/amendment-confirm-compact.test.ts:
-(pass) the amendment confirm keeps the exact old and new objective text [1.30ms]
-(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.05ms]
-(pass) a changed contract IS shown, both sides [0.06ms]
-(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.07ms]
-(pass) a very long CONTRACT is shortened with a visible marker [0.04ms]
+(pass) the amendment confirm keeps the exact old and new objective text [1.02ms]
+(pass) an unchanged contract is NOT reprinted — that was most of the wall [0.08ms]
+(pass) a changed contract IS shown, both sides [0.08ms]
+(pass) a long objective is NEVER clipped — consent exactness beats brevity [0.09ms]
+(pass) a very long CONTRACT is shortened with a visible marker [0.08ms]
 (pass) the compact body is measurably smaller than the old five-section form [0.05ms]
 139 |   assert.ok(amendment, 'the real complete_goal path opened the scope-amendment confirm');
 140 |   // Consent fidelity: the exact old and new objective both appear.
@@ -26,14 +25,14 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-fmznr_1l/tests/amendment-confirm-compact.test.ts:144:10
+      at /tmp/glla-ops-control-cjxgj4c7/tests/amendment-confirm-compact.test.ts:144:10
       at processTicksAndRejections (native:7:39)
-(fail) the real complete_goal amendment confirm uses the compact body [53.90ms]
-(pass) the real /goal tweak card is compact, exact, and expands with --rationale [10.28ms]
+(fail) the real complete_goal amendment confirm uses the compact body [51.29ms]
+(pass) the real /goal tweak card is compact, exact, and expands with --rationale [6.01ms]
 
  7 pass
  1 fail
-Ran 8 tests across 1 file. [487.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-9BhMI1/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-9BhMI1
+Ran 8 tests across 1 file. [470.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-4WLbpe/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-4WLbpe
 [run-tests] finished in 1s (exit 1)

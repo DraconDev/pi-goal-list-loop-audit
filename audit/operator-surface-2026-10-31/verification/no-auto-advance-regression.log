@@ -1,11 +1,10 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=223s heartbeat=30s
-[run-tests] host is 1.2x slower than an idle host — per-test budget raised to 148s
+[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/list-auto-advance.test.ts:
-(pass) queue items wait while an item is still in flight [46.35ms]
-(pass) a completed item leaves the queue readable for the completion path to advance [5.09ms]
-(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [7.42ms]
+(pass) queue items wait while an item is still in flight [47.65ms]
+(pass) a completed item leaves the queue readable for the completion path to advance [4.24ms]
+(pass) a paused, blocked, or failed item does NOT advance — driven through real settlement [4.93ms]
 132 | 
 133 |   const after = readState(cwd);
 134 |   // The queue advanced: the next item became the active goal, with no /list next.
@@ -26,13 +25,13 @@ AssertionError: the item that ran is the queue head after the finished one was c
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-o9n1f1vf/tests/list-auto-advance.test.ts:137:10
+      at /tmp/glla-ops-control-llk4hn51/tests/list-auto-advance.test.ts:137:10
       at processTicksAndRejections (native:7:39)
-(fail) a cleanly completed item auto-advances the queue without /list next [313.82ms]
+(fail) a cleanly completed item auto-advances the queue without /list next [289.32ms]
 
  3 pass
  1 fail
-Ran 4 tests across 1 file. [904.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-18bYIL/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-18bYIL
+Ran 4 tests across 1 file. [747.00ms]
+[run-tests] failure diagnostics retained at /tmp/glla-test-processes-Tj6wRZ/failure.json
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-Tj6wRZ
 [run-tests] finished in 1s (exit 1)
