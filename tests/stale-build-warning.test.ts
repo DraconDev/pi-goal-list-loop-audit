@@ -118,3 +118,42 @@ test('session start surfaces the stale-build warning and still runs', async () =
   'a stale build must not refuse or block session start');
   assert.ok(rows.length > 0, 'the session wrote its ledger — the warning is not a hard stop');
 });
+
+/**
+ * Audit finding 5: comparing against an ARBITRARY project's package.json made
+ * GLLA warn in every unrelated project whose version happened to be higher
+ * ("loaded build v0.39.54 is older than this repo (v1.0.0)"). A foreign
+ * manifest is not evidence about the GLLA source, so detection is scoped to
+ * this package.
+ */
+test('an unrelated project manifest does NOT produce a stale-build warning', () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
+    name: 'some-unrelated-project',
+    version: '1.0.0',
+  }));
+  const status = detectStaleBuild(cwd);
+  assert.equal(status.stale, false, 'a foreign package is not the GLLA source checkout');
+  assert.equal(formatStaleBuildWarning(status), undefined, 'and it never renders a warning');
+});
+
+test('the same version in a foreign manifest still does not warn (name is the gate, not version)', () => {
+  const cwd = tmpCwd();
+  const loaded = loadedGllaVersion();
+  fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
+    name: 'another-plugin',
+    version: loaded,
+  }));
+  assert.equal(detectStaleBuild(cwd).stale, false, 'a matching version in a foreign package is not GLLA');
+});
+
+test('a real older GLLA checkout still warns with the package name present', () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, 'package.json'), JSON.stringify({
+    name: 'pi-goal-list-loop-audit',
+    version: '0.0.1',
+  }));
+  const status = detectStaleBuild(cwd);
+  assert.equal(status.stale, true, 'the GLLA checkout itself is still detected');
+  assert.match(formatStaleBuildWarning(status) ?? '', /reload|reinstall/i);
+});
