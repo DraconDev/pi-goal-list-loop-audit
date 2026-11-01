@@ -184,9 +184,6 @@ export function compareGllaVersions(a: string, b: string): number {
   return 0;
 }
 
-/** The GLLA package name — the only manifest this comparison may read. */
-const GLLA_PACKAGE_NAME = "pi-goal-list-loop-audit";
-
 /**
  * Read `<dir>/package.json` ONLY when it is this package. Comparing the loaded
  * GLLA build against an arbitrary project's version is meaningless and worse
