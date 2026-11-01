@@ -1266,7 +1266,10 @@ export function settleApprovedCompletion(
   // surviving marker renders a standalone "send 'continue'" card six hours
   // later for work that no longer exists. Retire it here with the same verdict
   // the ordinary orphan sweep uses, so display and retirement agree.
-  if (retireOrphanedMainModelRecovery(ctx, true) === "persistence-failed") return;
+  // A persistence failure here must NOT swallow the approval notice: the
+  // goal is already archived, and withholding the recap would be worse than a
+  // surviving marker. The sweep reports its own warning.
+  retireOrphanedMainModelRecovery(ctx, true);
   notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
   // v0.39.61 (note.md: "we should be auto continuing no up next"): a CLEAN
   // completion advances the queue. The list used to print "N queued — /list
