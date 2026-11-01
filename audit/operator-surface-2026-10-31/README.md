@@ -360,11 +360,11 @@ goal card in the same frame has a border and a title. The note's own words are
 "this question looks fine, except unstyled", which is exactly right: the copy was
 already good, only the chrome was missing.
 
-**Root cause (observed).** `extensions/loops/goal-tools.ts` called
-`liveCtx.ui.confirm(title, body)` for the task amendment, and
-`extensions/loops/goal-tools.ts` called it again for the completion scope
-amendment, and `respec-builder-runtime.ts` reached the same flat primitive through
-the `confirmAmendment` hook. `ctx.ui.confirm` is title+body text by definition —
+**Root cause (observed).** Three amendment sites called the flat primitive:
+`extensions/loops/goal-tools.ts:4576` for the task amendment (the dialog in the
+screenshot), `extensions/loops/goal-tools.ts:900` for the completion scope
+amendment, and `extensions/loops/goal-tools.ts:711` via the `confirmAmendment`
+hook that `extensions/respec-builder-runtime.ts:342` consumes. `ctx.ui.confirm` is title+body text by definition —
 it cannot draw a border or theme a title. The tweak confirmation had moved to
 `ctx.ui.custom` in item 2, so these three were the last amendment dialogs still on
 the flat path. Ten `ctx.ui.confirm` sites existed overall; **three** were

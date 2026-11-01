@@ -97,6 +97,13 @@ apart per item.
   start now compares the loaded build with the repo manifest and warns with the
   reload action, non-blocking, and stays silent when they match.
 
+- **Amendment confirmations are styled.** The task-amendment and
+  completion-scope dialogs rendered as flat text with the host's raw
+  `↑↓ navigate enter select escape/ctrl+c cancel` footer. They now use the same
+  bordered card as the tweak confirmation, with the caller's exact body, two-way
+  Yes/No, a paged viewport for long amendments, and the plain confirm as the
+  fallback for hosts where `custom` never renders.
+
 Also in this revision: the manifest catches up with the source. Code has been
 annotated with change versions through `v0.39.61` while `package.json` still said
 `0.39.54` — the same class of drift the stale-build warning exists to catch.
