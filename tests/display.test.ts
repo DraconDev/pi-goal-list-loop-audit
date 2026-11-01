@@ -710,7 +710,7 @@ test("standalone main-model recovery remains visible when no goal is active", ()
   // recovery card is the standalone surface. Pinning that split stops this test
   // from silently depending on a status line it was never about.
   const status = buildStatusText(state, null, NOW);
-  assert.match(status ?? "", /LOOP endless-td audit · iter 12\/100/);
+  assert.match(status ?? "", /loop ∞ iter 12\/100/);
   assert.equal(/main-model recovery/.test(status ?? ""), false, "the loop owns the footer while it runs");
   // The renderer takes the ownership verdict as ephemeral extras (it must not
   // import state machinery); goal-ui.ts supplies it from
