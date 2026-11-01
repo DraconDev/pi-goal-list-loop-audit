@@ -149,3 +149,56 @@ test('the real complete_goal amendment confirm uses the compact body', async () 
   assert.ok(amendment!.body.length < oldFormLength,
     `the real confirm body must be shorter than the old form (${amendment!.body.length} vs ${oldFormLength})`);
 });
+
+/**
+ * The auditor's objection: the screenshots show `/goal tweak`, and an earlier
+ * revision only compacted the `complete_goal` amendment call. This drives the
+ * REAL `cmdTweak` — the path those screenshots came from.
+ */
+test('the real /goal tweak card is compact, exact, and expands with --rationale', async () => {
+  const { cmdTweak } = await import('../extensions/goal-commands.js');
+  const { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } = await import('./harness/mock-pi.js');
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+
+  const OLD = 'Audit the widget surface end to end and record what the user sees';
+  const NEW = 'Audit the widget surface end to end, record what the user sees, and file the defects';
+  const CONTRACT = 'npm run check exits 0';
+
+  async function run(args: string): Promise<{ body: string; applied: boolean; notifies: string[] }> {
+    const cwd = tmpCwd();
+    const pi = new MockPi();
+    activate(pi.api);
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: `tweak-${Math.random()}` } });
+    Object.assign(ctx, { modelRegistry: { find: () => undefined, getAvailable: () => [ctx.model], getAll: () => [ctx.model], hasConfiguredAuth: () => true } });
+    await pi.fire('session_start', { reason: 'startup' }, ctx);
+    seedState(cwd, {
+      goal: seedGoal({ status: 'active', objective: OLD, verificationContract: CONTRACT }),
+      list: [],
+    });
+    __testOnlyLoadState(cwd);
+    const bodies: string[] = [];
+    Object.assign(ctx.ui, {
+      confirmImpl: (title: string, body: string) => { bodies.push(body); return Promise.resolve(false); },
+      selectImpl: undefined,
+    });
+    await cmdTweak(args, ctx, 'goal');
+    return { body: bodies[0] ?? '', applied: bodies.length > 0, notifies: ctx.ui.notifies.map((n: { message: string }) => n.message) };
+  }
+
+  // Default: compact, and both objectives are present EXACTLY.
+  const compact = await run(`${OLD} and file the defects. Done when: ${CONTRACT}`);
+  assert.ok(compact.applied, 'the real tweak path opened its confirmation');
+  assert.ok(compact.body.includes(OLD), 'the exact previous objective is shown');
+  assert.ok(compact.body.includes(NEW) || compact.body.includes(`${OLD} and file the defects`),
+    'the exact proposed objective is shown');
+  assert.equal(compact.body.includes('CURRENT:'), false, 'the old CURRENT/NEW wall is gone');
+  assert.equal(compact.body.includes(CONTRACT), false, 'the contract body is not in the default card');
+  assert.match(compact.body, /Full rationale: re-run with --rationale/, 'the card names its own expand');
+
+  // The expand: the same gate, with the full form.
+  const expanded = await run(`--rationale ${OLD} and file the defects. Done when: ${CONTRACT}`);
+  assert.ok(expanded.applied, 'the expanded card is still the same consent gate');
+  assert.ok(expanded.body.includes('CURRENT:'), 'the full form carries the reference labels');
+  assert.ok(expanded.body.includes(CONTRACT), 'the full contract text is reachable through the expand');
+  assert.ok(expanded.body.length > compact.body.length, 'the expand is genuinely richer than the default');
+});
