@@ -1,4 +1,5 @@
-[run-tests] mode=explicit slow_files=13 stall_timeout=180s heartbeat=30s
+[run-tests] mode=explicit slow_files=13 stall_timeout=320s heartbeat=30s
+[run-tests] host is 1.8x slower than an idle host — per-test budget raised to 213s
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/stale-recovery-marker.test.ts:
@@ -19,10 +20,10 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-qbxsabhn/tests/stale-recovery-marker.test.ts:66:10
+      at /tmp/glla-ops-control-qerx3lm9/tests/stale-recovery-marker.test.ts:66:10
       at fn (node:test:215:18)
-(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [5.79ms]
-(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.33ms]
+(fail) a completed goal with a leftover recovery marker does NOT render the recovery card [3.69ms]
+(pass) a live recovery marker still renders its card — the guard is not blanket-hiding [0.58ms]
 125 |   assert.equal(mainModelRecoveryHasLiveOwner(), false,
 126 |     'a chat-owned marker with no supervised target has no live owner');
 127 |   // Feed the renderer the verdict the REAL widget feeds it (goal-ui.ts:930
@@ -40,19 +41,8 @@ true !== false
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /tmp/glla-ops-control-qbxsabhn/tests/stale-recovery-marker.test.ts:130:10
+      at /tmp/glla-ops-control-qerx3lm9/tests/stale-recovery-marker.test.ts:130:10
       at processTicksAndRejections (native:7:39)
-(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [41.94ms]
-(pass) the same real marker is retired, not merely hidden — display and retirement agree [7.48ms]
-(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [5.16ms]
-(pass) a terminal goal retires the main-model recovery marker durably [116.54ms]
-(pass) a live owner retains its marker — retirement is not blanket-clearing [107.82ms]
-(pass) the real settlement path retires the recovery marker when it archives [220.27ms]
-(pass) the live-owner predicate requires a supervised target for chat-owned markers [129.05ms]
-
- 7 pass
- 2 fail
-Ran 9 tests across 1 file. [973.00ms]
-[run-tests] failure diagnostics retained at /tmp/glla-test-processes-bq460Z/failure.json
-[run-tests] cleanup evidence retained at /tmp/glla-test-processes-bq460Z
-[run-tests] finished in 1s (exit 1)
+(fail) the REAL observed marker (owner:chat, kind:goal, goal:null, 7h old) does not render the card [173.99ms]
+(pass) the same real marker is retired, not merely hidden — display and retirement agree [40.82ms]
+(pass) a chat-owned marker WITH a live goal still renders — retirement is not blanket [58.08ms]
