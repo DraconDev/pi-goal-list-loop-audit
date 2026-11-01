@@ -202,6 +202,7 @@ import {
   tickLengthContinue,
 } from "../length-continue.js";
 import { capProviderRetrySeconds } from "../quota-retry.js";
+import { retireOrphanedMainModelRecovery } from "../goal-recovery.js";
 import {
   mainModelAutoRetryUntil,
   mainModelRetryDelayMs,
@@ -1260,6 +1261,12 @@ export function settleApprovedCompletion(
     model,
     renderPersisted: persisted,
   });
+  // note.md item 1: this is the terminal boundary. The goal is archived, so a
+  // main-model recovery marker created for it has nothing left to act on, and a
+  // surviving marker renders a standalone "send 'continue'" card six hours
+  // later for work that no longer exists. Retire it here with the same verdict
+  // the ordinary orphan sweep uses, so display and retirement agree.
+  if (retireOrphanedMainModelRecovery(ctx, true) === "persistence-failed") return;
   notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
   // v0.39.61 (note.md: "we should be auto continuing no up next"): a CLEAN
   // completion advances the queue. The list used to print "N queued — /list
