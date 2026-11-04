@@ -239,12 +239,13 @@ test("v0.36.0: auditor thinking inherits the parent dial unless explicitly overr
   assert.match(MENU, /valueText: settings\.auditorModelFallbacks/);
   const caseIdx2 = SRC.indexOf('case "auditorModel": {');
   // Audit 2026-09-07: inherit/clear parity added ~600 chars above the
-  // ladder — 3600 keeps the title inside the window.
-  assert.match(SRC.slice(caseIdx2, caseIdx2 + 3600), /"Auditor thinking — DETACHED auditor worker ONLY/);
+  // ladder. v0.39.62 added a global-only note above the session branch
+  // (~800 chars) — 4800 keeps the title inside the window.
+  assert.match(SRC.slice(caseIdx2, caseIdx2 + 4800), /"Auditor thinking — DETACHED auditor worker ONLY/);
   // Audit 2026-09-07 (MEDIUM, findings 386-387): the auditor flow mirrors
   // the drafter inherit/clear parity — a non-reasoning pick clears a stale
   // override, and the ladder offers a session-inherit row that clears it.
-  const auditorBlock = SRC.slice(caseIdx2, caseIdx2 + 6000);
+  const auditorBlock = SRC.slice(caseIdx2, caseIdx2 + 7000);
   assert.match(auditorBlock, /drafterThinkingChoiceOptions\(/, "auditor ladder offers the session-inherit row");
   assert.match(auditorBlock, /startsWith\("session —"\)/, "the inherit row parses like the drafter's");
   assert.match(auditorBlock, /auditorThinkingLevel: undefined \}\);/, "inherit / non-reasoning clears the override");
