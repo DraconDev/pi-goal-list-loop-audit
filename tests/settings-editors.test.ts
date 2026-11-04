@@ -1170,9 +1170,11 @@ test("auditor dial inherit clears the pin in every layer, not only the owning on
     const hostCtx = ctx as unknown as ExtensionContext;
     fs.mkdirSync(path.dirname(GLOBAL_FILE), { recursive: true });
     fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ auditorModel: "audit/global", auditorThinkingLevel: "low" }, null, 2));
-    // The project owns the MODEL; the global owns the DIAL.
+    // v0.39.62: both the primary and the dial are global-only. A stale
+    // project model is ignored on read, so the dial's only owner is global.
     fs.mkdirSync(path.dirname(projectSettingsPath(cwd)), { recursive: true });
     fs.writeFileSync(projectSettingsPath(cwd), JSON.stringify({ auditorModel: "audit/project" }));
+    assert.equal(loadSettings(cwd).auditorModel, "audit/global", "the stale project model is ignored");
     ctx.ui.customStubMode = true;
     ctx.ui.customImpl = async () => ({ kind: "model", ref: "audit/project" });
     ctx.ui.selectImpl = async () => "session — inherit current session level (default)";
