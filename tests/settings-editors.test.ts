@@ -505,7 +505,9 @@ test("T4: input editor — auditorModel pin / explicit session on empty", async 
     await handleSettingChoice("auditorModel", ctx as unknown as ExtensionContext);
     assert.equal(loadSettings(ctx.cwd).auditorModel, null, "empty input explicitly inherits the session instead of exposing a lower-layer pin");
     assert.equal(loadSettings(ctx.cwd).auditorThinkingLevel, undefined);
-    assert.equal(readGlobal().auditorModel, "openai/gpt-5", "the global pin still serves other projects");
+    // v0.39.62: both choices are global-only, so the explicit session state
+    // replaced the pin in the one file every project reads.
+    assert.equal(readGlobal().auditorModel, null, "the session choice is global, not a per-project mask");
   } finally {
     restoreGlobal();
   }
@@ -641,11 +643,15 @@ test("choosing session inherits both role settings without a separate thinking p
       ctx.ui.selectImpl = async () => { throw new Error("session inherits its thinking without another choice"); };
       await handleSettingChoice(`${role}Model`, ctx as ExtensionContext);
       if (role === "auditor") {
+        // v0.39.62: the auditor primary is global-only like every other role
+        // primary, so the session choice lands in the SAME layer it clears.
+        // The old project-scoped `null` left the global pin standing and
+        // shadowed it in exactly one tree — the defect this change removes.
         const effective = loadSettings(ctx.cwd);
-        assert.equal(effective.auditorModel, null, "explicit session masks the global model");
+        assert.equal(effective.auditorModel, null, "explicit session masks the configured model");
         assert.equal(effective.auditorThinkingLevel, undefined);
-        assert.equal(readGlobal().auditorModel, "test/selected", "other projects keep their pin");
-        assert.equal(readGlobal().auditorThinkingLevel, "low");
+        assert.equal(readGlobal().auditorModel, null, "the session choice is global, so every project sees it");
+        assert.equal(readGlobal().auditorThinkingLevel, undefined);
       } else {
         assert.equal(readGlobal()[`${role}Model`], undefined, role);
         assert.equal(readGlobal()[`${role}ThinkingLevel`], undefined, role);
