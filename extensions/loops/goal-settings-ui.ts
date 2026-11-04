@@ -260,6 +260,9 @@ function clearAuditorThinkingEverywhere(ctx: ExtensionContext): void {
   if (typeof probe === "function" && probe(ctx, "settings save")) {
     throw new Error("settings save refused: the session handle went stale during the edit (a replacement session owns the state root)");
   }
+  // v0.39.62: `auditorThinkingLevel` is global-only alongside the primary it
+  // belongs to. A stale project copy is still cleared so an old file cannot
+  // keep advertising a pin the runtime ignores.
   if (holds(globalLayer)) persistSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
   if (holds(projectLayer)) persistSettings("project", ctx.cwd, { auditorThinkingLevel: undefined });
 }
@@ -1798,15 +1801,20 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const pick = await promptModelRef(ctx, "Auditor model override", "provider/model-id — empty keeps the pi session model", { excludeRefs: loadSettings(ctx.cwd).forbiddenModels });
       if (pick === undefined) return;
       if (pick.kind === "session") {
-        saveSettings("project", ctx, { auditorModel: null, auditorThinkingLevel: undefined });
-        ctx.ui.notify("Auditor agent: live session model and thinking inherited together for this project; global settings and fallback lists preserved.", "info");
+        // v0.39.62: `auditorModel` is global-only, so BOTH choices are global.
+        // The old project-scoped `null` was the defect: it shadowed the global
+        // pin in exactly one tree, permanently, and the menu could not show a
+        // project-vs-global split it never reported. An explicit session choice
+        // is now the global "inherit the live session pair" state — the same
+        // masking semantics, applied where every project can see it.
+        saveSettings("global", ctx, { auditorModel: null, auditorThinkingLevel: undefined });
+        ctx.ui.notify("Auditor agent: live session model and thinking inherited together for EVERY project; an explicit fallback list is preserved.", "info");
         return;
       }
-      // Model + dial are one editor transaction. A project-owned pair must
-      // not save its dial into the global baseline after replacing null.
-      const sources = settingsProvenance(ctx.cwd);
-      const scope = sources.auditorModel?.source === "project" || sources.auditorThinkingLevel?.source === "project" ? "project" : "global";
-      const saveAuditor = (patch: Pick<Settings, "auditorModel" | "auditorThinkingLevel">): void => saveSettings(scope, ctx, patch);
+      // Model + dial are one editor transaction: the primary and its thinking
+      // pin always land in the same (global) layer, so a later session-
+      // inheritance choice cannot leave a half-applied pair behind.
+      const saveAuditor = (patch: Pick<Settings, "auditorModel" | "auditorThinkingLevel">): void => saveSettings("global", ctx, patch);
       saveAuditor({ auditorModel: pick.ref });
       // v0.31.4: thinking is chosen WITH the model (user: "we are setting
       // the thinking when we select the model now or we should") — there is
