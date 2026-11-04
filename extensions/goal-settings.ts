@@ -139,7 +139,10 @@ export interface Settings {
   mainModelPrimaryProbeMinutes?: number;
   /** "provider/model-id" or bare "model-id". Unset → configured fallbacks,
    * then session model; with no configured chain, inherit session directly. */
-  auditorModel?: string | null; // null explicitly inherits the live session pair, masking lower-layer pins
+  /** Detached auditor primary. Global-only: `null` (an explicit "inherit the
+   * live session pair") and a model ref are both machine policy, so they live
+   * in the global file and no project copy can shadow either. */
+  auditorModel?: string | null;
   /** Global-only ordered provider/model refs to try after the detached
    * auditor primary fails or is skipped. The session model remains the final
    * fallback. The shape and cap match mainModelFallbacks. */
@@ -394,6 +397,17 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "compactorModel",
   "compactorModelFallbacks",
   "compactionTokenThreshold",
+  // v0.39.62: the auditor PRIMARY joins its own fallback chain, its dial, and
+  // every other role primary (drafter/designer/compactor) as machine policy.
+  // It was the one exception, and the exception was invisible: selecting
+  // "session" in the picker wrote `auditorModel: null` into ONE project file,
+  // so that tree silently stopped inheriting the global pin — forever, and
+  // with no surface saying so. Fifteen projects ended up auditing on the
+  // global pin while four audited on their session model, purely by whichever
+  // project had been opened when the picker was used. One switch now governs
+  // every tree, and loadSettings()/saveSettings() evict the stale project
+  // copies that used to shadow it.
+  "auditorModel",
   "auditorModelFallbacks",
   "auditorToolTimeoutMs",
   "auditorStallMs",
