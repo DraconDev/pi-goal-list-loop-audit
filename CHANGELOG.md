@@ -9,6 +9,7 @@
 - `auditorModel` and `auditorThinkingLevel` join `GLOBAL_ONLY_KEYS`: the primary pin and its reasoning dial are machine/provider policy, saved in one global transaction. A project copy can no longer shadow the global pin invisibly.
 - Selecting "Session — inherit" now saves global `null` (explicit live-pair inheritance for EVERY project) instead of a project-scoped `null` that silently masked the global pin in exactly one tree forever. Stale project copies are evicted on load/save, and the paired dial is described the same way in the menu and in `docs/SETTINGS.md`.
 - The session choice remains a live binding, not a snapshot: each session audits with its own current model and thinking level. `docs/SETTINGS.md`, the encoder and the editor tests were updated to match the global-only contract.
+- The 2026-10-21 command-review reproducer that pinned the old project-scoped masking now asserts the global write: `audit/glla-command-review-2026-10-21/repro.test.ts`.
 
 ### Completion amendments and safe pre-audit compaction
 
