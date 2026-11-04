@@ -107,7 +107,10 @@ test("headless explicit session selection reports the live pair despite global p
   const session = { provider: "live", id: "current", reasoning: true, thinkingLevelMap: { max: "max" } };
   ctx.model = session;
   ctx.modelRegistry = { getAvailable: () => [FLASH, session] };
-  saveSettings("project", cwd, { auditorModel: null });
+  // v0.39.62: auditor primary + dial are global-only, so the picker’s
+  // explicit-session state is a GLOBAL null (+ cleared dial), not a project
+  // mask. The headless display must still report the live pair.
+  saveSettings("global", cwd, { auditorModel: null, auditorThinkingLevel: undefined });
   try {
     await pi.command("glla", "", ctx);
     const line = headlessText(ctx).split("\n").find(line => line.startsWith("auditorThinkingEffective:"));
