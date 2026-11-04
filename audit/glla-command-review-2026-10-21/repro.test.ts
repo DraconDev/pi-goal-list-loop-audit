@@ -39,7 +39,7 @@ function fixture(settings: any = {}) {
   return {cwd, ctx, session, selected, other};
 }
 
-test('session selection must not resurrect global auditor settings hidden by project overrides', async () => {
+test('v0.39.62: session selection saves global inheritance for every tree (global-only)', async () => {
   const {cwd, ctx} = fixture({auditorModel: 'audit/selected', auditorThinkingLevel: 'low'});
   const projectFile = projectSettingsPath(cwd);
   fs.mkdirSync(path.dirname(projectFile), {recursive: true});
@@ -50,9 +50,10 @@ test('session selection must not resurrect global auditor settings hidden by pro
     const settings = loadSettings(cwd);
     console.log('session picker effective result:', JSON.stringify({auditorModel: settings.auditorModel, auditorThinkingLevel: settings.auditorThinkingLevel, notifications: ctx.ui.notifies}));
     const resolved = resolveAuditorModel(ctx, settings.auditorModel, settings.auditorModelFallbacks);
-    assert.equal(resolved.model, ctx.model, 'session selection must actually inherit, not unmask the global auditor pin');
-    assert.equal(settings.auditorThinkingLevel, undefined, 'hidden global thinking must not shadow the live session');
-    assert.equal(JSON.parse(fs.readFileSync(globalFile, 'utf8')).auditorModel, 'audit/selected', 'other projects retain the global model');
+    assert.equal(resolved.model, ctx.model, 'global session choice must actually inherit, not unmask the global auditor pin');
+    assert.equal(settings.auditorModel, null, 'v0.39.62: session choice is global null, masking nothing project-locally');
+    assert.equal(settings.auditorThinkingLevel, undefined, 'global thinking must not shadow the live session');
+    assert.equal(JSON.parse(fs.readFileSync(globalFile, 'utf8')).auditorModel, null, 'other projects now see the same global session switch');
   } finally { await pi.fire('session_shutdown', {reason: 'audit-test'}, ctx); }
 });
 
