@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.39.62 — the auditor switch becomes global-only, and approval runs through the Confirm gate (2026-11-04)
+
+### Auditor choice is global-only — one switch governs every tree
+
+- `auditorModel` and `auditorThinkingLevel` join `GLOBAL_ONLY_KEYS`: the primary pin and its reasoning dial are machine/provider policy, saved in one global transaction. A project copy can no longer shadow the global pin invisibly.
+- Selecting "Session — inherit" now saves global `null` (explicit live-pair inheritance for EVERY project) instead of a project-scoped `null` that silently masked the global pin in exactly one tree forever. Stale project copies are evicted on load/save, and the paired dial is described the same way in the menu and in `docs/SETTINGS.md`.
+- The session choice remains a live binding, not a snapshot: each session audits with its own current model and thinking level. `docs/SETTINGS.md`, the encoder and the editor tests were updated to match the global-only contract.
+
 ### Completion amendments and safe pre-audit compaction
 
 - Confirmed completion amendments survive unchanged state rehydration and
