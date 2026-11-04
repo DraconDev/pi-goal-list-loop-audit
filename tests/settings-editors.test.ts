@@ -328,33 +328,43 @@ test("a subagent pin edit writes only its own role into the owning layer", async
   }
 });
 
-test("the auditor fallback editor excludes the EFFECTIVE primary, not the global one", async () => {
+test("the auditor fallback editor excludes the EFFECTIVE primary, not a shadowed one", async () => {
   // v0.39.45 (audit 2026-10-22): the editor computed the primary from the
-  // global layer while the runtime resolves the project-aware one, so a
+  // global layer while the runtime resolved the project-aware one, so a
   // project-owned primary could be saved as a backup and was then dropped
   // at runtime.
+  //
+  // v0.39.62: the primary is global-only now, so the two layers can no longer
+  // disagree in the first place — but the staleness hazard is worth pinning in
+  // its new form: a leftover project copy must not be mistaken for the primary
+  // (which would exclude the wrong ref) and must not be silently honoured.
   try {
     const cwd = tmpCwd();
     fs.mkdirSync(path.dirname(projectSettingsPath(cwd)), { recursive: true });
     fs.writeFileSync(projectSettingsPath(cwd), JSON.stringify({ auditorModel: "project/auditor" }));
     fs.writeFileSync(GLOBAL_FILE, JSON.stringify({
       auditorModel: "global/auditor",
-      auditorModelFallbacks: ["global/backup", "project/auditor"],
+      auditorModelFallbacks: ["global/backup", "global/auditor"],
     }));
     const ctx = makeMockCtx(cwd) as any;
     const projectAuditor = { provider: "project", id: "auditor", reasoning: true };
+    const globalAuditor = { provider: "global", id: "auditor", reasoning: true };
     const globalBackup = { provider: "global", id: "backup", reasoning: true };
     ctx.modelRegistry = {
-      find: (provider: string, id: string) => (provider === "project" && id === "auditor" ? projectAuditor : provider === "global" && id === "backup" ? globalBackup : undefined),
-      getAvailable: () => [projectAuditor, globalBackup],
+      find: (provider: string, id: string) => (provider === "project" && id === "auditor" ? projectAuditor
+        : provider === "global" && id === "auditor" ? globalAuditor
+          : provider === "global" && id === "backup" ? globalBackup : undefined),
+      getAvailable: () => [projectAuditor, globalAuditor, globalBackup],
       hasConfiguredAuth: () => true,
     };
     ctx.ui.customStubMode = true;
-    ctx.ui.inputImpl = async () => "global/backup,project/auditor";
+    ctx.ui.inputImpl = async () => "global/backup,global/auditor,project/auditor";
     await handleSettingChoice("auditorModelFallbacks", ctx as unknown as ExtensionContext);
+    assert.equal(loadSettings(cwd).auditorModel, "global/auditor", "the stale project copy is not the effective primary");
     const saved = readGlobal().auditorModelFallbacks as string[];
     assert.ok(saved.includes("global/backup"), "the real backup is kept");
-    assert.ok(!saved.includes("project/auditor"), "the effective (project) primary is not offered as its own backup");
+    assert.ok(!saved.includes("global/auditor"), "the effective (global) primary is not offered as its own backup");
+    assert.ok(saved.includes("project/auditor"), "a ref that is NOT the primary is a legal backup, even if a stale project key names it");
   } finally {
     restoreGlobal();
   }
