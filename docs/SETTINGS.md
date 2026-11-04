@@ -69,7 +69,7 @@ copies are ignored (GLLA reads the global file for these policies):
 `compactionTokenThreshold`,
 `auditorModel`, `auditorModelFallbacks`, `auditorToolTimeoutMs`, `auditorStallMs`,
 `auditJobRetentionMs`, `auditSpotCheckRate`, `auditorStrictChallenge`, `auditorInspection`,
-`versionDisplay`, `auditorThinkingLevel`.
+`autoAcceptDrafts`, `versionDisplay`, `auditorThinkingLevel`.
 
 This list is `GLOBAL_ONLY_KEYS` in `extensions/goal-settings.ts`, and a
 project-scope write to any of them is stripped on read. Every other key —
