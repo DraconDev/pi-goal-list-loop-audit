@@ -409,6 +409,11 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   // copies that used to shadow it.
   "auditorModel",
   "auditorModelFallbacks",
+  // v0.39.62: the dial travels with the primary it describes — the picker saves
+  // them as ONE transaction. Leaving it project-settable let a tree override
+  // the reasoning level of a model only the global file could name, and a
+  // stray project dial outlived the project primary it belonged to.
+  "auditorThinkingLevel",
   "auditorToolTimeoutMs",
   "auditorStallMs",
   "auditJobRetentionMs",
