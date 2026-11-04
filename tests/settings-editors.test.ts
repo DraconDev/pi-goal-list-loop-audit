@@ -514,13 +514,22 @@ test("T4: input editor — auditorModel pin / explicit session on empty", async 
 });
 
 // Absence inherits a lower settings layer; explicit session must instead
-// mask its model AND dial without mutating that layer or losing backups.
+// mask its model AND dial without losing backups.
+//
+// v0.39.62: the auditor primary is GLOBAL-ONLY, like the drafter/designer/
+// compactor primaries. The scenarios below used to prove that a project file
+// could mask the global pin; that masking is exactly what produced the field
+// divergence (fifteen projects on the global pin, four silently on their
+// session model, purely depending on which tree the picker was used in). The
+// scenarios now prove the surviving contract instead: ANY stale project copy is
+// IGNORED on read, the session choice is global, and one switch governs every
+// tree.
 for (const scenario of [
-  { name: "both project overrides", project: { auditorModel: "audit/project", auditorThinkingLevel: "medium" } },
-  { name: "project model plus global thinking", project: { auditorModel: "audit/project" } },
-  { name: "project thinking plus global model", project: { auditorThinkingLevel: "medium" } },
-  { name: "only global pins", project: {} },
-]) test(`auditor session selection masks ${scenario.name} and preserves other projects and backups`, async () => {
+  { name: "both stale project overrides", project: { auditorModel: "audit/project", auditorThinkingLevel: "medium" } },
+  { name: "a stale project model", project: { auditorModel: "audit/project" } },
+  { name: "a stale project thinking pin", project: { auditorThinkingLevel: "medium" } },
+  { name: "no stale project keys", project: {} },
+]) test(`auditor session selection is global and ignores ${scenario.name}, preserving backups`, async () => {
   try {
     const cwd = tmpCwd();
     const otherProject = tmpCwd();
@@ -539,18 +548,27 @@ for (const scenario of [
     const global = { auditorModel: "audit/global", auditorThinkingLevel: "low", auditorModelFallbacks: backups, autoAcceptDrafts: false, mainModelSameModelRetries: 3 };
     fs.mkdirSync(path.dirname(GLOBAL_FILE), { recursive: true });
     fs.writeFileSync(GLOBAL_FILE, JSON.stringify(global, null, 2));
-    const globalBytes = fs.readFileSync(GLOBAL_FILE, "utf8");
     const project = { ...scenario.project, subagentFallbacks: { scout: ["audit/project"] }, progressEvery: 7 };
     fs.mkdirSync(path.dirname(projectSettingsPath(cwd)), { recursive: true });
     fs.writeFileSync(projectSettingsPath(cwd), JSON.stringify(project));
+    // The stale project copy is never consulted, not even before the edit.
+    assert.equal(loadSettings(cwd).auditorModel, "audit/global", "a project copy cannot shadow the global auditor pin");
+    assert.equal(loadSettings(cwd).auditorThinkingLevel, "low", "a project copy cannot shadow the global auditor dial");
     ctx.ui.customStubMode = true;
     ctx.ui.customImpl = async () => ({ kind: "session" });
     await handleSettingChoice("auditorModel", hostCtx);
 
-    assert.equal(fs.readFileSync(GLOBAL_FILE, "utf8"), globalBytes, "global settings are byte-for-byte unchanged");
+    // The choice lands in the GLOBAL layer, and the stale project keys are
+    // evicted from disk so the file cannot contradict the effective value.
+    const saved = JSON.parse(fs.readFileSync(GLOBAL_FILE, "utf8"));
+    assert.equal(saved.auditorModel, null, "the session choice is global");
+    assert.equal("auditorThinkingLevel" in saved && saved.auditorThinkingLevel !== undefined ? saved.auditorThinkingLevel : undefined, undefined);
+    assert.deepEqual(saved.auditorModelFallbacks, backups, "the explicit backup list survives the primary change");
     const persisted = JSON.parse(fs.readFileSync(projectSettingsPath(cwd), "utf8"));
-    const { auditorThinkingLevel: _removed, ...expectedProject } = project as Record<string, unknown>;
-    assert.deepEqual(persisted, { ...expectedProject, auditorModel: null }, "only the project model/thinking selection changes");
+    const { auditorThinkingLevel: _dial, ...expectedProject } = project as Record<string, unknown>;
+    assert.deepEqual(persisted, { subagentFallbacks: { scout: ["audit/project"] }, progressEvery: 7 } as Record<string, unknown>, `only stale global-only auditor keys are evicted (${scenario.name})`);
+    assert.equal("auditorModel" in persisted, false, "no project tombstone survives the save");
+    void expectedProject;
     const settings = loadSettings(cwd);
     assert.equal(settings.auditorModel, null);
     assert.equal(settings.auditorThinkingLevel, undefined);
@@ -570,8 +588,7 @@ for (const scenario of [
     assert.ok(row, "auditor model row exists");
     assert.ok(row.valueText.includes("live/current"), "menu names the live session model, not the backup chain");
     assert.ok(row.valueText.includes("max"), "menu shows the effective session dial");
-    assert.equal(loadSettings(otherProject).auditorModel, "audit/global");
-    assert.equal(loadSettings(otherProject).auditorThinkingLevel, "low");
+    assert.equal(loadSettings(otherProject).auditorModel, null, "the switch is global — another project sees the same choice");
     assert.deepEqual(loadSettings(otherProject).auditorModelFallbacks, global.auditorModelFallbacks);
 
     // It is a live choice, not a pin to whatever ref/dial was current on save.
@@ -581,13 +598,12 @@ for (const scenario of [
     assert.equal(later.model, replacement);
     assert.equal(resolveCandidateThinkingLevel(later, { sessionThinkingLevel: ctx.thinkingLevel }), "medium");
 
-    // A subsequent explicit pin replaces the tombstone in the same project.
+    // A subsequent explicit pin replaces the tombstone in the same layer.
     ctx.ui.customImpl = async () => ({ kind: "model", ref: "audit/project" });
     ctx.ui.selectImpl = async () => "high";
     await handleSettingChoice("auditorModel", hostCtx);
     assert.equal(loadSettings(cwd).auditorModel, "audit/project");
     assert.equal(loadSettings(cwd).auditorThinkingLevel, "high");
-    assert.equal(fs.readFileSync(GLOBAL_FILE, "utf8"), globalBytes);
     assert.deepEqual(loadSettings(cwd).auditorModelFallbacks, backups);
   } finally { restoreGlobal(); }
 });
