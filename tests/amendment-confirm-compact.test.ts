@@ -360,7 +360,7 @@ test('a long objective keeps BOTH objectives in full on the default card', () =>
   // line with the verbatim text in a quote block below it, so the wrapped
   // continuation lines carry the quote bar and the two blocks never merge
   // into one Markdown paragraph.
-  assert.equal(body, `From:\n\n> ${LONG_CURRENT}\n\nTo:\n\n> ${LONG_NEXT}\n\nReplaces the goal objective; its verification contract is kept.`, 'the default body is exactly label + quote per side, plus the consequence');
+  assert.equal(body, `**From:**\n\n> ${LONG_CURRENT}\n\n**To:**\n\n> ${LONG_NEXT}\n\nReplaces the goal objective; its verification contract is kept.`, 'the default body is exactly label + quote per side, plus the consequence');
 
   // And the rationale still carries everything, reachable from this same card.
   const rationale = buildTweakRationaleBody(input);
