@@ -1,0 +1,40 @@
+input                                            kind            eager  empty  durable compaction
+----------------------------------------------------------------------------------------------------------------------
+# Screenshot_20261105_172401 + note.md, verbatim
+Error: Connection error.                         transient       true   false  true    provider-recovery
+Error: Request timed out.                        transient       true   false  true    provider-recovery
+Error: 429 "Rate limit exceeded"                 unknown         true   false  true    provider-recovery
+
+# same defect, other SDK transport wordings
+Connection error.                                transient       true   false  true    provider-recovery
+connection reset by peer                         transient       true   false  true    provider-recovery
+The connection was lost                          transient       true   false  true    provider-recovery
+Connection refused                               transient       true   false  true    provider-recovery
+connection closed before message completed       transient       true   false  true    provider-recovery
+Failed to fetch                                  transient       true   false  true    provider-recovery
+fetch failed                                     transient       true   false  true    provider-recovery
+premature close                                  transient       true   false  true    provider-recovery
+other side closed                                transient       true   false  true    provider-recovery
+UND_ERR_SOCKET                                   transient       true   false  true    provider-recovery
+write EPIPE                                      transient       true   false  true    provider-recovery
+Error: socket hang up                            transient       true   false  true    provider-recovery
+EAI_AGAIN                                        transient       true   false  true    provider-recovery
+getaddrinfo ENOTFOUND api.example.com            transient       true   false  true    provider-recovery
+ECONNRESET                                       transient       true   false  true    provider-recovery
+stream ended without a finish event              transient       true   false  true    provider-recovery
+
+# the empty-response family (already eager since v0.38.104)
+Provider returned an empty response              unknown         true   true   true    provider-recovery
+the provider returned an empty completion        unknown         true   true   true    provider-recovery
+
+# refusals that MUST NOT widen
+auditor produced no verdict marker               unknown         true   false  false   other-terminal
+auditor worker exited without an atomic result   unknown         true   false  false   other-terminal
+worker exited without a verdict                  unknown         true   false  false   other-terminal
+user aborted                                     non-recoverable false  false  false   other-terminal
+turn aborted: user interrupt                     non-recoverable false  false  false   other-terminal
+400: {"message":"maximum context length is 1048… non-recoverable false  false  false   context-overflow
+BadRequestError: Image count 12 exceeds limit 4… unknown         true   false  false   other-terminal
+connection pool exhausted (style guide note)     unknown         true   false  false   other-terminal
+expected an empty array, got 3 items             unknown         true   false  false   other-terminal
+Error: kablam                                    unknown         true   false  false   other-terminal
