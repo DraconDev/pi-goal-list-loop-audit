@@ -545,6 +545,39 @@ test('quoteBlock quotes every line and keeps paragraph breaks inside the quote',
   assert.equal(quoteBlock('first\nsecond'), '> first\n> second');
 });
 
+// The card body is Markdown. `ctx.ui.confirm` is NOT — the host prepends the
+// title and renders the message as selector text, so a `**From:**` label or a
+// `> ` quote bar would reach the user literally on an RPC/headless host. The
+// plain downgrade keeps the exact consent text and drops only the markers.
+test('the plain-text fallback carries the same body with no Markdown markers', () => {
+  const body = buildTweakConfirmBody({
+    currentObjective: 'Old objective', newObjective: 'New objective',
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+  });
+  assert.match(body, /\*\*From:\*\*/, 'the card body is Markdown');
+  const plain = plainCardBody(body);
+  assert.equal(plain, [
+    'From:', '', 'Old objective', '', 'To:', '', 'New objective', '',
+    'Replaces the goal objective; its verification contract is kept.',
+  ].join('\n'));
+  assert.equal(plain.includes('*'), false, 'no bold markers survive');
+  assert.equal(plain.includes('>'), false, 'no quote markers survive');
+  assert.ok(plain.includes('Old objective') && plain.includes('New objective'), 'both consent sides are still verbatim');
+
+  // Multi-line and contract shapes downgrade the same way.
+  const amended = plainCardBody(buildAmendmentConfirmBody({
+    oldObjective: 'Old', newObjective: 'New',
+    oldContract: 'npm run check exits 0', newContract: 'npm run check and release:check exit 0',
+  }));
+  assert.equal(amended, [
+    'From:', '', 'Old', '', 'To:', '', 'New', '',
+    'Contract — before:', '', 'npm run check exits 0', '',
+    'Contract — after:', '', 'npm run check and release:check exit 0', '',
+    'This changes what the independent auditor will judge.',
+  ].join('\n'));
+  assert.equal(plainCardBody('> first\n>\n> second').split('\n').length, 3, 'a bare quote line becomes a blank line');
+});
+
 test('a multi-line objective is quoted line by line, still verbatim in the render', () => {
   const multi = 'First paragraph of the objective.\n\nSecond paragraph with its own lines.\nThird line.';
   const body = buildTweakConfirmBody({
