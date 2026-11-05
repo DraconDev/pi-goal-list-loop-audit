@@ -486,7 +486,7 @@ export function buildTweakRationaleBody(input: TweakConfirmInput): string {
   ];
   if (input.inferredNote) lines.push('', `Where the new text came from: ${input.inferredNote.trim()}`);
   if (input.hasNewContract) {
-    lines.push('', `New verification contract:\n${(input.newContract ?? '').trim() || '(none)'}`);
+    lines.push('', 'New verification contract:', '', quoteBlock(input.newContract ?? ''));
   } else if (input.clearsContract) {
     lines.push('', "Empty 'Done when:' — the verification contract is cleared.");
   } else {
