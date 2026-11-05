@@ -1,0 +1,11 @@
+session_compact_failed errorMessage                  failureKind        pauseKind   mainModelRecovery.retryAt
+------------------------------------------------------------------------------------------------------------------------
+Error: Connection error.                             provider-recovery  wait        2026-11-05T22:37:19.763Z
+Error: Request timed out.                            provider-recovery  wait        2026-11-05T22:37:19.795Z
+Error: 429 "Rate limit exceeded"                     provider-recovery  wait        2026-11-05T22:42:15.098Z
+Error: Provider returned an empty response           provider-recovery  wait        2026-11-05T22:37:20.212Z
+auditor produced no verdict marker                   other-terminal     blocked     (none — no durable retry)
+user aborted                                         other-terminal     blocked     (none — no durable retry)
+
+pauseKind=wait + a retryAt  => the goal wakes itself on the paced ladder.
+pauseKind=blocked, no retryAt => MANUAL pause: the goal is dead until a human resumes it.
