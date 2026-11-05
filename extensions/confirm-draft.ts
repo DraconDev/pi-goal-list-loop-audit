@@ -295,11 +295,11 @@ export interface TweakConfirmInput {
  */
 export function tweakObjectiveLines(current: string, next: string): string[] {
   return [
-    'From:',
+    '**From:**',
     '',
     quoteBlock(current),
     '',
-    'To:',
+    '**To:**',
     '',
     quoteBlock(next),
   ];
