@@ -173,6 +173,25 @@ export function quoteBlock(text: string): string {
 }
 
 /**
+ * The same card body as PLAIN TEXT, for hosts that render no Markdown —
+ * `ctx.ui.confirm` is `${title}\n${message}` inside a selector, so a `**From:**`
+ * label or a `> ` quote bar would be shown literally to a user on an RPC or
+ * headless host. Every builder here emits only those two markers, so removing
+ * them is a faithful downgrade: the quote becomes a plain indented paragraph
+ * and the labels lose their emphasis, while the consent text is untouched.
+ */
+export function plainCardBody(body: string): string {
+  return body
+    .split('\n')
+    .map((line) => {
+      const quoted = /^>\s?(.*)$/.exec(line);
+      if (quoted) return quoted[1] ?? '';
+      return line.replace(/\*\*/g, '');
+    })
+    .join('\n');
+}
+
+/**
  * v0.39.61 (note.md 2026-10-31, tweak wall of text): the completion scope
  * amendment confirm printed five labelled sections and both full contracts,
  * which wrapped into a wall that hid the decision. The consent record must stay
