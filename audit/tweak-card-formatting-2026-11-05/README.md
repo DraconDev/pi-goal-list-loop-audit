@@ -110,7 +110,7 @@ npm test -- tests/amendment-confirm-compact.test.ts \
             tests/contract-text-semantics.test.ts \
             tests/confirm-draft.test.ts \
             tests/propose-tweak.test.ts          # 69 pass, 0 fail
-npm test                                         # full fast suite, 4238 pass / 1 skip / 0 fail
+npm test                                         # full fast suite, 4239 pass / 1 skip / 0 fail
 ```
 
 New cases in `tests/amendment-confirm-compact.test.ts`:

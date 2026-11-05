@@ -1,73 +1,78 @@
 # Rendered tweak/amendment cards — generated from the real rendering paths
-# (extensions/confirm-draft.ts + @earendil-works/pi-tui Markdown).
+# (extensions/confirm-draft.ts + @earendil-works/pi-tui Markdown). Host theme is a
+# pass-through, so bold labels print plain here; the real theme bolds them.
 
-objective lengths: 287 / 311 chars
+objective lengths: 489 / 556 chars (the shape from Screenshot_20261105_163146)
 
-=== BEFORE — the old body, rendered through the SAME Markdown card ===
-(exactly the shape in Screenshot_20261105_163146: From and To are one paragraph,
- To: lands mid-line, continuations are flush-left)
+=== BEFORE — the old body through the SAME Markdown card, render(150) ===
+From/To collapse into ONE paragraph: `To:` lands mid-line and every continuation is flush-left.
 
- **Tweak goal?
+ Tweak goal?
 
- From: Audit the whole GLLA operator surface end to end and record exactly what the user sees in
- the widget, the status footer, the settings menu, the list queue, the auditor display and every
- recovery card, so a reader who was not present can follow the narrative without guessing. Stop
- there.
- To:   Audit the whole GLLA operator surface end to end and record exactly what the user sees in
- the widget, the status footer, the settings menu, the list queue, the auditor display and every
- recovery card, so a reader who was not present can follow the narrative without guessing. File
- each defect as a tracked item.
+ From: Finish Winifred Hale's first historical-romance book ("The Widow's Bakery: A Historical Romance",
+ authors/fiction/winifred-hale/books/the-widows-bakery-a-historical-romance) to a Google-ready, verified, staged wave — and stop before Publish.
+ Concretely: (1) fix the remaining 12 lines with "Harrows" across chapters 06/10/12/13/14/16/18 so the family name is "the Harrow family"; (2) run
+ the shelf pipeline check, audit, metadata and convert stages for this book; (3) run the cover stage …
+ To:   Finish Winifred Hale's first historical-romance book ("The Widow's Bakery: A Historical Romance",
+ authors/fiction/winifred-hale/books/the-widows-bakery-a-historical-romance) to a Google-ready, verified, staged wave — and stop before Publish.
+ Concretely: (1) fix the remaining 12 lines with "Harrows" across chapters 06/10/12/13/14/16/18 so the family name is "the Harrow family"; (2) run
+ the shelf pipeline check, audit, metadata and convert stages for this book; (3) run the cover stage … Change (4) to defer live series checks until
+ all five books exist.
 
  Replaces the goal objective; its verification contract is kept.
 
 
-=== AFTER — the default card, render(100) ===
-────────────────────────────────────────────────────────────────────────────────────────────────────
+=== AFTER — default card, render(150) ===
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
  Tweak goal?
 
  From:
 
- │ Audit the whole GLLA operator surface end to end and record exactly what the user sees in the
- │ widget, the status footer, the settings menu, the list queue, the auditor display and every
- │ recovery card, so a reader who was not present can follow the narrative without guessing. Stop
- │ there.
+ │ Finish Winifred Hale's first historical-romance book ("The Widow's Bakery: A Historical Romance",
+ │ authors/fiction/winifred-hale/books/the-widows-bakery-a-historical-romance) to a Google-ready, verified, staged wave — and stop before Publish.
+ │ Concretely: (1) fix the remaining 12 lines with "Harrows" across chapters 06/10/12/13/14/16/18 so the family name is "the Harrow family"; (2) run
+ │ the shelf pipeline check, audit, metadata and convert stages for this book; (3) run the cover stage …
 
  To:
 
- │ Audit the whole GLLA operator surface end to end and record exactly what the user sees in the
-Review 1–13/19 · PgUp/PgDn scroll
+ │ Finish Winifred Hale's first historical-romance book ("The Widow's Bakery: A Historical Romance",
+ │ authors/fiction/winifred-hale/books/the-widows-bakery-a-historical-romance) to a Google-ready, verified, staged wave — and stop before Publish.
+ │ Concretely: (1) fix the remaining 12 lines with "Harrows" across chapters 06/10/12/13/14/16/18 so the family name is "the Harrow family"; (2) run
+Review 1–15/20 · PgUp/PgDn scroll
 
 → Confirm — apply this tweak
   Show the full rationale
   Cancel — change nothing
 
  ↑↓ choose · enter select · esc cancel · the expand is read-only
-────────────────────────────────────────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-=== AFTER — the same card at 72 columns ===
-────────────────────────────────────────────────────────────────────────
+=== AFTER — the same card at 80 columns ===
+────────────────────────────────────────────────────────────────────────────────
 
  Tweak goal?
 
  From:
 
- │ Audit the whole GLLA operator surface end to end and record exactly
- │ what the user sees in the widget, the status footer, the settings
- │ menu, the list queue, the auditor display and every recovery card,
- │ so a reader who was not present can follow the narrative without
- │ guessing. Stop there.
+ │ Finish Winifred Hale's first historical-romance book ("The Widow's Bakery: A
+ │ Historical Romance",
+ │ authors/fiction/winifred-hale/books/the-widows-bakery-a-historical-romance)
+ │ to a Google-ready, verified, staged wave — and stop before Publish.
+ │ Concretely: (1) fix the remaining 12 lines with "Harrows" across chapters
+ │ 06/10/12/13/14/16/18 so the family name is "the Harrow family"; (2) run the
+ │ shelf pipeline check, audit, metadata and convert stages for this book; (3)
+ │ run the cover stage …
 
  To:
-
-Review 1–13/21 · PgUp/PgDn scroll
+Review 1–15/28 · PgUp/PgDn scroll
 
 → Confirm — apply this tweak
   Show the full rationale
   Cancel — change nothing
 
  ↑↓ choose · enter select · esc cancel · the expand is read-only
-────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────
 
 === AFTER — expanded in place (Show the full rationale) ===
 ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -76,19 +81,19 @@ Review 1–13/21 · PgUp/PgDn scroll
 
  CURRENT:
 
- │ Audit the whole GLLA operator surface end to end and record exactly what the user sees in the
- │ widget, the status footer, the settings menu, the list queue, the auditor display and every
- │ recovery card, so a reader who was not present can follow the narrative without guessing. Stop
- │ there.
+ │ Audit the whole surface, record what the user sees, and stop there.
 
  NEW:
 
- │ Audit the whole GLLA operator surface end to end and record exactly what the user sees in the
- │ widget, the status footer, the settings menu, the list queue, the auditor display and every
- │ recovery card, so a reader who was not present can follow the narrative without guessing. File
- │ each defect as a tracked item.
+ │ Audit the whole surface, record what the user sees, and file each defect as a tracked item.
 
-Review 1–17/26 · PgUp/PgDn scroll
+ Replaces the goal objective and its verification contract.
+
+ New verification contract:
+
+ │ Done when: npm run check exits 0
+ │ Done when: npm run release:check exits 0
+Review 1–17/20 · PgUp/PgDn scroll
 
   Confirm — apply this tweak
 → Hide the full rationale
@@ -148,7 +153,7 @@ Review 1–18/24 · PgUp/PgDn scroll
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
 === AFTER — plain-text downgrade for ctx.ui.confirm hosts (RPC / headless) ===
-(ctx.ui.confirm renders no Markdown, so the same body arrives without ** and >)
+ctx.ui.confirm renders no Markdown: the same body arrives with the markers stripped.
 From:
 
 Old objective
