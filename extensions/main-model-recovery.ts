@@ -98,15 +98,62 @@ export function mainModelPrimaryProbeDelayMs(minutes: unknown = DEFAULT_MAIN_MOD
 
 export type MainModelFailureKind = "rate-limit" | "quota" | "billing" | "auth" | "transient" | "unknown" | "non-recoverable" | "context-overflow";
 
+/** v0.39.63: connection-level transport wording, not just the words the
+ * original branch happened to list.
+ *
+ * Field 2026-11-05 (Screenshot_20261105_172401 + note.md): the operator asked
+ * for every error to be retried aggressively, and the live lane already did
+ * — the journal shows `Connection error.` retried 13 times at the 5s eager
+ * quantum. What it did NOT get was durable authority: the string matched no
+ * branch, classified `unknown`, and `isRecoverableProviderError` — the single
+ * gate behind compaction classification, durable-wait restore and the
+ * auditor retry plan — accepts only positive families. So an ordinary
+ * dropped connection parked the goal as `compaction failure: Error:
+ * Connection error.` with no `retryAt` at all: the operator saw a red error
+ * and a dead goal for the most retryable failure there is.
+ *
+ * The old branch had `network|fetch failed|socket|econn|gateway|upstream`,
+ * which misses the exact wording pi's own SDKs emit: the OpenAI/Anthropic
+ * clients raise `APIConnectionError` ("Connection error."), Bun/undici raise
+ * `Failed to fetch` / `premature close` / `other side closed`, and DNS
+ * failures arrive as `EAI_AGAIN` / `getaddrinfo`. Those all classified
+ * `unknown`. The previously-matched words are all retained.
+ *
+ * Precision is deliberate. Every addition is transport-specific: an ordinary
+ * prose or fixture mention ("connection pool exhausted", an
+ * expected-empty-array assertion) does not become a provider outage,
+ * quota/rate-limit wording keeps its existing owners, and the context, auth
+ * and deterministic branches are checked BEFORE this one, so nothing gains
+ * durable retry authority by accident. */
+const TRANSPORT_FAILURE = /overload|temporarily unavailable|service unavailable|timeout|timed? ?out|network|fetch failed|failed to fetch|failed to connect|unable to connect|could not connect|socket|premature close|other side closed|und_err_socket|econn\w*|epipe|eai_again|getaddrinfo|enotfound|gateway|upstream|internal server|connection (?:error|reset|refused|closed|lost|aborted|dropped|failure|terminated)|connection was (?:reset|refused|closed|lost|aborted|dropped)|(?:error|reset|refused|closed|lost|dropped) (?:the )?connection|stream (?:ended|closed) (?:without|before|prematurely)/;
+
 /** Positive provider-outage evidence, shared by compaction and audit recovery.
  * Unknown infrastructure, prompt policy and context/output-limit failures keep
- * their own owners and remedies instead of acquiring retry authority. */
+ * their own owners and remedies instead of acquiring retry authority.
+ *
+ * v0.39.63: the empty-response family is accepted too. `isEagerRetryFailure`
+ * has always treated `Provider returned an empty response` as an eager
+ * provider glitch (v0.38.104: it normally clears on the immediate retry), and
+ * the auditor lane classifies it as a provider failure — but this gate listed
+ * only positive kinds, so the SAME string had no durable authority: it could
+ * not arm a compaction retry, could not restore a recovery-owned wait, and
+ * capped the auditor retry plan at the conservative horizon. A failure the
+ * live lane is willing to hammer ten times is a failure the durable lanes
+ * must be willing to wait on; the two predicates now agree.
+ *
+ * Deliberately still refused here: bare `unknown` prose (an unclassified
+ * failure is not evidence of an outage), `non-recoverable` (aborts, prompt
+ * policy, context overflow), and deterministic client errors. Tests pin
+ * `auditor produced no verdict marker` and friends to the no-verdict path, so
+ * this stays a vocabulary fix rather than a fails-open widening. */
 export function isRecoverableProviderError(raw: string | undefined): boolean {
   if (!raw?.trim() || /^Auditor (?:stalled|exceeded|aborted)\b/i.test(raw.trim())) return false;
   const failure = classifyMainModelFailure(raw);
   return failure.kind !== 'non-recoverable' && failure.kind !== 'context-overflow'
     && !isDeterministicProviderError(raw)
-    && (quotaSignal(raw) !== undefined || ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind));
+    && (quotaSignal(raw) !== undefined
+      || ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind)
+      || isEmptyProviderResponse(raw));
 }
 
 export interface MainModelFailure {
@@ -301,7 +348,7 @@ export function classifyMainModelFailure(error: string | undefined, opts?: { isC
   if (hasHttpStatus(text, /^40[13]$/) || /unauthori[sz]ed|forbidden|invalid (?:api|access) key|authentication|no api key|credential/.test(text)) {
     return { kind: "auth", raw };
   }
-  if (hasHttpStatus(text, /^5\d{2}$/) || /overload|temporarily unavailable|service unavailable|timeout|timed? ?out|network|fetch failed|socket|econn|gateway|upstream|internal server/.test(text)) {
+  if (hasHttpStatus(text, /^5\d{2}$/) || TRANSPORT_FAILURE.test(text)) {
     return { kind: "transient", raw };
   }
   return { kind: "unknown", raw };
