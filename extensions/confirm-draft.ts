@@ -205,14 +205,30 @@ export function buildAmendmentConfirmBody(input: {
     const tail = clean.slice(-60).trimStart();
     return `${head} … ${tail}`;
   };
+  // Label on its own line, text in a quote block below it. The old
+  // `From: <text>` single-line form collapsed in Markdown (a soft break
+  // is a space), so From and To read as one paragraph and the wrapped
+  // continuation lines were flush-left with no way to tell which side
+  // they belonged to. Blank lines keep each block its own paragraph;
+  // the quote bar repeats on wrapped lines so ownership is visible.
   const lines: string[] = [
-    `From: ${input.oldObjective.trim() || "(none)"}`,
-    `To:   ${input.newObjective.trim() || "(none)"}`,
+    "From:",
+    "",
+    quoteBlock(input.oldObjective),
+    "",
+    "To:",
+    "",
+    quoteBlock(input.newObjective),
   ];
   const oldContract = (input.oldContract ?? "").trim();
   const newContract = (input.newContract ?? "").trim();
   if (newContract !== oldContract) {
-    lines.push("", `Contract: ${clipContract(oldContract)} → ${clipContract(newContract)}`);
+    lines.push(
+      "",
+      "Contract:",
+      "",
+      quoteBlock(`${clipContract(oldContract)} → ${clipContract(newContract)}`),
+    );
   } else if (newContract) {
     // An UNCHANGED contract is not part of the decision — printing it twice was
     // most of the wall. Say it is untouched instead of echoing it.
