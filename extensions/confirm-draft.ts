@@ -634,7 +634,7 @@ export class TweakConfirmComponent implements Component {
     // SAFE was what fell off.
     const help = new Text(this.theme.fg("dim", this.expanded
       ? "↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel"
-      : "↑↓ choose · enter select · esc cancel · the rationale only expands"), 1, 0).render(width);
+      : "↑↓ choose · enter select · esc cancel · the expand is read-only"), 1, 0).render(width);
     const gaps = height < 14 ? [] : [""];
     const contentBudget = Math.max(0, height - border.length * 2 - decisions.length - help.length - gaps.length * 2);
     const bodyRows = body.length > contentBudget ? Math.max(0, contentBudget - 1) : contentBudget;
