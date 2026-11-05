@@ -223,11 +223,18 @@ export function buildAmendmentConfirmBody(input: {
   const oldContract = (input.oldContract ?? "").trim();
   const newContract = (input.newContract ?? "").trim();
   if (newContract !== oldContract) {
+    // Two labelled quotes, not one quoted `old → new`: contracts are
+    // multi-line, and a single quote block joined them at the arrow so the
+    // reader could not tell which `Done when:` line came from which side.
     lines.push(
       "",
-      "Contract:",
+      "Contract — before:",
       "",
-      quoteBlock(`${clipContract(oldContract)} → ${clipContract(newContract)}`),
+      quoteBlock(clipContract(oldContract)),
+      "",
+      "Contract — after:",
+      "",
+      quoteBlock(clipContract(newContract)),
     );
   } else if (newContract) {
     // An UNCHANGED contract is not part of the decision — printing it twice was

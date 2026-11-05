@@ -603,7 +603,8 @@ test('the amendment confirm quotes a changed contract the same way, and an infer
   assert.equal(amended, [
     'From:', '', '> Old objective', '',
     'To:', '', '> New objective', '',
-    'Contract:', '', '> npm run check exits 0 → npm run check and release:check exit 0', '',
+    'Contract — before:', '', '> npm run check exits 0', '',
+    'Contract — after:', '', '> npm run check and release:check exit 0', '',
     'This changes what the independent auditor will judge.',
   ].join('\n'));
 
