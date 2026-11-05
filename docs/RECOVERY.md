@@ -328,6 +328,36 @@ elapsed-time stop wording. Identity, counters, contract and history are
 retained; generic manual, decision, audit, deterministic,
 supervisor/load, and replaced-owner holds never migrate.
 
+### Which failures count as retryable (v0.39.63)
+
+Two predicates must agree, and only one of them decides policy.
+`isEagerRetryFailure` chooses the 5s eager window; `isRecoverableProviderError`
+decides whether the **durable** lanes (compaction classification, recovery-wait
+restore, the auditor retry plan) may wait on the failure at all. A string the
+first hammers but the second refuses gets rapid retries and then a park with no
+wake — the field shape this version fixed.
+
+Recognized as retryable, beyond HTTP statuses and quota/billing/auth wording:
+
+- **connection-level transport text** — `Connection error.`, `connection reset
+  by peer`, `Connection refused`, `The connection was lost`, `connection closed
+  before message completed`, `failed to connect`, `connection terminated`;
+- **fetch/socket teardown** — `fetch failed`, `Failed to fetch`, `premature
+  close`, `other side closed`, `UND_ERR_SOCKET`, `write EPIPE`, `socket hang
+  up`, `stream ended without a finish event`;
+- **DNS** — `EAI_AGAIN`, `getaddrinfo ENOTFOUND …`;
+- **timed out / timeout** (unchanged);
+- **an empty provider response** (`Provider returned an empty response`, `the
+  provider returned an empty completion`), which the eager lane has trusted
+  since 0.38.104 and the auditor lane already files as a provider failure.
+
+Deliberately still **not** retryable, and pinned by tests: user aborts and
+prompt-policy refusals, context/output-token limits (compaction owns those),
+deterministic 400s, and unclassified prose such as `auditor produced no verdict
+marker` or `expected an empty array, got 3 items`. Failing open on bare
+unknown text was rejected on purpose: it would put a dead auditor worker on the
+provider ladder and turn the no-verdict branch into a re-audit loop.
+
 ## Compaction-timeout handoff
 
 A compact-first timeout (including the 120s budget) hands the original
