@@ -354,8 +354,13 @@ test('a long objective keeps BOTH objectives in full on the default card', () =>
   assert.equal(body.includes('CURRENT:'), false, 'the CURRENT: label belongs to the expand');
   assert.equal(body.includes('NEW:'), false, 'the NEW: label belongs to the expand');
   assert.equal(body.includes('Verification contract:'), false, 'the contract body belongs to the expand');
-  assert.ok(body.split('\n').length <= 5,
-    `the default body is the pair plus one consequence line, got ${body.split('\n').length} lines`);
+  assert.ok(body.split('\n').length <= 10,
+    `the default body is the labelled pair plus one consequence line, got ${body.split('\n').length} lines`);
+  // Neatness (Screenshot_20261105_163146): each side is a label on its own
+  // line with the verbatim text in a quote block below it, so the wrapped
+  // continuation lines carry the quote bar and the two blocks never merge
+  // into one Markdown paragraph.
+  assert.equal(body, `From:\n\n> ${LONG_CURRENT}\n\nTo:\n\n> ${LONG_NEXT}\n\nReplaces the goal objective; its verification contract is kept.`, 'the default body is exactly label + quote per side, plus the consequence');
 
   // And the rationale still carries everything, reachable from this same card.
   const rationale = buildTweakRationaleBody(input);
