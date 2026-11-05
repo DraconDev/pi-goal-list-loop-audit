@@ -1,13 +1,13 @@
-# Rendered tweak/amendment cards — generated from the real components
-# (extensions/confirm-draft.ts). THE BEFORE FRAMES ARE THE OLD BODY TEXT, reprinted
-# here so the difference is visible; every frame is render() output.
+# Rendered tweak/amendment cards — generated from the real rendering paths
+# (extensions/confirm-draft.ts + @earendil-works/pi-tui Markdown).
 
 objective lengths: 287 / 311 chars
 
-=== BEFORE — the old single-line body, render(100) ===
-────────────────────────────────────────────────────────────────────────────────────────────────────
+=== BEFORE — the old body, rendered through the SAME Markdown card ===
+(exactly the shape in Screenshot_20261105_163146: From and To are one paragraph,
+ To: lands mid-line, continuations are flush-left)
 
- Tweak goal?
+ ****Tweak goal?
 
  From: Audit the whole GLLA operator surface end to end and record exactly what the user sees in
  the widget, the status footer, the settings menu, the list queue, the auditor display and every
@@ -21,13 +21,7 @@ objective lengths: 287 / 311 chars
  Replaces the goal objective; its verification contract is kept.
 
 
-→ Yes — apply this amendment
-  No — change nothing
-
- ↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel
-────────────────────────────────────────────────────────────────────────────────────────────────────
-
-=== AFTER — default card, render(100) ===
+=== AFTER — the default card, render(100) ===
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
  Tweak goal?
@@ -51,7 +45,7 @@ Review 1–13/19 · PgUp/PgDn scroll
  ↑↓ choose · enter select · esc cancel · the expand is read-only
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-=== AFTER — default card at 72 columns ===
+=== AFTER — the same card at 72 columns ===
 ────────────────────────────────────────────────────────────────────────
 
  Tweak goal?
@@ -75,7 +69,7 @@ Review 1–13/21 · PgUp/PgDn scroll
  ↑↓ choose · enter select · esc cancel · the expand is read-only
 ────────────────────────────────────────────────────────────────────────
 
-=== AFTER — expanded in place (Sh = Show the full rationale) ===
+=== AFTER — expanded in place (Show the full rationale) ===
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
  Tweak goal?
@@ -103,7 +97,7 @@ Review 1–17/26 · PgUp/PgDn scroll
  ↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-=== AFTER — amendment body (buildAmendmentConfirmBody, verbatim) ===
+=== AFTER — completion scope amendment body (buildAmendmentConfirmBody, verbatim) ===
 **From:**
 
 > Audit the whole surface and stop there.
@@ -153,7 +147,8 @@ Review 1–18/24 · PgUp/PgDn scroll
  ↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel
 ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-=== AFTER — plain-text downgrade for ctx.ui.confirm hosts (RPC/headless) ===
+=== AFTER — plain-text downgrade for ctx.ui.confirm hosts (RPC / headless) ===
+(ctx.ui.confirm renders no Markdown, so the same body arrives without ** and >)
 From:
 
 Old objective
