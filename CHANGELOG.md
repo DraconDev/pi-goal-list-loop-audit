@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Tweak/amendment Confirm cards are labelled quote blocks, not a wall
+
+- Screenshot_20261105_163146: the `/goal tweak` card printed `From: <long objective>` and `To: <long objective>` as two Markdown lines. A single newline is a soft break (a space), so the pair rendered as one paragraph — `To:` landed mid-line wherever the wrap fell and every continuation line was flush-left, hiding which lines belonged to the old text. `buildTweakConfirmBody`, `buildTweakRationaleBody`, and `buildAmendmentConfirmBody` now put each label on its own line with a blank line, then the verbatim text in a quote block (`quoteBlock`) whose bar repeats on every wrapped line. A changed contract gets the same label + quote chrome; the inferred-note line stays its own paragraph between the quote and the consequence line. Consent text is unchanged and exact — single-line objectives still appear as one contiguous substring — and the plain `ctx.ui.confirm` fallback reads the same way (label, blank line, `> ` quote).
+
 ## 0.39.62 — the auditor switch becomes global-only, and approval runs through the Confirm gate (2026-11-04)
 
 ### Auditor choice is global-only — one switch governs every tree
