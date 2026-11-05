@@ -486,7 +486,9 @@ export async function confirmCard(ctx: CardConfirmCtx, title: string, body: stri
       if (factoryInvoked) return false;
     }
   }
-  return ctx.ui.confirm(title, body);
+  // The plain primitive renders no Markdown, so the card's label/quote markers
+  // would reach the user literally here. Downgrade instead of changing shape.
+  return ctx.ui.confirm(title, plainCardBody(body));
 }
 
 /** One line: the single most important consequence of this tweak. */
