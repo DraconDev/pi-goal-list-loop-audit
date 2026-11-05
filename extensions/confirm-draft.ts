@@ -158,6 +158,21 @@ export class ConfirmDraftComponent implements Component {
 }
 
 /**
+ * Quote a verbatim block for the Markdown card. Each line gets a `> `
+ * prefix so the card renders it as an indented block with a left bar
+ * that repeats on every wrapped line — the reader can follow where the
+ * block ends even when it wraps several times. The text itself is
+ * untouched: for a single-line objective the quoted line still contains
+ * the objective as one contiguous substring, which is what the consent
+ * tests assert. A blank line inside the text becomes a bare `>` so
+ * paragraph breaks stay inside the quote instead of ending it.
+ */
+export function quoteBlock(text: string): string {
+  const clean = text.trim() || '(none)';
+  return clean.split('\n').map((line) => (line ? `> ${line}` : '>')).join('\n');
+}
+
+/**
  * v0.39.61 (note.md 2026-10-31, tweak wall of text): the completion scope
  * amendment confirm printed five labelled sections and both full contracts,
  * which wrapped into a wall that hid the decision. The consent record must stay
