@@ -392,17 +392,18 @@ test('a long objective is bounded on screen by paging, and paging reveals the wh
   // Page through the whole card at a width that does not truncate rows, and
   // prove the exact pair appears in full across the pages. This is why a
   // bounded viewport is compatible with exactness: nothing is dropped, it is
-  // only paged.
+  // only paged. Each window is collected whole — the card height is fixed,
+  // so slicing by length growth would collect nothing once the body is
+  // taller than one window (the labelled/quote form is taller than the old
+  // collapsed paragraph, which fit on the first window by luck).
   const pages: string[] = [...card.render(2000)];
   let guard = 0;
-  let previous = pages.length;
   while (guard++ < 200) {
     const before = card.render(2000);
     card.handleInput('tui.select.pageDown');
     const after = card.render(2000);
     if (after.join('\n') === before.join('\n')) break;
-    pages.push(...after.slice(0, Math.max(0, after.length - previous)));
-    previous = after.length;
+    pages.push(...after);
   }
   const paged = pages.join('\n');
   assert.ok(paged.includes(LONG_CURRENT), 'paging reveals the whole previous objective verbatim');
