@@ -212,11 +212,11 @@ export function buildAmendmentConfirmBody(input: {
   // they belonged to. Blank lines keep each block its own paragraph;
   // the quote bar repeats on wrapped lines so ownership is visible.
   const lines: string[] = [
-    "From:",
+    "**From:**",
     "",
     quoteBlock(input.oldObjective),
     "",
-    "To:",
+    "**To:**",
     "",
     quoteBlock(input.newObjective),
   ];
@@ -228,11 +228,11 @@ export function buildAmendmentConfirmBody(input: {
     // reader could not tell which `Done when:` line came from which side.
     lines.push(
       "",
-      "Contract — before:",
+      "**Contract — before:**",
       "",
       quoteBlock(clipContract(oldContract)),
       "",
-      "Contract — after:",
+      "**Contract — after:**",
       "",
       quoteBlock(clipContract(newContract)),
     );
