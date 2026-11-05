@@ -481,11 +481,11 @@ export function tweakConsequenceLine(input: TweakConfirmInput): string {
 /** The full rationale, reachable from the compact card by explicit request. */
 export function buildTweakRationaleBody(input: TweakConfirmInput): string {
   const lines = [
-    'CURRENT:',
+    '**Current:**',
     '',
     quoteBlock(input.currentObjective),
     '',
-    `NEW${input.inferredNote ? ` (inferred)` : ''}:`,
+    `**New${input.inferredNote ? ` (inferred)` : ''}:**`,
     '',
     quoteBlock(input.newObjective),
     '',
@@ -493,7 +493,7 @@ export function buildTweakRationaleBody(input: TweakConfirmInput): string {
   ];
   if (input.inferredNote) lines.push('', `Where the new text came from: ${input.inferredNote.trim()}`);
   if (input.hasNewContract) {
-    lines.push('', 'New verification contract:', '', quoteBlock(input.newContract ?? ''));
+    lines.push('', '**New verification contract:**', '', quoteBlock(input.newContract ?? ''));
   } else if (input.clearsContract) {
     lines.push('', "Empty 'Done when:' — the verification contract is cleared.");
   } else {
