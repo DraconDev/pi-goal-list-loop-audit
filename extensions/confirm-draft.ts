@@ -474,9 +474,13 @@ export function tweakConsequenceLine(input: TweakConfirmInput): string {
 /** The full rationale, reachable from the compact card by explicit request. */
 export function buildTweakRationaleBody(input: TweakConfirmInput): string {
   const lines = [
-    `CURRENT:\n${input.currentObjective.trim() || '(none)'}`,
+    'CURRENT:',
     '',
-    `NEW${input.inferredNote ? ` (inferred)` : ''}:\n${input.newObjective.trim() || '(none)'}`,
+    quoteBlock(input.currentObjective),
+    '',
+    `NEW${input.inferredNote ? ` (inferred)` : ''}:`,
+    '',
+    quoteBlock(input.newObjective),
     '',
     tweakConsequenceLine(input),
   ];
