@@ -11,6 +11,7 @@ import {
   TweakConfirmComponent,
   buildTweakConfirmBody,
   buildTweakRationaleBody,
+  plainCardBody,
   type TweakConfirmInput,
 } from "./confirm-draft.js";
 import * as fs from "node:fs";
@@ -3882,5 +3883,5 @@ async function confirmTweak(ctx: ExtensionContext, title: string, input: TweakCo
       // A non-stale custom failure degrades to the plain confirm path.
     }
   }
-  return ctx.ui.confirm(title, input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input));
+  return ctx.ui.confirm(title, plainCardBody(input.showRationale ? buildTweakRationaleBody(input) : buildTweakConfirmBody(input)));
 }
