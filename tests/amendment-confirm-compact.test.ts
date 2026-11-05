@@ -450,8 +450,7 @@ test('a short objective is still printed verbatim — the diff never guesses', (
     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
   };
   const body = buildTweakConfirmBody(input);
-  assert.ok(body.includes('From: Audit the widget surface\n'), body);
-  assert.ok(body.includes('To:   Audit the widget surface and file the defects'), body);
+  assert.equal(body, 'From:\n\n> Audit the widget surface\n\nTo:\n\n> Audit the widget surface and file the defects\n\nReplaces the goal objective; its verification contract is kept.', body);
   assert.equal(/showing the changed region/.test(body), false, 'nothing is elided, so nothing is disclosed as elided');
 });
 
