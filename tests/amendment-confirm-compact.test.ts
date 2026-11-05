@@ -450,7 +450,7 @@ test('a short objective is still printed verbatim — the diff never guesses', (
     hasNewContract: false, clearsContract: false, mode: 'goal' as const,
   };
   const body = buildTweakConfirmBody(input);
-  assert.equal(body, 'From:\n\n> Audit the widget surface\n\nTo:\n\n> Audit the widget surface and file the defects\n\nReplaces the goal objective; its verification contract is kept.', body);
+  assert.equal(body, '**From:**\n\n> Audit the widget surface\n\n**To:**\n\n> Audit the widget surface and file the defects\n\nReplaces the goal objective; its verification contract is kept.', body);
   assert.equal(/showing the changed region/.test(body), false, 'nothing is elided, so nothing is disclosed as elided');
 });
 
@@ -526,14 +526,14 @@ test('the tweak card separates From/To into labelled quote blocks (no wall)', ()
   });
   assert.equal(
     body,
-    `From:\n\n> ${current}\n\nTo:\n\n> ${next}\n\nReplaces the goal objective; its verification contract is kept.`,
+    `**From:**\n\n> ${current}\n\n**To:**\n\n> ${next}\n\nReplaces the goal objective; its verification contract is kept.`,
     'label, blank line, quote per side, consequence paragraph',
   );
   const lines = body.split('\n');
-  assert.equal(lines[0], 'From:', 'the From label is alone on its line');
+  assert.equal(lines[0], '**From:**', 'the From label is alone on its line');
   assert.equal(lines[1], '', 'a blank line ends the label paragraph');
   assert.ok(lines[2]!.startsWith('> '), 'the old text is an indented quote block');
-  const toAt = lines.indexOf('To:');
+  const toAt = lines.indexOf('**To:**');
   assert.ok(toAt > 2 && lines[toAt + 1] === '' && lines[toAt + 2]!.startsWith('> '), 'the To side mirrors the From side');
 });
 
@@ -586,11 +586,11 @@ test('the expanded rationale uses the same label + quote chrome', () => {
     mode: 'goal' as const,
   });
   assert.equal(body, [
-    'CURRENT:', '', '> Old objective', '',
-    'NEW (inferred):', '', '> New objective', '',
+    '**CURRENT:**', '', '> Old objective', '',
+    '**NEW (inferred):**', '', '> New objective', '',
     'Replaces the goal objective and its verification contract.', '',
     'Where the new text came from: inferred from a truncated proposal', '',
-    'New verification contract:', '', '> npm run check exits 0', '',
+    '**New verification contract:**', '', '> npm run check exits 0', '',
     'This changes what the independent auditor will judge.',
   ].join('\n'));
 });
@@ -601,10 +601,10 @@ test('the amendment confirm quotes a changed contract the same way, and an infer
     oldContract: 'npm run check exits 0', newContract: 'npm run check and release:check exit 0',
   });
   assert.equal(amended, [
-    'From:', '', '> Old objective', '',
-    'To:', '', '> New objective', '',
-    'Contract — before:', '', '> npm run check exits 0', '',
-    'Contract — after:', '', '> npm run check and release:check exit 0', '',
+    '**From:**', '', '> Old objective', '',
+    '**To:**', '', '> New objective', '',
+    '**Contract — before:**', '', '> npm run check exits 0', '',
+    '**Contract — after:**', '', '> npm run check and release:check exit 0', '',
     'This changes what the independent auditor will judge.',
   ].join('\n'));
 
@@ -614,8 +614,8 @@ test('the amendment confirm quotes a changed contract the same way, and an infer
     mode: 'goal' as const,
   });
   assert.equal(inferred, [
-    'From:', '', '> Old objective', '',
-    'To:', '', '> New objective', '',
+    '**From:**', '', '> Old objective', '',
+    '**To:**', '', '> New objective', '',
     'This replacement was inferred from a truncated proposal.', '',
     'Replaces the goal objective; its verification contract is kept.',
   ].join('\n'));
