@@ -902,12 +902,15 @@ function registerAgentTools(pi: any): void {
             // prints the EXACT old→new objective pair. The full contracts are
             // only shown when one actually changes, because an unchanged
             // contract is not part of the decision and was most of the wall.
+            // The builder emits Markdown (labelled quote blocks); this primitive
+            // renders none, so the plain downgrade keeps the text and drops the
+            // markers instead of showing `**From:**` and `> ` literally.
             confirmed = await ctx.ui.confirm(
               "Confirm completion scope amendment",
-              buildAmendmentConfirmBody({
+              plainCardBody(buildAmendmentConfirmBody({
                 oldObjective, newObjective: cleanObj,
                 oldContract: amendmentContract, newContract: proposedContract,
-              }),
+              })),
             );
           } catch {
             // Unavailable/stale UI cannot grant scope authority.
