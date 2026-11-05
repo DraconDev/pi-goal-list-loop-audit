@@ -506,3 +506,116 @@ test('without a height the card cannot scroll — which is why the call site pas
     'with no height the page-down cannot move the view — this is the bug the call site fixes');
   assert.ok(before.length > 20, `and the body renders unbounded (${before.length} rows)`);
 });
+
+// Screenshot_20261105_163146: the tweak card printed `From: <long>` and
+// `To: <long>` as two Markdown lines. A single newline is a soft break
+// (a space), so the pair rendered as ONE paragraph: `To:` landed mid-line
+// wherever the wrap fell and every continuation line was flush-left, so
+// nothing showed which lines belonged to the old text and which to the new.
+// The fix is structural, not shorter text: a label on its own line, a blank
+// line, then the verbatim text in a quote block whose bar repeats on every
+// wrapped line. Consent text stays exact; only the chrome changes.
+test('the tweak card separates From/To into labelled quote blocks (no wall)', () => {
+  const current =
+    'Finish the first book. Concretely: (1) fix the name; (2) run the pipeline; '
+    + '(3) run the cover stage; (4) build the manifest. Explicitly out of scope: Amazon entirely.';
+  const next = `${current} Change (4) to defer the live series checks.`;
+  const body = buildTweakConfirmBody({
+    currentObjective: current, newObjective: next,
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const, title: 'Tweak goal?',
+  });
+  assert.equal(
+    body,
+    `From:\n\n> ${current}\n\nTo:\n\n> ${next}\n\nReplaces the goal objective; its verification contract is kept.`,
+    'label, blank line, quote per side, consequence paragraph',
+  );
+  const lines = body.split('\n');
+  assert.equal(lines[0], 'From:', 'the From label is alone on its line');
+  assert.equal(lines[1], '', 'a blank line ends the label paragraph');
+  assert.ok(lines[2]!.startsWith('> '), 'the old text is an indented quote block');
+  const toAt = lines.indexOf('To:');
+  assert.ok(toAt > 2 && lines[toAt + 1] === '' && lines[toAt + 2]!.startsWith('> '), 'the To side mirrors the From side');
+});
+
+test('quoteBlock quotes every line and keeps paragraph breaks inside the quote', () => {
+  assert.equal(quoteBlock('one line'), '> one line');
+  assert.equal(quoteBlock('  padded  '), '> padded');
+  assert.equal(quoteBlock(''), '> (none)', 'an empty objective still shows a placeholder block');
+  assert.equal(quoteBlock('first\n\nsecond'), '> first\n>\n> second', 'a blank source line becomes a bare quote line');
+  assert.equal(quoteBlock('first\nsecond'), '> first\n> second');
+});
+
+test('a multi-line objective is quoted line by line, still verbatim in the render', () => {
+  const multi = 'First paragraph of the objective.\n\nSecond paragraph with its own lines.\nThird line.';
+  const body = buildTweakConfirmBody({
+    currentObjective: multi, newObjective: multi,
+    hasNewContract: false, clearsContract: false, mode: 'goal' as const,
+  });
+  assert.ok(body.includes('> First paragraph of the objective.'), 'first source line quoted');
+  assert.ok(body.includes('>\n> Second paragraph with its own lines.'), 'paragraph break stays inside the quote');
+  assert.ok(body.includes('> Third line.'), 'later source lines quoted');
+});
+
+test('the rendered card shows From/To on separate rows with the quoted text indented', () => {
+  const theme = { fg: (_c: string, t: string) => t, bold: (t: string) => t } as never;
+  const kb = { matches: (d: string, key: string) => d === key };
+  const card = new TweakConfirmComponent(
+    {
+      currentObjective: 'Old objective text that is long enough to wrap across the width of the card',
+      newObjective: 'New objective text that is long enough to wrap across the width of the card',
+      hasNewContract: false, clearsContract: false, mode: 'goal', title: 'Tweak goal?',
+      getHeight: () => 20,
+    },
+    () => {}, theme, kb as never, () => {},
+  );
+  const rows = card.render(80).map((r) => r.trimEnd());
+  const fromRow = rows.findIndex((r) => r.includes('From:'));
+  const toRow = rows.findIndex((r) => r.includes('To:'));
+  assert.ok(fromRow >= 0 && toRow > fromRow, `labels render on separate rows (From@${fromRow}, To@${toRow})`);
+  assert.ok(rows.some((r) => r.includes('Old objective text')), 'the old text renders');
+  assert.ok(rows.some((r) => r.includes('New objective text')), 'the new text renders');
+  // No row carries both labels — the old collapse put To: mid-paragraph.
+  assert.ok(!rows.some((r) => r.includes('From:') && r.includes('To:')), 'From and To never share a rendered row');
+});
+
+test('the expanded rationale uses the same label + quote chrome', () => {
+  const body = buildTweakRationaleBody({
+    currentObjective: 'Old objective', newObjective: 'New objective',
+    hasNewContract: true, newContract: 'npm run check exits 0',
+    clearsContract: false, inferredNote: 'inferred from a truncated proposal',
+    mode: 'goal' as const,
+  });
+  assert.equal(body, [
+    'CURRENT:', '', '> Old objective', '',
+    'NEW (inferred):', '', '> New objective', '',
+    'Replaces the goal objective and its verification contract.', '',
+    'Where the new text came from: inferred from a truncated proposal', '',
+    'New verification contract:', '', '> npm run check exits 0', '',
+    'This changes what the independent auditor will judge.',
+  ].join('\n'));
+});
+
+test('the amendment confirm quotes a changed contract the same way, and an inferred tweak note stays its own paragraph', () => {
+  const amended = buildAmendmentConfirmBody({
+    oldObjective: 'Old objective', newObjective: 'New objective',
+    oldContract: 'npm run check exits 0', newContract: 'npm run check and release:check exit 0',
+  });
+  assert.equal(amended, [
+    'From:', '', '> Old objective', '',
+    'To:', '', '> New objective', '',
+    'Contract:', '', '> npm run check exits 0 → npm run check and release:check exit 0', '',
+    'This changes what the independent auditor will judge.',
+  ].join('\n'));
+
+  const inferred = buildTweakConfirmBody({
+    currentObjective: 'Old objective', newObjective: 'New objective',
+    hasNewContract: false, clearsContract: false, inferredNote: 'inferred from a truncated proposal',
+    mode: 'goal' as const,
+  });
+  assert.equal(inferred, [
+    'From:', '', '> Old objective', '',
+    'To:', '', '> New objective', '',
+    'This replacement was inferred from a truncated proposal.', '',
+    'Replaces the goal objective; its verification contract is kept.',
+  ].join('\n'));
+});
