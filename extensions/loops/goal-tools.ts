@@ -378,6 +378,7 @@ import {
   ConfirmDraftComponent,
   buildAmendmentConfirmBody,
   confirmCard,
+  plainCardBody,
 } from "../confirm-draft.js";
 import {
   applyMeasurement,
