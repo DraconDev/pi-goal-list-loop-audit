@@ -1,8 +1,9 @@
 # Tweak / amendment Confirm cards: labelled quote blocks instead of a wall
 
-**Trigger.** `Screenshot_20261105_163146.png` — the `/goal tweak` confirm, with a
-~700-character objective on each side, described by the operator as *"this tweak
-text is pretty bad lets make sure it is formatted niely"*.
+**Trigger.** `Screenshot_20261105_163146.png` — the `/goal tweak` confirm, whose
+objective runs to well over a thousand characters on each side, described by the
+operator as *"this tweak text is pretty bad lets make sure it is formatted
+niely"*.
 
 ## Observed
 
@@ -15,21 +16,23 @@ To:   <objective>
 Replaces the goal objective; its verification contract is kept.
 ```
 
-Measured from the screenshot and reproduced through the real `Markdown` renderer
-(`verification/card-render.txt`, BEFORE frame): a single `\n` is a Markdown
-**soft break**, so `From:` and `To:` are one paragraph. The consequences are
-visible in the screenshot:
+The BEFORE frame in `verification/card-render.txt` renders that body through the
+real `Markdown` renderer, using the screenshot's own opening lines at 489 / 556
+characters (the ellipsized tail keeps the evidence file readable). A single `\n`
+is a Markdown **soft break**, so `From:` and `To:` are one paragraph. The
+consequences are visible in the screenshot:
 
 - `To:` does not start a line. It appears mid-line wherever the wrap happens
   (`operators decision use Agnes as a temporary substitute; (4) build …` on the
   old side runs straight into `To: Finish Winifred Hale's …`).
 - Every continuation line is flush-left, so there is nothing on screen that says
   which text belongs to the old objective and which to the new one.
-- Two near-identical 700-character blobs are stacked with no delimiter, so the
-  pair reads as one run-on paragraph — the reader has to diff it in their head.
+- Two near-identical thousand-character blobs are stacked with no delimiter, so
+  the pair reads as one run-on paragraph — the reader has to diff it in their
+  head, and the wrap points do not line up.
 
-This is a *formatting* defect, not a length one: the earlier rounds already made
-the body compact (one pair + one consequence line). The pair is still unreadable
+This is a *formatting* defect, not a length one: earlier rounds already made the
+body compact (one pair + one consequence line). The pair is still unreadable
 because the consent text is a long prose paragraph and Markdown collapses it.
 
 ## Fix
@@ -75,10 +78,11 @@ Replaces the goal objective; its verification contract is kept.
 **Plain-text hosts.** `ctx.ui.confirm` renders no Markdown — it is
 `${title}\n${message}` inside a selector — so `**From:**` and `> ` would reach an
 RPC/headless user literally. `plainCardBody(body)` strips exactly those two
-markers and is applied at every `ctx.ui.confirm` fallback
-(`confirmTweak`, the `complete_goal` completion-scope amendment, and
-`confirmCard`'s own caller-supplied body is left untouched because its callers
-pass already-rendered text). Consent text is byte-identical either way.
+markers, and the two fallbacks that now emit the Markdown body apply it:
+`confirmTweak` (`extensions/goal-commands.ts:3886`) and the `complete_goal`
+completion-scope amendment (`extensions/loops/goal-tools.ts:910`).
+`confirmCard`'s own `ctx.ui.confirm` fallback is untouched, because its only
+caller passes already-plain text. The consent text is byte-identical either way.
 
 **Help line.** The old hint was 90 columns and wrapped its tail
 (`without applying`) onto a second line at ordinary widths, hiding the one part
@@ -97,10 +101,10 @@ that says the expand is safe. It is now 65 columns and never wraps:
 
 ## Verification
 
-`verification/card-render.txt` — real `render()` output for the default card at
-100 and 72 columns, the expanded in-place rationale, the amendment card, and the
-plain-text downgrade. Regenerate by running the same components; no replica
-markup is involved.
+`verification/card-render.txt` — real `render()` output: the BEFORE body through
+`Markdown`, the default card at 150 and 80 columns, the expanded in-place
+rationale, the amendment card, and the plain-text downgrade. Regenerate by
+running the same components; no replica markup is involved.
 
 ```
 npm run check                                   # tsc --noEmit, clean
