@@ -88,8 +88,10 @@ test("bug (note 2026-08-07): bare /list tweak launches the update-proposal flow 
   // card keeps the consent text exact and drops the CURRENT/NEW wall labels).
   assert.ok(confirmMessage.includes("old list objective"), "proposal shows the current text");
   assert.ok(confirmMessage.includes("new list objective"), "proposal shows the new text");
-  assert.match(confirmMessage, /^From: /m, "the old text is labelled plainly");
-  assert.match(confirmMessage, /^To: /m, "the new text is labelled plainly");
+  assert.match(confirmMessage, /^From:$/m, "the old text is labelled on its own line");
+  assert.match(confirmMessage, /^> old list objective$/m, "the old text is quoted verbatim");
+  assert.match(confirmMessage, /^To:$/m, "the new text is labelled on its own line");
+  assert.match(confirmMessage, /^> new list objective$/m, "the new text is quoted verbatim");
   // Applied: ledger + persisted state; still paused; revision bumped once.
   const applied = readState(cwd).goal as { objective: string; status: string; policy: string; revision: number };
   assert.equal(applied.objective, "new list objective");

@@ -92,7 +92,8 @@ test('an amendment is confirmed through the styled card, not the flat confirm', 
 
   // The exact body the user is agreeing to is carried through unchanged.
   assert.equal(card.dialogDeps.body, BODY, 'the amendment body is byte-identical to the caller’s text');
-  assert.ok(BODY.includes('From: Repair the sweep record'), 'fixture is the real amendment shape');
+  assert.ok(BODY.includes('From:\n\n> Repair the sweep record'), 'fixture is the real amendment shape: label, blank line, quoted text');
+  assert.ok(BODY.includes('\n\nTo:\n\n> Validate the whole document'), 'the new side is labelled and quoted the same way');
   assert.ok(BODY.includes('This changes what the independent auditor will judge.'),
     'and carries the consequence line the caller produced');
   const paged = rows.join('\n');
