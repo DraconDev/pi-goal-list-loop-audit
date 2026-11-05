@@ -288,8 +288,13 @@ export interface TweakConfirmInput {
  */
 export function tweakObjectiveLines(current: string, next: string): string[] {
   return [
-    `From: ${current.trim() || '(none)'}`,
-    `To:   ${next.trim() || '(none)'}`,
+    'From:',
+    '',
+    quoteBlock(current),
+    '',
+    'To:',
+    '',
+    quoteBlock(next),
   ];
 }
 
