@@ -628,13 +628,13 @@ export class TweakConfirmComponent implements Component {
     const decisions = this.selectList.render(width);
     const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     // The affordance is stated in the help line so the expand is discoverable
-    // without selecting it first. Kept under ~76 columns: the previous wording
-    // ran to 90 and wrapped "without applying" onto a second line at ordinary
-    // terminal widths, so the one hint that the expand is SAFE was the part
-    // that fell off.
+    // without selecting it first. Kept short (65 columns) on purpose: the older
+    // wording ran to 90 and wrapped its tail ("without applying") onto a second
+    // line at ordinary terminal widths, so the one part saying the expand is
+    // SAFE was what fell off.
     const help = new Text(this.theme.fg("dim", this.expanded
       ? "↑↓ choose · enter select · PgUp/PgDn scroll · esc cancel"
-      : `↑↓ choose · enter select · esc cancel · ${TWEAK_RATIONALE_ACTION} applies nothing`), 1, 0).render(width);
+      : "↑↓ choose · enter select · esc cancel · the rationale only expands"), 1, 0).render(width);
     const gaps = height < 14 ? [] : [""];
     const contentBudget = Math.max(0, height - border.length * 2 - decisions.length - help.length - gaps.length * 2);
     const bodyRows = body.length > contentBudget ? Math.max(0, contentBudget - 1) : contentBudget;
