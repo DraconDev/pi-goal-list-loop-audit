@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "supervisorPaused": false,
+  "restoreHeld": false,
+  "goal": null,
+  "list": [],
+  "loop": null,
+  "pendingCompletion": null,
+  "lastVerdict": null
+}
