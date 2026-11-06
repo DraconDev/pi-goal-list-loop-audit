@@ -1,5 +1,14 @@
 {
-  "owner": "",
-  "updatedAt": 1793932880461,
-  "participants": []
+  "owner": "owner-678760-t0d0",
+  "updatedAt": 1793933115192,
+  "participants": [
+    {
+      "id": "owner-678760-t0d0",
+      "pid": 678760,
+      "birth": "363748745",
+      "sessionID": "",
+      "ticket": 1,
+      "lastSeen": 1793933115192
+    }
+  ]
 }
