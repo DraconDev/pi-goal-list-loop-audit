@@ -1003,6 +1003,10 @@ export function loadSettings(cwd: string): Settings {
         if (typeof entry !== "string") continue;
         const trimmed = entry.trim();
         if (!trimmed) continue;
+        // Pin values become single-line YAML scalars in the generated agent
+        // file. A value with a newline or control char is junk, not a model
+        // ref: drop it so it can never inject a second frontmatter key.
+        if (/[\r\n\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(trimmed)) continue;
         if (allowed && !allowed.includes(trimmed)) continue;
         out[role] = trimmed;
       }

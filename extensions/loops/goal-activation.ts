@@ -1209,7 +1209,6 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       ["resume", "resume a paused goal (and the list, when items are queued)"],
       ["cancel", "abort the active goal"],
       ["decide", "re-open the pending decision picker"],
-      ["decide", "re-open the decision picker for a decision pause"],
       ["tweak", "change the objective: /goal tweak <text>"],
       ["archive", "list archived goals"],
     ]),

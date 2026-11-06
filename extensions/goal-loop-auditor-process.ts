@@ -1719,12 +1719,26 @@ export function newVerdictKey(): string {
  * the worker's pipe, so a reader that did not launch the attempt (a
  * crash-recovery reader in a fresh session) has no key and cannot
  * authenticate a saved verdict — it declines and the audit re-runs. */
+/** Bound the retained keys so a long-lived process cannot grow this map
+ * without limit. Retention only matters for same-process recovery of a
+ * recently settled attempt; entries older than the window simply fail
+ * authentication and the audit re-runs (the fail-closed behavior a fresh
+ * process already has). */
+const VERDICT_KEYS_MAX = 100;
 const verdictKeys = new Map<string, string>();
+function rememberVerdictKey(attemptId: string, key: string): void {
+  verdictKeys.set(attemptId, key);
+  while (verdictKeys.size > VERDICT_KEYS_MAX) {
+    const oldest = verdictKeys.keys().next().value;
+    if (oldest === undefined) break;
+    verdictKeys.delete(oldest);
+  }
+}
 
 /** Test-only: model an authenticated same-process launch for recovery fixtures.
  * This does not persist or expose a live launch's key. */
 export function __testOnlyRememberVerdictKey(attemptId: string, key: string): void {
-  verdictKeys.set(attemptId, key);
+  rememberVerdictKey(attemptId, key);
 }
 
 /** Test-only: forget a launch's verdict key. */
@@ -1926,12 +1940,12 @@ function auditorCredentialEnv(provider: string | undefined, source: NodeJS.Proce
     xiaomi: ["XIAOMI_API_KEY", "XIAOMI_TOKEN_PLAN_API_KEY"],
   };
   const admitted = new Set(aliases[normalizedProvider] ?? []);
-  const providerPrefix = normalizedProvider ? `${normalizedProvider}_` : "";
+  const providerPrefix = normalizedProvider ? `${normalizedProvider.toUpperCase()}_` : "";
   const out: Record<string, string> = {};
   for (const [name, value] of Object.entries(source)) {
     if (typeof value !== "string" || value.length === 0) continue;
     const upper = name.toUpperCase();
-    const providerScopedCustom = upper.startsWith(providerPrefix)
+    const providerScopedCustom = providerPrefix !== "" && upper.startsWith(providerPrefix)
       && /(?:^|_)(?:API_KEY|ACCESS_TOKEN|AUTH_TOKEN|CLIENT_SECRET|CREDENTIALS?)(?:$|_)/.test(upper);
     if (admitted.has(upper) || providerScopedCustom) out[name] = value;
   }
@@ -2565,7 +2579,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   // v0.39.45 (audit 2026-10-22): the per-attempt verdict key. It exists
   // only in this process's memory and in the worker's pipe.
   const verdictKey = newVerdictKey();
-  verdictKeys.set(attemptId, verdictKey);
+  rememberVerdictKey(attemptId, verdictKey);
   const logicalAttemptId = runtime.logicalAttemptId ?? attemptId;
   // v0.34.59: capture the focus revision token at dispatch. Every result
   // shape returned to the parent carries this token so the parent can

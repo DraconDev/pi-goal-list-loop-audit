@@ -115,7 +115,7 @@ at runtime is retried once and the next detached candidate is tried; the
 plugin never falls back into the parent in-process session.
 
 ```
-# /glla → Auditor model row (and Auditor fallback models), or .pi-glla/settings.json
+# /glla → Auditor model row (and Auditor fallback models); global-only — ~/.pi/agent/pi-goal-list-loop-audit.settings.json
 { "auditorModel": "provider/model-id", "auditorModelFallbacks": ["provider/backup-1", "provider/backup-2"] }
 ```
 

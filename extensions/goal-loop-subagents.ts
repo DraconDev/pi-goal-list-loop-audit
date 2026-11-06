@@ -155,10 +155,16 @@ function installedAgentDefinition(name: string): string {
  * launch. Presenting a session projection as a static pin is the stale-pin
  * defect itself, so the file must say what it is. The wording avoids a colon
  * so the frontmatter stays a plain YAML scalar. */
+/** Frontmatter scalars must stay single-line: strip CR/LF and other C0
+ * control chars so a pin value cannot inject a second frontmatter key. */
+function singleLineScalar(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
+}
+
 export function designerProjectionNote(model?: string, thinking?: string): string {
   const pair = [
-    model ? `model ${model}` : undefined,
-    thinking ? `thinking ${thinking}` : undefined,
+    model ? `model ${singleLineScalar(model)}` : undefined,
+    thinking ? `thinking ${singleLineScalar(thinking)}` : undefined,
   ].filter(Boolean).join(", ");
   return `x-glla-note: glla-managed Designer projection (${pair || "inherits the parent session"}). `
     + "The pair comes from the /glla Designer pin or the live session; glla refreshes this file before every "
@@ -171,6 +177,9 @@ export function designerProjectionNote(model?: string, thinking?: string): strin
  * worker/scout into an accidentally empty agent. `note` replaces the default
  * provenance note (the Designer projection carries its own wording). */
 export function buildAgentOverrideMd(name: string, model?: string, thinking?: string, note?: string): string {
+  const cleanModel = model !== undefined ? singleLineScalar(model) : undefined;
+  const cleanThinking = thinking !== undefined ? singleLineScalar(thinking) : undefined;
+  const cleanNote = note !== undefined ? singleLineScalar(note) : undefined;
   const def = EMBEDDED_DEFAULTS[name];
   if (!def) throw new Error(`no embedded default config for agent "${name}"`);
   const source = def.upstream ? installedAgentDefinition(name) : designerDefinition();
@@ -180,14 +189,14 @@ export function buildAgentOverrideMd(name: string, model?: string, thinking?: st
     !/^model:\s*/.test(line) && !/^thinking:\s*/.test(line) && !/^x-managed-by:\s*/.test(line) && !/^x-glla-note:\s*/.test(line));
   const body = match[2]!.replace(/^\r?\n/, "").replace(/\s*$/, "");
   const lines = ["---", ...frontmatter];
-  if (model) lines.push(`model: ${model}`);
-  if (thinking) lines.push(`thinking: ${thinking}`);
+  if (cleanModel) lines.push(`model: ${cleanModel}`);
+  if (cleanThinking) lines.push(`thinking: ${cleanThinking}`);
   lines.push(
     `x-managed-by: ${SUBAGENT_MANAGED_MARKER}`,
-    note ?? (model
-      ? `x-glla-note: model pinned to ${model} by glla subagentModelOverrides${thinking ? `, thinking ${thinking} by subagentThinkingOverrides` : ""}. Remove the file or clear the /glla ${name} pin to restore the upstream model behavior.`
-      : thinking
-        ? `x-glla-note: thinking pinned to ${thinking} by glla subagentThinkingOverrides (model inherits the parent session). Managed by glla; clear the override to remove this file.`
+    cleanNote ?? (cleanModel
+      ? `x-glla-note: model pinned to ${cleanModel} by glla subagentModelOverrides${cleanThinking ? `, thinking ${cleanThinking} by subagentThinkingOverrides` : ""}. Remove the file or clear the /glla ${name} pin to restore the upstream model behavior.`
+      : cleanThinking
+        ? `x-glla-note: thinking pinned to ${cleanThinking} by glla subagentThinkingOverrides (model inherits the parent session). Managed by glla; clear the override to remove this file.`
         : "x-glla-note: model pin omitted so this agent inherits the parent session model. Managed by glla; clear the override or switch /glla subagent strategy to agent-default to remove this file."),
     "---",
     "",

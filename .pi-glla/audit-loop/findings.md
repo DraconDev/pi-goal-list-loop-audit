@@ -1166,3 +1166,26 @@ Existing queue-promotion finding reopened: snapshot refusal restores RAM but lea
 (The earlier "Repair and verification pending" note above is superseded by the two checked FIX rows that follow it.)
 
 - [x] FIX: HIGH: the test runner passes modern Bun isolation/exclusion flags without checking support; Bun 1.3.3 treats an unsupported exclusion value as an inclusion filter, so --all reports green after running only the Node-only test (scripts/run-tests.mjs:215-235; reproduced with disposable two-file fixture and the local --all run) — fixed in ad3c7111c (bounded capability preflight refuses unsupported Bun before starting tests); regression fixtures and declarations in ded2af54a. Old Bun now exits 1; CI-pinned Bun 1.3.14 passes the hardened seven-file regression run (110 pass, 0 fail).
+
+---
+# Full-project audit pass — 2026-11-06 (v0.39.62, branch main)
+
+Fresh pass: three parallel scouts (lifecycle/recovery, detached-auditor/reviewer/quota, settings/UI/docs-packaging), each tight scope ~30-40 tool calls, ~150-line cap. Findings deduped against the full history above and audit/PROJECT-AUDIT-2026-11-06.md (report-only). Lifecycle scout found no new defects (only main-model-recovery.ts changed since v0.39.62, already covered). The findings below are the NEW verified findings from this pass.
+
+## FIX findings (2026-11-06 pass)
+
+- [ ] FIX: MEDIUM: auditor credential fence dead for custom providers and fail-open on empty provider — normalizedProvider is lowercased so providerPrefix is lowercase, but upper.startsWith(providerPrefix) compares against the uppercase env name (always false for non-empty providers, killing the documented custom-provider path); when provider is empty/undefined, providerPrefix is "" and startsWith("") admits ANY credential-shaped env var into the bash-capable auditor child (extensions/goal-loop-auditor-process.ts:1930-1938)
+- [ ] FIX: MEDIUM: subagent model/thinking pins interpolated into YAML frontmatter unsanitized — buildAgentOverrideMd writes `model: ${model}` / `thinking: ${thinking}` verbatim and normalizePinMap only trims, so a pin value with a newline injects duplicate frontmatter keys (e.g. tools:) into a role file written to the GLOBAL agents dir (extensions/goal-loop-subagents.ts:173-198, extensions/goal-settings.ts:999-1011 normalizePinMap)
+- [ ] FIX: LOW: per-attempt verdict HMAC keys never evicted (unbounded memory growth) — verdictKeys.set on every attempt (extensions/goal-loop-auditor-process.ts:2568) with no delete on settle; only the test hook deletes; every audit in a long-lived pi process leaves a 64-hex entry behind
+- [ ] FIX: LOW: examples/example-objective.md auditor snippet still shows the project settings file — since v0.39.62 auditorModel/auditorModelFallbacks are GLOBAL_ONLY_KEYS stripped on load with bytes evicted from disk, so following the example has no effect (examples/example-objective.md:118-119)
+- [ ] FIX: LOW: duplicate /goal decide completion rows — ["decide", ...] registered twice with different descriptions so tab-completion shows decide twice (extensions/loops/goal-activation.ts:1211-1212)
+
+## DECIDE findings (2026-11-06 pass)
+
+None found in this pass.
+
+## Rejected candidates (not recorded — misdiagnosed or speculative)
+
+- Provider-retry notice dedup (extensions/quota-retry.ts:626,654): scout claimed repeat episodes notify never, but all 5 production callers of scheduleProviderRetryForSession pass episodeKey+noticeKey+suppressNotice (extensions/loops/goal-auditor-hooks.ts:2560, extensions/loops/goal-activation.ts:2489,3454,3491, extensions/loops/goal-tools.ts:2372), so the silent-second-episode path has no production trigger.
+- Lifecycle scout OBS (isCompactionInFlightSince future-timestamp grace, main-model-recovery.ts:619 / goal-continuation.ts:1058; IN_BAND_PROVIDER_FAILURE_PATTERN narrowness): speculative hardening with no reachable production path (all writers stamp Date.now()), not recorded as defects.
+- audit/INDEX.md stale (2026-11-06 report LOW-1): no longer holds — INDEX now lists the Nov audits (audit/INDEX.md:7-13); not re-filed.
