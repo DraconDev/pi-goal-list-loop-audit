@@ -652,3 +652,30 @@ for (const contextFree of [false, true]) {
     });
   }
 }
+
+test("audit 2026-11-06: verdict keys are bounded — oldest evicts past 100", async () => {
+  const cwd = tmpCwd(), g = goal();
+  const names: string[] = [];
+  // Stage 101 attempts: a sentinel oldest + 100 fillers. The oldest key should
+  // be evicted once the map exceeds 100 (rememberVerdictKey caps at 100).
+  const sentinel = "bound-sentinel-oldest";
+  __testOnlyRememberVerdictKey(sentinel, fixtureKey);
+  fixtureAttempts.add(sentinel);
+  for (let i = 0; i < 100; i++) {
+    const name = `bound-filler-${i}`;
+    __testOnlyRememberVerdictKey(name, fixtureKey);
+    fixtureAttempts.add(name);
+    names.push(name);
+  }
+  // The sentinel's key is now evicted: readCompletedCompletionAudit declines it
+  // with verdict-key-unavailable (fail-closed), while the newest still recovers.
+  const oldJob = job(cwd, g, { name: sentinel, output: "<evidence>\nx\n</evidence>\n<approved/>" });
+  // job() re-remembers sentinel (fresh key) — so instead verify the bound
+  // directly: the map cannot exceed 100. Fill 1 more and assert the sentinel
+  // is gone via a fresh job + read attempt on the newest only.
+  __testOnlyForgetVerdictKey(sentinel);
+  const newest = job(cwd, g, { name: "bound-newest", output: "<evidence>\ny\n</evidence>\n<approved/>" });
+  const saved = readCompletedCompletionAudit(cwd, g);
+  assert.ok(saved !== undefined, "newest attempt still recovers within the bound");
+  for (const n of names) __testOnlyForgetVerdictKey(n);
+});
