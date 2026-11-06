@@ -6,5 +6,11 @@
   "list": [],
   "loop": null,
   "pendingCompletion": null,
-  "lastVerdict": null
+  "lastVerdict": null,
+  "pendingConfirm": null,
+  "dispatch": null,
+  "generation": 1,
+  "providerRecovery": null,
+  "lastOwnerSessionID": null,
+  "lastActivityAt": 0
 }
