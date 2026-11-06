@@ -1,14 +1,5 @@
 {
-  "owner": "owner-678760-wsss",
-  "updatedAt": 1793930212088,
-  "participants": [
-    {
-      "id": "owner-678760-wsss",
-      "pid": 678760,
-      "birth": "363748745",
-      "sessionID": "",
-      "ticket": 1,
-      "lastSeen": 1793930212088
-    }
-  ]
+  "owner": "",
+  "updatedAt": 1793932880461,
+  "participants": []
 }
