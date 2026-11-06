@@ -156,3 +156,17 @@ test("v0.39.38: live worker rejects a redirected binary and a missing allowlist"
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("audit 2026-11-06: custom provider credential admitted, empty provider admits none, cross-provider denied", () => {
+  const src = { PATH: "/bin", MYPROVIDER_API_KEY: "custom-k", OTHER_API_KEY: "other-k", SOME_API_KEY: "any-k" };
+  const custom = detachedAuditorEnv(src, {}, "myprovider/model");
+  assert.equal(custom["MYPROVIDER_API_KEY"], "custom-k", "custom provider prefix admitted (case fix)");
+  assert.equal(custom["OTHER_API_KEY"], undefined, "unrelated provider key never admitted");
+  const empty = detachedAuditorEnv(src, {}, undefined);
+  assert.equal(empty["SOME_API_KEY"], undefined, "empty provider admits no credential-shaped var");
+  assert.equal(empty["MYPROVIDER_API_KEY"], undefined, "empty provider admits no custom key");
+  assert.equal(empty["PATH"], "/bin", "passthrough unaffected");
+  const cross = detachedAuditorEnv(src, {}, "other/model");
+  assert.equal(cross["OTHER_API_KEY"], "other-k", "other provider admits its own key");
+  assert.equal(cross["MYPROVIDER_API_KEY"], undefined, "other provider does not admit myprovider key");
+});

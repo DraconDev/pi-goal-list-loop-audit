@@ -546,3 +546,9 @@ test("every handled /goal subcommand has a completion entry", () => {
   assert.ok(handled.length >= 12, "scan covers real routes, including decision recovery");
   assert.deepEqual(handled.filter(action => !completions.has(action)), []);
 });
+
+test("audit 2026-11-06: /goal completions contain exactly one decide row", () => {
+  const srcText = fs.readFileSync(path.join(__dirname, "..", "extensions", "loops", "goal-activation.ts"), "utf-8");
+  const decideRows = srcText.split("\n").filter((line) => line.includes('"decide"'));
+  assert.equal(decideRows.length, 1, `expected exactly one decide completion row, found ${decideRows.length}`);
+});

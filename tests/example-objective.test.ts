@@ -36,3 +36,12 @@ test("v0.39.38: the doc matches the worker's real spawn spec", () => {
   const ui = fs.readFileSync(path.join(repoRoot, "extensions", "loops", "goal-settings-ui.ts"), "utf-8");
   assert.match(ui, /session packages load in the worker \(default\)/, "mirror default-ON is the coded default");
 });
+
+test("audit 2026-11-06: auditor snippet names the global settings file, not the project file", () => {
+  const auditorIdx = doc.indexOf("## The auditor model rule");
+  assert.ok(auditorIdx >= 0, "auditor section exists");
+  const section = doc.slice(auditorIdx);
+  assert.match(section, /global-only/, "auditor keys are global-only");
+  assert.match(section, /pi-goal-list-loop-audit\.settings\.json/, "global settings path named");
+  assert.doesNotMatch(section, /\.pi-glla\/settings\.json/, "project file no longer suggested for auditor keys");
+});
