@@ -6,6 +6,10 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Recent reviews
 
+- [Project audit — 6 November 2026](PROJECT-AUDIT-2026-11-06.md): report-only one-pass audit of 0.39.62 + Unreleased; no blocking defects; INDEX/note/contract hygiene + unrun-gate honesty (tsc + full suite not claimed under contention).
+- [Dropped connection gets durable retry — 5 November 2026](transport-failure-durable-retry-2026-11-05/README.md): vocabulary-only transport fix (`TRANSPORT_FAILURE`) + empty-response durable authority; eager/durable predicate agreement pinned.
+- [Tweak card quote blocks — 5 November 2026](tweak-card-formatting-2026-11-05/README.md): `**From:**`/`**To:**` labelled quote blocks + plain-text downgrade; consent text verbatim, real `render()` evidence.
+- [Operator surface — 31 October 2026](operator-surface-2026-10-31/README.md): six complaints fixed in v0.39.61 (recovery marker, tweak wall, wipe latency, list auto-advance, auditor label, stale-build banner).
 - [Rework round scope and transient provider failures — 21 October 2026](REWORK-ROUND-SCOPE-2026-10-21.md): why the final audit re-ran whole test suites in a loop, the empty-provider-response classification fix, and the per-project evidence.
 - [Final audit fallback recovery — 20 October 2026](FINAL-AUDIT-RECOVERY-2026-10-20.md): durable fallback cursors, prompt account-error recovery and a protected session-model last resort.
 - [Release 0.39.42 — 20 October 2026](RELEASE-0-39-42-2026-10-20.md): completion audit recovery and a load-aware release gate, with the gate's host-relative budgets, the focused verification and the contract attempts.
@@ -223,6 +227,16 @@ preserved unchanged.
 | v0.34.121 | v0.34.121-OBJECTIVE-LIFECYCLE-FOLLOWUP.md | OBJECTIVE-LIFECYCLE-FOLLOWUP-2026-08-09.md |
 
 ## Topic index (canonical docs, newest first)
+
+**2026-11-06**
+- PROJECT-AUDIT-2026-11-06.md — report-only one-pass audit of 0.39.62 + Unreleased (transport + tweak-card); no blocking defects; targeted 327 tests pass; tsc/full suite not claimed under host contention
+
+**2026-11-05**
+- transport-failure-durable-retry-2026-11-05/README.md — dropped-connection durable retry: `TRANSPORT_FAILURE` vocabulary + empty-response authority, refusal set unchanged
+- tweak-card-formatting-2026-11-05/README.md — tweak/amendment Confirm cards as labelled quote blocks; plain-text downgrade for RPC hosts
+
+**2026-10-31**
+- operator-surface-2026-10-31/README.md — six operator-surface fixes shipped in v0.39.61 (recovery marker, tweak wall, wipe latency, list auto-advance, auditor label, stale-build banner)
 
 **2026-09-01**
 - PR-AVO-DISPOSITION-2026-09-01.md — PR #22/#36 AVO relevance, CI, lifecycle findings, and selective-port disposition
