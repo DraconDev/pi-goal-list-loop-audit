@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
+
 ### A dropped connection gets the same durable retry as a 429
 
 - Screenshot_20261105_172401 + note.md: the operator asked for aggressive retry on `Error: Connection error.`, `Error: Request timed out.` and `Error: 429 "Rate limit exceeded"`. Two of the three already worked. `Connection error.` did not — and the split was invisible because two predicates disagreed about the same string: `isEagerRetryFailure` returned true (the live lane really did retry it — the journal shows 13 attempts at the 5s eager quantum) while `isRecoverableProviderError` returned false, so every durable lane refused it. One `session_compact_failed` carrying that text parked the goal `blocked` as `compaction failure: Error: Connection error.` with no `retryAt` at all: a dead goal for the most retryable failure there is.
