@@ -7,13 +7,13 @@
 
 ## The complaint
 
-Two field reports, one cause. A tab-hero goal closed after ~45 minutes with:
+Two field reports, one cause. A downstream goal closed after ~45 minutes with:
 
-> Outcome: The mini popup is gone — the toolbar button now opens Town… Changed:
-> removed default_popup and entrypoints/popup/, added a background onClicked
-> that opens Town, moved Collect Loot plus Settings and Side Panel buttons onto
-> Town, and dropped all max-width caps from the shared glass styles; no game
-> logic touched. Evidence: audit-evidence/fullwidth-preview.png screenshot…
+> Outcome: The mini popup is gone — the toolbar button now opens <home page>… Changed:
+> removed default_popup and <project>/entrypoints/popup/, added a background
+> onClicked that opens <home page>, moved <three buttons> onto it, and dropped
+> all max-width caps from the shared glass styles; no game logic touched.
+> Evidence: <artifact>.png screenshot…
 > Tests: vitest 72 passed… — NOTE: low evidence density: no path:line evidence
 > tokens and no verification gate rows…
 
@@ -26,7 +26,7 @@ The rendering layer was not broken. `extensions/completion-summary.ts` can
 produce an area-grouped card with nested evidence bullets, a
 `Quality Gate | Command | Scope | Status | Notes` table, and `path:line` tokens —
 `.pi-glla/archive/20261031094542-rxnfwy.md` in this repo is 16 KB of exactly
-that. The tab-hero claim produced the fallback instead because `findingGroups`
+that. The reported claim produced the fallback instead because `findingGroups`
 and `gateRows` are **optional** parameters, and the agent supplied neither.
 
 The one mechanism that noticed was `completionSummaryDensityNote`. It appended
@@ -55,9 +55,9 @@ explanation, and `showVerification` defaults off. The agent obeyed — it wrote 
 
 ```
 complete_goal needs structure for multi-area work — this claim spans 7 paths
-(audit-evidence/fullwidth-preview.png, entrypoints/background.ts, wxt.config.ts,
-entrypoints/town/TownApp.svelte, lib/ui/theme.css, tests/writer-contract.test.ts
-(+1 more)) but supplied no findingGroups or gateRows, so the summary and the
+(<artifact>.png, <project>/entrypoints/background.ts, <project>/wxt.config.ts,
+<project>/entrypoints/<home>/<HomeApp>.svelte, <project>/lib/ui/theme.css,
+<project>/tests/writer-contract.test.ts (+1 more)) but supplied no findingGroups or gateRows, so the summary and the
 durable archive record it as one opaque bullet.
 
 Re-submit with one findingGroups entry per work area ({ title, findings:
@@ -74,7 +74,7 @@ Breadth has two sources:
 | Signal | Source | Why it is needed |
 | --- | --- | --- |
 | `completionSummaryChangedPaths` | the recap's own `Changed:` value and any `path.ext` / `path.ext:12` token | catches a claim that already knows it spans areas |
-| `goal.telemetry.files` | durable v0.38.100 change set | not the agent's prose — in the tab-hero case it named **6** files while the recap named one screenshot |
+| `goal.telemetry.files` | durable v0.38.100 change set | not the agent's prose — in the reported case it named **6** files while the recap named one artifact |
 
 Directories are excluded: `lib/` is not something a reviewer can open, and
 counting it would let one path-shaped word look like scope.
@@ -118,8 +118,8 @@ paths, the durable change set, and its overflow count — the same forensic trai
 - `extensions/loops/goal-tools.ts` — the capture-time refusal before
   `beginCompletionAudit`, plus the schema guidance on `completionSummary`,
   `findingGroups`, and `gateRows`.
-- `tests/completion-structure-gate.test.ts` — 6 tests: the real tab-hero claim
-  is refused and names its change set; single-area work stays flat; supplied
+- `tests/completion-structure-gate.test.ts` — 6 tests: the archived claim's
+  real text is refused and names its change set; single-area work stays flat; supplied
   structure satisfies the gate; directories are not breadth; `complete_goal`
   refuses with no state change; `complete_goal` still audits a single-area
   claim.
@@ -127,13 +127,13 @@ paths, the durable change set, and its overflow count — the same forensic trai
   token once per row". The replay exposed a second bug the complaint was
   hiding: `findingPresentation` already folds extracted `path:line` tokens into
   `reason`, and the archive table then joined `evidence` in again, so
-  `entrypoints/background.ts:41-46` printed twice on one row of a report that
+  `<project>/entrypoints/background.ts:41-46` printed twice on one row of a report that
   is supposed to be readable. Not cosmetic — a doubled pointer makes the
   reader re-check whether the second one is a different claim.
 - `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md` — the new
   "multi-area claims must carry structure" section.
 - Replayed against the archived claim text and telemetry from
-  `tab-hero/.pi-glla/archive/20261107103159-jps4k0.md` and its `active.jsonl`
+  the downstream project's `.pi-glla/archive/<goal-id>.md` and its `active.jsonl`
   state line, not a synthetic fixture.
 
 ## Verification
