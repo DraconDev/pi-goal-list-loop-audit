@@ -12,6 +12,13 @@
 - The archive evidence cell also printed each `path:line` token twice, because `findingPresentation` already folds extracted tokens into the reason and the cell joined them in again. A duplicated pointer in a report that is supposed to be readable makes the reader re-check whether the second one is a different claim.
 - Recorded in `audit/completion-structure-gate-2026-11-07/README.md` and `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md`.
 
+### Shipped text no longer names a private project
+
+- This package is published to npm and mirrored publicly, so naming a private project in documentation publishes an inventory of private work to every consumer. A field report's durable value is the bug, the reproduction and the fix — not which private tree found it.
+- `AGENTS.md` now carries that as a standing rule with the rewrite shapes: "a field report" for provenance, `<project>/entrypoints/background.ts` in audit reproductions so the path shape and file counts still verify, and the same rule for commit messages and ledger text.
+- `npm run check:names` (`scripts/check-no-project-names.mjs`) enforces it inside `npm run release:check`. It judges only lines **new** relative to the newest release tag, so the tree's pre-existing references are grandfathered with no baseline manifest committed — a committed baseline would publish the very names it protects. The denylist lives untracked at `.dracon/no-project-names.txt`; a fresh clone reports "denylist absent" and exits 0 instead of failing.
+- Scope is everything npm publishes plus `audit/`, which the public mirrors carry even though the tarball does not. `tests/` is exempt: a fixture may need a realistic repo name and tests are not shipped documentation. `tests/no-project-names.test.ts` drives the script against a synthetic denylist in a throwaway repo, so the test file itself stays name-free.
+
 ## Unreleased
 
 ## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
