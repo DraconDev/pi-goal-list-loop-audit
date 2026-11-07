@@ -19,16 +19,27 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, type StdioOptions } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+
+interface MakeRepoOptions {
+  denylist?: boolean;
+  changelog?: string;
+  files?: Record<string, string>;
+}
+interface RunResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
 
 const SCRIPT = path.resolve("scripts/check-no-project-names.mjs");
 
 /** A throwaway repo with a synthetic denylist. The names are invented so this
  * file never contains a real one. */
-function makeRepo({ denylist = true, changelog = "", files = {} } = {}) {
+function makeRepo({ denylist = true, changelog = "", files = {} }: MakeRepoOptions = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "glla-names-"));
   fs.mkdirSync(path.join(root, ".dracon"), { recursive: true });
   fs.mkdirSync(path.join(root, "CHANGELOG.md").replace(/CHANGELOG\.md$/, ""), { recursive: true });
@@ -44,8 +55,8 @@ function makeRepo({ denylist = true, changelog = "", files = {} } = {}) {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, text);
   }
-  const git = (...args) =>
-    execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const git = (...args: string[]): string =>
+    execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] as StdioOptions });
   git("init", "-q");
   git("config", "user.email", "test@example.invalid");
   git("config", "user.name", "test");
@@ -55,16 +66,17 @@ function makeRepo({ denylist = true, changelog = "", files = {} } = {}) {
   return { root, git };
 }
 
-function run(root, args = []) {
+function run(root: string, args: string[] = []): RunResult {
   try {
     const stdout = execFileSync(process.execPath, [SCRIPT, ...args], {
       cwd: root,
       encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"] as StdioOptions,
     });
     return { code: 0, stdout, stderr: "" };
   } catch (err) {
-    return { code: err.status ?? 1, stdout: err.stdout ?? "", stderr: err.stderr ?? "" };
+    const failure = err as { status?: number; stdout?: string; stderr?: string };
+    return { code: failure.status ?? 1, stdout: failure.stdout ?? "", stderr: failure.stderr ?? "" };
   }
 }
 
