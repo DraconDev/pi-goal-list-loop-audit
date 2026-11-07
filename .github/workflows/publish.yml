@@ -54,6 +54,12 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          # `npm run check:names` judges only lines new relative to the newest
+          # release tag, so the quality lane needs tags in the clone. A shallow
+          # checkout has none, which silently degrades the gate to a full-tree
+          # scan of grandfathered text.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
