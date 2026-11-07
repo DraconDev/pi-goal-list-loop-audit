@@ -216,6 +216,45 @@ test("no-project-names: the hashed list splits joined identifiers", () => {
   assert.equal(result.code, 1, "a name joined by a hyphen inside a path still counts");
 });
 
+// Regression: the gate must never degrade into a full audit/ scan. Without a
+// base ref it cannot tell grandfathered evidence from new text, and scanning
+// audit/ failed a real release run on years of pre-rule references.
+test("no-project-names: no base ref judges the changelog only, never all of audit/", () => {
+  const { root } = makeRepo({
+    denylist: true,
+    changelog: "# Changelog\n\n## Unreleased\n\n- Fixes a scheduling bug.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  });
+  // Uncommitted: with no tag and no diff base this is the worst case.
+  fs.mkdirSync(path.join(root, "audit", "old-evidence"), { recursive: true });
+  fs.writeFileSync(path.join(root, "audit", "old-evidence", "notes.md"), "- Long-standing AcmeCorp reference.\n");
+  const result = run(root, ["--base", ""]);
+  assert.equal(result.code, 0, `grandfathered evidence must not fail the gate: ${result.stderr}`);
+  assert.match(result.stdout, /newest release section only/, "it says what it could actually judge");
+});
+
+test("no-project-names: no base ref warns about the degraded judgement", () => {
+  const { root } = makeRepo({
+    changelog: "# Changelog\n\n## Unreleased\n\n- Fixes a scheduling bug.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  });
+  const result = run(root, ["--base", ""]);
+  assert.match(result.stderr, /no usable git base ref/, "a degraded run must say so on stderr");
+  assert.match(result.stderr, /fetch-depth: 0/, "and name the CI fix");
+});
+
+test("no-project-names: a base ref still judges the newest release section", () => {
+  const { root, git } = makeRepo({
+    changelog: "# Changelog\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  });
+  fs.writeFileSync(
+    path.join(root, "CHANGELOG.md"),
+    "# Changelog\n\n## 2.0.0 — second (2026-02-01)\n\n- Reproduced in widgetworks.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  );
+  git("add", "-A");
+  git("commit", "-q", "-m", "leak in release notes");
+  const result = run(root, ["--base", "v1.0.0"]);
+  assert.equal(result.code, 1, "new release text is judged when a base exists");
+});
+
 test("release:check runs the gate", () => {
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf-8")) as { scripts: Record<string, string> };
   assert.match(pkg.scripts["release:check"] ?? "", /check:names/, "the gate is part of the release gate, not optional");
