@@ -1,5 +1,10 @@
 # Completion reports for human eyes — the structure gate (2026-11-07)
 
+> **Shipped in v0.39.64.** `glla version` / the version row reports the loaded
+> build, so a session can tell whether it is running the structure gate
+> (v0.39.64+) or an older build that only annotates the claim (v0.38.69–v0.39.63).
+> The stale-build warning also compares the loaded build against this checkout.
+
 ## The complaint
 
 Two field reports, one cause. A tab-hero goal closed after ~45 minutes with:
