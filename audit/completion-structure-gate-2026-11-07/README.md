@@ -136,6 +136,21 @@ paths, the durable change set, and its overflow count — the same forensic trai
   the downstream project's `.pi-glla/archive/<goal-id>.md` and its `active.jsonl`
   state line, not a synthetic fixture.
 
+## Naming rule (added to AGENTS.md with this change)
+
+The audit trail for this work is now name-free, and `AGENTS.md` carries a
+standing rule plus `npm run check:names` inside `npm run release:check`. The
+gate judges only lines **new** relative to the newest release tag, so the tree's
+~950 historical references are grandfathered without a committed baseline — a
+baseline in git would publish the very names it protects. The denylist lives
+untracked at `.dracon/no-project-names.txt`; a fresh clone reports "denylist
+absent" and exits 0 rather than failing.
+
+`tests/` is out of scope by design (a fixture may need a realistic repo name,
+and tests do not ship), and `tests/no-project-names.test.ts` drives the script
+in a throwaway repo with a synthetic denylist so the test file itself stays
+name-free.
+
 ## Verification
 
 | Gate | Command | Result |
