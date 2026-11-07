@@ -307,6 +307,7 @@ console.error(
   "without naming which private tree found it — \"a field report\" instead of the project,\n" +
   "and `<project>/entrypoints/background.ts` in audit reproductions so the path shape and\n" +
   "file counts still verify. Pre-existing text is grandfathered; only new lines are judged.\n\n" +
-  "Denylist: .dracon/no-project-names.txt (untracked by design).",
+  "Watch list: .dracon/no-project-names.txt (operator-local, untracked) and\n" +
+  "scripts/no-project-names.denylist.json (tracked, SHA-256 hashed).",
 );
 process.exit(1);
