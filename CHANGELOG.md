@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.39.64 — multi-area completion claims are refused until they can be read (2026-11-07)
 
 ### A multi-area completion claim is refused until it can be read
 
@@ -10,6 +10,8 @@
 - Breadth has two independent sources, because prose alone is the weaker one. `completionSummaryChangedPaths` reads repo-relative file tokens from the recap (directories excluded — `lib/` is not something a reviewer can open), and the durable v0.38.100 `telemetry.files` change set records what the work actually touched. In the tab-hero case the recap named one screenshot while telemetry named six files.
 - Threshold `MULTI_AREA_MIN_PATHS = 3` (a source file and its test can honestly be one change). Supplying *either* `findingGroups` or `gateRows` satisfies the gate — one group is enough for coherent multi-file work, since the gate demands structure, not theatre. Single-area work keeps the flat six-label render unchanged, and the claim schema now says so up front instead of after a refusal.
 - Recorded in `audit/completion-structure-gate-2026-11-07/README.md` and added to `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md` with the replay of the real claim.
+
+## Unreleased
 
 ## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
 
