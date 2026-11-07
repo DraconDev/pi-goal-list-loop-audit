@@ -13,6 +13,45 @@ Before changing code for an issue, verify that the behavior is owned by GLLA;
 record and dispose of external-only reports explicitly instead of silently
 expanding the repository boundary.
 
+## Never name the operator's private projects
+
+This package is published to npm and mirrored publicly. **Do not write the name
+of any private project, workspace, or proprietary tree into anything that
+ships or is mirrored**: `CHANGELOG.md`, `README.md`, `docs/`, `extensions/`,
+`skills/`, `prompts/`, `schemas/`, `scripts/`, `examples/`, and `audit/`.
+
+A field report's durable value is the bug, the reproduction, and the fix — not
+which private tree found it. Naming a project publishes an inventory of
+your private work to every consumer of the package.
+
+Write it this way instead:
+
+- **Provenance**: "a field report", "an operator report", "a downstream
+  project" — never the project name and never its goal id.
+- **Reproductions in `audit/`**: keep the path shape and file counts so the
+  evidence still verifies, and redact the name —
+  `<project>/entrypoints/background.ts`, `<project>/lib/ui/theme.css`.
+- **Artifacts**: `<artifact>.png`, not the project-specific filename.
+- **Commit messages and ledger text**: same rule. The daemon's auto-commits
+  quote file paths; a foreign project's paths must not ride them.
+
+Exempt by design:
+
+- **`tests/`** — a fixture may need a realistic repo name, and tests are not
+  shipped documentation.
+- **Published release history** — sections older than the newest release keep
+their original text. An npm tarball is immutable and this repo forbids
+rewriting pushed history. The rule moves forward with each release.
+
+Enforcement: `npm run check:names`
+(`scripts/check-no-project-names.mjs`) runs inside `npm run release:check`. It
+judges only lines **new** relative to the newest release tag, so historical
+text is grandfathered automatically and no baseline manifest has to be
+committed — a committed one would publish the very names it protects. The
+denylist itself lives untracked at `.dracon/no-project-names.txt`; a fresh
+clone has no denylist and the gate reports "denylist absent" instead of
+failing. Maintain that file locally when a project name needs to be blocked.
+
 ## dracon-sync daemon: git-history rules for agent loops
 
 This repo is watched by the **dracon-sync daemon**, which auto-commits
