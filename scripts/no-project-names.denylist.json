@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Project-name watch list — SHA-256 hashes, never plaintext.",
+    "",
+    "See scripts/check-no-project-names.mjs and the AGENTS.md rule. This file is",
+    "tracked so the release gate works in CI and for contributors; the plaintext",
+    "list stays untracked at .dracon/no-project-names.txt. A one-way hash means",
+    "the gate can still catch a leak without this file publishing the names it",
+    "protects.",
+    "",
+    "Note on hashing: the tokens are short, so this is not a cryptographic",
+    "commitment — a determined reader could guess candidates. It removes the",
+    "casual inventory (a plain list of the operator's private projects sitting in",
+    "a public repo), which is the actual exposure. Do not treat it as a secret.",
+    "",
+    "Adding an entry: run",
+    "  node -e 'const c=require(\"crypto\");const n=process.argv[1];console.log(c.createHash(\"sha256\").update(\"glla-no-project-names-v1|\"+n.toLowerCase()).digest(\"hex\"))' '<name>'",
+    "and append the hex digest to \"denied\"."
+  ],
+  "salt": "glla-no-project-names-v1",
+  "denied": [
+    "9786ece6626d84286c1e7c425f4ea7bd9444fdba34040aaf9cff18e3bb101e41",
+    "39cdf9b11b8f44c15e02b89d99b594c623bd032418a9779ecc4ad9ab80e77c8d",
+    "a87aec3e5dd6936282a2e7bff26182d130ca1040740087bb9ccf0671c621929d",
+    "7790c7cca3f0b7318b49f81bf164215cfae19c50cf8b2679c5ec68ead5e885ce",
+    "a536c17322210cefa5d3730fdd8cd9783b079eb692e9b3ff5dccacbeaae41ede",
+    "06adef46bb718468985c28ab46b53cb822a34b63c90c394d69ccfe25bd9a9f17",
+    "cd7c5300f88b5a2692a8bd09172ead713fbc275b187abdb8e7c979ffcf9f6671"
+  ]
+}
