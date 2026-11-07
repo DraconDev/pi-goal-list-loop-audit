@@ -47,10 +47,21 @@ Enforcement: `npm run check:names`
 (`scripts/check-no-project-names.mjs`) runs inside `npm run release:check`. It
 judges only lines **new** relative to the newest release tag, so historical
 text is grandfathered automatically and no baseline manifest has to be
-committed — a committed one would publish the very names it protects. The
-denylist itself lives untracked at `.dracon/no-project-names.txt`; a fresh
-clone has no denylist and the gate reports "denylist absent" instead of
-failing. Maintain that file locally when a project name needs to be blocked.
+committed — a committed baseline of *names* would publish the very names it
+protects.
+
+The watch list has two sources, both consulted:
+
+- **`.dracon/no-project-names.txt`** — plaintext, operator-local, untracked.
+  Add a name here and the gate fails on new text until it is reworded. This is
+  the one to edit when a project name needs blocking now.
+- **`scripts/no-project-names.denylist.json`** — tracked, SHA-256 hashed under
+  a fixed salt. It makes the gate run in CI and on a contributor checkout,
+  where the plaintext file does not exist, without publishing the names. Add an
+  entry with the `node -e` one-liner documented in that file's header.
+
+A hit from the hashed list is reported as `<matches a watched name>` — the gate
+must not echo a name back into CI logs.
 
 ## dracon-sync daemon: git-history rules for agent loops
 
