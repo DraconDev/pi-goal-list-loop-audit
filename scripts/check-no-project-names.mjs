@@ -241,10 +241,13 @@ function fallbackTargets() {
 }
 
 const names = readDenylist();
-if (names.length === 0) {
+const hashed = readHashedDenylist();
+if (names.length === 0 && hashed.hashes.size === 0) {
   console.log(
-    "no-project-names: denylist absent (.dracon/no-project-names.txt) — nothing to check.\n" +
-    "  This file is intentionally untracked; a fresh clone cannot run the gate.",
+    "no-project-names: no watch list — nothing to check.\n" +
+    `  Expected one of: ${path.relative(ROOT, DENYLIST_PATH)} (operator-local, untracked)\n` +
+    `  or ${path.relative(ROOT, HASHED_LIST_PATH)} (tracked, hashed).\n` +
+    "  This is not a failure: there are no names to enforce yet.",
   );
   process.exit(0);
 }
@@ -262,20 +265,30 @@ for (const entry of candidates) {
   if (entry.file === "scripts/check-no-project-names.mjs") continue;
   if (entry.text.includes("\u0000")) continue;
   considered++;
-  pattern.lastIndex = 0;
-  const matches = [...entry.text.matchAll(pattern)];
-  if (matches.length === 0) continue;
+  const found = new Set();
+  if (pattern) {
+    pattern.lastIndex = 0;
+    for (const match of entry.text.matchAll(pattern)) found.add(match[0]);
+  }
+  // The hashed list catches names even when no plaintext list exists (CI, or a
+  // contributor checkout). Reported as `<matches a watched name>`: the whole
+  // point of hashing is that this output cannot echo the name back.
+  const hits = hashedHits(entry.text, hashed);
+  if (hits && hits.length > 0) found.add("<matches a watched name>");
+  if (found.size === 0) continue;
   violations.push({
     file: entry.file,
     line: entry.line,
-    names: [...new Set(matches.map((m) => m[0]))],
+    names: [...found],
     excerpt: entry.text.trim().slice(0, 160),
   });
 }
 
 if (violations.length === 0) {
+  const watched = names.length + hashed.hashes.size;
   console.log(
-    `no-project-names: clean — ${considered} ${judgedBy} checked against ${names.length} denied name(s).`,
+    `no-project-names: clean — ${considered} ${judgedBy} checked against ${watched} watched name(s)` +
+    ` (${names.length} plaintext, ${hashed.hashes.size} hashed).`,
   );
   process.exit(0);
 }
