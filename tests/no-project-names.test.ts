@@ -20,12 +20,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, type StdioOptions } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
 interface MakeRepoOptions {
   denylist?: boolean;
+  hashed?: boolean;
   changelog?: string;
   files?: Record<string, string>;
 }
@@ -39,7 +41,11 @@ const SCRIPT = path.resolve("scripts/check-no-project-names.mjs");
 
 /** A throwaway repo with a synthetic denylist. The names are invented so this
  * file never contains a real one. */
-function makeRepo({ denylist = true, changelog = "", files = {} }: MakeRepoOptions = {}) {
+function hashName(name: string, salt = "glla-no-project-names-v1"): string {
+  return createHash("sha256").update(`${salt}|${name.toLowerCase()}`).digest("hex");
+}
+
+function makeRepo({ denylist = true, hashed = false, changelog = "", files = {} }: MakeRepoOptions = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "glla-names-"));
   fs.mkdirSync(path.join(root, ".dracon"), { recursive: true });
   fs.mkdirSync(path.join(root, "CHANGELOG.md").replace(/CHANGELOG\.md$/, ""), { recursive: true });
@@ -50,6 +56,13 @@ function makeRepo({ denylist = true, changelog = "", files = {} }: MakeRepoOptio
     );
   }
   fs.writeFileSync(path.join(root, "CHANGELOG.md"), changelog);
+  if (hashed) {
+    fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, "scripts", "no-project-names.denylist.json"),
+      JSON.stringify({ salt: "glla-no-project-names-v1", denied: ["acmecorp", "widgetworks"].map((n) => hashName(n)) }, null, 2),
+    );
+  }
   for (const [rel, text] of Object.entries(files)) {
     const full = path.join(root, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -160,14 +173,47 @@ test("no-project-names: tests/ is out of scope", () => {
   assert.equal(result.code, 0, "a test fixture may need a realistic repo name");
 });
 
-test("no-project-names: no denylist means nothing to check, not a failure", () => {
+test("no-project-names: no watch list at all means nothing to check, not a failure", () => {
   const { root } = makeRepo({
     denylist: false,
     changelog: "# Changelog\n\n## Unreleased\n\n- Names AcmeCorp freely.\n",
   });
   const result = run(root);
-  assert.equal(result.code, 0, "a fresh clone has no denylist; the gate must degrade loudly but not fail");
-  assert.match(result.stdout, /denylist absent/);
+  assert.equal(result.code, 0, "no watch list means no names to enforce; the gate says so instead of failing");
+  assert.match(result.stdout, /no watch list/);
+});
+
+// The tracked list is hashed so the gate still runs in CI, where the untracked
+// plaintext list does not exist — the reason it was added at all.
+test("no-project-names: the tracked hashed list catches a leak with no plaintext list", () => {
+  const { root, git } = makeRepo({
+    denylist: false,
+    hashed: true,
+    changelog: "# Changelog\n\n## Unreleased\n\n- x.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  });
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.writeFileSync(path.join(root, "docs", "note.md"), "- Replayed in AcmeCorp today.\n");
+  git("add", "-A");
+  git("commit", "-q", "-m", "leak");
+  const result = run(root, ["--verbose"]);
+  assert.equal(result.code, 1, "CI must catch this without the operator's plaintext file");
+  assert.match(result.stderr, /docs\/note\.md:1/);
+  assert.match(result.stderr, /matches a watched name/, "the hit is reported without echoing the name");
+  assert.doesNotMatch(result.stderr, /AcmeCorp/, "the gate must not print a name it was given only as a hash");
+});
+
+test("no-project-names: the hashed list splits joined identifiers", () => {
+  const { root, git } = makeRepo({
+    denylist: false,
+    hashed: true,
+    changelog: "# Changelog\n\n## Unreleased\n\n- x.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
+  });
+  fs.mkdirSync(path.join(root, "audit", "fix"), { recursive: true });
+  fs.writeFileSync(path.join(root, "audit", "fix", "README.md"), "- acmecorp-panel/widgets.ts:41\n");
+  git("add", "-A");
+  git("commit", "-q", "-m", "joined identifier");
+  const result = run(root);
+  assert.equal(result.code, 1, "a name joined by a hyphen inside a path still counts");
 });
 
 test("release:check runs the gate", () => {

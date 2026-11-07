@@ -274,13 +274,23 @@ for (const entry of candidates) {
   // contributor checkout). Reported as `<matches a watched name>`: the whole
   // point of hashing is that this output cannot echo the name back.
   const hits = hashedHits(entry.text, hashed);
-  if (hits && hits.length > 0) found.add("<matches a watched name>");
+  const hashedOnly = [];
+  if (hits && hits.length > 0) {
+    found.add("<matches a watched name>");
+    hashedOnly.push(...hits);
+  }
   if (found.size === 0) continue;
+  // A name known only as a hash must STAY unknown in the output: this runs in
+  // CI, whose logs are public. Redact hash-matched tokens from the excerpt.
+  let excerpt = entry.text.trim();
+  for (const token of hashedOnly) {
+    excerpt = excerpt.split(token).join("<redacted>");
+  }
   violations.push({
     file: entry.file,
     line: entry.line,
     names: [...found],
-    excerpt: entry.text.trim().slice(0, 160),
+    excerpt: excerpt.slice(0, 160),
   });
 }
 
