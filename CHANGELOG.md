@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### A multi-area completion claim is refused until it can be read
+
+- Field 2026-11-07 (tab-hero, `20261107103159-jps4k0`): a ~45-minute fullscreen pass touching `entrypoints/background.ts`, `wxt.config.ts`, `entrypoints/town/TownApp.svelte`, `lib/ui/theme.css` and two test files closed as one paragraph with a screenshot as its only named path. The operator's verdict was that the reports "are getting pretty bad by the end, we would want detailed ones that are for human eyes". The rendering layer was not at fault — `findingGroups` and `gateRows` produced a 16 KB area-grouped archive record for this repo's own `20261031094542-rxnfwy` — but both are optional, so an agent that omitted them got the three-column fallback and nobody was told to care.
+- The one mechanism that noticed was the v0.38.69 density lint, which appended `— NOTE: low evidence density …` to the claim and shipped it anyway, so the system's own diagnosis of the problem arrived inside the report as if it were part of the report.
+- `complete_goal` now refuses such a claim before `beginCompletionAudit`: nothing is persisted, no auditor is launched, and the refusal names the real change set, the fields to fill, and that no state changed. The episode is ledgered as `complete_goal_structure_refused`.
+- Breadth has two independent sources, because prose alone is the weaker one. `completionSummaryChangedPaths` reads repo-relative file tokens from the recap (directories excluded — `lib/` is not something a reviewer can open), and the durable v0.38.100 `telemetry.files` change set records what the work actually touched. In the tab-hero case the recap named one screenshot while telemetry named six files.
+- Threshold `MULTI_AREA_MIN_PATHS = 3` (a source file and its test can honestly be one change). Supplying *either* `findingGroups` or `gateRows` satisfies the gate — one group is enough for coherent multi-file work, since the gate demands structure, not theatre. Single-area work keeps the flat six-label render unchanged, and the claim schema now says so up front instead of after a refusal.
+- Recorded in `audit/completion-structure-gate-2026-11-07/README.md` and added to `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md` with the replay of the real claim.
+
 ## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
 
 ### A dropped connection gets the same durable retry as a 429

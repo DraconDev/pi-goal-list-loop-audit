@@ -936,12 +936,16 @@ export function buildRichTerminalParts(args: {
     findingLines.push("| Area | User-visible outcome | Evidence / reason |", "| --- | --- | --- |");
     for (const group of groups) {
       group.findings.forEach((finding, fi) => {
-        const { outcome, reason, evidence } = findingPresentation(finding, false);
+        const { outcome, reason } = findingPresentation(finding, false);
         // v0.38.52: test proof rides the Evidence cell (tables have no
         // sub-bullets); cells stay pipe-escaped. v0.38.55: unclipped.
+        // v0.39.x (field 2026-11-07 tab-hero replay): the cell folded the
+        // extracted tokens in a SECOND time even though findingPresentation
+        // already appends them to `reason`, so `entrypoints/background.ts:41-46`
+        // printed twice on one row. One fold, one cell.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
         const evidenceCell = [
-          [...new Set([reason, ...evidence].filter(Boolean))].join(" · ") || "not recorded",
+          reason || "not recorded",
           ...(proof ? [`Evidence: ${proof}`] : []),
         ].join(" \u00b7 ");
         findingLines.push(

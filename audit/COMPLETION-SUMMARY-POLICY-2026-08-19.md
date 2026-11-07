@@ -140,3 +140,45 @@ missing facts remain explicitly `not recorded`.
 - `tests/goal-loop-core.test.ts`, `tests/display.test.ts`,
   `tests/revision-bound-audit.test.ts` — persistence, display, and audit-claim
   regressions.
+
+## v0.39.x (2026-11-07): multi-area claims must carry structure
+
+The labeled recap fixed *missing* fields. It did not fix *collapsed* fields:
+a nine-hour, six-file change could still close as one paragraph with a single
+`Changed:` clause naming everything at once, and an optional parameter cannot
+be the only guarantee that a human gets a readable record.
+
+Field evidence (tab-hero, `20261107103159-jps4k0`): a fullscreen pass touching
+`entrypoints/background.ts`, `wxt.config.ts`, `entrypoints/town/TownApp.svelte`,
+`lib/ui/theme.css`, and two test files was claimed in four sentences, with a
+screenshot as its only named path. The density lint noticed (*low evidence
+density*) and merely appended a NOTE, so the claim shipped: the terminal card
+listed two bullets, the archive carried a three-column fallback table, and the
+only way to learn what changed in each area was to open the six files. A lint
+that only annotates is a warning the agent can ignore, and it was ignored for
+weeks.
+
+`complete_goal` now refuses a multi-area claim that carries neither
+`findingGroups` nor `gateRows`. Refusal happens before `beginCompletionAudit`,
+so nothing is persisted, no auditor is launched, and the agent can re-submit
+with structure instead of the render compensating for a claim it cannot
+verify.
+
+Breadth comes from two independent signals:
+
+- `completionSummaryChangedPaths(summary)` — repo-relative `path`, `path.ts`,
+  or `path.ts:12` tokens in the recap. Bare directories do not count: a file is
+  the smallest unit a reviewer can open.
+- `goal.telemetry.files` — the durable v0.38.100 change set, which records
+  every path the work actually touched. This is the stronger signal precisely
+  because it is not the agent's own prose; in the tab-hero case it named six
+  files while the recap named one.
+
+`MULTI_AREA_MIN_PATHS` (3) is the threshold. Single-area work keeps the flat
+six-label render — that shape is correct there, and gating it would train
+agents to fabricate groups for one-file changes. Supplying *either* structure
+satisfies the gate: a coherent multi-file change can honestly be one group.
+
+The refusal text names the real change set, the field names, and the fact that
+no state changed, and the episode is ledgered as
+`complete_goal_structure_refused` with the paths it judged.

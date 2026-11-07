@@ -6,6 +6,7 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Recent reviews
 
+- [Completion reports for human eyes — 7 November 2026](completion-structure-gate-2026-11-07/README.md): multi-area `complete_goal` claims are refused without `findingGroups`/`gateRows`; the density lint annotated the tab-hero claim and shipped it anyway.
 - [Project audit — 6 November 2026](PROJECT-AUDIT-2026-11-06.md): report-only one-pass audit of 0.39.62 + Unreleased; no blocking defects; INDEX/note/contract hygiene + unrun-gate honesty (tsc + full suite not claimed under contention).
 - [Dropped connection gets durable retry — 5 November 2026](transport-failure-durable-retry-2026-11-05/README.md): vocabulary-only transport fix (`TRANSPORT_FAILURE`) + empty-response durable authority; eager/durable predicate agreement pinned.
 - [Tweak card quote blocks — 5 November 2026](tweak-card-formatting-2026-11-05/README.md): `**From:**`/`**To:**` labelled quote blocks + plain-text downgrade; consent text verbatim, real `render()` evidence.
@@ -227,6 +228,9 @@ preserved unchanged.
 | v0.34.121 | v0.34.121-OBJECTIVE-LIFECYCLE-FOLLOWUP.md | OBJECTIVE-LIFECYCLE-FOLLOWUP-2026-08-09.md |
 
 ## Topic index (canonical docs, newest first)
+
+**2026-11-07**
+- completion-structure-gate-2026-11-07/README.md — multi-area completion claims refused without `findingGroups`/`gateRows`; breadth read from the recap AND durable `telemetry.files`; single-area work stays flat
 
 **2026-11-06**
 - PROJECT-AUDIT-2026-11-06.md — report-only one-pass audit of 0.39.62 + Unreleased (transport + tweak-card); no blocking defects; targeted 327 tests pass; tsc/full suite not claimed under host contention

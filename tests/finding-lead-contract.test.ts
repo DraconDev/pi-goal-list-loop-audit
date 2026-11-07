@@ -111,6 +111,30 @@ test("archive table uses outcome/evidence columns and keeps proof", () => {
   assert.doesNotMatch(parts.findingLines.join("\n"), /Lead|Finding \| Evidence/);
 });
 
+// Field 2026-11-07 (tab-hero replay): the evidence cell folded the extracted
+// tokens in a second time even though findingPresentation already appends them
+// to `reason`, so one row printed `entrypoints/background.ts:41-46` twice.
+// A duplicated pointer reads as a rendering bug in a report that is supposed
+// to be readable, so each token appears exactly once per row.
+test("archive table prints each evidence token once per row", () => {
+  const row = (() => {
+    const parts = buildRichTerminalParts({
+      outcome: "done",
+      details: [],
+      countsLine: "",
+      groups: [1, 2, 3, 4].map((n) => ({
+        title: `Area ${n}`,
+        findings: [`Users can complete action ${n} — src/area-${n}.ts:${n}`],
+      })),
+    });
+    return parts.findingLines.filter((l) => l.startsWith("| Area 1 |"))[0] ?? "";
+  })();
+  assert.ok(row, "the area row renders");
+  assert.equal(row.split("src/area-1.ts:1").length - 1, 1, "the pointer appears exactly once, not twice");
+  assert.equal(row.split("Users can complete action 1").length - 1, 1, "the outcome appears exactly once");
+  assert.match(row, /Users can complete action 1 \|/, "the outcome cell stays its own column");
+});
+
 test("widget projects the normalized outcome without legacy Lead or technical labels", () => {
   const widget = buildWidgetLines({ goal: goal({ completionSummary: SUMMARY.replace("Outcome: The browser-action popup is complete for users.", "Outcome: Lead: The browser-action popup is complete for users.") }), list: [] }, null, Date.parse("2026-09-24T00:05:00.000Z"))!;
   assert.match(widget.join("\n"), /browser-action popup is complete/);
