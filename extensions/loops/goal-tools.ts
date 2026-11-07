@@ -312,7 +312,7 @@ import {
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { selectQuotaWaitReroute } from "../quota-retry.js";
-import { buildFinalRepoStateLines, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryDensityNote } from "../completion-summary.js";
+import { buildFinalRepoStateLines, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryChangedPaths, completionSummaryDensityNote, completionSummaryStructureGap } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { HUMAN_HANDOFF_GUIDANCE, humanCheckTime } from "../human-handoff.js";
 import { auditReworkNotice } from "../audit-rework-handoff.js";
@@ -743,6 +743,7 @@ function registerAgentTools(pi: any): void {
           "Tests: <bounded commands + pass/fail, or `not run — <reason>`> · Unresolved: <remaining risk, or `none`> · " +
           "Next: <one follow-up hint, or `none`>. " +
           "Keep the human explanation short; put detailed findings in findingGroups and proof in verificationSummary/gateRows. " +
+          "MULTI-AREA WORK NEEDS STRUCTURE: when the Changed value names 3+ paths (or the work spans several areas), the claim is refused until it carries one findingGroups entry per area plus gateRows for the commands you ran — a flat paragraph for multi-file work produces an unreadable card and a thin archive record, which is the durable complaint this contract exists to prevent. Single-area work stays a flat recap. " +
           "Structured-long Outcome and findings remain available in the detailed record. " +
           "See audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md and docs/DESIGN-long-running-supervision.md. Free-form prose is allowed but discouraged; incomplete input receives a recorded-facts-only fallback at terminalization.",
       })),
@@ -781,7 +782,7 @@ function registerAgentTools(pi: any): void {
           "(subsystem, screen, phase); each finding leads with the primary user-visible outcome, then uses ` — ` for a concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason); never prefix a finding with `Lead:`, `Tests:`, or `Verdict:`. " +
           "Chat uses nested area sections; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
-          "Omit for single-area work — the flat six-label render stays the fallback.",
+          "REQUIRED when the six-label recap's Changed value names 3+ paths: the claim is refused without it. Omit only for genuinely single-area work — the flat six-label render stays the fallback there.",
       })),
       requestFullAudit: Type.Optional(Type.Boolean({
         description:
@@ -799,6 +800,8 @@ function registerAgentTools(pi: any): void {
           "The archive widens its Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
           "and supersedes the mechanical Tests rows. Default chat omits technical verification; pass showVerification=true only after an explicit user request. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
+          "REQUIRED alongside findingGroups when the recap's Changed value names 3+ paths: name each command you actually ran and copy its real counts into notes. " +
+          "Default chat omits technical verification; pass showVerification=true only after an explicit user request. " +
           "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
       })),
     }),
@@ -1119,6 +1122,22 @@ function registerAgentTools(pi: any): void {
       // v0.38.52: same for the agent-supplied gate inventory.
       const sanitizedGroups = sanitizeFindingGroups(p.findingGroups);
       const sanitizedGates = sanitizeGateRows(p.gateRows);
+      // v0.39.x (field 2026-11-07, tab-hero card): the density lint below
+      // ANNOTATES and the claim ships anyway, so a six-file change closed as
+      // one paragraph and every downstream surface stayed thin. A recap whose
+      // own Changed: clause names several paths now needs the structure that
+      // makes it readable — refusal happens BEFORE any state change, so the
+      // agent can re-submit honestly instead of the render compensating.
+      const structureGap = completionSummaryStructureGap(finalSummary, sanitizedGroups, sanitizedGates, state.goal.telemetry?.files);
+      if (structureGap) {
+        appendLedger(ctx.cwd, "complete_goal_structure_refused", {
+          goalId: state.goal.id,
+          paths: completionSummaryChangedPaths(finalSummary).slice(0, 20),
+          changeSet: (state.goal.telemetry?.files ?? []).slice(0, 20),
+          changeSetOverflow: state.goal.telemetry?.filesOverflow ?? 0,
+        });
+        return { content: [{ type: "text", text: structureGap }], details: {} };
+      }
       // v0.38.69 (Antigravity port): evidence-density lint — a claim with
       // no path:line tokens and no gate rows still audits, but rides with
       // a NOTE annotation (ledgered) so the terminal render falls back to

@@ -588,6 +588,91 @@ export function completionSummaryDensityNote(
   return "low evidence density: no path:line evidence tokens and no verification gate rows — add file:line pointers (e.g. extensions/goal-recovery.ts:847) or a gateRows inventory so the terminal render is verifiable";
 }
 
+/** A claim spans distinct work when its own recap names several files or
+ * several changed areas. This is a capture-time heuristic over the claim
+ * text the caller supplied — never a verdict about the work.
+ *
+ * Field 2026-11-07 (tab-hero completion card): a two-hour change to six
+ * files closed as a four-sentence paragraph with one combined
+ * `Changed:` clause, so every chat card and archive record read as a
+ * single opaque bullet for the rest of the project. The claim was
+ * *marked* low-density by the lint and still shipped, because the lint
+ * only annotated. */
+
+export const MULTI_AREA_MIN_PATHS = 3;
+
+/** Repo-relative `path`, `path.ts`, or `path.ts:12` tokens in a recap value.
+ * Directories do not count — a file is the smallest unit a reviewer can
+ * open, and counting directories would let one `lib/` mention look like
+ * scope. */
+const CLAIM_PATH_PATTERN = /(?<![\w/~])(?:[\w.-]+\/)+[\w.-]*\.[A-Za-z0-9]{1,8}(?::\d+)?\b/g;
+
+/** Distinct repo-relative paths named by a claim's own six-label values. */
+export function completionSummaryChangedPaths(summary: string | undefined): string[] {
+  const source = completionSummaryBody(summary ?? "");
+  if (!source) return [];
+  const changed = (() => {
+    const match = /\bChanged:\s*/i.exec(source);
+    if (!match) return "";
+    const start = match.index + match[0].length;
+    const rest = source.slice(start);
+    const next = /\b(?:Outcome|Evidence|Tests|Unresolved|Next|Left out):/i.exec(rest);
+    return next ? rest.slice(0, next.index) : rest;
+  })();
+  const pool = changed ? `${changed}\n${source.replace(changed, " ")}` : source;
+  const paths: string[] = [];
+  for (const match of pool.matchAll(CLAIM_PATH_PATTERN)) {
+    const token = match[0].replace(/:\d+$/, "");
+    if (!paths.includes(token)) paths.push(token);
+  }
+  return paths;
+}
+
+/**
+ * v0.39.x (field 2026-11-07): does this claim describe multi-area work
+ * without the structure that makes it readable? Returns the refusal text a
+ * capture-time gate can hand back to the agent, or undefined when the claim
+ * is either single-area (flat is genuinely correct) or already structured.
+ *
+ * Two independent signals name the work's breadth, because a claim's own
+ * prose is the weakest one: the recap's `Changed:` value, and the goal's
+ * durable telemetry change set (v0.38.100) which records every path the
+ * work actually touched. The field case that motivated this gate named six
+ * files in telemetry while its recap mentioned one screenshot — a gate that
+ * read only the prose would have missed it entirely.
+ *
+ * The gate never invents detail and never blocks single-area work: it asks
+ * for `findingGroups`/`gateRows` only when the work itself spans several
+ * paths. An agent can satisfy it honestly in a few seconds (one group is
+ * enough for genuinely coherent work), and the alternative — the previous
+ * annotation-only lint — silently shipped unreadable cards for weeks.
+ */
+export function completionSummaryStructureGap(
+  summary: string | undefined,
+  groups?: FindingGroup[],
+  gates?: GateRow[],
+  changedFiles?: string[],
+): string | undefined {
+  if (!summary?.trim()) return undefined;
+  if ((groups ?? []).length > 0 || (gates ?? []).length > 0) return undefined;
+  const paths = [...new Set([...completionSummaryChangedPaths(summary), ...(changedFiles ?? [])])]
+    .filter((path) => path.trim().length > 0);
+  if (paths.length < MULTI_AREA_MIN_PATHS) return undefined;
+  const shown = paths.slice(0, 6).join(", ");
+  const more = paths.length > 6 ? ` (+${paths.length - 6} more)` : "";
+  return (
+    `complete_goal needs structure for multi-area work — this claim spans ${paths.length} paths ` +
+    `(${shown}${more}) but supplied no findingGroups or gateRows, so the summary and the durable ` +
+    `archive record it as one opaque bullet.\n\n` +
+    `Re-submit with one findingGroups entry per work area ` +
+    `({ title, findings: ["<user-visible outcome> — <concrete evidence or path:line>"] }), plus ` +
+    `gateRows for the commands you actually ran ({ gate, command, scope, notes }). One group is ` +
+    `enough when the paths really are one coherent area.\n\n` +
+    `Single-area work stays a flat recap — omit both fields when the change really is one area. ` +
+    `The claim was NOT sent to the auditor and no state changed.`
+  );
+}
+
 /**
  * v0.38.50: one compact duration line from durable goal state — turns,
  * wall-clock elapsed since creation, and audit count. Only known facts
