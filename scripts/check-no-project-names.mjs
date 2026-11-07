@@ -8,49 +8,53 @@
 // tree found it. Naming a project in CHANGELOG.md publishes an inventory of
 // private work to every consumer of the package.
 //
-// Scope (operator decision 2026-11-07):
-//   - every path in package.json's `files` list (what npm actually publishes),
-//   - plus `audit/`, which ships in the public repo even though it is not in
-//     the npm tarball. Audit docs keep their reproduction; they redact the
-//     name (`<project>/entrypoints/background.ts`) so the path shape and file
-//     counts still verify.
-//   - `tests/` is out of scope: a test fixture may need a realistic repo name,
-//     and tests are not shipped documentation.
+// FORWARD-LOOKING BY DESIGN (operator decision 2026-11-07). The tree already
+// carries ~950 historical references in code comments, docs and published
+// release sections. Those are grandfathered: an npm tarball is immutable,
+// AGENTS.md forbids rewriting pushed history, and a retroactive scrub would be
+// a large risky edit to shipped sources for no behavioural gain.
 //
-// The denylist lives OUTSIDE git (`.dracon/no-project-names.txt`) because this
-// gate's own data would otherwise publish the names it exists to protect.
+// So the gate judges the RELEASE, not the tree: it reads only lines that are
+// NEW relative to the most recent release tag. Existing text is grandfathered
+// automatically, with no baseline manifest — which matters, because a
+// committed baseline would publish the very names it exists to protect.
 //
-// Grandfathered: release sections published before this rule (plus the
-// v0.39.64 section that was scrubbed by hand) keep their original text — an
-// npm tarball is immutable and AGENTS.md forbids rewriting pushed history.
-// Only the NEWEST release heading and the current `## Unreleased` section are
-// gated, so the rule moves forward with each release instead of demanding a
-// retroactive scrub it cannot verify.
+// Scope (operator decision): every path in package.json's `files` list (what
+// npm publishes) plus `audit/`, which is absent from the tarball but present
+// in the public GitHub/GitLab mirrors. Audit docs keep their reproduction and
+// redact the name (`<project>/entrypoints/background.ts`) so the path shape and
+// file counts still verify. `tests/` is out of scope: a fixture may need a
+// realistic repo name and tests are not shipped documentation.
 //
-// Usage: node scripts/check-no-project-names.mjs [--verbose]
-// Exit 0 = clean (or no denylist present), exit 1 = violation.
+// The denylist lives OUTSIDE git (`.dracon/no-project-names.txt`, covered by
+// the `.dracon/*` ignore rule) for the same reason.
+//
+// Usage: node scripts/check-no-project-names.mjs [--verbose] [--base <ref>]
+//   --base  compare against this ref instead of the newest tag. Pass `HEAD` to
+//           audit only the working tree (used by the unit test).
+// Exit 0 = clean (or nothing to judge), exit 1 = violation.
 
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = process.cwd();
 const DENYLIST_PATH = path.join(ROOT, ".dracon", "no-project-names.txt");
 const VERBOSE = process.argv.includes("--verbose");
+const baseArgIndex = process.argv.indexOf("--base");
+const BASE_ARG = baseArgIndex >= 0 ? process.argv[baseArgIndex + 1] : undefined;
 
-/** Paths under the repo root this gate scans. `audit/` is included even though
- * the npm tarball does not carry it: the GitHub mirror is public too. */
-const SCAN_DIRS = ["extensions", "skills", "prompts", "schemas", "scripts", "docs", "examples", "audit"];
+/** Files scanned when no base ref resolves (fallback: judge the newest release
+ * section + Unreleased only). Mirrors package.json `files` plus `audit/`. */
+const SCAN_PREFIXES = ["extensions", "skills", "prompts", "schemas", "scripts", "docs", "examples", "audit"];
 const SCAN_FILES = ["README.md", "INSTALL.md", "PLAN.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md"];
 
-/** Binary/asset extensions that carry no reviewable prose. */
+/** Extensions that carry no reviewable prose. */
 const SKIP_EXT = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".svg",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico",
   ".mp4", ".webm", ".mp3", ".wav", ".pdf", ".zip", ".gz", ".tgz", ".kra",
   ".woff", ".woff2", ".ttf", ".otf", ".db", ".sqlite", ".sqlite3",
 ]);
-
-/** Test fixtures and this script's own denylist handling are exempt. */
-const EXEMPT_PATH = /(?:^|\/)(?:fixtures?|__fixtures__)\//i;
 
 function readDenylist() {
   if (!fs.existsSync(DENYLIST_PATH)) return [];
@@ -63,147 +67,172 @@ function readDenylist() {
   return entries;
 }
 
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Word-boundary match, case-insensitive. `hegemon` must not fire inside
- * `hegemonic`, and `eve`-style 3-letter names are why the boundary matters. */
+/** Word-boundary, case-insensitive. The boundary is what keeps `hegemon` from
+ * firing inside `hegemonic`, and the `[\w-]` lookarounds stop a longer project
+ * name from matching a shorter denied one. */
 function buildPattern(names) {
   if (names.length === 0) return undefined;
   return new RegExp(`(?<![\\w-])(?:${names.map(escapeRegExp).join("|")})(?![\\w-])`, "gi");
 }
 
-function* walk(dir) {
-  let entries;
+function git(args) {
   try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
+    return execFileSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 30_000 }).trim();
   } catch {
-    return;
-  }
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-      yield* walk(full);
-    } else if (entry.isFile()) {
-      if (SKIP_EXT.has(path.extname(entry.name).toLowerCase())) continue;
-      yield full;
-    }
+    return undefined;
   }
 }
 
-/** Only the newest release section and the live Unreleased section are gated.
- * Everything older is grandfathered published text. */
-function gatedChangelogText(text) {
-  const lines = text.split("\n");
-  let firstReleaseAt = -1;
-  let secondReleaseAt = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (/^##\s+\d+\.\d+\.\d+/.test(lines[i])) {
-      if (firstReleaseAt < 0) firstReleaseAt = i;
-      else if (secondReleaseAt < 0) { secondReleaseAt = i; break; }
-    }
-  }
-  const kept = [];
-  // The Unreleased section, wherever it sits (normally above the newest).
-  for (let i = 0; i < lines.length; i++) {
-    if (/^##\s+Unreleased/.test(lines[i])) {
-      let j = i + 1;
-      while (j < lines.length && !/^##\s+/.test(lines[j])) j++;
-      kept.push({ offset: i, text: lines.slice(i, j).join("\n") });
-    }
-  }
-  if (firstReleaseAt >= 0) {
-    const end = secondReleaseAt >= 0 ? secondReleaseAt : lines.length;
-    kept.push({ offset: firstReleaseAt, text: lines.slice(firstReleaseAt, end).join("\n") });
-  }
-  // Return a text with non-gated regions blanked, so reported line numbers
-  // still point at the real file.
-  const blanked = lines.map(() => "");
-  for (const section of kept) {
-    const sectionLines = section.text.split("\n");
-    for (let k = 0; k < sectionLines.length; k++) blanked[section.offset + k] = sectionLines[k];
-  }
-  return blanked.join("\n");
+function newestTag() {
+  const tag = git(["describe", "--tags", "--abbrev=0"]);
+  return tag && tag.length > 0 ? tag : undefined;
 }
 
-function scan() {
-  const names = readDenylist();
-  if (names.length === 0) {
-    return { skipped: true, violations: [], scannedFiles: 0 };
-  }
-  const pattern = buildPattern(names);
-  const violations = [];
-  let scannedFiles = 0;
+function inScope(relPath) {
+  if (SCAN_FILES.includes(relPath)) return true;
+  if (!SCAN_PREFIXES.some((prefix) => relPath === prefix || relPath.startsWith(`${prefix}/`))) return false;
+  return !SKIP_EXT.has(path.extname(relPath).toLowerCase());
+}
 
-  const targets = [];
-  for (const file of SCAN_FILES) {
-    if (fs.existsSync(path.join(ROOT, file))) targets.push(path.join(ROOT, file));
-  }
-  for (const dir of SCAN_DIRS) {
-    const full = path.join(ROOT, dir);
-    if (fs.existsSync(full)) targets.push(...walk(full));
-  }
-
-  for (const file of targets) {
-    const rel = path.relative(ROOT, file).replaceAll("\\", "/");
-    if (EXEMPT_PATH.test(rel)) continue;
-    if (rel === "scripts/check-no-project-names.mjs") continue;
-    let text;
-    try {
-      text = fs.readFileSync(file, "utf-8");
-    } catch {
+/** Added lines only, as `file -> lineNumber -> text`. `-U0` keeps the diff
+ * small: we only need the new side. */
+function addedLines(base) {
+  const diff = git(["diff", "--unified=0", "--no-color", "--no-ext-diff", base, "--"]);
+  if (diff === undefined) return undefined;
+  const result = [];
+  let file;
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+++ b/")) {
+      file = line.slice("+++ b/".length);
       continue;
     }
-    // A NUL byte means binary despite the extension.
-    if (text.includes("\u0000")) continue;
-    scannedFiles++;
-    // CHANGELOG: only the newest release + Unreleased are gated.
-    const focus = rel === "CHANGELOG.md" ? gatedChangelogText(text) : text;
-    const lines = focus.split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      pattern.lastIndex = 0;
-      const matches = [...lines[i].matchAll(pattern)];
-      if (matches.length === 0) continue;
-      violations.push({
-        file: rel,
-        line: i + 1,
-        names: [...new Set(matches.map((m) => m[0]))],
-        excerpt: lines[i].trim().slice(0, 160),
-      });
+    if (line.startsWith("+++ ") || line.startsWith("--- ")) continue;
+    if (!file || !line.startsWith("@@")) continue;
+    // @@ -a,b +c,d @@ — the new-side start is the second number group.
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (!hunk) continue;
+    result.push({ file, start: Number(hunk[1]), count: hunk[2] === undefined ? 1 : Number(hunk[2]) });
+  }
+  // Re-walk to attach the actual added text to each hunk.
+  const out = [];
+  let fileB;
+  let cursor = -1;
+  let hunkIdx = -1;
+  const hunks = [];
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+++ b/")) { fileB = line.slice("+++ b/".length); continue; }
+    if (line.startsWith("+++ ") || line.startsWith("--- ")) continue;
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (hunk) {
+      cursor = Number(hunk[1]);
+      hunkIdx++;
+      hunks.length = 0;
+      continue;
+    }
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      out.push({ file: fileB, line: cursor, text: line.slice(1) });
+      cursor++;
+    } else if (line.startsWith(" ")) {
+      cursor++;
     }
   }
-  return { skipped: false, violations, scannedFiles, names };
+  void result; void hunkIdx; void hunks;
+  return out;
 }
 
-const result = scan();
+/** Fallback when no base ref resolves: judge only the newest release section
+ * and the live Unreleased section of CHANGELOG.md, plus every file under
+ * `audit/` (which the mirrors publish whether or not the tarball carries it). */
+function fallbackTargets() {
+  const targets = [];
+  const changelog = path.join(ROOT, "CHANGELOG.md");
+  if (fs.existsSync(changelog)) {
+    const lines = fs.readFileSync(changelog, "utf-8").split("\n");
+    const sectionStarts = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (/^##\s+(?:Unreleased|\d+\.\d+\.\d+)/.test(lines[i])) sectionStarts.push(i);
+      if (sectionStarts.length === 2) break;
+    }
+    const end = sectionStarts.length > 1 ? sectionStarts[1] : lines.length;
+    for (let i = sectionStarts[0] ?? lines.length; i < end; i++) {
+      targets.push({ file: "CHANGELOG.md", line: i + 1, text: lines[i] });
+    }
+  }
+  const auditDir = path.join(ROOT, "audit");
+  const walk = (dir) => {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (SKIP_EXT.has(path.extname(entry.name).toLowerCase())) continue;
+      let text;
+      try { text = fs.readFileSync(full, "utf-8"); } catch { continue; }
+      if (text.includes("\u0000")) continue;
+      const rel = path.relative(ROOT, full).replaceAll("\\", "/");
+      text.split("\n").forEach((lineText, i) => targets.push({ file: rel, line: i + 1, text: lineText }));
+    }
+  };
+  walk(auditDir);
+  return targets;
+}
 
-if (result.skipped) {
+const names = readDenylist();
+if (names.length === 0) {
   console.log(
     "no-project-names: denylist absent (.dracon/no-project-names.txt) — nothing to check.\n" +
     "  This file is intentionally untracked; a fresh clone cannot run the gate.",
   );
   process.exit(0);
 }
+const pattern = buildPattern(names);
 
-if (result.violations.length === 0) {
+const base = BASE_ARG ?? newestTag();
+const judged = base ? addedLines(base) : undefined;
+const candidates = judged ?? fallbackTargets();
+const judgedBy = base && judged ? `lines new since ${base}` : "newest release section + audit/ (no base ref)";
+
+const violations = [];
+let considered = 0;
+for (const entry of candidates) {
+  if (!entry.file || !inScope(entry.file)) continue;
+  if (entry.file === "scripts/check-no-project-names.mjs") continue;
+  if (entry.text.includes("\u0000")) continue;
+  considered++;
+  pattern.lastIndex = 0;
+  const matches = [...entry.text.matchAll(pattern)];
+  if (matches.length === 0) continue;
+  violations.push({
+    file: entry.file,
+    line: entry.line,
+    names: [...new Set(matches.map((m) => m[0]))],
+    excerpt: entry.text.trim().slice(0, 160),
+  });
+}
+
+if (violations.length === 0) {
   console.log(
-    `no-project-names: clean — ${result.scannedFiles} shipped files scanned against ${result.names.length} denied name(s).`,
+    `no-project-names: clean — ${considered} ${judgedBy} checked against ${names.length} denied name(s).`,
   );
   process.exit(0);
 }
 
-console.error(`no-project-names: ${result.violations.length} reference(s) to private project names in shipped text:\n`);
-for (const v of result.violations) {
+console.error(`no-project-names: ${violations.length} reference(s) to private project names in text shipping in this release (${judgedBy}):\n`);
+const seen = new Set();
+for (const v of violations) {
+  const key = `${v.file}:${v.line}`;
+  if (seen.has(key)) continue;
+  seen.add(key);
   console.error(`  ${v.file}:${v.line}  [${v.names.join(", ")}]`);
   if (VERBOSE) console.error(`      ${v.excerpt}`);
 }
 console.error(
   "\nShipped text names a private project. Describe the bug, the reproduction and the fix\n" +
-  "without naming which private tree found it — e.g. \"a field report\" instead of the\n" +
-  "project, and `<project>/entrypoints/background.ts` in audit reproductions so the path\n" +
-  "shape still verifies. Published release sections older than the newest are grandfathered.\n\n" +
+  "without naming which private tree found it — \"a field report\" instead of the project,\n" +
+  "and `<project>/entrypoints/background.ts` in audit reproductions so the path shape and\n" +
+  "file counts still verify. Pre-existing text is grandfathered; only new lines are judged.\n\n" +
   "Denylist: .dracon/no-project-names.txt (untracked by design).",
 );
 process.exit(1);
