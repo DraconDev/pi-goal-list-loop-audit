@@ -69,9 +69,9 @@ function readDenylist() {
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Word-boundary, case-insensitive. The boundary is what keeps `hegemon` from
- * firing inside `hegemonic`, and the `[\w-]` lookarounds stop a longer project
- * name from matching a shorter denied one. */
+/** Word-boundary, case-insensitive. The boundary keeps a denied name from
+ * firing inside a longer word that merely starts with it, and the `[\w-]`
+ * lookarounds stop a longer project name from matching a shorter denied one. */
 function buildPattern(names) {
   if (names.length === 0) return undefined;
   return new RegExp(`(?<![\\w-])(?:${names.map(escapeRegExp).join("|")})(?![\\w-])`, "gi");
