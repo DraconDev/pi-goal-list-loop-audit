@@ -19,7 +19,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, type StdioOptions } from "node:child_process";
+import { execFileSync, spawnSync, type StdioOptions } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -79,18 +79,16 @@ function makeRepo({ denylist = true, hashed = false, changelog = "", files = {} 
   return { root, git };
 }
 
+/** spawnSync rather than execFileSync: a successful run can still print a
+ * warning on stderr (the degraded-judgement notice), and execFileSync discards
+ * it unless the process fails. */
 function run(root: string, args: string[] = []): RunResult {
-  try {
-    const stdout = execFileSync(process.execPath, [SCRIPT, ...args], {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"] as StdioOptions,
-    });
-    return { code: 0, stdout, stderr: "" };
-  } catch (err) {
-    const failure = err as { status?: number; stdout?: string; stderr?: string };
-    return { code: failure.status ?? 1, stdout: failure.stdout ?? "", stderr: failure.stderr ?? "" };
-  }
+  const result = spawnSync(process.execPath, [SCRIPT, ...args], { cwd: root, encoding: "utf8" });
+  return {
+    code: result.status ?? 1,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
 }
 
 test("no-project-names: clean tree passes", () => {
