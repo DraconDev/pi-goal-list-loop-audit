@@ -221,22 +221,11 @@ function fallbackTargets() {
       targets.push({ file: "CHANGELOG.md", line: i + 1, text: lines[i] });
     }
   }
-  const auditDir = path.join(ROOT, "audit");
-  const walk = (dir) => {
-    let entries;
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) { walk(full); continue; }
-      if (SKIP_EXT.has(path.extname(entry.name).toLowerCase())) continue;
-      let text;
-      try { text = fs.readFileSync(full, "utf-8"); } catch { continue; }
-      if (text.includes("\u0000")) continue;
-      const rel = path.relative(ROOT, full).replaceAll("\\", "/");
-      text.split("\n").forEach((lineText, i) => targets.push({ file: rel, line: i + 1, text: lineText }));
-    }
-  };
-  walk(auditDir);
+  // Deliberately NOT all of audit/. Most of audit/ is dated historical
+  // evidence, which is grandfathered — walking it here mixed years of old
+  // references into the judged set and failed the gate for text that predates
+  // the rule. Without a base ref this gate can only judge what it can prove is
+  // new, and it cannot prove anything about untracked history.
   return targets;
 }
 
@@ -255,8 +244,22 @@ const pattern = buildPattern(names);
 
 const base = BASE_ARG ?? newestTag();
 const judged = base ? addedLines(base) : undefined;
+// A missing base is the difference between judging this release and failing
+// every release: without tags (shallow clone, fresh tarball) the gate cannot
+// distinguish new text from grandfathered text. Say so plainly and judge only
+// the changelog sections it can identify, rather than scanning the tree.
+const noBase = !base || judged === undefined;
 const candidates = judged ?? fallbackTargets();
-const judgedBy = base && judged ? `lines new since ${base}` : "newest release section + audit/ (no base ref)";
+const judgedBy = !noBase
+  ? `lines new since ${base}`
+  : "newest release section only (no base ref — shallow clone or tarball)";
+if (noBase) {
+  console.warn(
+    "no-project-names: WARNING — no usable git base ref, so only the newest release\n" +
+    "  section is judged. Historical text cannot be distinguished from new text here.\n" +
+    "  In CI this means the quality checkout is shallow; set fetch-depth: 0.\n",
+  );
+}
 
 const violations = [];
 let considered = 0;
