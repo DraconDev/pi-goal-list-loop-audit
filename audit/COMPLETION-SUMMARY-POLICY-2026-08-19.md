@@ -148,10 +148,11 @@ a nine-hour, six-file change could still close as one paragraph with a single
 `Changed:` clause naming everything at once, and an optional parameter cannot
 be the only guarantee that a human gets a readable record.
 
-Field evidence (tab-hero, `20261107103159-jps4k0`): a fullscreen pass touching
-`entrypoints/background.ts`, `wxt.config.ts`, `entrypoints/town/TownApp.svelte`,
-`lib/ui/theme.css`, and two test files was claimed in four sentences, with a
-screenshot as its only named path. The density lint noticed (*low evidence
+Field evidence (a downstream project, `<goal-id>`): a fullscreen pass touching
+`<project>/entrypoints/background.ts`, `<project>/wxt.config.ts`,
+`<project>/entrypoints/<home>/<HomeApp>.svelte`, `<project>/lib/ui/theme.css`,
+and two test files was claimed in four sentences, with a screenshot as its only
+named path. The density lint noticed (*low evidence
 density*) and merely appended a NOTE, so the claim shipped: the terminal card
 listed two bullets, the archive carried a three-column fallback table, and the
 only way to learn what changed in each area was to open the six files. A lint
@@ -171,7 +172,7 @@ Breadth comes from two independent signals:
   the smallest unit a reviewer can open.
 - `goal.telemetry.files` — the durable v0.38.100 change set, which records
   every path the work actually touched. This is the stronger signal precisely
-  because it is not the agent's own prose; in the tab-hero case it named six
+  because it is not the agent's own prose; in the reported case it named six
   files while the recap named one.
 
 `MULTI_AREA_MIN_PATHS` (3) is the threshold. Single-area work keeps the flat
