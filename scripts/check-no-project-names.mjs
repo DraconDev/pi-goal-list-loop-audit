@@ -35,11 +35,19 @@
 // Exit 0 = clean (or nothing to judge), exit 1 = violation.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = process.cwd();
+/** Operator-local plaintext list (untracked). Preferred when present. */
 const DENYLIST_PATH = path.join(ROOT, ".dracon", "no-project-names.txt");
+/** Tracked hashed watch list, so the gate also runs in CI and for
+ * contributors who have no plaintext list. One-way: it can catch a leak
+ * without publishing the names it protects. */
+const HASHED_LIST_PATH = path.join(ROOT, "scripts", "no-project-names.denylist.json");
+/** Must match the "salt" value in the hashed list. */
+const HASH_SALT = "glla-no-project-names-v1";
 const VERBOSE = process.argv.includes("--verbose");
 const baseArgIndex = process.argv.indexOf("--base");
 const BASE_ARG = baseArgIndex >= 0 ? process.argv[baseArgIndex + 1] : undefined;
@@ -65,6 +73,59 @@ function readDenylist() {
     entries.push(clean);
   }
   return entries;
+}
+
+/** SHA-256 of one candidate token, lowercased, salted. */
+function hashToken(token) {
+  return createHash("sha256").update(`${HASH_SALT}|${token.toLowerCase()}`).digest("hex");
+}
+
+/** Read the tracked hashed watch list. Returns [] when absent/malformed — the
+ * plaintext path still works locally. */
+function readHashedDenylist() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(HASHED_LIST_PATH, "utf-8"));
+    const salt = typeof parsed?.salt === "string" ? parsed.salt : HASH_SALT;
+    const denied = Array.isArray(parsed?.denied) ? parsed.denied : [];
+    return {
+      salt,
+      hashes: new Set(denied.filter((h) => typeof h === "string" && /^[0-9a-f]{64}$/i.test(h)).map((h) => h.toLowerCase())),
+    };
+  } catch {
+    return { salt: HASH_SALT, hashes: new Set() };
+  }
+}
+
+/** Every case-preserving token shape worth hashing: whole words, hyphen/underscore
+ * joined runs, and single tokens. We hash candidates rather than regex-matching
+ * because a hash cannot be turned back into a pattern. */
+const CANDIDATE_TOKEN = /[A-Za-z0-9][A-Za-z0-9_.-]*/g;
+/** The name may appear with a hyphen inside a longer identifier (the way a
+ * project name shows up in a package or a directory). Each contiguous run is
+ * hashed whole, and also in every underscore/dash-split segment, so both
+ * `lib/ui/theme.css`-style paths and joined identifiers are covered. */
+function candidateTokens(text) {
+  const seen = new Set();
+  for (const match of text.matchAll(CANDIDATE_TOKEN)) {
+    const run = match[0];
+    seen.add(run);
+    for (const part of run.split(/[-_.]/)) {
+      if (part.length >= 3) seen.add(part);
+    }
+  }
+  return seen;
+}
+
+/** Hashed-match a single added line. Returns the set of hex digests that hit,
+ * or null when there is no hashed list to check. */
+function hashedHits(text, hashed) {
+  if (hashed.hashes.size === 0) return null;
+  const hits = [];
+  for (const token of candidateTokens(text)) {
+    const digest = createHash("sha256").update(`${hashed.salt}|${token.toLowerCase()}`).digest("hex");
+    if (hashed.hashes.has(digest)) hits.push(token);
+  }
+  return hits;
 }
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
