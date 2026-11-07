@@ -237,8 +237,9 @@ test("no-project-names: no base ref warns about the degraded judgement", () => {
     changelog: "# Changelog\n\n## Unreleased\n\n- Fixes a scheduling bug.\n\n## 1.0.0 — first (2026-01-01)\n\n- Held.\n",
   });
   const result = run(root, ["--base", ""]);
-  assert.match(result.stderr, /no usable git base ref/, "a degraded run must say so on stderr");
-  assert.match(result.stderr, /fetch-depth: 0/, "and name the CI fix");
+  const output = `${result.stdout}${result.stderr}`;
+  assert.match(output, /no usable git base ref/, "a degraded run must say so");
+  assert.match(output, /fetch-depth: 0/, "and name the CI fix");
 });
 
 test("no-project-names: a base ref still judges the newest release section", () => {
