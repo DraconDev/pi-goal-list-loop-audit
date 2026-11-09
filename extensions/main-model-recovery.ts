@@ -141,11 +141,14 @@ const TRANSPORT_FAILURE = /overload|temporarily unavailable|service unavailable|
  * live lane is willing to hammer ten times is a failure the durable lanes
  * must be willing to wait on; the two predicates now agree.
  *
- * Deliberately still refused here: bare `unknown` prose (an unclassified
- * failure is not evidence of an outage), `non-recoverable` (aborts, prompt
- * policy, context overflow), and deterministic client errors. Tests pin
- * `auditor produced no verdict marker` and friends to the no-verdict path, so
- * this stays a vocabulary fix rather than a fails-open widening. */
+ * v0.39.67 (field 2026-11-09, operator rule "in fact all errors"): bare
+ * `unknown` prose is ADMITTED. The earlier refusal reasoned that an
+ * unclassified failure is not evidence of an outage — true, but the live lane
+ * had already decided the opposite since v0.38.104 by hammering unknown
+ * failures eagerly, and a lane disagreement is what produced a terminal-looking
+ * park for a retryable error. Refused here, explicitly and unchanged: user
+ * aborts, prompt-policy refusals, context overflow, deterministic client
+ * errors, and auditor no-verdict prose (which has its own retry plan). */
 /** The auditor no-verdict vocabulary stays on its own ladder. These strings
  * classify `unknown` (they are not provider failures), and v0.39.67 grants
  * `unknown` durable authority — so they are named here instead, or the
