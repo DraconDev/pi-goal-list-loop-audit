@@ -410,6 +410,26 @@ const BILLING = /insufficient[\s_-]+(?:credits?|balance|quota)|(?:credits?|balan
 // long-lived walls — and plain "temporarily unavailable" stays ambiguous
 // (ordinary outage) so we never turn a random transient into a quota wall.
 const TEMPORARY_QUOTA = /temporar(?:y|ily)[^.\n]{0,60}(?:quota|limit|throttl|too[\s_-]+many[\s_-]+requests)/i;
+// v0.39.67 (field 2026-11-09): a CONCURRENCY wall, not a spent plan.
+//
+//   Error: 400: {"code":"tier_limit_exceeded","message":"[code=tier_limit_exceeded]
+//   membership concurrency limit exceeded: 11/10 resets 2026-11-09T15:27:00Z"}
+//
+// The status is 400 and the wording contains "limit exceeded", which is why it
+// is easy to file as a client error. It is neither: the account is allowed 10
+// concurrent requests and one more was attempted. The wall lifts as soon as a
+// slot frees, so it must be retried PROMPTLY (never slept to the reset the
+// provider quotes, which can be hours away and is only an upper bound). Both
+// halves need this vocabulary: `quotaSignal` so it is never classified
+// `unknown`/deterministic, and the delay policy so it is not parked at the
+// reset instant.
+const CONCURRENCY_WALL = /\btier[_\s-]*limit|concurrency\s+(?:limit|cap|quota)|concurrent\s+(?:request|session|connection)s?\b|too\s+many\s+(?:concurrent|parallel|in[\s-]?flight)|(?:in[\s-]?flight|parallel|simultaneous)\s+(?:request|session)s?\s+(?:limit|cap|exceeded)/i;
+
+/** True when the failure is an admission limit on simultaneous requests rather
+ * than exhausted quota: retry promptly, do not sleep to the quoted reset. */
+export function isConcurrencyWall(error: string | undefined): boolean {
+  return typeof error === "string" && CONCURRENCY_WALL.test(error);
+}
 
 /** Return the strongest explicit provider signal, or undefined for an
  * ambiguous/transient message. An explicit HTTP 429 / "too many requests" /
@@ -422,6 +442,11 @@ export function quotaSignal(error: string | undefined): QuotaSignal | undefined 
   // Explicitly-temporary wording wins over every account-wall pattern:
   // "temporarily over quota" is a short retry window, not a plan wall.
   if (TEMPORARY_QUOTA.test(error)) return "rate-limit";
+  // A concurrency admission limit is a wall of its own (see CONCURRENCY_WALL):
+  // it is quota-shaped, so it must never fall through to `unknown`, but the
+  // delay policy treats it as a short window. Checked before the plan-quota
+  // branch because providers word it as "limit exceeded".
+  if (CONCURRENCY_WALL.test(error)) return "plan-quota";
   // An explicit 429/rate-limit signal is never a token-limit label. The
   // recovery path keeps retrying it and the optional hourly ticker can add a
   // probe after the start of each hour.
@@ -509,9 +534,19 @@ export function parseQuotaError(error: string, defaultRetryAfterSec = DEFAULT_QU
   const prose = retryWindow(m);
   if (prose !== undefined) return { raw: error, retryAfterSec: prose, fromUpstream: true, signal };
 
-  m = error.match(/(?:reset|resets|available)\s+(?:at|on)\s+([0-9]{4}-[0-9]{2}-[0-9]{2}[^,;\n)]*)/i);
+  m = error.match(/(?:reset|resets|resetting|available)\s+(?:at|on)\s+([0-9]{4}-[0-9]{2}-[0-9]{2}[^,;\n)]*)/i);
   const proseDate = absoluteReset(m?.[1], nowMs);
   if (proseDate) return { raw: error, ...proseDate, fromUpstream: true, signal };
+
+  // v0.39.67 (field 2026-11-09): the reset instant is often written WITHOUT
+  // "at" — `… concurrency limit exceeded: 11/10 resets 2026-11-09T15:27:00Z`.
+  // The branch above requires the preposition, so that shape fell through to
+  // the flat 3600s default and the provider's own deadline was discarded. The
+  // token is an ISO instant or datetime; require the `T`/time part so a bare
+  // "resets 2026-11-09" prose mention cannot be mistaken for a hint.
+  m = error.match(/(?:reset|resets|resetting|available)\s+(?:at\s+|on\s+)?([0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}[^,;\n)"']*)/i);
+  const bareDate = absoluteReset(m?.[1], nowMs);
+  if (bareDate) return { raw: error, ...bareDate, fromUpstream: true, signal };
 
   // v0.34.125: short-window prose (note.md 2026-08-10 — a temporary quota
   // message must not park until the hour-aligned "bigger reset"). Providers
