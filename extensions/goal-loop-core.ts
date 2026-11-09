@@ -1283,16 +1283,10 @@ export type GoalRoute =
 // project audit — user: "/goal audit IS the audit goal"); the v0.28.27
 // manual current-goal verification moved to "verify" (it happens
 // automatically at completion anyway — verify is the on-demand handle).
-// v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface —
-// it takes an optional id filter, so it lives with the ARG subs. An objective
-// that merely STARTS with the word ("recover the deleted fixtures") still
-// sets a goal because a bare word with no arg is not the subcommand form.
-const GOAL_EXACT_SUBS = new Set(["status", "pause", "resume", "cancel", "decide", "verify"]);
+// v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface and
+// takes an optional id filter, so it lives with the ARG subs (a bare word is
+// still routed: `rest` is simply empty).
 const GOAL_ARG_SUBS = new Set(["audit", "tweak", "archive", "start", "plan", "timeline", "recover"]);
-
-/** Subcommand names that are ALSO usable as a bare word (no argument). `recover`
- * is included: it is read-only, so a bare "/goal recover" is safe and useful. */
-const GOAL_BARE_ARG_SUBS = new Set(["audit", "archive", "start", "plan", "timeline", "recover"]);
 
 export function routeGoalArgs(raw: string): GoalRoute {
   const trimmed = raw.trim();
@@ -1302,9 +1296,6 @@ export function routeGoalArgs(raw: string): GoalRoute {
   const rest = space === -1 ? "" : trimmed.slice(space + 1).trim();
   if (GOAL_EXACT_SUBS.has(first) && rest === "") {
     return { kind: "sub", name: first as "status" | "pause" | "resume" | "cancel" | "decide" | "verify", rest: "" };
-  }
-  if (GOAL_BARE_ARG_SUBS.has(first) && rest === "") {
-    return { kind: "sub", name: first as "audit" | "archive" | "start" | "plan" | "timeline" | "recover", rest: "" };
   }
   if (GOAL_ARG_SUBS.has(first)) {
     return { kind: "sub", name: first as "audit" | "tweak" | "archive" | "start" | "plan" | "timeline" | "recover", rest };
