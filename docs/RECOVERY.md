@@ -140,6 +140,7 @@ This display change neither grants access nor changes pause/resume policy.
 | `/goal resume` | Resume the current goal through its goal recovery path. |
 | `/list resume` | Resume the current list item, including recovery of its pending completion audit. |
 | `/loop resume` | Resume an eligible held metric loop or project builder, retaining its target, iteration and audit claim. |
+| `/goal recover [id]` | Read-only. Not a resume: reconciles live state with the saved goal records on disk and previews a restore-as-new recipe. See below. |
 
 For a held project, `/glla resume` delegates to the same loop recovery as
 `/loop resume`. Both retain blocker and branch checks. Neither overrides an
@@ -150,6 +151,66 @@ After loading a session, **Loaded without starting** means the saved work is
 restored but automation awaits your decision. Load the intended conversation,
 inspect its state, then resume. Enable **Auto-resume** in `/glla` only if you
 want automation to restart after future loads.
+
+## Saved records that disagree with live state
+
+Live state, not a markdown file, decides what is running. `.pi-glla/goals/<id>.md`
+and `.pi-glla/archive/<id>.md` are **projections** written by the normal goal
+writer. A projection can outlive the goal it described: a cancelled list item,
+a replaced objective or a deleted live slot leaves the file saying
+`**Status**: active` while the newest ledger snapshot says `goal: null`.
+
+`/goal status` and `/goal resume` report a leftover projection as saved-but-not-
+live, and `/goal recover [id]` lists every saved record with the answer that
+matters:
+
+| Label | Meaning |
+| --- | --- |
+| `CURRENT` | This record is the live objective. `/goal status`, `/goal resume` and `/goal tweak` act on it. |
+| `STALE PROJECTION` | Only a leftover file. Nothing is running it; it is **not** resumable. |
+| `HISTORICAL` | Terminal record with its archive published. Finished work, `complete` or `aborted`. |
+| `TERMINAL, UNARCHIVED` | Finished on disk but the archive never landed — cleanup debt, not work. |
+| `UNREADABLE` | No `**Status**` marker; not a goal record and never promoted to one. |
+
+`/goal recover` mutates nothing. It reads the live slot, the saved records and
+any queue sidecars, then prints the recipe below for every non-`CURRENT` record
+whose scope survives a round trip.
+
+### Restore as NEW
+
+Resume cannot reopen archived work, and a stale projection cannot be edited back
+to life. The supported path is a **new** goal built from the saved scope:
+
+1. Run `/goal recover` and read the record's recipe. It is a `/goal start` command
+   carrying the saved objective followed by `Done when:` and the saved criteria.
+2. Confirm before you paste it: the recipe's round-trip line reports
+   `N criteria in, N out` and says whether the objective and criteria are
+   identical. A recipe whose round trip does not match is never printed as a
+   command.
+3. Run it. `/goal start` is goal mode — this never becomes a list item, and an
+   existing unrelated live goal is replaced only because an explicit start is
+   consent to do so.
+4. Recreate the plan with `propose_task_list` using the saved structure. The
+   restored plan starts **pending**: completed task states, checkpoints, audit
+   verdicts, approvals, timers and the goal id are history and stay history.
+5. Verify the durable result, not the receipt. A command that returned
+   `accepted: true` is not activation evidence. `/goal status` and `list_status`
+   must show the new goal active, the same objective and contract, and the
+   expected task plan before recovery counts as done.
+
+The old record stays in `archive/` (or as cleanup debt in `goals/`) as the
+provenance of the recreation. Nothing about it is revalidated by being copied:
+old tests and audit reports describe the old goal.
+
+### Contract round trips are fixed points
+
+A saved contract re-enters through the same `Done when:`-family introducer that
+created it. Introducer handling is now symmetric — the line-start form keeps
+exactly one introducer, and duplicates in front of captured criteria are
+consumed — so exporting a stored contract and recreating from it does not
+accumulate `Done when: Done when:` prefixes. Criteria text is never rewritten; an
+already-present marker collapses in one pass. Absent, inline, line-start and
+decorated introducers all round-trip to the same criteria set.
 
 ## Project increment infrastructure retries
 
