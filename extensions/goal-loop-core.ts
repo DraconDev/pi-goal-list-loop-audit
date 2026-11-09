@@ -4758,15 +4758,19 @@ export function extractVerificationContract(raw: string): { objective: string; v
         explicitClear = true;
         continue;
       }
-      // v0.39.66 (GitHub #62): the line-start path has always RETAINED the
-      // marker line (a pinned convention the shield and the docs rely on), so
-      // a stored contract re-fed as `Done when: <stored contract>` used to
-      // grow by one `Done when: ` prefix per export/recreate cycle. A
-      // duplicate introducer in front of the captured text is that
-      // accumulation: keep exactly one marker line and consume the
-      // duplicates, which makes the round trip a fixed point.
+      // v0.39.66 (GitHub #62): the line-start path RETAINS the marker line (a
+      // convention the shield and its tests rely on), but the inline fallback
+      // CONSUMES it. That asymmetry made a naive export/recreate non-idempotent:
+      // `Done when: <stored contract>` grew by one `Done when: ` prefix per
+      // round. Duplicate introducers in front of the captured text are exactly
+      // that accumulation, so they are consumed here and the single marker
+      // line is kept — every round trip now reproduces the stored text.
       const deduped = stripContractIntroducers(rest);
-      verifyParts.push(deduped === rest.trimStart() ? line : `${m[0]} ${deduped}`);
+      if (deduped !== rest.trimStart()) {
+        verifyParts.push(`${m[0]} ${deduped}`);
+        continue;
+      }
+      verifyParts.push(line);
       continue;
     }
     if (mode === "obj") objParts.push(line);
