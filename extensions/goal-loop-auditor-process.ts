@@ -33,7 +33,7 @@ import {
 } from "./goal-loop-core.js";
 import {
   classifyMainModelFailure,
-  isRecoverableProviderError,
+  hasPositiveProviderEvidence,
   isMainModelFallbackFailure,
   mainModelFailureDelayMs,
   modelRef,
@@ -686,7 +686,12 @@ export async function runAuditorFallbackWithPolicy(
     // Missing models and explicit account walls cannot heal in a same-ref
     // retry. Persist exhaustion and advance immediately; the session tail
     // remains eligible even when it shares the configured pin's provider.
-    if (isUnresolvableAuditorModelRefError(first.error) || (failureClass(first) === "provider" && (isRecoverableProviderError(first.error) || isAuditorAccountFailure(first.error)))) {
+    // v0.39.67: positive evidence only. The durable gate now accepts
+    // unclassified failures (operator rule "retry all errors"), but this branch
+    // decides whether a SAME-REF retry is worth attempting, and the "provider"
+    // bucket is the default for unrecognized text — an ambiguous worker death
+    // must still get its one same-ref retry before the chain advances.
+    if (isUnresolvableAuditorModelRefError(first.error) || (failureClass(first) === "provider" && (hasPositiveProviderEvidence(first.error) || isAuditorAccountFailure(first.error)))) {
       if (isBackendSideFailure(failureClass(first), failure.kind, first.error)) skipSameProviderRungs(selectedRef);
       currentRef = selectedRef;
       const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
