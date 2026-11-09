@@ -45,10 +45,16 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 �
   assert.ok(!SRC.includes("const reachedInfraCap = infraStreak >= 3;"), "3-strike cap gone");
   assert.ok(!SRC.includes("auditor infrastructure failed ${infraStreak}× in a row"), "3-strike wording gone");
   assert.ok(!SRC.includes("audit_infra_waiting\", { goalId, attemptId: claim.attemptId, error: result.error.slice(0, 240), infraStreak }"), "3-strike ledger payload gone");
-  // The stranded-audit no-verdict blocker keeps its own distinct wording
-  // ("Fix the auditor/session issue" — a different feature from the
-  // 3-strike stop):
-  assert.match(RECOVERY, /The completion claim is stored and was not judged\. Fix the auditor\/session issue/); // decomposition step 3 (v0.34.111)
+  // The stranded-audit no-verdict blocker keeps its own distinct wording — a
+  // different feature from the 3-strike stop. Field 2026-11-09: the single
+  // generic sentence ("Fix the auditor/session issue") asserted a fault class
+  // the durable record did not support, so the copy is now per-cause and lives
+  // in completion-audit-park.ts. This pin keeps the park copy OUT of the
+  // 3-strike wording's way while proving the park path still states the claim
+  // is stored and not judged.
+  assert.match(RECOVERY, /pauseSuggestedAction: completionAuditParkAction\(reason, activeGoalSurfaceCommand\("resume"\)\)/);
+  assert.match(PARK, /The completion claim is stored and was not judged/);
+  assert.ok(!RECOVERY.includes("Fix the auditor/session issue"), "the one-size fault accusation is gone");
   // The durable plan owns the wait: retry-waiting phase, wait-kind pause,
   // conservative horizon stop, aggressive unbounded retry, and a re-checked
   // auto-resume callback.
