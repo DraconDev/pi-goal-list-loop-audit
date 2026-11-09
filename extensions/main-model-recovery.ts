@@ -155,6 +155,25 @@ const TRANSPORT_FAILURE = /overload|temporarily unavailable|service unavailable|
  * auditor retry plan would be replaced by main-model recovery. */
 const AUDITOR_NO_VERDICT = /(?:auditor|worker|child)\b[^\n]{0,120}(?:no verdict|no output|without (?:an?\s+)?(?:atomic\s+)?(?:verdict|result))/i;
 
+/** Positive provider-outage evidence only — the strict predicate.
+ *
+ * Compaction is the consumer that needs this distinction: a compaction failure
+ * is host-owned (pi decides whether to retry), so only POSITIVE evidence may
+ * hand it to durable provider recovery. `provider returned 503` is bare prose
+ * with an unparseable status, so it stays terminal for compaction even though
+ * the durable retry lanes now accept it (v0.39.67 widened
+ * {@link isRecoverableProviderError} to `unknown`). */
+export function hasPositiveProviderEvidence(raw: string | undefined): boolean {
+  if (!raw?.trim() || /^Auditor (?:stalled|exceeded|aborted)\b/i.test(raw.trim())) return false;
+  if (AUDITOR_NO_VERDICT.test(raw)) return false;
+  const failure = classifyMainModelFailure(raw);
+  return failure.kind !== 'non-recoverable' && failure.kind !== 'context-overflow'
+    && !isDeterministicProviderError(raw)
+    && (quotaSignal(raw) !== undefined
+      || ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind)
+      || isEmptyProviderResponse(raw));
+}
+
 export function isRecoverableProviderError(raw: string | undefined): boolean {
   if (!raw?.trim() || /^Auditor (?:stalled|exceeded|aborted)\b/i.test(raw.trim())) return false;
   if (AUDITOR_NO_VERDICT.test(raw)) return false;

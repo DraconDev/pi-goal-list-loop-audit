@@ -6,7 +6,7 @@
 // that case. Terminal failures need one conservative distinction: a prompt
 // that still cannot fit versus a summarizer whose bounded output was cut off.
 
-import { isRecoverableProviderError } from './main-model-recovery.js';
+import { hasPositiveProviderEvidence } from './main-model-recovery.js';
 
 export type CompactionFailureKind =
   | "retry-owned"
@@ -68,7 +68,14 @@ export function classifyCompactionFailure(event: CompactionFailureEvent): Compac
   if (firstMatch(CONTEXT_OVERFLOW_PATTERNS, raw)) return { kind: "context-overflow", raw };
   // A host's terminal *attempt* does not make a provider outage terminal
   // for supervised work. Preserve the host/extension ownership checks above.
-  if (isRecoverableProviderError(raw)) {
+  //
+  // v0.39.67: compaction asks for POSITIVE evidence, not the widened durable
+  // gate. `provider returned 503` (bare prose, unparseable status) is retried by
+  // the durable lanes now, but a compaction failure is host-owned: handing it to
+  // provider recovery on unclassified text would double-drive the same failure.
+  // Recognized families (quota walls, concurrency limits, transport, auth,
+  // empty responses) still route to provider recovery.
+  if (hasPositiveProviderEvidence(raw)) {
     return { kind: 'provider-recovery', raw };
   }
   return { kind: "other-terminal", raw };
