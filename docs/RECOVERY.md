@@ -152,6 +152,39 @@ restored but automation awaits your decision. Load the intended conversation,
 inspect its state, then resume. Enable **Auto-resume** in `/glla` only if you
 want automation to restart after future loads.
 
+## A parked completion audit
+
+When an agent claims completion, the claim is stored and a detached auditor
+verifies it. If the auditor run ends without a verdict, the claim is **parked**:
+the item is paused, the claim stays durable, and the card says
+`completion audit: parked — no review recorded`.
+
+A parked claim names its own cause. The causes are not interchangeable, and
+none of them means your claim was lost:
+
+| Cause on the card | What happened | What to do |
+| --- | --- | --- |
+| `the session changed before the auditor finished` | A session boundary (reload, restart, successor session) ended the run before a verdict. Nothing is misconfigured. | Resume. Exactly one fresh audit starts. |
+| `the auditor stopped reporting` | The supervisor noticed the worker went silent and parked the claim instead of guessing a verdict. | Resume; if it repeats, check the auditor model and tool budget in `/glla settings`. |
+| `the provider failed the audit run` | The provider refused or dropped the audit request (quota, auth, transport). | Restore provider access or pick another auditor model, then resume. |
+| `the verdict could not be applied` | The auditor answered, but applying its verdict to this goal failed. | Resume to audit the current scope again. |
+| `the auditor exited without a verdict` | The worker finished without producing a verdict marker. | Resume; if it repeats, check the auditor model and tool budget. |
+
+A session boundary is the common one on long lists, and it is the one most
+often misread: `Fix the auditor/session issue` used to be printed for every
+cause, which sent operators to check an auditor model that was already the
+session's own model. Only the provider row asks you to fix anything.
+
+**Lists hold at the parked item.** The queue does not advance past work whose
+completion claim was never judged, because doing so would silently drop the
+claim. The card names the surface command (`/list resume` or `/goal resume`).
+
+**Consent decides whether it resumes by itself.** A load committed to
+load-time automation (Auto-resume in `/glla`, an explicit resume, or a
+same-process session replacement) finishes the parked claim on its own —
+including a claim that was waiting for a pre-audit compaction boundary when the
+session changed. A cold load holds for an explicit decision and says so.
+
 ## Saved records that disagree with live state
 
 Live state, not a markdown file, decides what is running. `.pi-glla/goals/<id>.md`
