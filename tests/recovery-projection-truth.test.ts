@@ -179,7 +179,7 @@ test("#62: a paused live goal is the only resumable case and recover never resum
   const { pi, ctx } = boot({ goal: paused });
   writeProjection(ctx.cwd, paused);
   const before = readState(ctx.cwd);
-  await pi.command("goal", "recover", "", ctx);
+  await pi.command("goal", "recover", ctx);
   const after = readState(ctx.cwd);
   assert.deepEqual(after, before, "/goal recover mutates no durable state");
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
@@ -203,7 +203,7 @@ test("#62: an unrelated live goal does not make another saved record resumable",
   writeProjection(ctx.cwd, unrelated);
   writeProjection(ctx.cwd, cancelled);
   writeArchive(ctx.cwd, cancelled);
-  await pi.command("goal", "recover", cancelled.id, ctx);
+  await pi.command("goal", `recover ${cancelled.id}`, ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /HISTORICAL/, "the cancelled record is history");
   assert.match(text, /NOT resumable/);
@@ -216,7 +216,7 @@ test("#62: recover journals what it showed and never claims it activated anythin
   const { pi, ctx } = boot({ goal: null, list: [] });
   const saved = objectiveOf({ status: "active" });
   writeProjection(ctx.cwd, saved);
-  await pi.command("goal", "recover", "", ctx);
+  await pi.command("goal", "recover", ctx);
   const ledger = fs.readFileSync(path.join(piGlaDir(ctx.cwd), "active.jsonl"), "utf-8")
     .trim().split("\n").map((line) => JSON.parse(line) as { type: string; value?: Record<string, unknown> });
   const row = ledger.find((entry) => entry.type === "goal_recovery_inventory");
@@ -234,11 +234,11 @@ test("#62: recover filters by id and refuses an unknown filter instead of guessi
   const { pi, ctx } = boot({ goal: null, list: [] });
   writeProjection(ctx.cwd, objectiveOf({ id: "20261106130000-cancel1", status: "aborted", stopReason: "list cancelled" }));
   writeProjection(ctx.cwd, objectiveOf({ id: "20261106140000-histor1", status: "complete" }));
-  await pi.command("goal", "recover", "cancel1", ctx);
+  await pi.command("goal", "recover cancel1", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /20261106130000-cancel1 — HISTORICAL/);
   assert.doesNotMatch(text, /20261106140000-histor1/, "the filter excludes other records");
-  await pi.command("goal", "recover", "nope123", ctx);
+  await pi.command("goal", "recover nope123", ctx);
   assert.match(ctx.ui.notifies.at(-1)!.message, /No saved record matching "nope123"/);
 });
 
@@ -248,7 +248,7 @@ test("#62: an orphan queue sidecar is reported as a queue, not as a goal", async
   fs.writeFileSync(path.join(piGlaDir(ctx.cwd), "goals", "20261106120000-qw001.queue.json"), JSON.stringify({
     schema: 1, type: "queue-item", id: "20261106120000-qw001", objective: "Fix the flaky login test", addedAt: NOW,
   }));
-  await pi.command("goal", "recover", "", ctx);
+  await pi.command("goal", "recover", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /Saved queue sidecars not in the live list \(1\): this is a queue, not a goal/);
   assert.match(text, /\/list resume activates its head/);
@@ -303,7 +303,7 @@ test("#62: the rendered recipe tells the operator the plan starts pending and ol
   const { pi, ctx } = boot({ goal: null, list: [] });
   const saved = objectiveOf({ status: "aborted", stopReason: "list cancelled", taskList: withProgress(PLAN) });
   writeProjection(ctx.cwd, saved);
-  await pi.command("goal", "recover", "", ctx);
+  await pi.command("goal", "recover", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /plan 5 tasks\/14 subtasks \(3 complete — historical\)/);
   assert.match(text, /then propose_task_list with the saved plan \(5 tasks, 14 subtasks\) — all pending, nothing pre-completed\./);
@@ -314,7 +314,7 @@ test("#62: a recreation through the public /goal start command keeps the objecti
   const saved = objectiveOf({ status: "aborted", stopReason: "list cancelled", taskList: PLAN });
   const recipe = buildRestoreRecipe({ objective: saved.objective, verificationContract: saved.verificationContract ?? "", objectiveAmbiguous: false });
   const { pi, ctx } = boot({ goal: null, list: [] });
-  await pi.command("goal", "start", recipe!.command, ctx);
+  await pi.command("goal", `start ${recipe!.command}`, ctx);
   await tick(60);
   const created = readState(ctx.cwd).goal;
   assert.ok(created, "the public start path created the goal");
