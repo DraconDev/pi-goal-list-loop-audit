@@ -1286,6 +1286,7 @@ export type GoalRoute =
 // v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface and
 // takes an optional id filter, so it lives with the ARG subs (a bare word is
 // still routed: `rest` is simply empty).
+const GOAL_EXACT_SUBS = new Set(["status", "pause", "resume", "cancel", "decide", "verify"]);
 const GOAL_ARG_SUBS = new Set(["audit", "tweak", "archive", "start", "plan", "timeline", "recover"]);
 
 export function routeGoalArgs(raw: string): GoalRoute {
