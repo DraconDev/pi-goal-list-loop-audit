@@ -1312,10 +1312,16 @@ export function scheduleMainModelPrimaryProbe(ctx: ExtensionContext, delayMs?: n
  * scheduled (no duplicate schedules). */
 export function scheduleHourlyProbe(ctx: ExtensionContext): void {
   if (loadGlobalSettings().hourlyRetryProbe !== true) return;
+  // v0.39.67: the parked check no longer excludes families the durable lanes
+  // accept. That exclusion made the ticker a fallback for UNRECOGNIZED failures
+  // only, so widening the durable gate ("retry all errors") would have retired
+  // the backstop for exactly the failures that need it — the ones whose ladder
+  // timer died. This is the documented contract: "an unconditional retry slot,
+  // not a provider-status probe", co-resident with the ladder and adding one
+  // extra opportunity per hour.
   const mainParked = !!state.mainModelRecovery
     && state.mainModelRecovery.manualResumeRequired !== true
-    && state.mainModelRecovery.retryAt !== undefined
-    && !isRecoverableProviderError(state.mainModelRecovery.providerErrorDiagnostic);
+    && state.mainModelRecovery.retryAt !== undefined;
   // Shared ticker: a parked auditor retry-waiting claim rides the same
   // :00:30 probe as main-model recovery — the auditor is just provider
   // requests, same as main. The ladder timer stays the primary driver; the
@@ -1323,8 +1329,7 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
   // timer) and normally no-ops on the claim-phase guard.
   const auditorParked = state.goal?.status === "paused"
     && (state.goal.pendingCompletion?.phase ?? "") === "retry-waiting"
-    && (state.goal.pauseReason ?? "").startsWith("auditor retry:")
-    && !isRecoverableProviderError(state.goal.pendingCompletion?.providerErrorDiagnostic);
+    && (state.goal.pauseReason ?? "").startsWith("auditor retry:");
   // The ticker is only for a parked recovery. After setModel succeeds,
   // retryAt is cleared while the next supervised turn is being tested; do
   // not let :00:30 switch models underneath that turn.
