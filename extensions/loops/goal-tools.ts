@@ -3414,7 +3414,21 @@ function registerAgentTools(pi: any): void {
       const ctx = currentToolContext(execCtx);
       if (!ctx) return staleToolResult();
       const p = params as { reason?: string };
-      if (!state.goal) return { content: [{ type: "text", text: "No active goal." }], details: {} };
+      if (!state.goal) {
+        // v0.39.66 (GitHub #62): resume cannot reopen history, and a saved
+        // projection is not live work. Say so and name the supported
+        // goal-mode recreation path instead of letting the agent infer
+        // that a leftover goals/<id>.md is resumable.
+        const saved = (() => {
+          try {
+            return savedRecordsOneLiner(collectSavedGoalRecords(ctx.cwd), { goalPresent: false, goal: null });
+          } catch { return undefined; }
+        })();
+        const lines = ["No active goal. Resume cannot reopen archived work."];
+        if (saved) lines.push(saved);
+        lines.push("To reclaim saved scope, run /goal recover for a round-trip-checked /goal start recipe (goal mode, plan starting pending), or /list show / /loop status for the owning surface.");
+        return { content: [{ type: "text", text: lines.join("\n") }], details: {} };
+      }
       const noun = goalNoun();
       if (state.goal.status !== "paused") {
         if (state.goal.status === "active") {
