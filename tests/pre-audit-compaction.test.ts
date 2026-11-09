@@ -322,7 +322,9 @@ test('the promised manual path works from the parked state: /list resume starts 
       'the parked copy names the surface command for this policy');
 
     s.setIdle(true);
+    const t0 = Date.now();
     await s.successorPi.command('list', 'resume', s.successor);
+    console.log('DBG resume returned in', Date.now() - t0, 'callbacks', s.callbacks.length, 'phase', readState(h.cwd).goal?.pendingCompletion?.phase);
     await tick(150);
 
     if (s.callbacks.length > 0) {
@@ -332,7 +334,10 @@ test('the promised manual path works from the parked state: /list resume starts 
       await tick(120);
       await s.successorPi.fire('agent_settled', {}, s.successor);
     }
+    const t1 = Date.now();
+    console.log('DBG before wait', fs.existsSync(h.started), 'elapsed', t1 - t0);
     await waitForStart(h.started);
+    console.log('DBG after wait', Date.now() - t1);
     const admitted = readState(h.cwd).goal!;
     assert.notEqual(admitted.status, 'paused');
     assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined);
