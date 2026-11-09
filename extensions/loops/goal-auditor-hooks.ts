@@ -1540,7 +1540,22 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       if (!updateGoal({ pendingCompletion: { ...guardedGoal.pendingCompletion, preAuditCompaction: true,
         preAuditCompactionRevision: guardedGoal.revision ?? 0 } }, initialCtx)) return;
     }
-    if ((state.goal?.status !== 'auditing' && origin !== 'manual' && origin !== 'agent')
+    // Field 2026-11-09: a parked claim's admission debt must be dischargeable by
+    // the AUTOMATIC recovery that owns it. `session-recovery` is the only
+    // automatic origin and it arrives solely from
+    // maybeAutoRetryParkedCompletionAudit, which requires a PAUSED goal and has
+    // already cleared the load hold, the supervisor freeze, the provider due
+    // time, the one-shot marker, the generation and the goal fences. Requiring
+    // `status === "auditing"` here for every non-manual origin made that
+    // recovery self-contradictory — it only runs when the goal is paused and
+    // the gate then refused paused goals — so an admission interrupted by a
+    // session boundary could only ever be finished by a manual resume. The
+    // field shape: a list frozen at "next: /list resume starts a fresh
+    // auditor" with every queued item behind it, after the retry had already
+    // consumed its one automatic attempt.
+    const recoveryAdmitted = origin === 'session-recovery'
+      && (state.goal?.pendingCompletion?.phase ?? 'recovery-pending') === 'recovery-pending';
+    if ((state.goal?.status !== 'auditing' && !recoveryAdmitted && origin !== 'manual' && origin !== 'agent')
         || abortedStandDown || mainModelRecoveryActive() || supervisorPaused(state)
         || compactionInFlightSince !== null || boundaryCompactionPending(initialCtx)) return;
     try { if (!initialCtx.isIdle() || initialCtx.hasPendingMessages()) return; } catch { return; }
@@ -1562,6 +1577,17 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // Optional compaction unavailable, already spent, or failed: preserve
     // the claim and admit its independent audit on this safe boundary.
     // This preventive target is not an unconditional hard ceiling.
+    if (recoveryAdmitted) {
+      // Durable evidence that the debt was discharged without a compaction:
+      // the alternative was a silent dead end, and the field report could not
+      // tell an interrupted admission from a model/session problem.
+      appendLedger(initialCtx.cwd, 'audit_compaction_admission_discharged', {
+        goalId,
+        origin,
+        attemptId: state.goal?.pendingCompletion?.attemptId,
+        compaction: 'unavailable-or-spent',
+      });
+    }
   }
   completionAuditRecoveryArmed = true;
   let liveCtx: ExtensionContext = initialCtx;
