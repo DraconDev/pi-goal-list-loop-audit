@@ -25,6 +25,8 @@
 
 ## Unreleased
 
+## 0.39.66 — saved records stop pretending to be live work, and a parked audit names its cause (2026-11-09)
+
 ### A parked completion audit names its real cause, and a reload no longer strands it
 
 - A field report from a long list: after `complete_goal` staged its pre-audit compaction admission, a reload landed before the owned idle boundary. The item then sat at `completion audit: parked — no review recorded` with `next: /list resume starts a fresh auditor`, and the operator reported the diagnosis as wrong — the action line said `Fix the auditor/session issue` while the auditor was resolving to the session's own model. No auditor fault existed.
