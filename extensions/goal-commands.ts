@@ -35,6 +35,17 @@ import {
 // projection the widget uses.
 import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
+// v0.39.66 (GitHub #62): /goal recover — read-only reconciliation of the live
+// state against the saved markdown projections, with a round-trip-checked
+// restore-as-new recipe. Pure renderer in its own module so tests drive it
+// without a host session.
+import {
+  buildRestoreRecipe,
+  classifySavedRecord,
+  collectSavedGoalRecords,
+  formatRecoveryInventory,
+  savedRecordsOneLiner,
+} from "./goal-recovery-inventory.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { buildUiStatusCard } from './goal-loop-display.js';
 import { projectUiStatus } from './ui-status.js';
@@ -275,6 +286,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
   if (route.kind === "sub") {
     if (route.name === "status") return cmdStatus(ctx);
     if (route.name === "timeline") return cmdTimeline(route.rest, ctx);
+    if (route.name === "recover") return cmdRecover(route.rest, ctx);
     if (route.name === "pause") return cmdPause(ctx);
     if (route.name === "resume") return cmdResume(ctx);
     if (route.name === "cancel") return cmdCancel(ctx);
