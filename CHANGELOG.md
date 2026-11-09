@@ -25,6 +25,19 @@
 
 ## Unreleased
 
+### A saved goal projection no longer reads as work you can resume (GitHub #62)
+
+- A field report: after an unwanted list cancellation, `list_status()` correctly said `Active: (none)` and `resume_goal` said `No active goal.`, but a leftover `.pi-glla/goals/<id>.md` still said `**Status**: active`. Reading the saved file alone said a goal was running, and recovery began with manual ledger inspection. Nothing distinguished a CURRENT record from a stale projection, an archive, and finished history.
+- `/goal recover [id]` is the read-only reconciliation surface. It reports the live slot, the list and the loop, then classifies every saved record as `CURRENT`, `STALE PROJECTION`, `HISTORICAL`, `TERMINAL, UNARCHIVED` or `UNREADABLE` — with its status, policy, projection/archive location, saved plan size and stop reason. It mutates no state and journals only what it showed (`goal_recovery_inventory`). A projection is cleanup debt: silently rewriting it would hide the drift the report is about.
+- `/goal status` and `/goal resume` now name what is saved and that it is not live, and `resume_goal` says outright that resume cannot reopen archived work. `Nothing to resume` no longer reads as `nothing exists`.
+- Restore-as-new is documented and previewed instead of improvised: the recipe is a `/goal start` command carrying the saved objective plus `Done when:` and every saved criterion (goal mode — never converted into a list item), followed by `propose_task_list` with the saved plan, all tasks **pending**. Old identity, checkpoints, approvals, timers and completed states stay historical; a `accepted: true` receipt is explicitly not activation evidence.
+- A recipe is only printed when it survives a round trip: the parsed objective and the criteria set must be identical, and the line says `N criteria in, N out`. Objective text whose own `## ` heading makes its saved boundary unrecoverable is reported as such and gets no command.
+
+### A stored contract survives export and recreation without growing markers
+
+- The line-start introducer path retained its marker line while the inline fallback consumed it, so a saved contract re-fed as `Done when: <stored>` grew by one `Done when: ` prefix per cycle: `Done when: Done when: - alpha renders`. Introducer handling is now symmetric through one shared `CONTRACT_MARKER_PATTERN`/`stripContractIntroducers` pair — a duplicate introducer in front of captured criteria collapses, criteria text is never rewritten, and every round trip reproduces the stored contract.
+- Absent, inline, line-start, decorated (`Done when ALL of the following are true:`) and already-duplicated introducers now round-trip to the same criteria set; an empty saved contract recreates as objective-only instead of inventing criteria.
+
 ## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
 
 ### A dropped connection gets the same durable retry as a 429
