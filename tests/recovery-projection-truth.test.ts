@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.39.66
+// pi-goal-list-loop-audit — unreleased (GitHub #62)
 // tests/recovery-projection-truth.test.ts
 //
 // GitHub #62: a saved goal projection disagreed with live state, restore-as-

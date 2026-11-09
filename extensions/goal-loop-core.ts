@@ -4707,7 +4707,7 @@ export function isProviderRecoveryArmed(
 }
 
 /** The contract-introducer alternation, shared by extraction and by the
- * restore/export helpers (unreleased, GitHub #62). Callers anchor it themselves
+ * restore/export helpers (GitHub #62). Callers anchor it themselves
  * (`^` for a line-start marker, `^\\s*` for a leading introducer). One
  * definition on purpose: the parser, the duplication guard and the restore
  * preview must agree on exactly what counts as an introducer, or a contract
