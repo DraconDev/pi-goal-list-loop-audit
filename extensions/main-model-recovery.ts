@@ -146,13 +146,32 @@ const TRANSPORT_FAILURE = /overload|temporarily unavailable|service unavailable|
  * policy, context overflow), and deterministic client errors. Tests pin
  * `auditor produced no verdict marker` and friends to the no-verdict path, so
  * this stays a vocabulary fix rather than a fails-open widening. */
+/** The auditor no-verdict vocabulary stays on its own ladder. These strings
+ * classify `unknown` (they are not provider failures), and v0.39.67 grants
+ * `unknown` durable authority — so they are named here instead, or the
+ * auditor retry plan would be replaced by main-model recovery. */
+const AUDITOR_NO_VERDICT = /(?:auditor|worker|child)\b[^\n]{0,120}(?:no verdict|no output|without (?:an?\s+)?(?:atomic\s+)?(?:verdict|result))/i;
+
 export function isRecoverableProviderError(raw: string | undefined): boolean {
   if (!raw?.trim() || /^Auditor (?:stalled|exceeded|aborted)\b/i.test(raw.trim())) return false;
+  if (AUDITOR_NO_VERDICT.test(raw)) return false;
   const failure = classifyMainModelFailure(raw);
+  // v0.39.67 (field 2026-11-09, "in fact all errors"): an UNCLASSIFIED failure
+  // keeps durable authority too. The live lane has failed open to `unknown`
+  // since v0.38.104 (it hammers 10 eager attempts and then backs off), but this
+  // gate accepted only positive families — so the same string could be retried
+  // every 5 seconds in the live lane and still have no retry armed in the
+  // durable lanes, parking the work as if the failure were terminal. "A failure
+  // the live lane is willing to hammer is a failure the durable lanes must be
+  // willing to wait on" is the v0.39.63 rule; this makes the two agree.
+  //
+  // The refusals are unchanged and explicit: user aborts, prompt-policy
+  // refusals, context overflow, deterministic client errors (an identical
+  // retry cannot succeed), and auditor no-verdict prose (its own ladder).
   return failure.kind !== 'non-recoverable' && failure.kind !== 'context-overflow'
     && !isDeterministicProviderError(raw)
     && (quotaSignal(raw) !== undefined
-      || ['rate-limit', 'quota', 'billing', 'auth', 'transient'].includes(failure.kind)
+      || ['rate-limit', 'quota', 'billing', 'auth', 'transient', 'unknown'].includes(failure.kind)
       || isEmptyProviderResponse(raw));
 }
 
