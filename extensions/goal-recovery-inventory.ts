@@ -245,8 +245,6 @@ export interface RecoveryInventoryInput {
   records: SavedGoalRecord[];
   /** Saved queue sidecars that the live list does not own. */
   orphanQueue: Array<{ objective: string }>;
-  /** Path shown in the header (relative display kept short). */
-  stateLabel?: string;
 }
 
 function liveStateLine(live: SavedLiveState): string {
