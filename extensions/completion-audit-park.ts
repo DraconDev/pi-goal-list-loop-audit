@@ -19,7 +19,7 @@
  * imports `main-model-recovery` — so this direction adds no new cycle.
  */
 
-import { isRecoverableProviderError } from "./main-model-recovery.js";
+import { hasPositiveProviderEvidence } from "./main-model-recovery.js";
 
 /** Why a parked claim lost its auditor. The reason strings come from a closed
  * set of callers (goal-activation, goal-session, the auditor hooks, the
@@ -36,7 +36,11 @@ export function classifyCompletionAuditParkReason(reason: string | undefined): C
   // still not proof of a configuration mistake.
   if (/^(?:stale-latch-recovery|heartbeat-recovery)\b/i.test(text)) return "watchdog";
   if (/apply-gate|verdict-apply/i.test(text)) return "verdict-apply";
-  if (isRecoverableProviderError(text)) return "provider";
+  // Positive provider evidence only: v0.39.67 made the durable retry gate accept
+  // unclassified failures, and inheriting that here would relabel "the auditor
+  // produced nothing" as "the provider failed" — the same false diagnosis this
+  // module exists to remove.
+  if (hasPositiveProviderEvidence(text)) return "provider";
   return "no-verdict";
 }
 
