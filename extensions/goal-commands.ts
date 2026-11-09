@@ -35,7 +35,7 @@ import {
 // projection the widget uses.
 import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
-// v0.39.66 (GitHub #62): /goal recover — read-only reconciliation of the live
+// unreleased (GitHub #62): /goal recover — read-only reconciliation of the live
 // state against the saved markdown projections, with a round-trip-checked
 // restore-as-new recipe. Pure renderer in its own module so tests drive it
 // without a host session.
@@ -521,7 +521,7 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
 
 async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
-    // v0.39.66 (GitHub #62): "No active goal" must not read as "nothing is
+    // unreleased (GitHub #62): "No active goal" must not read as "nothing is
     // saved". A leftover projection (goals/<id>.md still saying Status: active
     // after the ledger cleared the slot) is the exact case where the operator
     // read the markdown as live work. Name what is on disk and that it is not
@@ -2694,7 +2694,7 @@ export function formatGoalTimeline(input: GoalTimelineInput): string {
   return [head, ...lines, timelineNextAction(goal, nowMs)].join("\n");
 }
 
-/** v0.39.66 (GitHub #62): the saved-record summary used by every "nothing is
+/** unreleased (GitHub #62): the saved-record summary used by every "nothing is
  * live" reply. Best-effort and silent on failure — a projection scan must
  * never turn a status answer into an error. */
 function savedRecordsNote(cwd: string): string | undefined {
@@ -2706,7 +2706,7 @@ function savedRecordsNote(cwd: string): string | undefined {
   }
 }
 
-/** v0.39.66 (GitHub #62): `/goal recover [id]` — read-only reconciliation of
+/** unreleased (GitHub #62): `/goal recover [id]` — read-only reconciliation of
  * LIVE durable state against the markdown projections left on disk, plus a
  * round-trip-checked restore-as-new recipe.
  *

@@ -1283,7 +1283,7 @@ export type GoalRoute =
 // project audit — user: "/goal audit IS the audit goal"); the v0.28.27
 // manual current-goal verification moved to "verify" (it happens
 // automatically at completion anyway — verify is the on-demand handle).
-// v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface.
+// unreleased (GitHub #62): "recover" is the read-only reconciliation surface.
 // It takes at most ONE id token as its argument, and that is deliberate: a
 // multi-word tail ("recover the deleted fixtures from the backup") is an
 // OBJECTIVE, not a filter. Routing it as a subcommand would silently swallow
@@ -4707,7 +4707,7 @@ export function isProviderRecoveryArmed(
 }
 
 /** The contract-introducer alternation, shared by extraction and by the
- * restore/export helpers (v0.39.66, GitHub #62). Callers anchor it themselves
+ * restore/export helpers (unreleased, GitHub #62). Callers anchor it themselves
  * (`^` for a line-start marker, `^\\s*` for a leading introducer). One
  * definition on purpose: the parser, the duplication guard and the restore
  * preview must agree on exactly what counts as an introducer, or a contract
@@ -4763,7 +4763,7 @@ export function extractVerificationContract(raw: string): { objective: string; v
         explicitClear = true;
         continue;
       }
-      // v0.39.66 (GitHub #62): the line-start path RETAINS the marker line (a
+      // unreleased (GitHub #62): the line-start path RETAINS the marker line (a
       // convention the shield and its tests rely on), but the inline fallback
       // CONSUMES it. That asymmetry made a naive export/recreate non-idempotent:
       // `Done when: <stored contract>` grew by one `Done when: ` prefix per

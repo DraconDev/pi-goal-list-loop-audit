@@ -302,7 +302,7 @@ import {
   runMechanicalPreAuditChecks,
   type MechanicalCheckResult,
 } from "../goal-loop-shield.js";
-// v0.39.66 (GitHub #62): resume_goal's "no goal" answer names the saved records
+// unreleased (GitHub #62): resume_goal's "no goal" answer names the saved records
 // it cannot reopen, so a leftover projection is never mistaken for live work.
 import { collectSavedGoalRecords, savedRecordsOneLiner } from "../goal-recovery-inventory.js";
 import {
@@ -3418,7 +3418,7 @@ function registerAgentTools(pi: any): void {
       if (!ctx) return staleToolResult();
       const p = params as { reason?: string };
       if (!state.goal) {
-        // v0.39.66 (GitHub #62): resume cannot reopen history, and a saved
+        // unreleased (GitHub #62): resume cannot reopen history, and a saved
         // projection is not live work. Say so and name the supported
         // goal-mode recreation path instead of letting the agent infer
         // that a leftover goals/<id>.md is resumable.

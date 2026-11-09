@@ -1,5 +1,5 @@
 /**
- * pi-goal-list-loop-audit — v0.39.66 (GitHub #62)
+ * pi-goal-list-loop-audit — unreleased (GitHub #62)
  * extensions/goal-recovery-inventory.ts
  *
  * Read-only reconciliation between the LIVE durable state and the markdown

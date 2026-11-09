@@ -85,7 +85,7 @@ test("no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts)",
   // commands (tool vocabulary descriptions, the /glla status deep map) —
   // these are cross-surface references, not active-surface guidance.
   // v0.38.85: timeline joined the /goal subcommand enumeration.
-  // v0.39.66 (GitHub #62): so did the read-only `recover` verb — this is a
+  // unreleased (GitHub #62): so did the read-only `recover` verb — this is a
   // cross-surface enumeration of the command's OWN subcommands, not
   // active-surface guidance, so the pattern names it alongside the rest.
   const SURFACE_MAP = [/deep: \/goal status/, /\/list remove N/, /status\|timeline\|recover\|pause\|resume\|cancel\|(?:tweak|decide)/, /\/goal resume, \/list resume, or \/loop resume/];
