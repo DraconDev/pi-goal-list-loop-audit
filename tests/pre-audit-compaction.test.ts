@@ -338,6 +338,8 @@ test('the promised manual path works from the parked state: /list resume starts 
     console.log('DBG before wait', fs.existsSync(h.started), 'elapsed', t1 - t0);
     await waitForStart(h.started);
     console.log('DBG after wait', Date.now() - t1);
+    console.log('DBG events', fs.readFileSync(path.join(h.cwd, '.pi-glla', 'active.jsonl'), 'utf8')
+      .split('\n').filter(Boolean).map(l => { const e = JSON.parse(l); return `${String(e.at).slice(11, 19)} ${e.type}`; }).slice(-16).join(' | '));
     const admitted = readState(h.cwd).goal!;
     assert.notEqual(admitted.status, 'paused');
     assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined);
