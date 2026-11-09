@@ -180,7 +180,8 @@ rather than assumed broken.
 `node scripts/run-tests.mjs` refuses to start here: the installed Bun (1.3.3)
 lacks `--parallel` / `--path-ignore-patterns`, which the hardened runner
 requires (≥1.3.14). The suite above was therefore run file-by-file through
-`bun test</tool_end>
+`bun test`, not through the hardened runner. Each file's own counts are the
+numbers in the block above; no aggregate total is claimed.
 
 ## Not changed
 
