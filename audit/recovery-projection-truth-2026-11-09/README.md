@@ -164,6 +164,7 @@ bun test tests/behavioral-orchestrator.test.ts                   → 159 pass / 
 npx tsc --noEmit                                                 → clean
 node scripts/check-no-project-names.mjs                          → clean (778 new lines vs 14 watched names)
 node scripts/generate-inventory.mjs --check                      → exit 0
+npm run release:check (Bun 1.3.14)                               → 4635 pass / 1 skip / 0 fail (490 files, 991 s)
 ```
 
 ### The release gate ran, and it is green

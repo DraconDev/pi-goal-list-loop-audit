@@ -154,6 +154,7 @@ bun test tests/doc-index.test.ts                   →  3 pass / 0 fail
 npx tsc --noEmit                                   → clean
 node scripts/check-no-project-names.mjs            → clean
 node scripts/generate-inventory.mjs --check        → exit 0
+npm run release:check                              → 4635 pass / 1 skip / 0 fail (490 files, 991 s)
 ```
 
 ### New tests, and what each one pins
