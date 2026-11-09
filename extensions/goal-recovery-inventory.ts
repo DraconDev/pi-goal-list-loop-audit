@@ -117,7 +117,7 @@ export function parseSavedGoalMarkdown(md: string): Omit<SavedGoalRecord, "id" |
   const objectiveAmbiguous = /^\s*(?:##\s+|> ##\s+)/m.test(objective);
   const verificationContract = sectionText(md, "## Verification contract") ?? "";
   const tasksSection = sectionText(md, "## Tasks") ?? "";
-  const taskRows = [...tasksSection.matchAll(/^([ \t]*)-?\s*-?\s*\[([ x~])\]/gm)];
+  const taskRows = [...tasksSection.matchAll(/^([ \t]*)- \[([ x~])\]/gm)];
   const topLevel = tasksSection.split("\n").filter((line) => /^- \[[ x~]\]/.test(line)).length;
   const subtasks = taskRows.length - topLevel;
   const complete = taskRows.filter((row) => row[2] === "x").length;
@@ -237,7 +237,7 @@ const ROW_VERDICT: Record<SavedRecordState, string> = {
   "stale-projection": "leftover projection only — NOT resumable",
   historical: "archived history — NOT resumable",
   "unarchived-terminal": "finished, but its archive never landed — not resumable",
-  unreadable: "no Status marker — not a GLLLA goal record",
+  unreadable: "no Status marker — not a GLLA goal record",
 };
 
 export interface RecoveryInventoryInput {
