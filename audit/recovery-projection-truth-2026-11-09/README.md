@@ -140,18 +140,47 @@ bun test tests/glla-ui-command-audit.test.ts                     → 29 pass / 0
 bun test tests/resume-goal-tool.test.ts                          → 10 pass / 0 fail
 bun test tests/gettick-tool-visibility.test.ts                   →  1 pass / 0 fail
 bun test tests/goal-loop-core.test.ts                            → 37 pass / 0 fail
+bun test tests/goal-state.test.ts                                →  4 pass / 0 fail
+bun test tests/goal-state-drift.test.ts                          →  7 pass / 0 fail
+bun test tests/task-list.test.ts                                 →  9 pass / 0 fail
+bun test tests/task-list-persistence.test.ts                     →  2 pass / 0 fail
+bun test tests/disk-first-queue.test.ts                          → 18 pass / 0 fail
+bun test tests/faulty-objective-recovery.test.ts                 → 46 pass / 0 fail
+bun test tests/contract-resolution-runtime.test.ts               → 17 pass / 0 fail
+bun test tests/suspicious-draft-contract.test.ts                 →  3 pass / 0 fail
+bun test tests/goal-timeline.test.ts                             →  6 pass / 0 fail
+bun test tests/lifecycle-recovery.test.ts                        →  7 pass / 0 fail
+bun test tests/persistence-recovery.test.ts                      →  8 pass / 0 fail
+bun test tests/objective-loss-lifecycle.test.ts                  →  4 pass / 0 fail
+bun test tests/list-invisible-restart.test.ts                    →  6 pass / 0 fail
+bun test tests/ui-status-projection.test.ts                      → 11 pass / 0 fail
+bun test tests/state-root.test.ts                                →  5 pass / 0 fail
+bun test tests/state-root-consumers.test.ts                      →  4 pass / 0 fail
+bun test tests/state-root-failure.test.ts                        →  6 pass / 0 fail
+bun test tests/recovery-lifecycle-regression.test.ts             → 30 pass / 0 fail
+bun test tests/fresh-session-auto-recovery.test.ts                →  7 pass / 0 fail
+bun test tests/load-hold-release.test.ts                         →  3 pass / 0 fail
 bun test tests/behavioral-orchestrator.test.ts                   → 159 pass / 0 fail
 npx tsc --noEmit                                                 → clean
+node scripts/check-no-project-names.mjs                          → clean (778 new lines vs 14 watched names)
+node scripts/generate-inventory.mjs --check                      → exit 0
 ```
 
-`bun test tests/regression-shield.test.ts` reports 37 pass / **1 fail** —
-"mechanical checks stay async and kill descendant processes on timeout" times
-out at 5000 ms. That file also fails on a stashed (pre-change) tree, so it is a
-host/contention artifact of this machine, not a regression from this work; the
-same run passed in earlier sessions. `node scripts/run-tests.mjs` refuses to
-start on this host because the installed Bun (1.3.3) lacks `--parallel` /
-`--path-ignore-patterns`, which the runner requires (≥1.3.14). The full suite was
-therefore run file-by-file, not through the hardened runner.
+### Two honest limits on this run
+
+`bun test tests/regression-shield.test.ts` reports 37 pass / **1 fail**: "mechanical
+checks stay async and kill descendant processes on timeout" times out at
+5000 ms. It is **not** from this work — the identical failure, with identical
+timing, reproduces in a clean `git worktree` checked out at tag `v0.39.65`
+(pre-change, no `CONTRACT_MARKER_PATTERN`, no inventory module). It is a
+host/contention artifact on this machine. The same file passed in earlier
+sessions on this host, so it should be re-checked on an idle machine or in CI
+rather than assumed broken.
+
+`node scripts/run-tests.mjs` refuses to start here: the installed Bun (1.3.3)
+lacks `--parallel` / `--path-ignore-patterns`, which the hardened runner
+requires (≥1.3.14). The suite above was therefore run file-by-file through
+`bun test</tool_end>
 
 ## Not changed
 
