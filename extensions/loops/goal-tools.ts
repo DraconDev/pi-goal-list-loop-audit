@@ -3415,8 +3415,7 @@ function registerAgentTools(pi: any): void {
       if (!ctx) return staleToolResult();
       const p = params as { reason?: string };
       if (!state.goal) return { content: [{ type: "text", text: "No active goal." }], details: {} };
-      const noun = goalNoun();
-      if (state.goal.status !== "paused") {
+      const noun = goalNoun();      if (state.goal.status !== "paused") {
         if (state.goal.status === "active") {
           return { content: [{ type: "text", text: `The ${noun} is already active — just continue working; no resume was needed.` }], details: {} };
         }
