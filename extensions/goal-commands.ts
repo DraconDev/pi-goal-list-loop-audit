@@ -521,12 +521,18 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
 
 async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
+    // v0.39.66 (GitHub #62): "No active goal" must not read as "nothing is
+    // saved". A leftover projection (goals/<id>.md still saying Status: active
+    // after the ledger cleared the slot) is the exact case where the operator
+    // read the markdown as live work. Name what is on disk and that it is not
+    // resumable, rather than leaving recovery to manual ledger inspection.
+    const saved = savedRecordsNote(ctx.cwd);
     const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), currentUiStatusContext(ctx).evidence?.recovery);
     if (recoveryLines.length > 0) {
-      ctx.ui.notify(["No active goal.", ...recoveryLines, "Use /goal <objective>, /list show, or /loop status for the owning surface."].join("\n"), "info");
+      ctx.ui.notify(["No active goal.", ...(saved ? [saved] : []), ...recoveryLines, "Use /goal <objective>, /list show, or /loop status for the owning surface."].join("\n"), "info");
       return;
     }
-    ctx.ui.notify("No active goal. Use /goal <objective>.", "info");
+    ctx.ui.notify(["No active goal. Use /goal <objective>.", ...(saved ? [saved] : [])].join("\n"), "info");
     return;
   }
   const g = state.goal;
@@ -755,15 +761,16 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     // ineffective command must answer. Name the actual state and the
     // real recovery path instead of swallowing the verb silently.
     if (!state.goal) {
+      const saved = savedRecordsNote(ctx.cwd);
       const loopHint = isLoopActive() ? " A loop is active: /loop resume (or /loop status)." : " /goal <objective> starts one (or /list show for the queue).";
-      ctx.ui.notify(`Nothing to resume — no goal is active or paused.${loopHint}`, "info");
+      ctx.ui.notify([`Nothing to resume — no goal is active or paused.${loopHint}`, ...(saved ? [saved] : [])].join("\n"), "info");
       return;
     }
     const label = state.goal.policy === "list" ? "list item" : "goal";
     const terminal = state.goal.status === "complete" || state.goal.status === "aborted";
     if (terminal) {
       ctx.ui.notify(
-        `The ${label} is ${state.goal.status} (archived) — it can't be resumed. ${state.goal.policy === "list" ? "/list add <objective> re-queues it; /list show lists waiting items." : "/goal <objective> starts a fresh one; /goal archive lists archived goals."}`,
+        `The ${label} is ${state.goal.status} (archived) — it can't be resumed. ${state.goal.policy === "list" ? "/list add <objective> re-queues it; /list show lists waiting items." : "/goal <objective> starts a fresh one; /goal archive lists archived goals."} A saved record can be recreated as a NEW goal (new identity, plan starting pending) — /goal recover previews the recipe.`,
         "warning",
       );
     } else {
@@ -2685,6 +2692,18 @@ export function formatGoalTimeline(input: GoalTimelineInput): string {
   const head = `Timeline: ${goal.objective.slice(0, 100)} (${goal.status})` +
     (total > shown.length ? ` — showing last ${shown.length} of ${total}` : "");
   return [head, ...lines, timelineNextAction(goal, nowMs)].join("\n");
+}
+
+/** v0.39.66 (GitHub #62): the saved-record summary used by every "nothing is
+ * live" reply. Best-effort and silent on failure — a projection scan must
+ * never turn a status answer into an error. */
+function savedRecordsNote(cwd: string): string | undefined {
+  try {
+    const records = collectSavedGoalRecords(cwd);
+    return savedRecordsOneLiner(records, { goalPresent: !!state.goal, goal: state.goal ?? null });
+  } catch {
+    return undefined;
+  }
 }
 
 /** v0.39.66 (GitHub #62): `/goal recover [id]` — read-only reconciliation of
