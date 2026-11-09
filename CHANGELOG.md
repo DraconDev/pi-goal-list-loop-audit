@@ -25,6 +25,15 @@
 
 ## Unreleased
 
+### A parked completion audit names its real cause, and a reload no longer strands it
+
+- A field report from a long list: after `complete_goal` staged its pre-audit compaction admission, a reload landed before the owned idle boundary. The item then sat at `completion audit: parked — no review recorded` with `next: /list resume starts a fresh auditor`, and the operator reported the diagnosis as wrong — the action line said `Fix the auditor/session issue` while the auditor was resolving to the session's own model. No auditor fault existed.
+- Cause: two gates disagreed about the same state. The dispatch path's admission-debt gate required `status === "auditing"` for every non-manual origin, while the automatic stored-claim recovery only runs when the goal is `paused`. So the one automatic retry was claimed (`audit_recovery_auto_retry_claimed`) and then returned at that gate forever — consuming its one-shot, launching nothing, and leaving a manual resume as the only exit. Confirmed in a reproduction before the fix: one claim, zero compactions, zero launches.
+- The automatic recovery may now discharge the admission debt it owns (`session-recovery` is the only automatic origin, and it already clears the load hold, supervisor freeze, provider due time, the one-shot marker, the generation and the goal fences). The debt is still discharged by compaction first where compaction is available; otherwise the launch happens on the same safe boundary and journals `audit_compaction_admission_discharged`.
+- Parked copy is per-cause (`extensions/completion-audit-park.ts`): a session boundary says the session changed and names nothing to fix; a watchdog recovery says the auditor stopped reporting; a provider failure names the provider; an unapplied verdict and a missing verdict each say their own thing. An unrecognized reason degrades to "exited without a verdict", never to a model accusation.
+- The parked card now prints `why: <cause>` from the durable `recoveryReason`, on both the glance and detailed renderers — the recorded breadcrumb was never shown before, so the only diagnosis on screen was the action line's guess.
+- Consent is unchanged: a cold load without Auto-resume/an explicit resume still holds the claim for a decision (and now says so truthfully); lists still stop at the paused item rather than advance past an unjudged claim. `docs/RECOVERY.md` documents the cause table and that boundary.
+
 ### A saved goal projection no longer reads as work you can resume (GitHub #62)
 
 - A field report: after an unwanted list cancellation, `list_status()` correctly said `Active: (none)` and `resume_goal` said `No active goal.`, but a leftover `.pi-glla/goals/<id>.md` still said `**Status**: active`. Reading the saved file alone said a goal was running, and recovery began with manual ledger inspection. Nothing distinguished a CURRENT record from a stale projection, an archive, and finished history.
