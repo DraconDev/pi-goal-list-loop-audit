@@ -6,6 +6,7 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Recent reviews
 
+- [Concurrency wall retried, all errors retryable — 9 November 2026](concurrency-wall-retry-2026-11-09/README.md): `tier_limit_exceeded` arrives as HTTP 400 and was one rewording from the never-retried deterministic bucket; its `resets <ISO>` deadline was parsed away, a concurrency wall now probes eagerly instead of sleeping to the reset, and `unknown` failures keep durable retry authority (strict predicate retained where 'retryable' was being used as 'recognized wall').
 - [Parked completion audits — 9 November 2026](completion-audit-park-2026-11-09/README.md): a reload during staged admission consumed the one automatic retry at a contradictory gate (no compaction, no launch), and `Fix the auditor/session issue` was printed for causes that had nothing to fix; per-cause copy plus a `why:` line on the card.
 - [Saved goal projections and restore-as-new — 9 November 2026](recovery-projection-truth-2026-11-09/README.md): GitHub #62 — a leftover `goals/<id>.md` still read `Status: active` beside a `goal: null` snapshot; `/goal recover` classifies every saved record and prints a round-trip-checked restore-as-new recipe; the contract round trip no longer accumulates `Done when:` markers.
 - [Completion reports for human eyes — 7 November 2026](completion-structure-gate-2026-11-07/README.md): multi-area `complete_goal` claims are refused without `findingGroups`/`gateRows`; the density lint annotated the tab-hero claim and shipped it anyway.
@@ -232,6 +233,7 @@ preserved unchanged.
 ## Topic index (canonical docs, newest first)
 
 **2026-11-09**
+- concurrency-wall-retry-2026-11-09/README.md — `tier_limit_exceeded`/concurrency wall retried promptly with its reset as an upper bound; `unknown` failures gain durable authority; strict predicate for compaction/auditor/card/hourly
 - completion-audit-park-2026-11-09/README.md — parked completion audit: automatic recovery could not discharge pre-audit admission debt (claimed one-shot, zero launches); per-cause park copy + recorded `why:` on the card
 - recovery-projection-truth-2026-11-09/README.md — GitHub #62: saved projections classified against live state, `/goal recover` + round-trip-checked restore-as-new recipe, symmetric contract introducers
 
