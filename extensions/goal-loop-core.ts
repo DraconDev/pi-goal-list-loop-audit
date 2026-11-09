@@ -1283,9 +1283,11 @@ export type GoalRoute =
 // project audit — user: "/goal audit IS the audit goal"); the v0.28.27
 // manual current-goal verification moved to "verify" (it happens
 // automatically at completion anyway — verify is the on-demand handle).
-// v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface and
-// takes an optional id filter, so it lives with the ARG subs (a bare word is
-// still routed: `rest` is simply empty).
+// v0.39.66 (GitHub #62): "recover" is the read-only reconciliation surface.
+// It takes at most ONE id token as its argument, and that is deliberate: a
+// multi-word tail ("recover the deleted fixtures from the backup") is an
+// OBJECTIVE, not a filter. Routing it as a subcommand would silently swallow
+// the user's start command — a read-only verb must never eat real intent.
 const GOAL_EXACT_SUBS = new Set(["status", "pause", "resume", "cancel", "decide", "verify"]);
 const GOAL_ARG_SUBS = new Set(["audit", "tweak", "archive", "start", "plan", "timeline", "recover"]);
 
@@ -1298,8 +1300,11 @@ export function routeGoalArgs(raw: string): GoalRoute {
   if (GOAL_EXACT_SUBS.has(first) && rest === "") {
     return { kind: "sub", name: first as "status" | "pause" | "resume" | "cancel" | "decide" | "verify", rest: "" };
   }
-  if (GOAL_ARG_SUBS.has(first)) {
-    return { kind: "sub", name: first as "audit" | "tweak" | "archive" | "start" | "plan" | "timeline" | "recover", rest };
+  if (first === "recover" && (rest === "" || !/\s/.test(rest))) {
+    return { kind: "sub", name: "recover", rest };
+  }
+  if (first !== "recover" && GOAL_ARG_SUBS.has(first)) {
+    return { kind: "sub", name: first as "audit" | "tweak" | "archive" | "start" | "plan" | "timeline", rest };
   }
   return { kind: "set", text: trimmed };
 }
