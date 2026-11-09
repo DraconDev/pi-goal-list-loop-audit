@@ -88,7 +88,7 @@ test("no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts)",
   // unreleased (GitHub #62): so did the read-only `recover` verb — this is a
   // cross-surface enumeration of the command's OWN subcommands, not
   // active-surface guidance, so the pattern names it alongside the rest.
-  const SURFACE_MAP = [/deep: \/goal status/, /\/list remove N/, /status\|timeline\|recover\|pause\|resume\|cancel\|(?:tweak|decide)/, /\/goal resume, \/list resume, or \/loop resume/];
+  const SURFACE_MAP = [/deep: \/goal status/, /\/list remove N/, /\/goal status\|timeline\|pause\|resume\|cancel\|decide\|archive\|verify\|recover/, /\/goal resume, \/list resume, or \/loop resume/];
   // v0.34.108: the scan used to skip lines without a guidance trigger token
   // (pauseSuggestedAction / notify( / lines.push / text: / description:),
   // so a literal parked on a `const resumeCmd = ...` assignment line escaped

@@ -16,7 +16,7 @@ import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestra
  * Command surface (v0.39.x — five top-level slash commands, registered
  * in goal-activation.ts with bodies in goal-commands.ts; completion claims
  * are verified by the DETACHED auditor via goal-loop-auditor-process.ts):
- *   /goal start|plan|audit|verify|status|timeline|pause|resume|cancel|decide|tweak|archive (+ draft)
+ *   /goal start|plan|audit|verify|status|timeline|recover|pause|resume|cancel|decide|tweak|archive (+ draft)
  *   /list add|show|start|resume|pause|tweak|next|remove|rm|clear|depth|cancel|plan|audit|import
  *   /loop start|respec|plan|audit|status|blockers|recheck|resume|refine|polish|stop|cancel|pause|finish (+ draft)
  *   /glla <settings table> | version|status|fleet|progress|log|resume|pause|cancel|wipe|stats|audits|agents|switchlog|tooloverride|fallbacks|owner|takeover|postaudit|bug

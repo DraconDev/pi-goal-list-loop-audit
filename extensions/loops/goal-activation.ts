@@ -13,7 +13,7 @@ import { replayRespecCompletionSummary } from "../respec-builder-runtime.js";
  * Command surface (v0.39.x — five top-level slash commands, registered
  * in goal-activation.ts with bodies in goal-commands.ts; completion claims
  * are verified by the DETACHED auditor via goal-loop-auditor-process.ts):
- *   /goal start|plan|audit|verify|status|timeline|pause|resume|cancel|decide|tweak|archive (+ draft)
+ *   /goal start|plan|audit|verify|status|timeline|recover|pause|resume|cancel|decide|tweak|archive (+ draft)
  *   /list add|show|start|resume|pause|tweak|next|remove|rm|clear|depth|cancel|plan|audit|import
  *   /loop start|respec|plan|audit|status|blockers|recheck|resume|refine|polish|stop|cancel|pause|finish (+ draft)
  *   /glla <settings table> | version|status|fleet|progress|log|resume|pause|cancel|wipe|stats|audits|agents|switchlog|tooloverride|fallbacks|owner|takeover|postaudit|bug
@@ -1197,7 +1197,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       }));
 
   pi.registerCommand("goal", {
-    description: "Set/draft a goal, or /goal status|timeline|recover|pause|resume|cancel|decide|archive|verify; /goal tweak <text>, start <objective>, plan [direction], audit [focus]. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting. /goal plan drafts in rounds with a deep contract; /goal audit runs a one-shot project audit; /goal verify audits the current goal; /goal recover reconciles live state with saved goal records and previews a restore-as-new recipe.",
+    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|decide|archive|verify|recover; /goal tweak <text>, start <objective>, plan [direction], audit [focus]. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting. /goal plan drafts in rounds with a deep contract; /goal audit runs a one-shot project audit; /goal verify audits the current goal. /goal recover reconciles live state with saved goal records and previews a restore-as-new recipe.",
     getArgumentCompletions: completions([
       ["timeline", "show this goal's event trail plus the single next action (/goal timeline [N])"],
       ["recover", "reconcile live state with saved goal records and preview a restore-as-new recipe (/goal recover [id])"],
