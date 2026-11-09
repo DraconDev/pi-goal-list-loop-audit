@@ -192,78 +192,115 @@ function sameProcessReloadSidecar(cwd: string): void {
   }));
 }
 
-test('a reload during the admission wait still launches the stored audit (no manual resume)', async () => {
+/** Stage admission, then take the host away before the owned idle boundary —
+ * the field transcript: complete_goal's "AUDIT PENDING … will check preventive
+ * compaction", then a reload. Returns the successor ctx/pi so the test can own
+ * the compaction callbacks the fresh generation registers. */
+async function stageThenReload(h: Awaited<ReturnType<typeof setup>>, settings: Record<string, unknown>) {
+  const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
+  const result = await h.pi.runTool('complete_goal', { completionSummary: 'Outcome: staged. Changed: x. Evidence: y. Tests: z. Unresolved: none. Next: none.' }, h.ctx);
+  assert.equal(result.isError, undefined);
+  const staged = readState(h.cwd).goal!;
+  assert.equal(staged.pendingCompletion?.preAuditCompaction, true, 'the claim is staged as admission debt');
+  assert.equal(staged.status, 'auditing');
+
+  await h.pi.fire('session_shutdown', { reason: 'reload' }, h.ctx);
+  const parked = readState(h.cwd).goal!;
+  assert.equal(parked.status, 'paused', 'a session boundary parks the claim');
+  assert.equal(parked.pendingCompletion?.phase, 'recovery-pending');
+  assert.equal(parked.pendingCompletion?.preAuditCompaction, true, 'the admission debt survives the boundary');
+
+  fs.writeFileSync(settingsPath, JSON.stringify(settings));
+  sameProcessReloadSidecar(h.cwd);
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
+  const successor = makeMockCtx(h.cwd, {
+    sessionManager: { name: `successor-${Date.now()}-${Math.random()}`, getSessionId: () => 'successor-session-id' },
+  });
+  let idle = true;
+  let tokens = 903644;
+  Object.assign(successor, { modelRegistry: { find: () => undefined, getAvailable: () => [successor.model], getAll: () => [successor.model], hasConfiguredAuth: () => true } });
+  const base = successor as unknown as {
+    isIdle: () => boolean; hasPendingMessages: () => boolean;
+    getContextUsage: () => unknown; compact: (o: unknown) => void;
+  };
+  base.isIdle = () => idle;
+  base.hasPendingMessages = () => false;
+  base.getContextUsage = () => ({ tokens, contextWindow: 1048000, percent: tokens / 10480 });
+  const callbacks: Array<{ onComplete?(): void; onError?(error: Error): void }> = [];
+  base.compact = options => {
+    callbacks.push({
+      onComplete: () => (options as { onComplete?: (r: unknown) => void }).onComplete?.({ summary: 'Preserved completion claim', firstKeptEntryId: 'kept', tokensBefore: tokens }),
+      onError: error => (options as { onError?: (e: Error) => void }).onError?.(error),
+    });
+    idle = false;
+  };
+  const successorPi = new MockPi();
+  activate(successorPi.api);
+  await successorPi.fire('session_start', { reason: 'resume' }, successor);
+  await tick(150);
+  return { successor, successorPi, callbacks, setIdle: (v: boolean) => { idle = v; } };
+}
+
+function ledgerTypes(cwd: string): string[] {
+  return fs.readFileSync(path.join(cwd, '.pi-glla', 'active.jsonl'), 'utf8')
+    .split('\n').filter(Boolean)
+    .map(line => (JSON.parse(line) as { type: string }).type);
+}
+
+test('a reload during the admission wait still launches the stored audit when recovery consent exists', async () => {
   const h = await setup();
   const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
   const previousSettings = fs.readFileSync(settingsPath, 'utf8');
   try {
-    // 1. Busy complete_goal stages admission debt — the transcript's first line.
-    const result = await h.pi.runTool('complete_goal', { completionSummary: 'Outcome: staged. Changed: x. Evidence: y. Tests: z. Unresolved: none. Next: none.' }, h.ctx);
-    assert.equal(result.isError, undefined);
-    const staged = readState(h.cwd).goal!;
-    assert.equal(staged.pendingCompletion?.preAuditCompaction, true);
-    assert.equal(staged.status, 'auditing');
+    // Auto-resume = the operator consented to load-time automation, so the
+    // stored claim owns its one automatic retry (no manual /list resume).
+    const s = await stageThenReload(h, { autoResume: true });
+    assert.ok(ledgerTypes(h.cwd).includes('audit_recovery_auto_retry_claimed'),
+      'the successor grants the parked claim its one automatic retry');
 
-    // 2. The host reloads BEFORE the owned idle boundary: the shutdown path
-    //    parks the claim as recovery-pending and the admission debt rides it.
-    await h.pi.fire('session_shutdown', { reason: 'reload' }, h.ctx);
-    const parked = readState(h.cwd).goal!;
-    assert.equal(parked.status, 'paused', 'a session boundary parks the claim');
-    assert.equal(parked.pendingCompletion?.phase, 'recovery-pending');
-    assert.equal(parked.pendingCompletion?.preAuditCompaction, true, 'the admission debt survives the boundary');
+    // The retry must make progress on its own: it re-enters the admission
+    // boundary (compaction) or dispatches directly. Before the fix it returned
+    // at the gate, consuming the one-shot and stranding the claim.
+    assert.equal(s.callbacks.length, 1, 'the admission boundary is re-entered by the automatic recovery');
+    assert.ok(ledgerTypes(h.cwd).includes('audit_compaction_admission_started'));
 
-    // 3. The successor session in the SAME process: stock settings (autoResume
-    //    unset) — consent comes from the same-process reload, not a setting.
-    fs.writeFileSync(settingsPath, JSON.stringify({}));
-    sameProcessReloadSidecar(h.cwd);
-    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
-    const successor = makeMockCtx(h.cwd, {
-      sessionManager: { name: `successor-${Date.now()}`, getSessionId: () => 'successor-session-id' },
-    });
-    let idle = true;
-    let tokens = 903644;
-    Object.assign(successor, { modelRegistry: { find: () => undefined, getAvailable: () => [successor.model], getAll: () => [successor.model], hasConfiguredAuth: () => true } });
-    (successor as unknown as { isIdle: () => boolean }).isIdle = () => idle;
-    (successor as unknown as { hasPendingMessages: () => boolean }).hasPendingMessages = () => false;
-    (successor as unknown as { getContextUsage: () => unknown }).getContextUsage = () => ({ tokens, contextWindow: 1048000, percent: tokens / 10480 });
-    const callbacks: Array<{ onComplete?(): void; onError?(error: Error): void }> = [];
-    (successor as unknown as { compact: (o: unknown) => void }).compact = options => {
-      callbacks.push({
-        onComplete: () => (options as { onComplete?: (r: unknown) => void }).onComplete?.({ summary: 'Preserved completion claim', firstKeptEntryId: 'kept', tokensBefore: tokens }),
-        onError: error => (options as { onError?: (e: Error) => void }).onError?.(error),
-      });
-      idle = false;
-    };
-    const successorPi = new MockPi();
-    activate(successorPi.api);
-    await successorPi.fire('session_start', { reason: 'resume' }, successor);
-    await tick(150);
-
-    // The automatic recovery claimed the parked claim (the machinery works)…
-    const events = (): string[] => fs.readFileSync(path.join(h.cwd, '.pi-glla', 'active.jsonl'), 'utf8')
-      .split('\n').filter(Boolean).map(line => JSON.parse(line) as { type: string }).map(e => e.type);
-    assert.ok(events().includes('audit_recovery_auto_retry_claimed'), 'the same-process successor grants its one automatic retry');
-
-    // …so the admission must make progress on its own: either the boundary
-    // compaction restarts, or the audit launches directly.
-    if (callbacks.length > 0) {
-      callbacks[0]!.onComplete?.();
-      idle = true;
-      await successorPi.fire('session_compact', {}, successor);
-      await h.pi.fire('session_compact', {}, h.ctx);
-      await tick(120);
-      await h.pi.fire('agent_settled', {}, h.ctx);
-      await successorPi.fire('agent_settled', {}, successor);
-    }
+    s.callbacks[0]!.onComplete?.();
+    s.setIdle(true);
+    await s.successorPi.fire('session_compact', {}, s.successor);
+    await tick(120);
+    await s.successorPi.fire('agent_settled', {}, s.successor);
     await waitForStart(h.started);
 
     const admitted = readState(h.cwd).goal!;
     assert.notEqual(admitted.status, 'paused', 'the staged claim is no longer a paused dead end');
-    assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined, 'the admission debt is discharged by the launch');
-    assert.equal(
-      fs.readFileSync(h.started, 'utf8').trim().split('\n').length, 1,
-      'exactly one auditor launched — the automatic retry must not duplicate the claim',
-    );
+    assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined, 'the launch discharges the admission debt');
+    assert.equal(fs.readFileSync(h.started, 'utf8').trim().split('\n').length, 1,
+      'exactly one auditor launched — the automatic retry never duplicates the claim');
+  } finally {
+    fs.writeFileSync(settingsPath, previousSettings);
+    await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx);
+  }
+});
+
+test('a cold load without consent HOLDS the staged claim, and says so without blaming the auditor', async () => {
+  const h = await setup();
+  const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
+  const previousSettings = fs.readFileSync(settingsPath, 'utf8');
+  try {
+    const s = await stageThenReload(h, {});
+    // Stock install: the load hold is the documented consent gate. It must be
+    // the reason, and the claim must not be silently consumed.
+    assert.equal(s.callbacks.length, 0, 'no admission work runs behind a load hold');
+    assert.equal(fs.existsSync(h.started), false, 'no auditor launches behind a load hold');
+    const held = readState(h.cwd).goal!;
+    assert.equal(held.status, 'paused');
+    assert.equal(held.pendingCompletion?.phase, 'recovery-pending');
+    assert.equal(held.pauseSuggestedAction?.includes('nothing about your auditor or model setup is implicated'), true,
+      'the parked action names the session boundary instead of accusing the auditor');
+    assert.doesNotMatch(held.pauseSuggestedAction ?? '', /Fix the auditor\/session issue/,
+      'one generic sentence must not assert a fault class the durable record does not support');
+    assert.match(held.pendingCompletion?.recoveryReason ?? '', /^session_shutdown:/,
+      'the durable reason still records the real breadcrumb');
   } finally {
     fs.writeFileSync(settingsPath, previousSettings);
     await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx);
