@@ -23,6 +23,7 @@ import { currentRecoveryOwner, recoveryOwnership } from "./recovery-ownership.js
 import { clampThinkingLevel } from "@earendil-works/pi-ai/compat";
 import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
+import { completionAuditParkAction } from "./completion-audit-park.js";
 import { isAuditorInfrastructureClass, isPersistenceDegraded, recheckPersistenceAfterRepair, appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
 import { stateRootPending } from './glla-state-root.js';
@@ -140,70 +141,6 @@ function interruptedAuditorCursor(claim: PendingCompletion): CompletionAuditCurs
     cursor.auditorAttemptedRefs = cursor.auditorAttemptedRefs.filter((ref) => ref.toLowerCase() !== current.toLowerCase());
   }
   return cursor;
-}
-
-/** Why a parked completion claim lost its auditor, in terms the operator can
- * act on.
- *
- * Field 2026-11-09 (GitHub #62 follow-up): the suggested action said "Fix the
- * auditor/session issue" for EVERY cause. In that report the cause was a
- * session boundary — a reload landed while the claim waited for its pre-audit
- * admission boundary — and the operator checked the auditor model against the
- * session model, found them identical, and reported a bogus diagnosis. Naming
- * the cause also keeps "the auditor is broken" from being the default story
- * for a claim that was simply interrupted. */
-export type CompletionAuditParkCause = "session-boundary" | "watchdog" | "provider" | "verdict-apply" | "no-verdict";
-
-/** Classify a park reason. The reason strings come from this module's own
- * callers (goal-activation, goal-session, the auditor hooks, the heartbeat), so
- * the vocabulary is closed — an unknown string degrades to `no-verdict`, the
- * honest "no verdict was produced" case, never to a model accusation. */
-export function classifyCompletionAuditParkReason(reason: string): CompletionAuditParkCause {
-  const text = (reason ?? "").trim();
-  if (/^(?:session_shutdown|session_start|silent-host-successor|host-rebind)\b/i.test(text)) return "session-boundary";
-  if (/^(?:stale-latch-recovery|heartbeat-recovery)\b/i.test(text)) return "watchdog";
-  if (/apply-gate|verdict-apply/i.test(text)) return "verdict-apply";
-  if (isRecoverableProviderError(text)) return "provider";
-  return "no-verdict";
-}
-
-/** One-line human cause for the parked card. The raw breadcrumb is appended
- * when it is short enough to read, so the durable ledger vocabulary stays
- * available without hiding behind a friendly phrase. */
-export function formatCompletionAuditParkCause(reason: string): string {
-  const raw = (reason ?? "").trim();
-  switch (classifyCompletionAuditParkReason(raw)) {
-    case "session-boundary":
-      return `the session changed before the auditor finished${raw ? ` (${raw})` : ""}`;
-    case "watchdog":
-      return `the auditor stopped reporting${raw ? ` (${raw})` : ""}`;
-    case "provider":
-      return `the provider failed the audit run${raw ? ` (${raw})` : ""}`;
-    case "verdict-apply":
-      return `the verdict could not be applied${raw ? ` (${raw})` : ""}`;
-    default:
-      return `the auditor exited without a verdict${raw ? ` (${raw})` : ""}`;
-  }
-}
-
-/** The one action line for a parked claim. Every cause gets its own sentence:
- * a session boundary has nothing to fix, and a provider failure names the
- * provider instead of implying the operator picked the wrong auditor model. */
-export function completionAuditParkAction(reason: string, resumeCommand: string): string {
-  const cause = classifyCompletionAuditParkReason(reason);
-  if (cause === "session-boundary") {
-    return `The completion claim is stored and was not judged: the session changed before the auditor finished, so nothing about your auditor or model setup is implicated. ${resumeCommand} starts exactly one fresh audit.`;
-  }
-  if (cause === "watchdog") {
-    return `The completion claim is stored and was not judged: the auditor stopped reporting and the supervisor parked it rather than guess. ${resumeCommand} starts exactly one fresh audit.`;
-  }
-  if (cause === "provider") {
-    return `The completion claim is stored and was not judged: the provider failed the audit run. Restore provider access (or pick another auditor model in /glla settings), then ${resumeCommand} starts exactly one fresh audit.`;
-  }
-  if (cause === "verdict-apply") {
-    return `The completion claim is stored and its verdict could not be applied to this goal. ${resumeCommand} starts exactly one fresh audit of the current scope.`;
-  }
-  return `The completion claim is stored and the auditor exited without a verdict. ${resumeCommand} starts exactly one fresh audit; if it repeats, check the auditor model and tool budget in /glla settings.`;
 }
 
 export function markCompletionAuditRecoveryPending(ctx: ExtensionContext, reason: string, cursorPatch?: CompletionAuditCursorPatch): boolean {
