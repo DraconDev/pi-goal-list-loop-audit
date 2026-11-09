@@ -4707,11 +4707,11 @@ export function isProviderRecoveryArmed(
 }
 
 /** The contract-introducer alternation, shared by extraction and by the
- * restore/export helpers (GitHub #62). Callers anchor it themselves
- * (`^` for a line-start marker, `^\\s*` for a leading introducer). One
- * definition on purpose: the parser, the duplication guard and the restore
- * preview must agree on exactly what counts as an introducer, or a contract
- * exported by one layer accumulates markers when the next layer re-parses it. */
+ * restore/export helpers (GitHub #62). Callers anchor it themselves: `^` for a
+ * line-start marker, `^\s*` for a leading introducer. One definition on
+ * purpose — the parser, the duplication guard and the restore preview must
+ * agree on exactly what counts as an introducer, or a contract exported by one
+ * layer accumulates markers when the next layer re-parses it. */
 export const CONTRACT_MARKER_PATTERN = /(?:(?:done|verified)\s+when\b[^:]{0,60}:|done\b[^:]{0,60}:|verify(?:\s+when)?\s*:|verification(?:\s+contract(?:\s*\(auditor checks each line\))?)?\s*:)/i;
 
 /** Consume every leading contract introducer (and the whitespace around it)
