@@ -5,7 +5,7 @@
 - [Product overview](../README.md): what GLLA does, who it is for, work shapes and trust boundaries.
 - [Install and update](../INSTALL.md): setup, companions, auditor configuration and first run.
 - [Practical workflows](WORKFLOWS.md): fixes, audits, backlogs, spec-driven builds and bounded improvement.
-- [Recovery](RECOVERY.md): saved work, resume commands, provider fallback, compaction and completed objectives.
+- [Recovery](RECOVERY.md): saved work, resume commands, stale saved records and restore-as-new, provider fallback, compaction and completed objectives.
 - [Settings](SETTINGS.md): files, precedence and available options.
 - [Work-shape philosophy](../LIST-PHILOSOPHY.md): goals, work pools and loops.
 - [Delegation skill](../skills/glla-delegate/SKILL.md): normal-chat queue requests and consent boundaries.
