@@ -5,7 +5,7 @@
 // configured candidates, recognizes positively non-recoverable failures, and
 // computes a bounded-but-persistent retry cadence.
 
-import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError, quotaSignal, isDeterministicProviderError } from "./quota-retry.js";
+import { DEFAULT_QUOTA_RETRY_SEC, isConcurrencyWall, parseQuotaError, quotaSignal, isDeterministicProviderError } from "./quota-retry.js";
 
 /** Recovery retries the configured chain promptly, then makes one paced
  * attempt every five minutes for as long as the owning work remains eligible.
