@@ -4698,6 +4698,30 @@ export function isProviderRecoveryArmed(
   return (goal.errorBrakeStreak ?? 0) > 0;
 }
 
+/** The contract-introducer alternation, shared by extraction and by the
+ * restore/export helpers (v0.39.66, GitHub #62). Callers anchor it themselves
+ * (`^` for a line-start marker, `^\\s*` for a leading introducer). One
+ * definition on purpose: the parser, the duplication guard and the restore
+ * preview must agree on exactly what counts as an introducer, or a contract
+ * exported by one layer accumulates markers when the next layer re-parses it. */
+export const CONTRACT_MARKER_PATTERN = /(?:(?:done|verified)\s+when\b[^:]{0,60}:|done\b[^:]{0,60}:|verify(?:\s+when)?\s*:|verification(?:\s+contract(?:\s*\(auditor checks each line\))?)?\s*:)/i;
+
+/** Consume every leading contract introducer (and the whitespace around it)
+ * from contract text. Criteria lines are never altered — only introducers
+ * that would re-open a contract are removed, and they are removed repeatedly
+ * so `"Done when: Done when: <criteria>"` collapses to `<criteria>` in one
+ * pass instead of growing by one marker per export/recreate cycle. */
+export function stripContractIntroducers(contract: string): string {
+  const leading = new RegExp(`^\\s*(?:${CONTRACT_MARKER_PATTERN.source})\\s*`, "i");
+  let body = contract.replace(/^\s+/, "");
+  for (let guard = 0; guard < 16; guard++) {
+    const m = body.match(leading);
+    if (!m || m[0].length === 0) break;
+    body = body.slice(m[0].length);
+  }
+  return body.replace(/\s+$/, "");
+}
+
 export function extractVerificationContract(raw: string): { objective: string; verificationContract: string; explicitClear: boolean } {
   // Line-based first: a marker at line start begins the contract block.
   const lines = raw.split("\n");
@@ -4721,15 +4745,26 @@ export function extractVerificationContract(raw: string): { objective: string; v
   // when"/"verified when" keep a bounded decorated-marker gap (they are not
   // imperative openers), now capped at 60 chars so prose tails cannot
   // masquerade as markers either.
-  const MARKER_START = /^\s*(?:(?:done|verified)\s+when\b[^:]{0,60}:|done\b[^:]{0,60}:|verify(?:\s+when)?\s*:|verification(?:\s+contract(?:\s*\(auditor checks each line\))?)?\s*:)/i;
+  const MARKER_START = new RegExp(`^\\s*${CONTRACT_MARKER_PATTERN.source}`, "i");
   for (const line of lines) {
     const m = line.match(MARKER_START);
     if (m) {
       mode = "verify";
-      if (!line.slice(m[0].length).trim()) {
+      const rest = line.slice(m[0].length);
+      if (!rest.trim()) {
         explicitClear = true;
         continue;
       }
+      // v0.39.66 (GitHub #62): the line-start path has always RETAINED the
+      // marker line (a pinned convention the shield and the docs rely on), so
+      // a stored contract re-fed as `Done when: <stored contract>` used to
+      // grow by one `Done when: ` prefix per export/recreate cycle. A
+      // duplicate introducer in front of the captured text is that
+      // accumulation: keep exactly one marker line and consume the
+      // duplicates, which makes the round trip a fixed point.
+      const deduped = stripContractIntroducers(rest);
+      verifyParts.push(deduped === rest.trimStart() ? line : `${m[0]} ${deduped}`);
+      continue;
     }
     if (mode === "obj") objParts.push(line);
     else verifyParts.push(line);
