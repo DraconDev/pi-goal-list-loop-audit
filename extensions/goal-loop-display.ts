@@ -25,6 +25,7 @@ import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
 import { RESUMABLE_STOP } from "./goal-loop.js";
 import { respecCoverage } from "./respec-builder.js";
 import { providerErrorPresentation } from "./quota-retry.js";
+import { formatCompletionAuditParkCause } from "./completion-audit-park.js";
 import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 import { isCompactionRecoveryHold, compactionResumeAction } from "./compaction-resume.js";
@@ -1886,6 +1887,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   if (g && isCompletionAuditNoVerdict(g) && (status.execution === 'blocked' || status.execution === 'dormant')) {
     rows.push(row('├─ ', 'completion audit: parked — no review recorded', 'warning'));
     rows.push(row('│  ', 'the stored completion claim was not evaluated — the audit waits while the item is paused'));
+    // Field 2026-11-09: the card never named WHY the claim was parked, so the
+    // only diagnosis on screen was the action line's guess. Show the recorded
+    // cause instead of letting the reader infer an auditor fault.
+    rows.push(row('│  ', `why: ${formatCompletionAuditParkCause(g.pendingCompletion?.recoveryReason)}`, 'dim'));
   }
   // A blocked glance card is for the person's prerequisite, not the agent's
   // internal durable/defer taxonomy. Detailed status retains the judgment.
@@ -3314,6 +3319,8 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         : "";
       lines.push(`├─ ${paint(theme, "warning", `completion audit: parked — no review recorded${retryNote}`)}`);
       lines.push(`├─ ${paint(theme, "dim", "the stored completion claim was not evaluated — the audit waits while the item is paused")}`);
+      // Same as the glance card: name the recorded cause, not an inferred one.
+      lines.push(`├─ ${paint(theme, "dim", `why: ${formatCompletionAuditParkCause(g.pendingCompletion?.recoveryReason)}`)}`);
       const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
       lines.push(`├─ ${paint(theme, "dim", lifecycle)}`);
       lines.push(`│  ${paint(theme, "dim", transition)}`);
