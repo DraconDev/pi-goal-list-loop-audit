@@ -121,6 +121,7 @@ with unfinished tasks are refused unless an explicit deferral was recorded.
 | `/goal audit [focus]` | Start a new one-pass repository audit; this is not `/goal verify` |
 | `/goal cancel` | Cancel the current goal, not certify it as complete |
 | `/goal archive` | Inspect archived goals |
+| `/goal recover [id]` | Read-only: reconcile live state with saved goal records and preview a restore-as-new recipe |
 | `/glla bug [description]` | Capture diagnostic context without changing the objective |
 
 ## Work through a backlog
