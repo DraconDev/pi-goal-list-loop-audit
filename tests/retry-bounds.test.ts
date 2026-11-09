@@ -27,6 +27,7 @@ import { PERSISTENT_PROVIDER_RETRY_MS } from '../extensions/main-model-recovery.
 const SRC = readGoalRuntimeSource();
 const CONT = fs.readFileSync("extensions/goal-continuation.ts", "utf-8"); // decomposition step 5 (v0.34.113)
 const RECOVERY = fs.readFileSync("extensions/goal-recovery.ts", "utf-8"); // decomposition step 3 (v0.34.111)
+const PARK = fs.readFileSync("extensions/completion-audit-park.ts", "utf-8");
 const LOOP = fs.readFileSync("extensions/goal-loop.ts", "utf-8");
 const CORE = fs.readFileSync("extensions/goal-loop-core.ts", "utf-8");
 const PROVIDER_RETRY = fs.readFileSync("extensions/quota-retry.ts", "utf-8");
