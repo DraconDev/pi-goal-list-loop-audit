@@ -239,7 +239,7 @@ async function stageThenReload(h: Awaited<ReturnType<typeof setup>>, settings: R
   activate(successorPi.api);
   await successorPi.fire('session_start', { reason: 'resume' }, successor);
   await tick(150);
-  return { successor, successorPi, callbacks, setIdle: (v: boolean) => { idle = v; } };
+  return { successor, successorPi, callbacks, setIdle: (v: boolean) => { idle = v; }, setTokens: (v: number) => { tokens = v; } };
 }
 
 function ledgerTypes(cwd: string): string[] {
@@ -321,28 +321,18 @@ test('the promised manual path works from the parked state: /list resume starts 
     assert.equal(parked.pauseSuggestedAction?.includes('/list resume'), true,
       'the parked copy names the surface command for this policy');
 
+    // Under the preventive target, so the manual resume discharges the debt
+    // directly instead of re-running the admission compaction. The debt — not
+    // the token budget — is what must not survive the resume.
+    s.setTokens(120_000);
     s.setIdle(true);
-    const t0 = Date.now();
     await s.successorPi.command('list', 'resume', s.successor);
-    console.log('DBG resume returned in', Date.now() - t0, 'callbacks', s.callbacks.length, 'phase', readState(h.cwd).goal?.pendingCompletion?.phase);
-    await tick(150);
-
-    if (s.callbacks.length > 0) {
-      s.callbacks[0]!.onComplete?.();
-      s.setIdle(true);
-      await s.successorPi.fire('session_compact', {}, s.successor);
-      await tick(120);
-      await s.successorPi.fire('agent_settled', {}, s.successor);
-    }
-    const t1 = Date.now();
-    console.log('DBG before wait', fs.existsSync(h.started), 'elapsed', t1 - t0);
     await waitForStart(h.started);
-    console.log('DBG after wait', Date.now() - t1);
-    console.log('DBG events', fs.readFileSync(path.join(h.cwd, '.pi-glla', 'active.jsonl'), 'utf8')
-      .split('\n').filter(Boolean).map(l => { const e = JSON.parse(l); return `${String(e.at).slice(11, 19)} ${e.type}`; }).slice(-16).join(' | '));
+
+    assert.equal(s.callbacks.length, 0, 'a below-target manual resume dispatches instead of re-compacting');
     const admitted = readState(h.cwd).goal!;
-    assert.notEqual(admitted.status, 'paused');
-    assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined);
+    assert.notEqual(admitted.status, 'paused', 'the parked claim is dispatched, not left parked');
+    assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined, 'the admission debt is discharged');
     assert.equal(fs.readFileSync(h.started, 'utf8').trim().split('\n').length, 1, 'one audit, not two');
   } finally {
     fs.writeFileSync(settingsPath, previousSettings);
