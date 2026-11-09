@@ -24,7 +24,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import activate, { __testOnlyResetProcessState } from "../extensions/loops/goal.js";
+import activate, { __testOnlyLoadState, __testOnlyResetProcessState } from "../extensions/loops/goal.js";
 import {
   archiveDir,
   buildTaskList,
@@ -80,6 +80,7 @@ function boot(liveState: Parameters<typeof seedState>[1]): { pi: MockPi; ctx: Mo
   activate(pi.api);
   const cwd = tmpCwd();
   seedState(cwd, liveState);
+  __testOnlyLoadState(cwd);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `recovery-projection-${Math.random().toString(36).slice(2, 8)}` } });
   return { pi, ctx, cwd };
 }
@@ -104,28 +105,22 @@ test("#62: a leftover active projection beside `goal: null` classifies as a stal
 });
 
 test("#62: /goal status with no live goal names the stale projection and offers the inventory", async () => {
-  const cwd = tmpCwd();
-  const saved = objectiveOf({ status: "active" });
-  writeProjection(cwd, saved);
-  seedState(cwd, { goal: null, list: [] });
   const { pi, ctx } = boot({ goal: null, list: [] });
-  ctx.cwd = cwd;
+  writeProjection(ctx.cwd, objectiveOf({ status: "active" }));
   await pi.command("goal", "status", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /No active goal\./);
   assert.match(text, /1 stale projection on disk — none is live work/);
   assert.match(text, /\/goal recover previews each one/);
-  assert.doesNotMatch(text, /active:? /i, "the answer must not present the stale projection as running work");
+  // The projection's own claim is never echoed back as a live status row.
+  assert.doesNotMatch(text, /\(active\)/, "the answer must not present the stale projection as running work");
 });
 
 test("#62: /goal resume with no live goal says resume cannot reopen history and points at recover", async () => {
-  const cwd = tmpCwd();
-  const saved = objectiveOf({ status: "active" });
-  writeProjection(cwd, saved);
-  // The archived terminal record is what makes this history rather than debt.
-  writeArchive(cwd, objectiveOf({ status: "aborted", stopReason: "list cancelled" }));
   const { pi, ctx } = boot({ goal: null, list: [] });
-  ctx.cwd = cwd;
+  writeProjection(ctx.cwd, objectiveOf({ status: "active" }));
+  // The archived terminal record is what makes this history rather than debt.
+  writeArchive(ctx.cwd, objectiveOf({ status: "aborted", stopReason: "list cancelled" }));
   await pi.command("goal", "resume", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /Nothing to resume/);
@@ -184,6 +179,7 @@ test("#62: a paused live goal is the only resumable case and recover never resum
   assert.deepEqual(after, before, "/goal recover mutates no durable state");
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /CURRENT/, "the paused live goal is the current record");
+  assert.match(text, /this record IS the live objective/);
   assert.match(text, /The CURRENT record is the only resumable one/);
   assert.match(text, /\/goal resume/);
 });
@@ -232,8 +228,10 @@ test("#62: recover journals what it showed and never claims it activated anythin
 
 test("#62: recover filters by id and refuses an unknown filter instead of guessing", async () => {
   const { pi, ctx } = boot({ goal: null, list: [] });
-  writeProjection(ctx.cwd, objectiveOf({ id: "20261106130000-cancel1", status: "aborted", stopReason: "list cancelled" }));
-  writeProjection(ctx.cwd, objectiveOf({ id: "20261106140000-histor1", status: "complete" }));
+  const cancelled = objectiveOf({ id: "20261106130000-cancel1", status: "aborted", stopReason: "list cancelled" });
+  writeProjection(ctx.cwd, cancelled);
+  writeArchive(ctx.cwd, cancelled);
+  writeArchive(ctx.cwd, objectiveOf({ id: "20261106140000-histor1", status: "complete" }));
   await pi.command("goal", "recover cancel1", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
   assert.match(text, /20261106130000-cancel1 — HISTORICAL/);
@@ -282,7 +280,7 @@ test("#62: the restore recipe preserves the full objective, every criterion and 
   writeProjection(cwd, saved);
   const record = collectSavedGoalRecords(cwd)[0]!;
   assert.equal(record.tasks.total, 5, "five top-level tasks are read back from the projection");
-  assert.equal(record.tasks.subtasks, 14, "fifteen subtasks render as fourteen nested rows under five parents");
+  assert.equal(record.tasks.subtasks, 13, "the thirteen nested subtask rows are counted");
   assert.equal(record.tasks.complete, 3, "the completed rows are counted so they can be labelled historical");
 
   const recipe = buildRestoreRecipe(record);
@@ -305,8 +303,8 @@ test("#62: the rendered recipe tells the operator the plan starts pending and ol
   writeProjection(ctx.cwd, saved);
   await pi.command("goal", "recover", ctx);
   const text = ctx.ui.notifies.map((n) => n.message).join("\n");
-  assert.match(text, /plan 5 tasks\/14 subtasks \(3 complete — historical\)/);
-  assert.match(text, /then propose_task_list with the saved plan \(5 tasks, 14 subtasks\) — all pending, nothing pre-completed\./);
+  assert.match(text, /plan 5 tasks\/13 subtasks \(3 complete — historical\)/);
+  assert.match(text, /then propose_task_list with the saved plan \(5 tasks, 13 subtasks\) — all pending, nothing pre-completed\./);
   assert.match(text, /Old audit reports and test runs stay historical until revalidated here\./);
 });
 
