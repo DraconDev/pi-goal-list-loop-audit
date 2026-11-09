@@ -25,6 +25,23 @@
 
 ## Unreleased
 
+## 0.39.67 — every provider error is retryable, including a concurrency wall that arrives as HTTP 400 (2026-11-09)
+
+### `tier_limit_exceeded` is a retryable wall, not a client error
+
+- Operator report (verbatim): `Error: 400: {"code":"tier_limit_exceeded","message":"[code=tier_limit_exceeded] membership concurrency limit exceeded: 11/10 resets 2026-11-09T15:27:00Z","type":"tier_limit_exceeded"}` — "such error too we should be retrying, in fact all errors".
+- The status is 400 and the wording contains `limit exceeded`, so the class sat one vocabulary change away from being filed as a deterministic client error, which is never retried. A concurrency admission limit is neither deterministic nor a spent plan: the account is allowed 10 simultaneous requests and an 11th was attempted, so the wall lifts as soon as any in-flight request finishes. `CONCURRENCY_WALL` / `isConcurrencyWall` now name it (`tier_limit_exceeded`, `concurrency limit`, `concurrent requests`, `too many parallel/in-flight`, `in-flight request limit`), and `quotaSignal` maps it to the quota family so it can never fall through to `unknown` or to the deterministic bucket.
+- The provider's own deadline was being **discarded**: `parseQuotaError` understood `resets at <date>` and `available at <date>`, but this provider writes `resets 2026-11-09T15:27:00Z` with no preposition, so the explicit instant fell through to the flat 3600s default. The reset-hint parser now accepts the bare form (still requiring a time component, so an announcement like "resets 2026-11-09" cannot invent a midnight deadline).
+- Timing is deliberately not "sleep to the reset". A concurrency wall resolves when a slot frees, so `isEagerRetryFailure` and `mainModelFailureDelayMs` probe at the 5s eager quantum (then the minutes ladder) even when a reset hint exists — the hint is the upper bound, not the expected wait. A *non*-concurrency quota wall still honours its reset instant, unchanged.
+- The same string now has durable authority: it is a recognized quota wall, so a compaction or stored-claim lane that hits it arms a retry instead of parking terminally.
+
+### "All errors": unclassified provider failures keep durable authority
+
+- The live lane has failed open to `unknown` since v0.38.104 (ten eager attempts at 5s, then a minutes ladder), but `isRecoverableProviderError` — the single gate behind compaction classification, parked-claim restore and the auditor retry plan — accepted only positive families. The same string could therefore be hammered in the live lane and still park the work as if it were terminal. That lane disagreement is the v0.39.63 lesson ("a failure the live lane is willing to hammer is a failure the durable lanes must be willing to wait on"), so `unknown` is admitted.
+- This is not "no exceptions". Still refused, and pinned: user aborts, prompt-policy refusals, context overflow, deterministic client errors (an identical retry cannot succeed — the 12-images-vs-4-cap case), and auditor no-verdict prose (which has its own retry plan and would otherwise be replaced by main-model recovery).
+- Compaction keeps the stricter read on purpose: `classifyCompactionFailure` now asks for positive evidence (`hasPositiveProviderEvidence`) because a compaction failure is host-owned. Bare prose like `provider returned 503` stays terminal for compaction while the durable retry lanes accept it.
+- The hourly `:00:30` backstop no longer skips families the durable lanes accept. That exclusion made the ticker a fallback for *unrecognized* failures only, so widening the gate would have retired the backstop for exactly the failures that need it — the ones whose ladder timer died. The ticker is the documented "unconditional retry slot" again.
+
 ## 0.39.66 — saved records stop pretending to be live work, and a parked audit names its cause (2026-11-09)
 
 ### A parked completion audit names its real cause, and a reload no longer strands it
