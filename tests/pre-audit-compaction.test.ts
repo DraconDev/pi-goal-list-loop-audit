@@ -9,6 +9,7 @@ import { readState } from '../extensions/goal-loop-core.js';
 import { currentUiStatusContext } from '../extensions/loops/goal-ui.js';
 import { buildWidgetLines } from '../extensions/goal-loop-display.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from './harness/mock-pi.js';
+import { scaledBudgetMs } from '../scripts/host-contention.mjs';
 import { waitFor } from './harness/host-budget.js';
 
 const originalBinary = process.env.GLLA_PI_BINARY;
@@ -95,8 +96,7 @@ for (const outcome of ['success', 'failure', 'unavailable'] as const) {
           await h.pi.fire('session_compact', {}, h.ctx);
         } else h.callbacks[0]!.onError?.(new Error('summarizer unavailable'));
       }
-      console.log('DBG events', ledgerTypes(h.cwd).slice(-10).join(','), 'callbacks', s.callbacks.length, 'status', readState(h.cwd).goal?.status, 'phase', readState(h.cwd).goal?.pendingCompletion?.phase, 'preAudit', readState(h.cwd).goal?.pendingCompletion?.preAuditCompaction);
-    await waitForStart(h.started);
+      await waitForStart(h.started);
       await h.pi.fire('agent_settled', {}, h.ctx);
       await tick(40);
       assert.equal(fs.readFileSync(h.started, 'utf8').trim().split('\n').length, 1);
@@ -248,7 +248,7 @@ function ledgerTypes(cwd: string): string[] {
     .map(line => (JSON.parse(line) as { type: string }).type);
 }
 
-test('a reload during the admission wait still launches the stored audit when recovery consent exists', async () => {
+test('a reload during the admission wait still launches the stored audit when recovery consent exists', { timeout: scaledBudgetMs(120_000) }, async () => {
   const h = await setup();
   const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
   const previousSettings = fs.readFileSync(settingsPath, 'utf8');
@@ -284,7 +284,7 @@ test('a reload during the admission wait still launches the stored audit when re
   }
 });
 
-test('a cold load without consent HOLDS the staged claim, and says so without blaming the auditor', async () => {
+test('a cold load without consent HOLDS the staged claim, and says so without blaming the auditor', { timeout: scaledBudgetMs(60_000) }, async () => {
   const h = await setup();
   const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
   const previousSettings = fs.readFileSync(settingsPath, 'utf8');
@@ -303,6 +303,40 @@ test('a cold load without consent HOLDS the staged claim, and says so without bl
       'one generic sentence must not assert a fault class the durable record does not support');
     assert.match(held.pendingCompletion?.recoveryReason ?? '', /^session_shutdown:/,
       'the durable reason still records the real breadcrumb');
+  } finally {
+    fs.writeFileSync(settingsPath, previousSettings);
+    await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx);
+  }
+});
+
+test('the promised manual path works from the parked state: /list resume starts exactly one audit', { timeout: scaledBudgetMs(120_000) }, async () => {
+  const h = await setup();
+  const settingsPath = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
+  const previousSettings = fs.readFileSync(settingsPath, 'utf8');
+  try {
+    const s = await stageThenReload(h, {});
+    const parked = readState(h.cwd).goal!;
+    // The card promises this exact recovery; a promise the machinery cannot
+    // keep is how the field stall read as an auditor/session problem.
+    assert.equal(parked.pauseSuggestedAction?.includes('/list resume'), true,
+      'the parked copy names the surface command for this policy');
+
+    s.setIdle(true);
+    await s.successorPi.command('list', 'resume', s.successor);
+    await tick(150);
+
+    if (s.callbacks.length > 0) {
+      s.callbacks[0]!.onComplete?.();
+      s.setIdle(true);
+      await s.successorPi.fire('session_compact', {}, s.successor);
+      await tick(120);
+      await s.successorPi.fire('agent_settled', {}, s.successor);
+    }
+    await waitForStart(h.started);
+    const admitted = readState(h.cwd).goal!;
+    assert.notEqual(admitted.status, 'paused');
+    assert.equal(admitted.pendingCompletion?.preAuditCompaction, undefined);
+    assert.equal(fs.readFileSync(h.started, 'utf8').trim().split('\n').length, 1, 'one audit, not two');
   } finally {
     fs.writeFileSync(settingsPath, previousSettings);
     await h.pi.fire('session_shutdown', { reason: 'quit' }, h.ctx);
