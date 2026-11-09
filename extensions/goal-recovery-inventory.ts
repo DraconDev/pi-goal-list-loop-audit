@@ -10,8 +10,8 @@
  * while `list_status()` correctly reported `Active: (none)` and `resume_goal`
  * answered `No active goal.`. Reading the projection alone said a goal was
  * running. Nothing named WHICH saved record was resumable, which was a stale
- * projection, and which was historical history — so recovery started with
- * manual ledger inspection.
+ * projection, and which was history — so recovery started with manual ledger
+ * inspection.
  *
  * This module answers that with two deliberate limits:
  *
