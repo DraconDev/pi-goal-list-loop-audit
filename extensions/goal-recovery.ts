@@ -243,7 +243,7 @@ export function markCompletionAuditRecoveryPending(ctx: ExtensionContext, reason
     pauseKind: "blocked",
     pauseResumeAt: undefined,
     pauseReason: `completion audit blocked — no verdict${failureCopy.sensitive ? `: ${failureCopy.display}` : `: ${reason}`}`,
-    pauseSuggestedAction: `The completion claim is stored and was not judged. Fix the auditor/session issue, then ${activeGoalSurfaceCommand("resume")} to start exactly one fresh audit.`,
+    pauseSuggestedAction: completionAuditParkAction(reason, activeGoalSurfaceCommand("resume")),
     pauseOptions: undefined,
     pauseRecommended: undefined,
   }, ctx);
@@ -296,7 +296,7 @@ export function parkCompletionAuditRecovery(cwd: string, reason: string, cursorP
     pauseKind: "blocked",
     pauseResumeAt: undefined,
     pauseReason: `completion audit blocked — no verdict${failureCopy.sensitive ? `: ${failureCopy.display}` : `: ${reason}`}`,
-    pauseSuggestedAction: `The completion claim is stored and was not judged. Fix the auditor/session issue, then ${activeGoalSurfaceCommand("resume")} to start exactly one fresh audit.`,
+    pauseSuggestedAction: completionAuditParkAction(reason, activeGoalSurfaceCommand("resume")),
     pauseOptions: undefined,
     pauseRecommended: undefined,
     updatedAt: nowIso(),
