@@ -302,6 +302,9 @@ import {
   runMechanicalPreAuditChecks,
   type MechanicalCheckResult,
 } from "../goal-loop-shield.js";
+// v0.39.66 (GitHub #62): resume_goal's "no goal" answer names the saved records
+// it cannot reopen, so a leftover projection is never mistaken for live work.
+import { collectSavedGoalRecords, savedRecordsOneLiner } from "../goal-recovery-inventory.js";
 import {
   REPETITION,
   isActuallyStuck,
