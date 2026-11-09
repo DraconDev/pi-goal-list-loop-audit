@@ -2687,6 +2687,62 @@ export function formatGoalTimeline(input: GoalTimelineInput): string {
   return [head, ...lines, timelineNextAction(goal, nowMs)].join("\n");
 }
 
+/** v0.39.66 (GitHub #62): `/goal recover [id]` — read-only reconciliation of
+ * LIVE durable state against the markdown projections left on disk, plus a
+ * round-trip-checked restore-as-new recipe.
+ *
+ * Why a command and not an automatic heal: the field case was a leftover
+ * `goals/<id>.md` still reading `Status: active` while the ledger's latest
+ * snapshot said `goal: null`. Reading the file alone said a goal was running;
+ * `resume_goal` correctly refused. Nothing named WHICH record was resumable,
+ * which was a stale projection and which was history, so recovery started with
+ * manual ledger inspection. This surface answers that and mutates nothing —
+ * a projection is cleanup debt, not work, and rewriting it here would hide the
+ * drift instead of reporting it. */
+function cmdRecover(args: string, ctx: ExtensionContext): void {
+  if (stateRootPending()) {
+    ctx.ui.notify("Recovery inventory unavailable — the selected state root is not resolved yet, so no durable record was read. Reload the host session and retry.", "warning");
+    return;
+  }
+  const idFilter = args.trim().split(/\s+/).filter(Boolean)[0];
+  let records: ReturnType<typeof collectSavedGoalRecords> = [];
+  try {
+    records = collectSavedGoalRecords(ctx.cwd);
+  } catch (err) {
+    ctx.ui.notify(`Recovery inventory could not read the saved records: ${(err as Error).message.slice(0, 160)}. Repair .pi-glla storage and retry.`, "warning");
+    return;
+  }
+  const matching = idFilter
+    ? records.filter((record) => record.id === idFilter || record.id.includes(idFilter))
+    : records;
+  if (idFilter && matching.length === 0) {
+    ctx.ui.notify(`No saved record matching "${idFilter}". /goal recover with no filter lists every saved record.`, "info");
+    return;
+  }
+  const liveQueue = listQueue();
+  const diskQueue = readQueueFromDisk(ctx.cwd);
+  const orphanQueue = diskQueue.filter((item) => !liveQueue.some((queued) => queued.id === item.id));
+  const live = {
+    goalPresent: !!state.goal,
+    goal: state.goal ? { id: state.goal.id, status: state.goal.status, policy: state.goal.policy } : null,
+    listCount: liveQueue.length,
+    loop: state.loop ? { active: state.loop.active, target: state.loop.target, iteration: state.loop.iteration } : null,
+  };
+  const text = formatRecoveryInventory({ live, records: matching, orphanQueue });
+  appendLedger(ctx.cwd, "goal_recovery_inventory", {
+    // Read-only facts, journaled so a later report can prove what was shown.
+    goalId: state.goal?.id,
+    saved: matching.length,
+    ...(idFilter ? { filter: idFilter } : {}),
+    stale: matching.filter((record) => classifySavedRecord(record, live) === "stale-projection").length,
+    historical: matching.filter((record) => classifySavedRecord(record, live) === "historical").length,
+    // Recipes are only emitted for round-trip-clean records.
+    recipes: matching.filter((record) => buildRestoreRecipe(record)?.roundTrip.ok === true).length,
+    orphanQueue: orphanQueue.length,
+  });
+  ctx.ui.notify(text, "info");
+}
+
 /** v0.38.85: /goal timeline [N] — the goal's own trail plus the single
  * next action. Read-only: works on a stale handle like /glla log. */
 function cmdTimeline(args: string, ctx: ExtensionContext): void {
