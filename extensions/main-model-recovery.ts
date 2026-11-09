@@ -517,6 +517,14 @@ export function isEagerRetryFailure(failure: MainModelFailure | undefined): bool
   if (!failure) return false;
   if (["auth", "billing", "non-recoverable", "context-overflow"].includes(failure.kind)) return false;
   const signal = quotaSignal(failure.raw);
+  // v0.39.67 (field 2026-11-09): an admission limit on simultaneous requests
+  // (`tier_limit_exceeded` / "membership concurrency limit exceeded: 11/10")
+  // retries eagerly even when the provider quotes a reset instant. The quoted
+  // `resets <ISO>` is the guarantee, not the expected wait: a concurrency slot
+  // frees as soon as any other in-flight request finishes, so sleeping to a
+  // reset hours away would idle a healthy rig behind a limit that already
+  // lifted.
+  if (isConcurrencyWall(failure.raw)) return true;
   if (signal === "rate-limit" || signal === "plan-quota") return quotaResetSleepMs(failure) === undefined;
   if (signal) return false;
   return failure.kind === "transient" || failure.kind === "unknown" || isEmptyProviderResponse(failure.raw);
@@ -545,6 +553,14 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   // check, so the FIRST failure carrying "429 … Retry-After: 14400" slept 5
   // seconds and probed the wall the provider had just named. The hint now
   // wins for every attempt; the eager quantum remains for everything else.
+  // v0.39.67 (field 2026-11-09): a concurrency wall is checked BEFORE the
+  // reset sleep. Everything else keeps the v0.38.104 ordering (an explicit
+  // upstream hint outranks the eager quantum); a concurrency limit is the one
+  // wall where the hint is an upper bound rather than the expected wait.
+  if (isConcurrencyWall(failure.raw)) {
+    if (attempt <= TRANSIENT_EAGER_ATTEMPTS) return 5_000;
+    return transientRetryDelayMs(attempt, baseMinutes);
+  }
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
   if (attempt <= 1) return 5_000;
