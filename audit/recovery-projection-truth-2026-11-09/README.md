@@ -166,22 +166,24 @@ node scripts/check-no-project-names.mjs                          → clean (778 
 node scripts/generate-inventory.mjs --check                      → exit 0
 ```
 
-### Two honest limits on this run
+### The release gate ran, and it is green
 
-`bun test tests/regression-shield.test.ts` reports 37 pass / **1 fail**: "mechanical
-checks stay async and kill descendant processes on timeout" times out at
-5000 ms. It is **not** from this work — the identical failure, with identical
-timing, reproduces in a clean `git worktree` checked out at tag `v0.39.65`
-(pre-change, no `CONTRACT_MARKER_PATTERN`, no inventory module). It is a
-host/contention artifact on this machine. The same file passed in earlier
-sessions on this host, so it should be re-checked on an idle machine or in CI
-rather than assumed broken.
+The whole `npm run release:check` contract passes on the release tree:
+**4635 pass / 1 skip / 0 fail across 490 files** (991 s), plus `tsc --noEmit`,
+`check:inventory`, `check:names`, `npm pack --dry-run` and the pack smoke
+(packed launcher RPC probe, packed skill load, installed-import probe).
 
-`node scripts/run-tests.mjs` refuses to start here: the installed Bun (1.3.3)
-lacks `--parallel` / `--path-ignore-patterns`, which the hardened runner
-requires (≥1.3.14). The suite above was therefore run file-by-file through
-`bun test`, not through the hardened runner. Each file's own counts are the
-numbers in the block above; no aggregate total is claimed.
+The gate needs Bun ≥ 1.3.14 for `--parallel` / `--path-ignore-patterns`; this
+host's system Bun is 1.3.3, so the run used a 1.3.14 binary placed first on
+`PATH`. It was **not** run through a partial or file-by-file substitute.
+
+An earlier draft of this document reported two "pre-existing failures"
+(`tests/regression-shield.test.ts` and `tests/audit-lifecycle-surfaces.test.ts`
+timing out at 5 s). That was wrong in an instructive way: those were bare
+`bun test` runs using Bun's own 5 s per-test default, while the project runner
+sizes a 120 s per-test budget (`DEFAULT_TEST_TIMEOUT_MS`) for exactly these
+child-process tests. Both pass in the real gate. The observation is kept here
+only as the correction — a test that needs a child boot is not a broken test.
 
 ## Not changed
 

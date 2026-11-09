@@ -173,17 +173,17 @@ node scripts/generate-inventory.mjs --check        → exit 0
 - `completion-audit-park.test.ts` — the classifier and copy, including the
   unknown-reason default and the length bound.
 
-### Two pre-existing failures on this host, both reproduced at tag `v0.39.65`
+### The release gate ran, and it is green
 
-Both are 5-second test-budget timeouts in tests that boot a real child process;
-each reproduces identically in a clean `git worktree` at the pre-change tag, so
-neither is caused by this work:
+`npm run release:check` passes on the release tree: **4635 pass / 1 skip / 0 fail
+across 490 files** (991 s), plus `tsc --noEmit`, `check:inventory`,
+`check:names`, `npm pack --dry-run` and the pack smoke.
 
-- `tests/regression-shield.test.ts` — "mechanical checks stay async and kill
-  descendant processes on timeout"
-- `tests/audit-lifecycle-surfaces.test.ts` — "durable: an ordinary complete_goal
-  records phase running + lastActivityAt before the verdict"
-
-`node scripts/run-tests.mjs` also refuses to start here: the installed Bun 1.3.3
-lacks `--parallel` / `--path-ignore-patterns` (the runner requires ≥1.3.14), so
-the suite was run file-by-file. No aggregate total is claimed.
+One correction worth recording, because the first pass of this work got it wrong:
+two tests (`tests/regression-shield.test.ts`,
+`tests/audit-lifecycle-surfaces.test.ts`) time out at 5 s under bare `bun test`,
+and reproducing that at tag `v0.39.65` was read as "pre-existing host failures".
+They are bare-Bun budget artifacts — the project runner uses a 120 s per-test
+budget for exactly these child-process tests, and both pass in the real gate. The
+gate also needs Bun ≥ 1.3.14 for `--parallel` / `--path-ignore-patterns`, so this
+host's 1.3.3 system Bun was not used: a 1.3.14 binary was placed first on `PATH`.
