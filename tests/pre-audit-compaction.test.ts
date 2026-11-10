@@ -270,7 +270,6 @@ test('a reload during the admission wait still launches the stored audit when re
     await s.successorPi.fire('session_compact', {}, s.successor);
     await tick(120);
     await s.successorPi.fire('agent_settled', {}, s.successor);
-    console.log('DBG events', ledgerTypes(h.cwd).slice(-10).join(','), 'callbacks', s.callbacks.length, 'status', readState(h.cwd).goal?.status, 'phase', readState(h.cwd).goal?.pendingCompletion?.phase, 'preAudit', readState(h.cwd).goal?.pendingCompletion?.preAuditCompaction);
     await waitForStart(h.started);
 
     const admitted = readState(h.cwd).goal!;

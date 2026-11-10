@@ -1,29 +1,22 @@
 # Changelog
 
-## 0.39.64 — multi-area completion claims are refused until they can be read (2026-11-07)
-
-### A multi-area completion claim is refused until it can be read
-
-- A field report: a ~45-minute change spanning six source files closed as one paragraph, naming a single artifact as its only evidence. The operator's verdict was that completion reports "are getting pretty bad by the end, we would want detailed ones that are for human eyes". The rendering layer was not at fault — `findingGroups` and `gateRows` render an area-grouped card with `path:line` evidence and a gate table for exactly this work — but both parameters are optional, so an agent that omitted them got the three-column fallback and nothing told it to care.
-- The one mechanism that noticed was the v0.38.69 density lint, which appended `— NOTE: low evidence density …` to the claim and shipped it anyway, so the system's own diagnosis of the problem arrived inside the report as if it were part of the report. A warning an agent can ignore is not a contract.
-- `complete_goal` now refuses such a claim before `beginCompletionAudit`: nothing is persisted, no auditor is launched, and the refusal names the real change set, the fields to fill, and that no state changed. The episode is ledgered as `complete_goal_structure_refused`.
-- Breadth has two independent sources, because prose alone is the weaker one. `completionSummaryChangedPaths` reads repo-relative file tokens from the recap (directories excluded — a directory is not something a reviewer can open), and the durable v0.38.100 `telemetry.files` change set records what the work actually touched. Durable telemetry is the stronger signal precisely because it is not the agent's own summary; a recap can underreport its own scope, and in the reported case it named one artifact while telemetry named six files.
-- Threshold `MULTI_AREA_MIN_PATHS = 3` (a source file and its test can honestly be one change). Supplying *either* `findingGroups` or `gateRows` satisfies the gate — one group is enough for coherent multi-file work, since the gate demands structure, not theatre. Single-area work keeps the flat six-label render unchanged, and the claim schema now says so up front instead of after a refusal.
-- The archive evidence cell also printed each `path:line` token twice, because `findingPresentation` already folds extracted tokens into the reason and the cell joined them in again. A duplicated pointer in a report that is supposed to be readable makes the reader re-check whether the second one is a different claim.
-- Recorded in `audit/completion-structure-gate-2026-11-07/README.md` and `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md`.
-
-## 0.39.65 — the naming gate judges only what it can prove is new (2026-11-07)
-
-### Shipped text no longer names a private project
-
-- This package is published to npm and mirrored publicly, so naming a private project in documentation publishes an inventory of private work to every consumer. A field report's durable value is the bug, the reproduction and the fix — not which private tree found it.
-- `AGENTS.md` now carries that as a standing rule with the rewrite shapes: "a field report" for provenance, `<project>/entrypoints/background.ts` in audit reproductions so the path shape and file counts still verify, and the same rule for commit messages and ledger text.
-- `npm run check:names` (`scripts/check-no-project-names.mjs`) enforces it inside `npm run release:check`. It judges only lines **new** relative to the newest release tag, so the tree's pre-existing references are grandfathered with no baseline manifest committed — a committed baseline would publish the very names it protects. The watch list has two sources: plaintext `.dracon/no-project-names.txt` (operator-local, untracked — the one to edit when a name must be blocked now) and tracked `scripts/no-project-names.denylist.json`, which stores SHA-256 hashes under a fixed salt so the gate also runs in CI and on a contributor checkout without publishing the names. A hash-only hit is reported as `<matches a watched name>` and the token is redacted from the verbose excerpt, because CI logs are public. Neither list present means "nothing to enforce", not a failure.
-- Scope is everything npm publishes plus `audit/`, which the public mirrors carry even though the tarball does not. `tests/` is exempt: a fixture may need a realistic repo name and tests are not shipped documentation. `tests/no-project-names.test.ts` drives the script against a synthetic denylist in a throwaway repo, so the test file itself stays name-free.
-- The gate judges **only** text it can prove is new, so a shallow CI checkout (no tags) degrades to the newest release section with an explicit warning instead of scanning years of grandfathered `audit/` evidence and failing on it. The quality lane now checks out with `fetch-depth: 0` so that degradation does not happen in CI either.
-
-
 ## Unreleased
+
+## 0.39.68 — the audit lane reads the recorded failure class, not the raw text (2026-11-10)
+
+### The class the auditor already recorded decided the wrong thing
+
+- The audit lane records a typed class for every auditor failure — `no-verdict`, `timeout`, `transport`, `provider`, `context-exhausted` (`auditorResultFailureClass`) — and persists it on the claim; the resume policy already reads it. The lane decisions re-parsed the raw text instead, and v0.39.67 widened that text test to admit unclassified failures, so the two disagreed: `Error: worker exited with code 1` is classified `no-verdict` (the auditor's own failure) while the text test called it a recoverable provider wall.
+- The consequence was that the audit lane's bound machinery was switched off for exactly the failures it was built for. The three-identical-failure slowdown marker fires only for a bounded plan, the 24h dispatch horizon binds only for a non-provider diagnostic, and the one-shot marker is bypassed only by a recoverable one — so an auditor that kept dying with its own crash text moved onto the provider lane's unbounded five-minute cadence: a fresh detached auditor every five minutes, forever, with no slowdown marker and no horizon.
+- `claimUsesProviderLane` (new leaf module `extensions/auditor-lane.ts`) reads the recorded class first. `no-verdict` and `context-exhausted` are failures a retry cannot fix, so the claim keeps the auditor's own bounded lane; everything else keeps v0.39.67's widened text test, so a real provider wall — including an unparseable one like `provider returned 503` — still retries with durable authority at the five-minute cadence. A claim with no recorded class falls back to the text test, so no legacy claim silently changes lane.
+- The retry plan now reads the class of the failure it is planning for, not the class the claim carried from the previous failure — the lane decision and the recorded class must agree.
+- Recorded in `audit/auditor-lane-class-2026-11-10/README.md`.
+
+### The final-audit dead end the shipped version still had
+
+- npm `latest` was 0.39.65, and that version still carried the final-audit dead end fixed in 0.39.66: a reload during staged admission consumed the one automatic retry at a gate that refused paused goals, and the claim then sat at `completion audit: parked — no review recorded` with the rest of the list frozen behind it. The regression test fails on 0.39.65 and passes from 0.39.66 on.
+- 0.39.66 and 0.39.67 were tagged but never published — the npm publish job only runs on a published GitHub Release, and no Release was created for those tags. They ship inside 0.39.68, the first version of this tree that reaches the registry.
+
 
 ## 0.39.67 — every provider error is retryable, including a concurrency wall that arrives as HTTP 400 (2026-11-09)
 
@@ -65,6 +58,29 @@
 
 - The line-start introducer path retained its marker line while the inline fallback consumed it, so a saved contract re-fed as `Done when: <stored>` grew by one `Done when: ` prefix per cycle: `Done when: Done when: - alpha renders`. Introducer handling is now symmetric through one shared `CONTRACT_MARKER_PATTERN`/`stripContractIntroducers` pair — a duplicate introducer in front of captured criteria collapses, criteria text is never rewritten, and every round trip reproduces the stored contract.
 - Absent, inline, line-start, decorated (`Done when ALL of the following are true:`) and already-duplicated introducers now round-trip to the same criteria set; an empty saved contract recreates as objective-only instead of inventing criteria.
+
+## 0.39.65 — the naming gate judges only what it can prove is new (2026-11-07)
+
+### Shipped text no longer names a private project
+
+- This package is published to npm and mirrored publicly, so naming a private project in documentation publishes an inventory of private work to every consumer. A field report's durable value is the bug, the reproduction and the fix — not which private tree found it.
+- `AGENTS.md` now carries that as a standing rule with the rewrite shapes: "a field report" for provenance, `<project>/entrypoints/background.ts` in audit reproductions so the path shape and file counts still verify, and the same rule for commit messages and ledger text.
+- `npm run check:names` (`scripts/check-no-project-names.mjs`) enforces it inside `npm run release:check`. It judges only lines **new** relative to the newest release tag, so the tree's pre-existing references are grandfathered with no baseline manifest committed — a committed baseline would publish the very names it protects. The watch list has two sources: plaintext `.dracon/no-project-names.txt` (operator-local, untracked — the one to edit when a name must be blocked now) and tracked `scripts/no-project-names.denylist.json`, which stores SHA-256 hashes under a fixed salt so the gate also runs in CI and on a contributor checkout without publishing the names. A hash-only hit is reported as `<matches a watched name>` and the token is redacted from the verbose excerpt, because CI logs are public. Neither list present means "nothing to enforce", not a failure.
+- Scope is everything npm publishes plus `audit/`, which the public mirrors carry even though the tarball does not. `tests/` is exempt: a fixture may need a realistic repo name and tests are not shipped documentation. `tests/no-project-names.test.ts` drives the script against a synthetic denylist in a throwaway repo, so the test file itself stays name-free.
+- The gate judges **only** text it can prove is new, so a shallow CI checkout (no tags) degrades to the newest release section with an explicit warning instead of scanning years of grandfathered `audit/` evidence and failing on it. The quality lane now checks out with `fetch-depth: 0` so that degradation does not happen in CI either.
+
+
+## 0.39.64 — multi-area completion claims are refused until they can be read (2026-11-07)
+
+### A multi-area completion claim is refused until it can be read
+
+- A field report: a ~45-minute change spanning six source files closed as one paragraph, naming a single artifact as its only evidence. The operator's verdict was that completion reports "are getting pretty bad by the end, we would want detailed ones that are for human eyes". The rendering layer was not at fault — `findingGroups` and `gateRows` render an area-grouped card with `path:line` evidence and a gate table for exactly this work — but both parameters are optional, so an agent that omitted them got the three-column fallback and nothing told it to care.
+- The one mechanism that noticed was the v0.38.69 density lint, which appended `— NOTE: low evidence density …` to the claim and shipped it anyway, so the system's own diagnosis of the problem arrived inside the report as if it were part of the report. A warning an agent can ignore is not a contract.
+- `complete_goal` now refuses such a claim before `beginCompletionAudit`: nothing is persisted, no auditor is launched, and the refusal names the real change set, the fields to fill, and that no state changed. The episode is ledgered as `complete_goal_structure_refused`.
+- Breadth has two independent sources, because prose alone is the weaker one. `completionSummaryChangedPaths` reads repo-relative file tokens from the recap (directories excluded — a directory is not something a reviewer can open), and the durable v0.38.100 `telemetry.files` change set records what the work actually touched. Durable telemetry is the stronger signal precisely because it is not the agent's own summary; a recap can underreport its own scope, and in the reported case it named one artifact while telemetry named six files.
+- Threshold `MULTI_AREA_MIN_PATHS = 3` (a source file and its test can honestly be one change). Supplying *either* `findingGroups` or `gateRows` satisfies the gate — one group is enough for coherent multi-file work, since the gate demands structure, not theatre. Single-area work keeps the flat six-label render unchanged, and the claim schema now says so up front instead of after a refusal.
+- The archive evidence cell also printed each `path:line` token twice, because `findingPresentation` already folds extracted tokens into the reason and the cell joined them in again. A duplicated pointer in a report that is supposed to be readable makes the reader re-check whether the second one is a different claim.
+- Recorded in `audit/completion-structure-gate-2026-11-07/README.md` and `audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md`.
 
 ## 0.39.63 — dropped connections and timeouts get durable retry; tweak cards become labelled quotes (2026-11-06)
 
