@@ -206,6 +206,10 @@ import { capProviderRetrySeconds } from "../quota-retry.js";
 // v0.39.68: the audit lane's provider/auditor lane decision reads the
 // RECORDED failure class first (extensions/auditor-lane.ts).
 import { claimUsesProviderLane } from "../auditor-lane.js";
+// v0.39.68: the pause-reason vocabulary that says "the audit lane parked
+// this claim" is shared with the persistent-lane ownership test, so a park
+// and the gate that resumes it cannot drift apart.
+import { isAuditParkPauseReason } from "../auditor-lane.js";
 import { clearStaleMainModelRecovery, retireOrphanedMainModelRecovery } from "../goal-recovery.js";
 import {
   mainModelAutoRetryUntil,
@@ -958,7 +962,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   if (completionAuditInFlight) return false;
   if (claimUsesProviderLane(claim)) {
     if (goal.pauseSource !== 'system' || goal.pauseKind === 'decision'
-      || !/^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? '')) return false;
+      || !isAuditParkPauseReason(goal.pauseReason)) return false;
     const due = Date.parse(claim.recoveryRetryAt ?? goal.pauseResumeAt ?? '');
     if (Number.isFinite(due) && due > Date.now()) return false;
   }
@@ -2454,6 +2458,11 @@ function applyCompletedCompletionAudit(args: {
       recoveryNoticeKeys: pending.recoveryNoticeKeys,
       pauseKind: pending.recoveryRetryAt ? "wait" : "error",
       pauseResumeAt: pending.recoveryRetryAt,
+      // v0.39.68: this park arms a retry timer, so it must also write the
+      // pause state that timer's recovery gate accepts — a system-owned
+      // pause with an audit-lane reason. Without it the timer fired into a
+      // refusal and the claim waited for a human.
+      pauseSource: 'system',
       pauseReason: timeoutInfrastructure
         ? "completion audit timed out — no verifier verdict was produced"
         : "completion audit stopped before a verifier verdict — no semantic verdict was produced",

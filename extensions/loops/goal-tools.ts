@@ -2691,6 +2691,11 @@ function registerAgentTools(pi: any): void {
           recoveryNoticeKeys: pending.recoveryNoticeKeys,
           pauseKind: pending.recoveryRetryAt ? "wait" : "error",
           pauseResumeAt: pending.recoveryRetryAt,
+          // v0.39.68: this park arms a retry timer, so it must write the
+          // pause state that timer's recovery gate accepts — a system-owned
+          // pause with an audit-lane reason. Otherwise the timer fired into
+          // a refusal and the stored claim waited for a human.
+          pauseSource: 'system',
           pauseReason: "completion auditor infrastructure failure — no verdict was produced",
           pauseSuggestedAction: pending.recoveryRetryAt
             ? `One bounded auditor retry is scheduled in ${fmtRetryDelay(Math.max(1, (Date.parse(pending.recoveryRetryAt) - Date.now()) / 1000))}; ${activeGoalSurfaceCommand("resume")} retries immediately.`

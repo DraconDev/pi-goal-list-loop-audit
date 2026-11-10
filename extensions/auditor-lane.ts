@@ -67,3 +67,28 @@ export function claimUsesProviderLane(
   if (isAuditorOwnedFailureClass(claim.auditorFailureClass)) return false;
   return isRecoverableProviderError(claim.providerErrorDiagnostic);
 }
+
+/**
+ * The pause reasons that mean "the audit lane parked this claim" — the only
+ * ones an AUTOMATIC recovery may resume.
+ *
+ * A park that arms a retry timer and then writes a reason outside this
+ * vocabulary strands its own claim: the recovery gate refuses it, the timer
+ * fires into a refusal, and the claim waits for a human. That is how the
+ * timeout park and the thrown-infrastructure park behaved (their reasons read
+ * "completion audit timed out …" / "completion auditor infrastructure
+ * failure …"), while the ladder parks ("auditor retry: …") recovered fine.
+ *
+ * A DELIBERATE stop stays outside: the cursor could not be persisted, the
+ * candidate chain is exhausted, aggressive recovery is off, the recovery
+ * horizon was reached — those are honest manual decisions, and an automatic
+ * recovery must not paper over them.
+ */
+const AUDIT_PARK_PAUSE_REASON =
+  /^(?:auditor retry:|auditor blocked:|completion audit (?:blocked|timed out|stopped)|completion auditor infrastructure failure)/;
+
+/** True when this pause reason is an audit-lane park an automatic recovery
+ * may resume. */
+export function isAuditParkPauseReason(reason: string | undefined): boolean {
+  return AUDIT_PARK_PAUSE_REASON.test((reason ?? "").trim());
+}

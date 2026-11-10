@@ -4,6 +4,8 @@ import { isRecoverableProviderError } from './main-model-recovery.js';
 // class first — a failure the auditor owns is not a provider wall to wait
 // out (extensions/auditor-lane.ts).
 import { claimUsesProviderLane } from './auditor-lane.js';
+// v0.39.68: the shared audit-park pause-reason vocabulary.
+import { isAuditParkPauseReason } from './auditor-lane.js';
 import { recoveryOwnership } from './recovery-ownership.js';
 
 /** A saved recovery episode carries continuation authority only for its own
@@ -34,7 +36,7 @@ export function ownsPersistentProviderWait(state: State): boolean {
     && (goal.pauseReason ?? '').startsWith('auditor retry:') && claim.phase === 'retry-waiting')
     || ((goal.pauseKind === 'wait' || goal.pauseKind === 'blocked')
       && !!claim.recoveryRetryAt && claim.phase === 'recovery-pending'
-      && /^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? ''));
+      && isAuditParkPauseReason(goal.pauseReason));
 }
 
 /** A recovery-owned wait whose due time has ALREADY passed carries its own
