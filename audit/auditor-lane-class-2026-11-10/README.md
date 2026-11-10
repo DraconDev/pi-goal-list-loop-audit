@@ -63,6 +63,39 @@ and would otherwise be replaced by main-model recovery" — the intent was
 right; the implementation protected only the exact `AUDITOR_NO_VERDICT`
 vocabulary, not the class it means.
 
+## What was wrong, part 3 — a park that armed a retry wrote a state its own gate refused
+
+The recovery gate accepts a system-owned pause whose reason is an audit-lane
+park (`auditor retry: …`, `auditor blocked: …`, `completion audit blocked …`).
+Two parks wrote something else:
+
+| park | reason it wrote | `pauseSource` |
+| --- | --- | --- |
+| timeout / no-verdict | `completion audit timed out — …` | not set |
+| thrown infrastructure | `completion auditor infrastructure failure — …` | not set |
+
+A claim parked that way **armed a retry timer**; the timer fired into a
+refusal; the stored claim waited for a human. Same "stranded at the final
+audit" shape, one path over.
+
+Measured with the mock harness (`maybeAutoRetryParkedCompletionAudit`, one
+case per process — the in-process audit latch blocks later cases):
+
+| parked state | v0.39.67 | v0.39.68 |
+| --- | --- | --- |
+| infrastructure park, provider diagnostic | refused | **recovered** |
+| infrastructure park, auditor-owned crash | refused | **recovered** |
+| ladder park (`auditor retry:`) | recovered | recovered |
+| timeout park | refused | **recovered** |
+| deliberate stop ("automatic recovery disabled") | refused | refused |
+| session-boundary park | refused | **recovered** |
+
+The fix: both parks now write a system-owned pause with an audit-lane
+reason, and the pause-reason vocabulary is one shared definition
+(`isAuditParkPauseReason`) read by the recovery gate *and* the persistent-lane
+ownership test — a park and the gate that resumes it can no longer drift
+apart. A deliberate stop stays manual.
+
 ## The fix
 
 `extensions/auditor-lane.ts` (new leaf module) decides the lane from the
@@ -93,12 +126,11 @@ the cadence and the horizon):
 | `429 rate limit exceeded` | `provider` | 5 min, unbounded | 5 min, unbounded | unchanged |
 | `provider returned 503` | `provider` | 5s → hourly, bounded | 5 min, unbounded | unchanged |
 
-Regression coverage (`tests/auditor-lane.test.ts`, 8 tests): 4 of them fail
-on the pre-fix tree (`v0.39.67`) and pass on the fixed tree — the A/B is in
-the test file's own assertions, not in prose.
+Regression coverage (`tests/auditor-lane.test.ts`, 8 tests; `tests/auditor-park-recovery.test.ts`, 3 tests): 4 of the lane tests fail on the pre-fix tree (`v0.39.67`) and pass on the fixed tree, and the park-recovery test fails on the pre-fix tree for the same reason — the A/B is in the test files' own assertions, not in prose.
 
 ```text
 bun test tests/auditor-lane.test.ts              →  8 pass / 0 fail (new)
+bun test tests/auditor-park-recovery.test.ts     →  3 pass / 0 fail (new)
 bun test tests/pre-audit-compaction.test.ts       → 14 pass / 0 fail
 bun test tests/auditor-eager-retry.test.ts        → pass
 bun test tests/persistent-provider-recovery.test.ts → pass

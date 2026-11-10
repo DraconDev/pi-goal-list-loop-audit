@@ -12,6 +12,12 @@
 - The retry plan now reads the class of the failure it is planning for, not the class the claim carried from the previous failure — the lane decision and the recorded class must agree.
 - Recorded in `audit/auditor-lane-class-2026-11-10/README.md`.
 
+### A park that arms a retry wrote a state its own gate refused
+
+- The recovery gate accepts a system-owned pause whose reason is an audit-lane park, but two parks wrote something else: the timeout / no-verdict park (`completion audit timed out — …`) and the thrown-infrastructure park (`completion auditor infrastructure failure — …`), and neither wrote `pauseSource: "system"`. A claim parked that way armed a retry timer, the timer fired into a refusal, and the stored claim waited for a human — the same "stranded at the final audit" shape as the session-boundary dead end, one path over.
+- Both parks now write a system-owned pause with an audit-lane reason, and the pause-reason vocabulary is one shared definition (`isAuditParkPauseReason`) that the recovery gate and the persistent-lane ownership test both read — a park and the gate that resumes it can no longer drift apart.
+- A deliberate stop stays manual: "automatic recovery disabled", "aggressive recovery horizon reached", "the cursor could not be persisted" and "the candidate chain is exhausted" are honest operator decisions, and the vocabulary keeps them out of the automatic path.
+
 ### The final-audit dead end the shipped version still had
 
 - npm `latest` was 0.39.65, and that version still carried the final-audit dead end fixed in 0.39.66: a reload during staged admission consumed the one automatic retry at a gate that refused paused goals, and the claim then sat at `completion audit: parked — no review recorded` with the rest of the list frozen behind it. The regression test fails on 0.39.65 and passes from 0.39.66 on.
