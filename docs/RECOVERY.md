@@ -185,6 +185,20 @@ same-process session replacement) finishes the parked claim on its own —
 including a claim that was waiting for a pre-audit compaction boundary when the
 session changed. A cold load holds for an explicit decision and says so.
 
+**The recorded failure class decides how it comes back.** The audit lane
+records what kind of failure it was, and that class — not the error text —
+picks the lane:
+
+| The failure was | The claim comes back | Why |
+| --- | --- | --- |
+| the auditor's own (`no-verdict`, `context-exhausted`) | the auditor's ladder: an eager first retry, then a slower probe, and a visible "N identical failures" slowdown marker if it keeps failing | an identical retry reproduces the same wall |
+| a provider wall (`provider`, `transport`, `timeout`) | the durable provider cadence — every five minutes, for as long as the claim is eligible | the provider is expected to answer again |
+
+A claim parked before the class was recorded keeps the text-based behaviour it
+had. A deliberate stop — "automatic recovery is off", "the recovery horizon was
+reached", "the cursor could not be persisted" — is never resumed by automation:
+those are decisions, not outages.
+
 ## Saved records that disagree with live state
 
 Live state, not a markdown file, decides what is running. `.pi-glla/goals/<id>.md`
