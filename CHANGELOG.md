@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.39.69 — the audit lane waits for a quoted reset, uses a fallback, and stops when it stops progressing (2026-11-10)
+
+### "If the model runs out then the audit never completes"
+
+- Operator report with a screenshot: a list item at `paused by GLLA · EXECUTION UNCONFIRMED · age 4h 24m`, the transcript repeating `Auditor still failing — next auto-retry in 5m` and `Auditor provider retry is due`, and `next: /glla status to inspect execution`. The plan quota was gone for good. Three separate defects produced that shape.
+
+- **The audit lane ignored the provider's quoted reset.** The main lane has honoured `resets <ISO>` since v0.38.69 — a weekly wall sleeps the per-attempt envelope and re-evaluates — but the audit lane re-armed a flat five minutes at *every* attempt, twelve times an hour, for the whole outage. A plan that said "resets in five hours" was hammered sixty times instead of waited for. The retry plan now takes the reset wait (even a week out, bounded by the shared per-attempt envelope) and treats an explicit reset as exempt from the fifteen-minute per-attempt cap, because undercutting the provider's own deadline is exactly the churn this fixes.
+
+- **There was no no-progress stop at all.** `unbounded` held at attempt 501: a wall with no reset hint repeated forever and never asked the operator anything. The dispatch path now consults a durable episode stamp (`auditorNoProgressSince`, written once per no-verdict episode and carried across every later attempt and every candidate reseed) and stops automatic retries after six hours with a decision card naming the two likely causes — a plan quota exhausted for good, or a retired model — with the auditor-model / fresh-window / cancel options. Six hours is deliberate: a five-hour plan quota can legitimately swallow a whole audit and must be waited out, not escalated; a quoted reset suspends the escalation entirely, because that wait is scheduled rather than stalled.
+
+- **A model that no longer resolves escalates on a thirty-minute grace** instead of burning six hours of launches. Waiting cannot produce a model the provider no longer serves; the short grace still absorbs a transient catalogue hiccup.
+
+- **The five-minute retry re-walked the burned cursor**, so the model that was out of quota (or retired) was retried by name even when a configured fallback existed — the operator's rule is "if we have a fallback model we should be using that too". The `provider-retry` origin now takes a cursor-only reseed: candidates are re-resolved (so a newly configured fallback is used) while the episode clock, the attempt count and the quoted-reset diagnostic survive. Evicted refs stay evicted — a retired model must not come back just because the cursor was reseeded.
+
+- Recorded in `audit/audit-no-progress-2026-11-10/README.md`.
+
+
+
 ## 0.39.68 — the audit lane reads the recorded failure class, not the raw text (2026-11-10)
 
 ### The class the auditor already recorded decided the wrong thing
