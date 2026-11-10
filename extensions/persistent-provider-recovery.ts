@@ -1,5 +1,9 @@
 import type { State } from './goal-loop-core.js';
 import { isRecoverableProviderError } from './main-model-recovery.js';
+// v0.39.68: a completion claim's lane is decided by its RECORDED failure
+// class first — a failure the auditor owns is not a provider wall to wait
+// out (extensions/auditor-lane.ts).
+import { claimUsesProviderLane } from './auditor-lane.js';
 import { recoveryOwnership } from './recovery-ownership.js';
 
 /** A saved recovery episode carries continuation authority only for its own
@@ -25,7 +29,7 @@ export function ownsPersistentProviderWait(state: State): boolean {
   const claim = goal?.pendingCompletion;
   if (goal?.status !== 'paused' || goal.pauseSource !== 'system'
     || !claim?.attemptId || !claim.recoveryEpisodeKey
-    || !isRecoverableProviderError(claim.providerErrorDiagnostic)) return false;
+    || !claimUsesProviderLane(claim)) return false;
   return (goal.pauseKind === 'wait' && !!goal.pauseResumeAt
     && (goal.pauseReason ?? '').startsWith('auditor retry:') && claim.phase === 'retry-waiting')
     || ((goal.pauseKind === 'wait' || goal.pauseKind === 'blocked')

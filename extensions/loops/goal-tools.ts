@@ -2277,7 +2277,11 @@ function registerAgentTools(pi: any): void {
           const failureCopy = providerErrorPresentation(result.error, "completion");
           const recoveryEpisodeKey = durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${failureCopy.fingerprint}`;
           const aggressive = resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode;
-          const plan = auditorRetryPlan({ ...durableCompletionClaim, providerErrorDiagnostic: failureCopy.diagnostic }, undefined, undefined, aggressive);
+          // v0.39.68: the plan reads the class of THIS failure, not the
+          // claim's previous one — the lane decision and the recorded class
+          // must agree (extensions/auditor-lane.ts).
+          const failureClass = auditorResultFailureClass(result);
+          const plan = auditorRetryPlan({ ...durableCompletionClaim, providerErrorDiagnostic: failureCopy.diagnostic, auditorFailureClass: failureClass }, undefined, undefined, aggressive);
           // v0.38.63 (audit-stuck batch): N consecutive identical infra
           // failures terminate the loop visibly — park blocked naming the
           // dead chain, schedule no further retry. Manual/agent resume
@@ -2296,7 +2300,7 @@ function registerAgentTools(pi: any): void {
             providerErrorDiagnostic: failureCopy.diagnostic,
             recoveryEpisodeKey,
             recoveryNoticeKeys: durableCompletionClaim.recoveryNoticeKeys ?? [],
-            auditorFailureClass: auditorResultFailureClass(result),
+            auditorFailureClass: failureClass,
             auditorFailureAt: new Date().toISOString(),
             auditorLastFailureFingerprint: identical.auditorLastFailureFingerprint,
             auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
