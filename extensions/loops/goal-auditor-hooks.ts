@@ -213,6 +213,7 @@ import { auditResetWaitMs } from "../auditor-lane.js";
 // v0.39.69: an audit lane that produces no verdict for long enough must stop
 // retrying and ask, instead of arming another five-minute timer forever.
 import { auditNoProgressEscalation } from "../auditor-lane.js";
+import { AUDIT_DEAD_MODEL_ESCALATE_MS } from "../auditor-lane.js";
 // v0.39.68: the pause-reason vocabulary that says "the audit lane parked
 // this claim" is shared with the persistent-lane ownership test, so a park
 // and the gate that resumes it cannot drift apart.
