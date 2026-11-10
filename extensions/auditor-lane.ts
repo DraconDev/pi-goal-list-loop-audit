@@ -41,6 +41,7 @@
 
 import { isRecoverableProviderError } from "./main-model-recovery.js";
 import { classifyMainModelFailure, quotaResetSleepMs } from "./main-model-recovery.js";
+import { isUnresolvableAuditorModelRefError } from "./goal-loop-core.js";
 
 /** The classes the auditor owns outright: a retry reproduces the same wall.
  * `no-verdict` — the auditor produced nothing (crash, exit code, no output).
@@ -126,6 +127,12 @@ export function auditResetWaitMs(
  * escalation does not fire. */
 export const AUDIT_NO_PROGRESS_ESCALATE_MS = 6 * 60 * 60_000;
 
+/** A model that no longer resolves cannot be waited for: the pin names a
+ * model the provider no longer serves (a retired model, a revoked auth). A
+ * short grace still absorbs a transient catalogue hiccup, then the operator is
+ * asked rather than burning a launch every five minutes. */
+export const AUDIT_DEAD_MODEL_ESCALATE_MS = 30 * 60_000;
+
 /**
  * Has this parked audit used up its automatic patience?
  *
@@ -151,7 +158,7 @@ export function auditNoProgressEscalation(
     auditorFailureClass?: string;
   } | undefined | null,
   nowMs = Date.now(),
-): { reason: "waiting"; resetMs: number; resetAt: string } | { reason: "no-progress"; sinceMs: number; hours: number } | undefined {
+): { reason: "waiting"; resetMs: number; resetAt: string } | { reason: "no-progress"; sinceMs: number; hours: number } | { reason: "dead-model"; sinceMs: number; hours: number } | undefined {
   if (!claim) return undefined;
   const resetMs = auditResetWaitMs(claim, nowMs);
   if (resetMs !== undefined) {
@@ -161,6 +168,14 @@ export function auditNoProgressEscalation(
     .map((value) => (typeof value === "string" ? Date.parse(value) : Number.NaN))
     .find((value) => Number.isFinite(value));
   if (!Number.isFinite(since)) return undefined;
-  if (nowMs - since! < AUDIT_NO_PROGRESS_ESCALATE_MS) return undefined;
-  return { reason: "no-progress", sinceMs: since!, hours: Math.round((nowMs - since!) / 3_600_000) };
+  const elapsed = nowMs - since!;
+  const hours = Math.round(elapsed / 3_600_000);
+  // A ref the provider does not serve needs a person, not a timer. Checked
+  // before the long bound so a retired model does not burn six hours of
+  // launches that cannot possibly resolve it.
+  if (isUnresolvableAuditorModelRefError(claim.providerErrorDiagnostic) && elapsed >= AUDIT_DEAD_MODEL_ESCALATE_MS) {
+    return { reason: "dead-model", sinceMs: since!, hours };
+  }
+  if (elapsed < AUDIT_NO_PROGRESS_ESCALATE_MS) return undefined;
+  return { reason: "no-progress", sinceMs: since!, hours };
 }
