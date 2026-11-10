@@ -344,6 +344,7 @@
         "auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider", "context-exhausted"] },
         "auditorFallbackExhausted": { "type": "boolean" },
         "auditorFailureAt": { "type": "string", "format": "date-time" },
+        "auditorNoProgressSince": { "type": "string", "format": "date-time", "description": "When the current no-verdict audit episode began. Survives a candidate-cycle reseed (it measures the episode, not the candidate) and is cleared by any verdict or a new claim; it bounds how long automatic retries may keep producing nothing before the operator is asked." },
         "exhaustedChain": { "type": "string", "maxLength": 2000, "description": "Newline-free names of the auditor candidates exhausted in the current bounded cycle, joined with ' → '. Set at burn time; cleared with the cycle. Display-only diagnostic — never candidate-selection state." },
         "auditorThinkingLevel": { "type": "string", "maxLength": 20, "description": "Effective thinking level resolved for the running attempt (per-candidate fallback applied at launch). Display-only — never candidate-selection state; absent on legacy claims." },
         "priorAttemptId": { "type": "string", "minLength": 1, "description": "The rotated-away attempt id. Keys the prior worker's job directory; NOT claim identity." },

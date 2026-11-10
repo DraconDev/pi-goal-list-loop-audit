@@ -995,6 +995,14 @@ gateRows?: GateRow[];
   auditorFailureClass?: AuditorRecoveryFailureClass;
   auditorFallbackExhausted?: boolean;
   auditorFailureAt?: string;
+  /** v0.39.69 (field 2026-11-10): when the current no-verdict audit EPISODE
+   * began — the first attempt that ended without a verdict. Unlike every
+   * other cursor field it survives a cycle reseed, because it measures how
+   * long the audit lane has produced nothing, not which candidate is being
+   * tried. It is what lets a permanent wall (quota exhausted for good, a
+   * retired model) stop retrying and ask the operator instead of re-arming a
+   * five-minute timer forever. Cleared by any verdict or a new claim. */
+  auditorNoProgressSince?: string;
   /** 2026-09-17 (auditor objection 18:49): names of the candidates exhausted
    * in the current bounded cycle, joined with " → ". Set at burn time,
    * cleared with the cycle, and carried into every parked state (retry-wait
@@ -3469,6 +3477,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorFailureClass: _auditorFailureClass,
     auditorFallbackExhausted: _auditorFallbackExhausted,
     auditorFailureAt: _auditorFailureAt,
+    auditorNoProgressSince: _auditorNoProgressSince,
     exhaustedChain: _exhaustedChain,
     auditorThinkingLevel: _auditorThinkingLevel,
     timeoutEscalation: _timeoutEscalation,
@@ -3561,6 +3570,11 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const auditorFailureAt = typeof _auditorFailureAt === "string" && Number.isFinite(Date.parse(_auditorFailureAt))
     ? new Date(Date.parse(_auditorFailureAt)).toISOString()
     : undefined;
+  // v0.39.69: the episode stamp is a bounded timestamp or absent — a corrupt
+  // value must never manufacture (or suppress) a no-progress escalation.
+  const auditorNoProgressSince = typeof _auditorNoProgressSince === "string" && Number.isFinite(Date.parse(_auditorNoProgressSince))
+    ? new Date(Date.parse(_auditorNoProgressSince)).toISOString()
+    : undefined;
   // 2026-09-17: the exhausted-chain name is a bounded, newline-free display
   // string. Garbage degrades to absent, never to a half-parsed chain.
   const exhaustedChain = typeof _exhaustedChain === "string" && _exhaustedChain.trim()
@@ -3607,6 +3621,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFailureClass ? { auditorFailureClass } : {}),
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
+    ...(auditorNoProgressSince ? { auditorNoProgressSince } : {}),
     ...(exhaustedChain ? { exhaustedChain } : {}),
     ...(auditorThinkingLevel ? { auditorThinkingLevel } : {}),
     ...(claimLineageId ? { claimLineageId } : {}),
@@ -5672,6 +5687,38 @@ export function freshAuditorCycleClaim<T extends object>(claim: T): T {
   const reseeded: Record<string, unknown> = {};
   Object.assign(reseeded, claim);
   for (const key of FRESH_AUDITOR_CYCLE_CLEARED_KEYS) delete reseeded[key];
+  return reseeded as T;
+}
+
+/** v0.39.69 (field 2026-11-10): reseed ONLY the candidate cursor and the
+ * failure streak, keeping the durable episode accounting.
+ *
+ * The provider-retry timer used to re-walk a burned cursor, so a model that
+ * was out of quota (or retired) was retried with the same reference every five
+ * minutes even when a configured fallback existed — the operator's rule is
+ * "if we have a fallback model we should be using that too". It also carries
+ * `retryAttempts`/`retryFirstAt`/`providerErrorDiagnostic` forward, which the
+ * full fresh cycle deliberately drops: both the quoted-reset wait and the
+ * no-progress bound are read from them, and a reseed must not reset the clock
+ * on an episode that is already old. */
+const AUDITOR_CURSOR_ONLY_CLEARED_KEYS = [
+  "auditorCandidateRefs",
+  "auditorCandidateRef",
+  "auditorRetryCandidateRef",
+  "auditorRetryAttemptStartedAt",
+  "auditorAttemptedRefs",
+  "auditorLastFailureFingerprint",
+  "auditorConsecutiveIdenticalFailures",
+  "auditorFailureCount",
+  "auditorFallbackExhausted",
+  "auditorFailureAt",
+  "exhaustedChain",
+] as const;
+
+export function reseededAuditorCursorClaim<T extends object>(claim: T): T {
+  const reseeded: Record<string, unknown> = {};
+  Object.assign(reseeded, claim);
+  for (const key of AUDITOR_CURSOR_ONLY_CLEARED_KEYS) delete reseeded[key];
   return reseeded as T;
 }
 /** v0.38.63: append a dead ref to the eviction list when the error proves it
