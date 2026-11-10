@@ -2601,6 +2601,10 @@ function applyCompletedCompletionAudit(args: {
       recoveryEpisodeKey,
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
       auditorFailureClass: failureClass,
+      // v0.39.69: the episode stamp is written once per no-verdict episode and
+      // carried across every later attempt (and across a cursor reseed), so
+      // the no-progress bound measures the audit, not the current candidate.
+      auditorNoProgressSince: durableClaim.auditorNoProgressSince ?? new Date().toISOString(),
       // v0.39.56: an explicit USER abort rides the durable claim, so the retry
       // resolver can refuse to resume it. Absent for every other failure (a
       // GLLA-initiated stop stays "transport").

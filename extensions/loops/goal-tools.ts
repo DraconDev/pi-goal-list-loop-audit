@@ -2301,6 +2301,9 @@ function registerAgentTools(pi: any): void {
             recoveryEpisodeKey,
             recoveryNoticeKeys: durableCompletionClaim.recoveryNoticeKeys ?? [],
             auditorFailureClass: failureClass,
+            // v0.39.69: the episode stamp is written once per no-verdict episode
+            // and carried across later attempts and cursor reseeds.
+            auditorNoProgressSince: durableCompletionClaim.auditorNoProgressSince ?? new Date().toISOString(),
             auditorFailureAt: new Date().toISOString(),
             auditorLastFailureFingerprint: identical.auditorLastFailureFingerprint,
             auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
