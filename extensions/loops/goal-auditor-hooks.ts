@@ -1609,7 +1609,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         ],
         pauseRecommended: 1,
         pauseReason: `completion audit stopped making progress — ${cause}`,
-        pauseSuggestedAction: `${chainNotice}Automatic retries stopped after ${deadline} without a verdict: ${cause}. The stored claim is safe. Add a fallback auditor model in /glla settings (a working fallback is used automatically), or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
+        pauseSuggestedAction: `${chainNotice}No automatic attempt has produced a verdict in ${deadline}, so the audit has paused for your decision: ${cause}. The stored claim is safe. Add a fallback auditor model in /glla settings (a working fallback is used automatically), or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
       }, initialCtx);
       appendLedger(initialCtx.cwd, "audit_no_progress_escalated", {
         goalId,
