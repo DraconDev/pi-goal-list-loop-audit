@@ -297,7 +297,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import {
-  extractMechanicalCheckCommands,
+  extractMechanicalCheckSteps,
   mechanicalPreAuditVerdict,
   runMechanicalPreAuditChecks,
   type MechanicalCheckResult,
@@ -568,7 +568,7 @@ async function verifyTaskMilestone(
   if (!verificationContract?.trim()) return null;
   const result = await runMechanicalPreAuditChecks(
     ctx.cwd,
-    extractMechanicalCheckCommands(verificationContract),
+    extractMechanicalCheckSteps(verificationContract),
     undefined,
     signal,
     undefined,
@@ -1433,7 +1433,7 @@ function registerAgentTools(pi: any): void {
       // runner is asynchronous and process-group bounded, so it cannot block
       // the main pi event loop or strand descendants on timeout.
       try {
-        const mechanicalCmds = extractMechanicalCheckCommands(auditGoal.verificationContract ?? "");
+        const mechanicalCmds = extractMechanicalCheckSteps(auditGoal.verificationContract ?? "");
         const mechanicalResult = await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal, undefined, {
           loadScale: settings.mechanicalLoadScale !== false,
         });

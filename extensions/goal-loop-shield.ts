@@ -201,9 +201,79 @@ function isServerModeMechanicalCommand(part: string): boolean {
  * for deterministic fast-fail pre-auditing before spawning the heavy LLM worker.
  */
 export function extractMechanicalCheckCommands(contract: string): string[] {
+  return extractMechanicalCheckSteps(contract).map((step) => step.command);
+}
+
+/** One extracted gate: the runner invocation and the directory it must run in. */
+export interface MechanicalCheckStep {
+  command: string;
+  /**
+   * Working directory declared by a leading `cd <dir>` in the same contract
+   * fragment — relative to the caller's cwd unless absolute.
+   */
+  cwd?: string;
+}
+
+/** Runners whose invocation can gate deterministically. */
+const MECHANICAL_RUNNER = /^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i;
+
+/** A `cd <dir>` fragment. Same character alphabet as a safe command argument:
+ * no quotes, no expansions, no redirections — nothing a shell would interpret. */
+const MECHANICAL_CD_SEGMENT = /^cd\s+([A-Za-z0-9_./@:=+,-]+)$/;
+
+/** The directory a `cd <dir>` fragment names, or null when the fragment is not
+ * a plain directory change. */
+function mechanicalCdTarget(segment: string): string | null {
+  const match = MECHANICAL_CD_SEGMENT.exec(segment.trim());
+  if (!match) return null;
+  const dir = match[1] ?? "";
+  // A `cd` whose argument starts with `-` is option forwarding, not a path.
+  if (!dir || dir.startsWith("-")) return null;
+  return dir;
+}
+
+/**
+ * Walk a contract fragment's `&&`/`;` segments in order, carrying the directory
+ * the contract asked for.
+ *
+ * v0.39.x (field, 2026-11-10): a cross-repo contract — this session's strategy
+ * repo driving work in a sibling checkout — legitimately writes
+ * `cd web/games && bun run build`. The old extractor kept only allowlisted
+ * runner segments, so `cd web/games` was silently DROPPED and the build ran in
+ * the session's own directory, where it printed `error: Script not found
+ * "build"`. A finished, twice-approved goal was then fast-failed by the
+ * pre-audit gate for a directory the contract never asked for. The directory is
+ * now carried, not discarded: executing what the contract says is the point of
+ * a deterministic gate, and dropping a restriction makes the check weaker, not
+ * stricter. A `cd` fragment is never executed as a command — it only ever
+ * becomes the child process's cwd, which is validated as an existing directory
+ * by the runner.
+ */
+function mechanicalStepsFromSegments(segments: string[], out: MechanicalCheckStep[]): void {
+  let dir: string | undefined;
+  for (const raw of segments) {
+    const segment = raw.trim();
+    if (!segment) continue;
+    const cd = mechanicalCdTarget(segment);
+    if (cd) {
+      dir = cd;
+      continue;
+    }
+    if (isServerModeMechanicalCommand(segment)) continue;
+    if (!MECHANICAL_RUNNER.test(segment)) continue;
+    out.push(dir ? { command: segment, cwd: dir } : { command: segment });
+  }
+}
+
+/**
+ * v0.39.x: the extractor's real output — each gate with the working directory
+ * the contract named for it. `extractMechanicalCheckCommands` stays as the
+ * command-only projection existing callers and tests use.
+ */
+export function extractMechanicalCheckSteps(contract: string): MechanicalCheckStep[] {
   if (!contract) return [];
   const items = contractItems(contract);
-  const commands: string[] = [];
+  const steps: MechanicalCheckStep[] = [];
   for (const item of items) {
     const backtickMatches = [...item.matchAll(/`([^`]+)`/g)];
     if (backtickMatches.length > 0) {
@@ -213,33 +283,18 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
         const after = item.slice((m.index ?? 0) + m[0]!.length, (m.index ?? 0) + m[0]!.length + MECHANICAL_NEGATION_TRAILING_WINDOW);
         if (MECHANICAL_NEGATION_TRAILING.test(after)) continue;
         const inner = m[1]!.trim();
-        const parts = inner.split(/\s*&&\s*|\s*;\s*/);
-        for (let part of parts) {
-          part = part.trim();
-          if (!part || isServerModeMechanicalCommand(part)) continue;
-          if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(part)) {
-            commands.push(part);
-          }
-        }
+        mechanicalStepsFromSegments(inner.split(/\s*&&\s*|\s*;\s*/), steps);
       }
       continue;
     }
     let candidate = item.trim();
     candidate = candidate.replace(/\s+(?:passes(?:\s+cleanly|\s+with\s+zero\s+errors)?|exits\s+0|returns\s+0|cleanly|completes(?:\s+successfully)?|succeeds(?:\s+cleanly)?|successfully).*$/i, "").trim();
     if (MECHANICAL_NEGATION.test(candidate)) continue;
-    if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(candidate)) {
-      if (!isPlausibleBareMechanicalCandidate(candidate)) continue;
-      const parts = candidate.split(/\s*&&\s*|\s*;\s*/);
-      for (let part of parts) {
-        part = part.trim();
-        if (!part || isServerModeMechanicalCommand(part)) continue;
-        if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(part)) {
-          commands.push(part);
-        }
-      }
-    }
+    if (!MECHANICAL_RUNNER.test(candidate)) continue;
+    if (!isPlausibleBareMechanicalCandidate(candidate)) continue;
+    mechanicalStepsFromSegments(candidate.split(/\s*&&\s*|\s*;\s*/), steps);
   }
-  return commands;
+  return steps;
 }
 
 function isPlausibleBareMechanicalCandidate(candidate: string): boolean {
@@ -939,7 +994,7 @@ function formatMechanicalFailure(run: MechanicalCommandRun, timeoutMs: number): 
  */
 export async function runMechanicalPreAuditChecks(
   cwd: string,
-  commands: string[],
+  commands: Array<string | MechanicalCheckStep>,
   timeoutMs = DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS,
   signal?: AbortSignal,
   maxProcessGroupSize = MAX_MECHANICAL_PROCESS_GROUP_SIZE,
@@ -956,13 +1011,47 @@ export async function runMechanicalPreAuditChecks(
   const effectiveTimeoutMs = opts?.loadScale === false ? baseTimeoutMs : scaledMechanicalTimeoutMs(baseTimeoutMs);
   const effectiveProcessGroupSize = normalizeMechanicalProcessGroupLimit(maxProcessGroupSize);
   const recoveredRetries: string[] = [];
-  let scripts: Record<string, string> = {};
-  try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "package.json"), "utf8"));
-    if (pkg && typeof pkg.scripts === "object" && pkg.scripts) scripts = pkg.scripts;
-  } catch { /* no package.json — nothing to resolve */ }
-  for (const rawCommand of commands) {
+  // v0.39.x: scripts resolve per DIRECTORY, because a step may name its own
+  // cwd. A cross-repo step must canonicalise `bun test` against THAT project's
+  // package.json, not the session's.
+  const scriptsByDir = new Map<string, Record<string, string>>();
+  const scriptsFor = (dir: string): Record<string, string> => {
+    const cached = scriptsByDir.get(dir);
+    if (cached) return cached;
+    let scripts: Record<string, string> = {};
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+      if (pkg && typeof pkg.scripts === "object" && pkg.scripts) scripts = pkg.scripts;
+    } catch { /* no package.json — nothing to resolve */ }
+    scriptsByDir.set(dir, scripts);
+    return scripts;
+  };
+  for (const entry of commands) {
+    const step = typeof entry === "string" ? { command: entry } : entry;
+    const rawCommand = step.command;
     const cmd = rawCommand.trim();
+    // v0.39.x: the directory this step runs in — the contract's own `cd` target
+    // when it named one, the caller's cwd otherwise. A named directory that
+    // does not exist is a CONTRACT error and is reported as such: silently
+    // running somewhere else is exactly the defect this replaced.
+    let runCwd = cwd;
+    if (step.cwd) {
+      runCwd = path.isAbsolute(step.cwd) ? step.cwd : path.resolve(cwd, step.cwd);
+      let isDir = false;
+      try { isDir = fs.statSync(runCwd).isDirectory(); } catch { isDir = false; }
+      if (!isDir) {
+        return {
+          passed: false,
+          outcome: "fail",
+          failedCommand: rawCommand,
+          output: `Mechanical contract command \`${rawCommand}\` names a working directory that does not exist: ${runCwd}`,
+          exitCode: 126,
+        };
+      }
+    }
+    // A redirected step says WHERE it ran in its evidence, so a cross-repo gate
+    // is never mistaken for a run in the session's own checkout.
+    const cwdNote = runCwd === cwd ? "" : `[cwd: ${runCwd}]\n`;
     const compound = safeFileMarkerCompound(cmd);
     if (compound) {
       // Run each allowlisted assertion independently so no shell ever parses
@@ -971,7 +1060,7 @@ export async function runMechanicalPreAuditChecks(
       for (const step of compound) {
         // Pass the caller's base (not the scaled value): scaling applies
         // once per check, never compounded per recursion level.
-        const stepResult = await runMechanicalPreAuditChecks(cwd, [step], baseTimeoutMs, signal, effectiveProcessGroupSize, opts);
+        const stepResult = await runMechanicalPreAuditChecks(runCwd, [step], baseTimeoutMs, signal, effectiveProcessGroupSize, opts);
         if (!stepResult.passed) return { ...stepResult, failedCommand: rawCommand };
       }
       continue;
@@ -980,7 +1069,8 @@ export async function runMechanicalPreAuditChecks(
     // shell-free before the single-command gate below.
     const pipeline = parseMechanicalPipeline(cmd);
     if (pipeline) {
-      const pipelineResult = await runMechanicalPipeline(cwd, pipeline, rawCommand, scripts, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
+      const pipelineResult = await runMechanicalPipeline(runCwd, pipeline, rawCommand, scriptsFor(runCwd), effectiveTimeoutMs, signal, effectiveProcessGroupSize);
+      if (!pipelineResult.passed && cwdNote) pipelineResult.output = cwdNote + (pipelineResult.output ?? "");
       if (!pipelineResult.passed) return pipelineResult;
       continue;
     }
@@ -1002,7 +1092,7 @@ export async function runMechanicalPreAuditChecks(
     // the bare runner ignores that configuration and fails spuriously while
     // the real gate is green (field: fourth audit round, 2026-08-21).
     // (scripts are loaded once above the loop so the pipeline path shares them.)
-    const { program, args } = resolveCanonicalRunnerCommand(cmd, scripts);
+    const { program, args } = resolveCanonicalRunnerCommand(cmd, scriptsFor(runCwd));
     if (!program) {
       return { passed: false, outcome: "fail", failedCommand: rawCommand, output: "Empty mechanical command.", exitCode: 126 };
     }
@@ -1017,7 +1107,7 @@ export async function runMechanicalPreAuditChecks(
     let firstFailure: { output: string; exitCode: number } | null = null;
     let passed = false;
     for (let attempt = 1; attempt <= 2 && !passed; attempt++) {
-      const run = await runMechanicalCommand(cwd, program, args, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
+      const run = await runMechanicalCommand(runCwd, program, args, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
       if (!run.timedOut && !run.aborted && !run.outputLimit && !run.processGroupLimit && run.exitCode === 0) {
         passed = true;
         continue;
@@ -1035,7 +1125,7 @@ export async function runMechanicalPreAuditChecks(
           outcome: "inconclusive",
           inconclusiveReason: containmentReason(run) ?? "timeout",
           failedCommand: rawCommand,
-          output: failure.output,
+          output: cwdNote + failure.output,
           exitCode: failure.exitCode,
         };
       }
@@ -1046,9 +1136,9 @@ export async function runMechanicalPreAuditChecks(
           passed: false,
           outcome: "fail",
           failedCommand: rawCommand,
-          output: firstFailure
+          output: cwdNote + (firstFailure
             ? `[mechanical check retried once after a failed first attempt (exit ${firstFailure.exitCode}); second attempt also failed — output tail below]\n` + failure.output
-            : failure.output,
+            : failure.output),
           exitCode: failure.exitCode,
         };
       }
