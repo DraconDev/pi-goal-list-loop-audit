@@ -134,6 +134,7 @@ extractPendingTasks,
   isForbiddenModel,
   filterEvictedAuditorRefs,
   freshAuditorCycleClaim,
+  reseededAuditorCursorClaim,
   isQuotaIdenticalParkExempt,
   withEvictedAuditorRef,
   trackAuditorIdenticalFailure,
@@ -1568,6 +1569,55 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         retryUntil: pending.retryUntil,
         automaticRecoveryUntil: pending.automaticRecoveryUntil,
       });
+      return;
+    }
+    // v0.39.69 (field 2026-11-10): an audit lane that has produced NOTHING for
+    // long enough stops retrying by itself and asks the operator.
+    //
+    // Before this gate the provider lane was unbounded at every attempt, so a
+    // plan that was out for good (or a model that had been retired) retried
+    // every five minutes forever: the field card read "Auditor still failing —
+    // next auto-retry in 5m" at age 4h24m with `next: /glla status to inspect
+    // execution` and never completed. A provider that QUOTED a reset is
+    // exempt — that wait is scheduled, not stalled — and the scheduled retry
+    // simply continues. Only automatic origins are gated: an explicit resume
+    // is consent and always dispatches.
+    const noProgress = auditNoProgressEscalation(pending);
+    if (noProgress?.reason === "no-progress") {
+      clearScheduledAuditorRecoveryTimer();
+      const chainNotice = pending.exhaustedChain ? `Exhausted auditor chain: ${pending.exhaustedChain}. ` : "";
+      const modelNotice = pending.auditorFailureClass === "provider"
+        ? "The last failure was a provider wall with no reset time, so waiting longer cannot help."
+        : "";
+      updateGoal({
+        status: "paused",
+        pendingCompletion: { ...pending, recoveryRetryAt: undefined },
+        pauseKind: "decision",
+        pauseResumeAt: undefined,
+        pauseOptions: [
+          `Pick a different auditor model in /glla settings, then ${activeGoalSurfaceCommand("resume")}`,
+          `Start a fresh bounded audit window now (${activeGoalSurfaceCommand("resume")})`,
+          `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`,
+        ],
+        pauseRecommended: 1,
+        pauseReason: `completion audit stopped making progress — no verdict in ${noProgress.hours}h`,
+        pauseSuggestedAction: `${chainNotice}No auditor run has produced a verdict for ${noProgress.hours} hours and the provider named no reset time, so automatic retries have stopped instead of repeating forever. The usual causes are a plan quota that is exhausted for good and an auditor model that was retired. ${modelNotice}`.trim(),
+      }, initialCtx);
+      appendLedger(initialCtx.cwd, "audit_no_progress_escalated", {
+        goalId,
+        origin,
+        sinceMs: noProgress.sinceMs,
+        hours: noProgress.hours,
+        attempts: pending.retryAttempts,
+        failureClass: pending.auditorFailureClass,
+        chain: pending.exhaustedChain,
+        diagnostic: pending.providerErrorDiagnostic?.slice(0, 400),
+      });
+      initialCtx.ui.notify(
+        `Completion audit stopped making progress: no verdict in ${noProgress.hours}h. The stored claim is safe. Pick another auditor model in /glla settings, or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
+        "warning",
+      );
+      maybeDecisionPopup(initialCtx);
       return;
     }
   }
