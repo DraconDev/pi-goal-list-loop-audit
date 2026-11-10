@@ -203,13 +203,15 @@ import {
   tickLengthContinue,
 } from "../length-continue.js";
 import { capProviderRetrySeconds } from "../quota-retry.js";
+// v0.39.68: the audit lane's provider/auditor lane decision reads the
+// RECORDED failure class first (extensions/auditor-lane.ts).
+import { claimUsesProviderLane } from "../auditor-lane.js";
 import { clearStaleMainModelRecovery, retireOrphanedMainModelRecovery } from "../goal-recovery.js";
 import {
   mainModelAutoRetryUntil,
   mainModelRetryDelayMs,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
   PERSISTENT_PROVIDER_RETRY_MS,
-  isRecoverableProviderError,
   MAX_AUDITOR_CANDIDATE_REFS,
   modelRef,
   normalizeModelRefs,
@@ -559,7 +561,10 @@ function automaticRecoveryWindow(pending: PendingCompletion, now = Date.now(), _
     .map((value) => typeof value === "string" ? Date.parse(value) : Number.NaN)
     .find((value) => Number.isFinite(value));
   const firstMs = Number.isFinite(firstCandidate) ? firstCandidate! : now;
-  if (isRecoverableProviderError(pending.providerErrorDiagnostic)) {
+  // v0.39.68: the lane is decided by the RECORDED class first (see
+  // extensions/auditor-lane.ts). A failure the auditor owns keeps the
+  // conservative horizon; a provider wall keeps the unbounded window.
+  if (claimUsesProviderLane(pending)) {
     return { firstAt: new Date(firstMs).toISOString(), untilMs: Number.POSITIVE_INFINITY };
   }
   // Non-provider infrastructure retains its independent conservative policy.
@@ -618,7 +623,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
   // park time, so the next episode re-walks a fresh chain.
   const now = Date.now();
   const aggressive = aggressiveAuditorRecoveryEnabled(ctx.cwd);
-  if (pending.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(pending.providerErrorDiagnostic)) return pending;
+  if (pending.automaticRecoveryAttempted === true && !aggressive && !claimUsesProviderLane(pending)) return pending;
   const window = automaticRecoveryWindow(pending, now, aggressive);
   if (aggressive && Number.isFinite(window.untilMs) && now >= window.untilMs) {
     return { ...pending, recoveryRetryAt: undefined, automaticRecoveryFirstAt: window.firstAt, automaticRecoveryUntil: window.until };
@@ -628,7 +633,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
   // re-arms through this same scheduler, but on the retry plan's own backoff
   // instead of the 60s no-verdict tick — the claim must keep trying without
   // re-probing a named provider wall every minute.
-  const persistentProvider = isRecoverableProviderError(pending.providerErrorDiagnostic);
+  const persistentProvider = claimUsesProviderLane(pending);
   const requestedDelayMs = options?.delayMs;
   const cadenceMs = persistentProvider ? (auditorRecoveryRetryDelayOverrideMs ?? PERSISTENT_PROVIDER_RETRY_MS) : Number.isFinite(requestedDelayMs) && (requestedDelayMs as number) >= 1_000
     ? Math.floor(requestedDelayMs as number)
@@ -672,7 +677,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     if (!goal || goal.id !== scheduledGoalId || goal.status !== "paused" || !claim
       || claim.attemptId !== pending.attemptId || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
     const aggressiveNow = aggressiveAuditorRecoveryEnabled(fresh.cwd);
-    if (claim.automaticRecoveryAttempted === true && !aggressiveNow && !isRecoverableProviderError(claim.providerErrorDiagnostic)) {
+    if (claim.automaticRecoveryAttempted === true && !aggressiveNow && !claimUsesProviderLane(claim)) {
       updateGoal({
         pendingCompletion: { ...claim, recoveryRetryAt: undefined },
         pauseKind: "blocked",
@@ -721,7 +726,7 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   const recoveryWindow = automaticRecoveryWindow(claim, startedMs, aggressive);
   const automaticRecoveryRetry = origin === "session-recovery"
     && (claim.phase ?? "recovery-pending") === "recovery-pending"
-    && (claim.automaticRecoveryAttempted !== true || aggressive || isRecoverableProviderError(claim.providerErrorDiagnostic))
+    && (claim.automaticRecoveryAttempted !== true || aggressive || claimUsesProviderLane(claim))
     && (!aggressive || startedMs < recoveryWindow.untilMs);
   // An agent-tool resume carries the same in-conversation user
   // authorization as a typed /goal resume, so an exhausted claim also
@@ -892,7 +897,13 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   // The optional legacy parameters are accepted so older embedded callers do
   // not break, but retry scheduling is deliberately reason-agnostic.
   const now = Date.now();
-  const persistentProvider = isRecoverableProviderError(claim.providerErrorDiagnostic);
+  // v0.39.68: a claim whose last failure the AUDITOR owns (`no-verdict`,
+  // `context-exhausted`) stays on the auditor's own bounded ladder, whatever
+  // the raw text says. The text test alone would call "worker exited with
+  // code 1" a provider wall and hand the claim to the unbounded five-minute
+  // cadence — with the identical-failure slowdown marker, the 24h horizon
+  // and the one-shot all switched off.
+  const persistentProvider = claimUsesProviderLane(claim);
   const firstMs = claim.retryFirstAt ? Date.parse(claim.retryFirstAt) : Number.NaN;
   const firstAtMs = Number.isFinite(firstMs) ? firstMs : now;
   const firstAt = new Date(firstAtMs).toISOString();
@@ -945,7 +956,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   if (!goal || goal.status !== "paused" || !claim) return false;
   if ((claim.phase ?? "recovery-pending") !== "recovery-pending") return false;
   if (completionAuditInFlight) return false;
-  if (isRecoverableProviderError(claim.providerErrorDiagnostic)) {
+  if (claimUsesProviderLane(claim)) {
     if (goal.pauseSource !== 'system' || goal.pauseKind === 'decision'
       || !/^(?:auditor retry:|auditor blocked:|completion audit blocked)/.test(goal.pauseReason ?? '')) return false;
     const due = Date.parse(claim.recoveryRetryAt ?? goal.pauseResumeAt ?? '');
@@ -956,7 +967,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   const ctx = freshCtxForGeneration(generation);
   if (!ctx) return false;
   const aggressive = aggressiveAuditorRecoveryEnabled(ctx.cwd);
-  if (claim.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(claim.providerErrorDiagnostic)) return false;
+  if (claim.automaticRecoveryAttempted === true && !aggressive && !claimUsesProviderLane(claim)) return false;
   if (aggressive) {
     const window = automaticRecoveryWindow(claim, Date.now(), true);
     if (Number.isFinite(window.untilMs) && Date.now() >= window.untilMs) return false;
@@ -971,7 +982,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
     || current.status !== "paused"
     || !currentClaim
     || (currentClaim.phase ?? "recovery-pending") !== "recovery-pending"
-    || (currentClaim.automaticRecoveryAttempted === true && !aggressive && !isRecoverableProviderError(currentClaim.providerErrorDiagnostic))
+    || (currentClaim.automaticRecoveryAttempted === true && !aggressive && !claimUsesProviderLane(currentClaim))
   ) return false;
 
   appendLedger(ctx.cwd, "audit_recovery_auto_retry_claimed", {
@@ -1496,7 +1507,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const pending = guardedGoal.pendingCompletion;
     const deadlines = [pending.retryUntil, pending.automaticRecoveryUntil]
       .filter((value): value is string => typeof value === "string" && value.length > 0);
-    const expired = !isRecoverableProviderError(pending.providerErrorDiagnostic) && deadlines.some((value) => {
+    const expired = !claimUsesProviderLane(pending) && deadlines.some((value) => {
       const parsed = Date.parse(value);
       return !Number.isFinite(parsed) || Date.now() >= parsed;
     });
@@ -2474,7 +2485,10 @@ function applyCompletedCompletionAudit(args: {
     const failureCopy = providerErrorPresentation(result.error, "completion");
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const aggressive = aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
-    const plan = auditorRetryPlan({ ...durableClaim, providerErrorDiagnostic: failureCopy.diagnostic }, undefined, undefined, aggressive);
+    // v0.39.68: the plan reads the class of THIS failure, not the claim's
+    // previous one — the lane decision and the recorded class must agree.
+    const failureClass = auditorResultFailureClass(result);
+    const plan = auditorRetryPlan({ ...durableClaim, providerErrorDiagnostic: failureCopy.diagnostic, auditorFailureClass: failureClass }, undefined, undefined, aggressive);
     // v0.38.63 (audit-stuck batch): same identical-park gate as the
     // complete_goal ladder path — the loop terminates visibly here too.
     // v0.38.68 (relentless, field 150821): quota walls are transient —
@@ -2491,7 +2505,7 @@ function applyCompletedCompletionAudit(args: {
       providerErrorDiagnostic: failureCopy.diagnostic,
       recoveryEpisodeKey,
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
-      auditorFailureClass: auditorResultFailureClass(result),
+      auditorFailureClass: failureClass,
       // v0.39.56: an explicit USER abort rides the durable claim, so the retry
       // resolver can refuse to resume it. Absent for every other failure (a
       // GLLA-initiated stop stays "transport").
