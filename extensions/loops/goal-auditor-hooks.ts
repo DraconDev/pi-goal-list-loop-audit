@@ -206,6 +206,9 @@ import { capProviderRetrySeconds } from "../quota-retry.js";
 // v0.39.68: the audit lane's provider/auditor lane decision reads the
 // RECORDED failure class first (extensions/auditor-lane.ts).
 import { claimUsesProviderLane } from "../auditor-lane.js";
+// v0.39.69: a quoted reset is a scheduled wait, not a stall — the retry plan
+// honours it instead of re-arming a flat five minutes forever.
+import { auditResetWaitMs } from "../auditor-lane.js";
 // v0.39.68: the pause-reason vocabulary that says "the audit lane parked
 // this claim" is shared with the persistent-lane ownership test, so a park
 // and the gate that resumes it cannot drift apart.
@@ -897,6 +900,10 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   automatic: boolean;
   requestedSec: number;
   unbounded: boolean;
+  /** v0.39.69: the provider's own quoted reset deadline, when it named one.
+   * Present means "this wait is scheduled, not stalled" — the card may say
+   * when, and no-progress escalation must not fire. */
+  resetAt?: string;
 } {
   // The optional legacy parameters are accepted so older embedded callers do
   // not break, but retry scheduling is deliberately reason-agnostic.
@@ -923,14 +930,30 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   const requestedSec = persistentProvider ? PERSISTENT_PROVIDER_RETRY_MS / 1000 : attempt === 1
     ? EAGER_AUDITOR_RETRY_SEC
     : Math.max(60, Math.round((nextHourlyProbeMs(now) - now) / 1000));
+  // v0.39.69 (field 2026-11-10): a provider that QUOTED a reset gets waited
+  // for. The audit lane re-armed a flat five minutes at every attempt, so a
+  // plan whose reset was hours (or a week) away was hammered twelve times an
+  // hour for the whole outage while the card repeated "next auto-retry in 5m".
+  // The reset wait outranks the flat cadence and the 15-minute per-attempt
+  // cap; it is still bounded by the shared per-attempt envelope inside
+  // quotaResetSleepMs, so a "next week" wall sleeps the envelope and
+  // re-evaluates rather than parking blind.
+  const resetWaitMs = persistentProvider ? auditResetWaitMs(claim, now) : undefined;
+  const requestedSecWithReset = resetWaitMs !== undefined
+    ? Math.round(resetWaitMs / 1000)
+    : requestedSec;
   // requestedSec stays the diagnostic slot; the persisted wait is capped.
-  const retryAfterSec = Math.min(capProviderRetrySeconds(requestedSec), AUDITOR_RETRY_WAIT_CAP_SEC);
+  // An explicit reset is exempt from AUDITOR_RETRY_WAIT_CAP_SEC: undercutting
+  // a provider's own deadline is exactly the churn this fixes.
+  const retryAfterSec = resetWaitMs !== undefined
+    ? requestedSecWithReset
+    : Math.min(capProviderRetrySeconds(requestedSec), AUDITOR_RETRY_WAIT_CAP_SEC);
   // No attempt cap: the shared 24h horizon (MAIN_MODEL_AUTO_RETRY_HORIZON_MS)
   // is the only conservative stop, same as the main-model envelope. The
   // attempt counter stays as diagnostic metadata.
   // An automatic retry never earns a new window, including aggressive mode.
   const automatic = persistentProvider || now + retryAfterSec * 1_000 <= untilMs;
-  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: persistentProvider };
+  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: persistentProvider, resetAt: resetWaitMs !== undefined ? new Date(now + resetWaitMs).toISOString() : undefined };
 }
 
 export type AuditorModelCandidate = AuditorFallbackCandidate;

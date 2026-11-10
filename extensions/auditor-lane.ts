@@ -40,6 +40,7 @@
  */
 
 import { isRecoverableProviderError } from "./main-model-recovery.js";
+import { classifyMainModelFailure, quotaResetSleepMs } from "./main-model-recovery.js";
 
 /** The classes the auditor owns outright: a retry reproduces the same wall.
  * `no-verdict` — the auditor produced nothing (crash, exit code, no output).
@@ -91,4 +92,75 @@ const AUDIT_PARK_PAUSE_REASON =
  * may resume. */
 export function isAuditParkPauseReason(reason: string | undefined): boolean {
   return AUDIT_PARK_PAUSE_REASON.test((reason ?? "").trim());
+}
+
+/**
+ * How long the provider told us to wait, if it said anything at all.
+ *
+ * v0.39.69 (field 2026-11-10): the audit lane ignored the reset hint
+ * entirely — it re-armed a flat five minutes at every attempt, so a plan
+ * that had quoted `resets <ISO>` hours or a week away was hammered twelve
+ * times an hour for the whole outage, with the card repeating "Auditor still
+ * failing — next auto-retry in 5m". The main lane has honoured the hint
+ * since v0.38.69. Returns `undefined` when the provider quoted nothing, which
+ * is the case the operator escalates instead of waiting forever.
+ */
+export function auditResetWaitMs(
+  claim: { providerErrorDiagnostic?: string } | undefined | null,
+  nowMs = Date.now(),
+): number | undefined {
+  const raw = claim?.providerErrorDiagnostic;
+  if (typeof raw !== "string" || !raw.trim()) return undefined;
+  return quotaResetSleepMs(classifyMainModelFailure(raw), nowMs);
+}
+
+/** A no-verdict audit episode older than this stops retrying by itself and
+ * asks the operator.
+ *
+ * Deliberately longer than every quota window a single audit can legitimately
+ * eat (a five-hour plan quota straddling an audit start must be waited out,
+ * not escalated), and deliberately shorter than a day, because the field
+ * shape that motivated it sat 4h24m repeating "still failing" with no
+ * actionable line. A quoted reset always outranks this bound: while the
+ * provider has told us when it will answer, waiting is correct and the
+ * escalation does not fire. */
+export const AUDIT_NO_PROGRESS_ESCALATE_MS = 6 * 60 * 60_000;
+
+/**
+ * Has this parked audit used up its automatic patience?
+ *
+ * Returns the escalation reason, or `undefined` while automatic retries are
+ * still the right answer. The two exemptions are deliberate:
+ *
+ * - **A quoted reset is being waited on.** The provider said when it will
+ *   answer (even "next week"), so retrying is not a dead end — it is a
+ *   scheduled wait. `resetAt`/`resetMs` are reported so the caller can say
+ *   *when*, instead of "still failing".
+ * - **The episode is younger than {@link AUDIT_NO_PROGRESS_ESCALATE_MS}.**
+ *
+ * `noProgressSince` must survive a cursor reseed: it is the age of the
+ * *episode*, not of the current candidate chain. A claim with no recorded
+ * start falls back to its first retry timestamp and then to `recoveryAt`.
+ */
+export function auditNoProgressEscalation(
+  claim: {
+    providerErrorDiagnostic?: string;
+    auditorNoProgressSince?: string;
+    retryFirstAt?: string;
+    recoveryAt?: string;
+    auditorFailureClass?: string;
+  } | undefined | null,
+  nowMs = Date.now(),
+): { reason: "waiting"; resetMs: number; resetAt: string } | { reason: "no-progress"; sinceMs: number; hours: number } | undefined {
+  if (!claim) return undefined;
+  const resetMs = auditResetWaitMs(claim, nowMs);
+  if (resetMs !== undefined) {
+    return { reason: "waiting", resetMs, resetAt: new Date(nowMs + resetMs).toISOString() };
+  }
+  const since = [claim.auditorNoProgressSince, claim.retryFirstAt, claim.recoveryAt]
+    .map((value) => (typeof value === "string" ? Date.parse(value) : Number.NaN))
+    .find((value) => Number.isFinite(value));
+  if (!Number.isFinite(since)) return undefined;
+  if (nowMs - since! < AUDIT_NO_PROGRESS_ESCALATE_MS) return undefined;
+  return { reason: "no-progress", sinceMs: since!, hours: Math.round((nowMs - since!) / 3_600_000) };
 }
