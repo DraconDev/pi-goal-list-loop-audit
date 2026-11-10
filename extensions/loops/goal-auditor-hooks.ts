@@ -745,6 +745,14 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   // freshAuditorCycleClaim; the automatic attempt stays bounded by
   // automaticRecoveryAttempted.
   const freshAuditorCycle = (origin === "manual" || origin === "agent" || origin === "session-recovery") && claim.auditorFallbackExhausted === true;
+  // v0.39.69 (field 2026-11-10, operator rule "if we have a fallback model we
+  // should be using that too"): the provider-retry timer is a real origin and
+  // it reseeds too. It used to re-walk the burned cursor, so a model that was
+  // out of quota or retired was retried with the SAME reference every five
+  // minutes while a configured fallback sat unused. It gets the cursor-only
+  // reseed: fresh candidates, but the episode clock (how long this audit has
+  // produced nothing) and the quoted-reset wait are carried forward.
+  const reseedCursor = origin === "provider-retry" && claim.auditorFallbackExhausted === true;
   const claimForAttempt = (origin === "manual" || origin === "agent")
     ? {
       ...claim,
@@ -755,7 +763,9 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     }
     : origin === "session-recovery" && freshAuditorCycle
       ? { ...claim, ...freshAuditorCycleClaim(claim) }
-      : claim;
+      : reseedCursor
+        ? { ...claim, ...reseededAuditorCursorClaim(claim) }
+        : claim;
   const priorAttemptId = claim.attemptId;
   // v0.39.55 auditor objection (2026-10-30): `priorAttemptId` is the
   // ROTATED job-dir key, not claim identity. Comparing it against the new
