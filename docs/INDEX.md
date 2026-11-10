@@ -34,8 +34,12 @@
 ## Versions and shipped content
 
 [CHANGELOG.md](../CHANGELOG.md) records the full release history from
-v0.1.0-alpha.1 (2026-07-19) through v0.39.68 (2026-11-10), including the
-final-audit lane reading the failure class the auditor already recorded — an
+v0.1.0-alpha.1 (2026-07-19) through v0.39.69 (2026-11-10), including an audit
+lane that waits for the provider's quoted reset (even a weekly one) instead of
+re-arming a five-minute timer, uses a configured fallback model instead of
+re-walking the failed one, and stops to ask after six hours without a verdict
+instead of retrying an exhausted quota forever — and the final-audit lane
+reading the failure class the auditor already recorded — an
 auditor-owned crash keeps the bounded ladder, the slowdown marker and the
 horizon instead of being handed to the provider lane's unbounded five-minute
 cadence — every provider error keeping retry authority — a concurrency wall arriving as HTTP 400 retries promptly instead of parking, and its `resets <ISO>` deadline is honoured as an upper bound — saved goal records that stop pretending to be live work (`/goal recover` classifies every projection and previews a round-trip-checked restore-as-new recipe) and a parked completion audit that names its real cause instead of blaming the auditor, the release gate judging only text it can prove is new, multi-area completion claims that are refused until they can be read rather than shipped as one opaque bullet, dropped connections, timeouts and 429s sharing one aggressive durable retry, tweak cards as labelled quote blocks, and an auditor switch that is now global-only — one switch for every project, where session inheritance follows each session's live model and thinking — and approval through the Confirm gate instead of a typed tweak, an operator-surface pass that stopped asking the user to act on finished work — a terminal goal retires its main-model recovery marker, a clean list completion starts the next item on its own, `/glla wipe` went from 912 ms to 71 ms by not rescanning 280 MB of history, the tweak confirmation shows the exact objective pair with the rationale behind a toggle, the audit card names the model that actually ran, and a stale loaded build warns instead of silently explaining the wrong source — a `/glla` settings surface that keeps its promises — a reachable Version indicator row, and a postaudit editor that no longer forgets an option an earlier edit saved — a release gate that no longer reports a busy machine as a broken one, interrupted audits that never claim the operator aborted them, a version indicator that is a choice of one surface, declared Pi 1.x support, auditor liveness that survives an unavailable identity probe, one-surface card rendering, a readable task-amendment dialog and system-wide draft auto-accept, authenticated auditor verdicts, fail-closed crash recovery, session inheritance and ten-slot role fallbacks, clearer
