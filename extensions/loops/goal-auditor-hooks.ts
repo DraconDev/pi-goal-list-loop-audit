@@ -1586,12 +1586,16 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // simply continues. Only automatic origins are gated: an explicit resume
     // is consent and always dispatches.
     const noProgress = auditNoProgressEscalation(pending);
-    if (noProgress?.reason === "no-progress") {
+    if (noProgress && noProgress.reason !== "waiting") {
       clearScheduledAuditorRecoveryTimer();
       const chainNotice = pending.exhaustedChain ? `Exhausted auditor chain: ${pending.exhaustedChain}. ` : "";
-      const modelNotice = pending.auditorFailureClass === "provider"
-        ? "The last failure was a provider wall with no reset time, so waiting longer cannot help."
-        : "";
+      const deadModel = (noProgress as { reason: string }).reason === "dead-model";
+      const cause = deadModel
+        ? `the auditor model does not resolve (retired model or missing auth), which no amount of waiting fixes`
+        : `no auditor run has produced a verdict for ${(noProgress as { hours: number }).hours} hours and the provider named no reset time, so a plan quota exhausted for good or a retired model are the likely causes`;
+      const deadline = deadModel
+        ? `${Math.round(AUDIT_DEAD_MODEL_ESCALATE_MS / 60_000)} minutes`
+        : `${(noProgress as { hours: number }).hours} hours`;
       updateGoal({
         status: "paused",
         pendingCompletion: { ...pending, recoveryRetryAt: undefined },
@@ -1603,21 +1607,22 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`,
         ],
         pauseRecommended: 1,
-        pauseReason: `completion audit stopped making progress — no verdict in ${noProgress.hours}h`,
-        pauseSuggestedAction: `${chainNotice}No auditor run has produced a verdict for ${noProgress.hours} hours and the provider named no reset time, so automatic retries have stopped instead of repeating forever. The usual causes are a plan quota that is exhausted for good and an auditor model that was retired. ${modelNotice}`.trim(),
+        pauseReason: `completion audit stopped making progress — ${cause}`,
+        pauseSuggestedAction: `${chainNotice}Automatic retries stopped after ${deadline} without a verdict: ${cause}. The stored claim is safe. Add a fallback auditor model in /glla settings (a working fallback is used automatically), or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
       }, initialCtx);
       appendLedger(initialCtx.cwd, "audit_no_progress_escalated", {
         goalId,
         origin,
+        cause: noProgress.reason,
         sinceMs: noProgress.sinceMs,
-        hours: noProgress.hours,
+        hours: (noProgress as { hours: number }).hours,
         attempts: pending.retryAttempts,
         failureClass: pending.auditorFailureClass,
         chain: pending.exhaustedChain,
         diagnostic: pending.providerErrorDiagnostic?.slice(0, 400),
       });
       initialCtx.ui.notify(
-        `Completion audit stopped making progress: no verdict in ${noProgress.hours}h. The stored claim is safe. Pick another auditor model in /glla settings, or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
+        `Completion audit stopped making progress: ${cause}. The stored claim is safe. Pick another auditor model in /glla settings, or ${activeGoalSurfaceCommand("resume")} to start a fresh window.`,
         "warning",
       );
       maybeDecisionPopup(initialCtx);
