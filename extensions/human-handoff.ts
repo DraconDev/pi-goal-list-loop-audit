@@ -1,5 +1,6 @@
 import { stripTerminalSequences } from "@earendil-works/pi-tui";
 import { clipSummaryValue } from "./finding-lead.js";
+import { CARD_SECTION, LEGACY_CARD_SECTIONS, cardSectionName } from "./card-sections.js";
 
 /** Authoring contract, shared by goal/list completion and pause tools. The
  * display can preview a legacy report, but cannot invent its missing action. */
@@ -37,7 +38,8 @@ export function compactHumanSummary(content: string): { content: string; omitted
       continue;
     }
     if (marker) {
-      const hidden = section === "Summary" || section === "What Changed";
+      const hidden = section === CARD_SECTION.summary || section === CARD_SECTION.whatChanged
+        || section === LEGACY_CARD_SECTIONS[0] || section === LEGACY_CARD_SECTIONS[1];
       fence = { char: marker[0]!, size: marker.length, hidden };
       if (hidden) omitted = true; else result.push(line);
       continue;
@@ -47,21 +49,29 @@ export function compactHumanSummary(content: string): { content: string; omitted
     // challenge disclosure or saved-record link to the paragraph budget.
     if (/^•\s/.test(line)) section = "";
     const heading = line.trim().replace(/^#{2,4}\s+/, "").replace(/^\*\*(.*?)\*\*$/, "$1");
-    if (/^(Summary|What Changed|Remaining|Verification|Next|Final Repository State)$/.test(heading)) {
-      section = heading;
+    const sectionName = cardSectionName(heading);
+    if (sectionName) {
+      section = sectionName;
       result.push(line);
       continue;
     }
-    if (section === "Summary" && line.trim()) {
+    const isChangeArea = /^#{2,4}\s+What changed\s*\u00b7/i.test(line) || /^\*\*What changed\s*\u00b7/i.test(line);
+    if (section === CARD_SECTION.summary && line.trim()) {
       if (/^#{2,4}\s|^\*\*.*\*\*$/.test(line) || ++summaryLines > 2) { omitted = true; continue; }
       const preview = humanTextPreview(line);
       if (preview !== line.trim()) omitted = true;
       result.push(preview);
       continue;
     }
-    if (section === "What Changed") {
-      // Nested proof and area headings are supporting details. Primary
-      // findings remain in their original words and order.
+    if (section === CARD_SECTION.whatChanged || section === LEGACY_CARD_SECTIONS[0]) {
+      // One line per area label, then its findings; nested proof and area
+      // headings are supporting details. Primary findings keep their
+      // original words and order.
+      if (isChangeArea) {
+        if (++findings > 4) { omitted = true; continue; }
+        result.push(humanTextPreview(line));
+        continue;
+      }
       if (/^\s{2,}\S|^\*\*\d+\./.test(line)) { omitted = true; continue; }
       if (/^(?:- |\d+\. )/.test(line)) {
         if (++findings > 4) { omitted = true; continue; }
@@ -71,8 +81,9 @@ export function compactHumanSummary(content: string): { content: string; omitted
         continue;
       }
     }
-    // Never silently clip Next or Remaining: these may contain an exact
-    // command, a permission boundary or an important limitation.
+    // Never silently clip Follow-up items, Next steps or limitations: these
+    // may contain an exact command, a permission boundary or an important
+    // limitation.
     result.push(line);
   }
   if (omitted) result.push("", "More details are available in the expanded message and saved record.");

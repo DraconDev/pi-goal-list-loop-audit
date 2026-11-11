@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
+import { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
 export { clipSummaryValue };
 
 /**
@@ -357,23 +358,10 @@ function stripMachineTokens(line: string): string {
 }
 
 /** Section vocabulary for the report card (field 2026-11-11 — "more like
- * opencode's end-of-task summary"). ONE canonical source: the composer, the
- * renderer's heading recognizer, the collapsed receipt projection and the
- * agent guidance all read these names, so a rename cannot drift between the
- * surface a human sees and the surface that recognizes it. */
-export const CARD_SECTION = {
-  summary: "Summary",
-  whatChanged: "What changed",
-  verification: "Verification",
-  followUp: "Follow-up items",
-  nextSteps: "Next steps",
-  repo: "Final Repository State",
-} as const;
-
-/** Legacy section names stay recognized on replay: a queued terminal render
- * written by an older build must still collapse and color correctly after an
- * upgrade, and its durable text is never rewritten. */
-export const LEGACY_CARD_SECTIONS = ["What Changed", "Remaining", "Next", "Verification Evidence"] as const;
+ * opencode's end-of-task summary"). Re-exported from the leaf module
+ * ./card-sections.js so the composer, the collapsed chat receipt and the
+ * terminal renderer cannot drift apart without adding an import cycle. */
+export { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
 
 /** Full Outcome body for the `### Summary` card section, or null when
  * the value is not section-structured (caller keeps today's budgets).
