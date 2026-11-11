@@ -401,6 +401,15 @@ export interface RichTerminalParts {
    * value earned the structured path — never a second copy of the
    * clipped headline echo. */
   summaryLines: string[];
+  /** Field 2026-11-11: findings arrived as per-area groups, so the card
+   * already carries `What changed · <area>` subsection labels. True keeps
+   * them unwrapped; false (flat findings) renders the legacy numbered list
+   * under a single section label. */
+  grouped?: boolean;
+  /** Field 2026-11-11: one compact receipt line closing the report
+   * (`completion audit approved (1 review) · record: <path>`). Absent keeps
+   * the legacy multi-bullet trailer for direct callers. */
+  footerLines?: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -531,8 +540,14 @@ function findingBullet(finding: string, chat: boolean): string[] {
   const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
   const { outcome, reason } = findingPresentation(finding, chat);
   if (semantic.technical && chat) return [];
-  const lead = chat ? outcome : `**${outcome}**`;
-  return reason ? [`- ${lead}`, `  - ${reason}`] : [`- ${lead}`];
+  // Report shape (field 2026-11-11 — "more like opencode's end-of-task
+  // summary"): chat reads `- **lead** — evidence` on ONE line. The old two-
+  // level shape (lead, then an indented reason) doubled every area's height
+  // in the terminal and made the card scan as a list of orphaned fragments.
+  // The archive keeps the two-level form because a .md reader benefits from
+  // the indented supporting detail.
+  if (chat) return reason ? [`- **${outcome}** \u2014 ${reason}`] : [`- **${outcome}**`];
+  return reason ? [`- **${outcome}**`, `  - ${reason}`] : [`- **${outcome}**`];
 }
 
 /**
