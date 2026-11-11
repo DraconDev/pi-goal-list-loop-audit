@@ -700,6 +700,11 @@ export function completionSummaryStructureGap(
  * wall-clock elapsed since creation, and audit count. Only known facts
  * render (absent stays absent); null when nothing is known.
  */
+/** Report meta line (field 2026-11-11): when the card has enough substance
+ * for the meta to be a footnote, it closes the report as a short italic
+ * line (`*9 turns · 5m elapsed · 1 audit*`) instead of sitting under the
+ * headline where `—` alone made it read as a broken bullet. Unknown facts
+ * stay absent; null means the card has no meta to show. */
 export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   const segs: string[] = [];
   const turns = goal.telemetry?.turns;
@@ -712,7 +717,7 @@ export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   if (Number.isFinite(started)) segs.push(`${fmtElapsed(now - started)} elapsed`);
   const audits = Array.isArray(goal.auditHistory) ? goal.auditHistory.length : 0;
   if (audits > 0) segs.push(`${audits} audit${audits === 1 ? "" : "s"}`);
-  return segs.length > 0 ? `\u2014 ${segs.join(" \u00b7 ")}` : null;
+  return segs.length > 0 ? `*${segs.join(" \u00b7 ")}*` : null;
 }
 
 /** Topic words for co-locating a problem and its action, never for
@@ -977,17 +982,16 @@ export function buildRichTerminalParts(args: {
     }
   } else if (groups.length > 0) {
     groups.forEach((group, i) => {
-      if (args.chat && i > 0) findingLines.push(''); // End prior nested evidence list before the next area.
-      // v0.39.19: same plain-heading rule as composeRichTerminalLines —
-      // `#### n. Area` reached the terminal literally (field 2026-10-09).
-      findingLines.push(args.chat
-        ? `**${i + 1}. ${sanitizeDisplayText(group.title)}**`
-        : `#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
+      if (args.chat && i > 0) findingLines.push(''); // End prior area's list before the next.
+      // Report shape (field 2026-11-11): each area is a `What changed · <area>`
+      // subsection rather than `**1. Area**`, so the section, not a number,
+      // names the work. The archive file renders the same label as an `###`.
+      findingLines.push(`#### ${CARD_SECTION.whatChanged} \u00b7 ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));
         // Test proof is supporting evidence, not a second narrative. Keep it
         // on the archive's detailed finding; chat folds all gate outcomes into
-        // the compact Verification section below.
+        // the verification table below.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
         if (proof && !args.chat) findingLines.push(`  - Evidence: ${proof}`);
       });
@@ -1016,7 +1020,11 @@ export function buildRichTerminalParts(args: {
   // v0.38.55: every row renders with its repro command when any row
   // carries one (Stage | Command | Result | Notes parity) — no row cap.
   const gates = args.gates ?? [];
-  const showCommand = !args.chat && gates.some((row) => row.command?.trim());
+  // Field 2026-11-11: the gate table is part of the report on BOTH surfaces.
+  // Chat earns a compact three-column shape (Gate | Command | Result); the
+  // archive keeps the wide inventory (Command + Scope + Status + Notes) and
+  // its completion-review row. Status stays DERIVED in every shape.
+  const showCommand = args.chat ? true : gates.some((row) => row.command?.trim());
   if (gates.length > 0) {
     for (const row of gates) {
       const safeNotes = row.notes ? sanitizeDisplayText(row.notes).trim() : "";
@@ -1025,6 +1033,13 @@ export function buildRichTerminalParts(args: {
       const command = row.command ? sanitizeDisplayText(row.command).trim() : "\u2014";
       const gate = sanitizeDisplayText(row.gate);
       const scope = row.scope ? sanitizeDisplayText(row.scope).trim() : "\u2014";
+      if (args.chat) {
+        // A PASS label is only printed when the notes actually prove a pass;
+        // anything unproven keeps the raw wording instead of a status word.
+        const result = notes ? (derived === "PASS" ? `PASS: ${notes}` : notes) : derived;
+        tableRows.push(`| ${escapeTableCell(gate)} | ${escapeTableCell(command)} | ${escapeTableCell(result || "\u2014")} |`);
+        continue;
+      }
       tableRows.push(showCommand
         ? `| ${escapeTableCell(gate)} | ${escapeTableCell(command)} | ${escapeTableCell(scope)} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`
         : `| ${escapeTableCell(gate)} | ${escapeTableCell(scope)} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`);
@@ -1067,14 +1082,21 @@ export function buildRichTerminalParts(args: {
     ].filter(Boolean);
     verificationSummaryLine = parts.length > 0 ? `${parts.join(", ")}.` : "Verification reported.";
   }
-  // v0.38.55: the archive verification table always renders in full. Chat uses
-  // the opt-in aggregate line above instead; default chat omits this section.
+  // v0.38.55: the archive verification table always renders in full. Chat
+  // renders its compact three-column form on the same rule (report shape,
+  // field 2026-11-11) — verification is part of the report, not archive-only
+  // trivia. `showVerification` now only adds the aggregate sentence for a
+  // claim that supplied no gate inventory at all.
   const tableLines = tableRows.length > 0
-    ? [(gates.length > 0
-      ? (showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
-      : "| Verification | Status | Details |"),
-      (gates.length > 0 ? (showCommand ? "| --- | --- | --- | --- | --- |" : "| --- | --- | --- | --- |") : "| --- | --- | --- |"),
-      ...tableRows]
+    ? [
+      gates.length > 0
+        ? (args.chat ? "| Gate | Command | Result |" : showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
+        : "| Verification | Status | Details |",
+      gates.length > 0
+        ? (args.chat ? "| --- | --- | --- |" : showCommand ? "| --- | --- | --- | --- | --- |" : "| --- | --- | --- | --- |")
+        : "| --- | --- | --- |",
+      ...tableRows,
+    ]
     : [];
   // v0.38.55: every concrete Next renders — no cap. Unresolved and Left out
   // are change-impact facts, not a second technical next step.
@@ -1164,13 +1186,21 @@ function terminalizeHeadings(line: string): string {
   return line.replace(/^(\s*)#{1,6}\s+(.*\S)\s*$/, "$1**$2**");
 }
 
-/** Compose parts + banner + section headers into markdown lines.
- * v0.38.50: the duration line rides directly under the headline.
- * Audit 2026-09-13: findings-first order is pinned — findings, then the
- * verification table, then Next.
- * v0.38.55 (full parity): the verdict banner opens the card and the
- * final repository state closes it — findings, verification, Next,
- * repo state, in that order. */
+/** Compose parts into the end-of-task report card.
+ *
+ * Field 2026-11-11 ("more like opencode's end-of-task summary"): the card
+ * is ONE document — headline, then `## Summary` carrying the outcome and
+ * one `What changed · <area>` subsection per work area, then the always-on
+ * `## Verification` gate table, `## Follow-up items`, `## Next steps`, the
+ * archive-only repository state, and a single compact receipt line. The
+ * pre-report shape split the same facts across Summary / What Changed /
+ * Remaining / Verification Evidence / Next with a second headline and four
+ * `•` trailer bullets, which is what made a finished goal read as an audit
+ * log.
+ *
+ * Ordering guarantees kept from v0.38.55: findings precede verification,
+ * verification precedes the follow-ups, and a resolved problem carries its
+ * action inline (`→ Next:`) instead of restating it under Next steps. */
 export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   const banner = sanitizeDisplayText(parts.banner ?? parts.headline);
   const headline = sanitizeDisplayText(parts.headline);
@@ -1184,9 +1214,10 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // is untouched.
   // v0.39.19 (field 2026-10-09 — terminal card screenshot): the Pi TUI
   // renders bold/lists but NOT `#` headings, so `### What Changed` reached
-  // the screen literally. Chat/terminal surfaces get plain section labels;
-  // the archived markdown keeps its headings (a .md file renders them).
-  const head = (text: string): string => (parts.chat ? text : `### ${text}`);
+  // the screen literally. Chat/terminal surfaces get ONE `##` level (the
+  // TUI renders depth 2 without the `##` prefix); the archived markdown
+  // keeps its `###` headings because a .md file renders them.
+  const head = (text: string): string => (parts.chat ? `## ${text}` : `### ${text}`);
   // v0.39.23 (field 2026-10-10 — Clean-Web terminal screenshots): agents
   // write `###`/`####` headers INSIDE finding/remaining/next text and the
   // Pi TUI renders bold/lists but not `#` headings, so they reached the
@@ -1196,29 +1227,37 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
     const clean = sanitizeDisplayText(line);
     return parts.chat ? terminalizeHeadings(clean) : clean;
   };
-  if (parts.summaryLines.length > 0) {
-    lines.push(head("Summary"), ...parts.summaryLines.map(contentLine), "");
-  }
+  const summaryBlocks: string[] = [];
+  if (parts.summaryLines.length > 0) summaryBlocks.push(...parts.summaryLines.map(contentLine));
   if (parts.findingLines.length > 0) {
-    lines.push(head("What Changed"), ...parts.findingLines.map(contentLine), "");
+    if (summaryBlocks.length > 0) summaryBlocks.push("");
+    summaryBlocks.push(...parts.findingLines.map(contentLine));
   }
+  if (summaryBlocks.length > 0) lines.push(head(CARD_SECTION.summary), ...summaryBlocks, "");
   // Section headings already supply these labels in chat. Keep the
   // explicit Left out distinction and preserve all archive labels verbatim.
   const sectionLine = (line: string): string => contentLine(parts.chat
     ? line.replace(/^(\s*-\s+)\*\*(?:Unresolved|Next)\*\*\s+—\s+/, '$1') : line);
   if (parts.remainingLines.length > 0) {
-    lines.push(head("Remaining"), ...parts.remainingLines.map(sectionLine), "");
+    lines.push(head(CARD_SECTION.followUp), ...parts.remainingLines.map(sectionLine), "");
   }
   if (parts.verificationSummaryLine) {
-    lines.push(head("Verification"), contentLine(parts.verificationSummaryLine), "");
-  } else if (!parts.chat && parts.tableLines.length > 0) {
-    lines.push("### Verification Evidence", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head(CARD_SECTION.verification), contentLine(parts.verificationSummaryLine), "");
+  } else if (parts.tableLines.length > 0) {
+    // Field 2026-11-11: the gate table always renders — a completion claim's
+    // verification is part of the report a person reads, not archive-only
+    // trivia. The archive widens the same table with commands and its review
+    // row; chat drops only the mechanical narrow-width columns.
+    lines.push(head(CARD_SECTION.verification), ...parts.tableLines.map((line) => contentLine(line)), "");
   }
   if (parts.nextLines.length > 0) {
-    lines.push(head("Next"), ...parts.nextLines.map(sectionLine), "");
+    lines.push(head(CARD_SECTION.nextSteps), ...parts.nextLines.map(sectionLine), "");
   }
   if (parts.repoLines.length > 0) {
-    lines.push(head("Final Repository State"), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
+    lines.push(head(CARD_SECTION.repo), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
+  }
+  if (parts.footerLines && parts.footerLines.length > 0) {
+    lines.push(...parts.footerLines.map((line) => sanitizeDisplayText(line)));
   }
   return lines;
 }
