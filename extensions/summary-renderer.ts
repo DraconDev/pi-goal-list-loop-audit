@@ -1,16 +1,17 @@
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { Box, Markdown, stripTerminalSequences, truncateToWidth, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { compactHumanSummary } from "./human-handoff.js";
+import { CARD_SECTION, cardSectionName } from "./card-sections.js";
 
 export type SummaryTone = "success" | "warning" | "error" | "accent" | "dim" | "text";
 
 /** Color describes a stated result; neutral evidence must never look passed. */
 export function summaryHeadingTone(text: string): SummaryTone {
   const heading = stripTerminalSequences(text).replace(/^#+\s*/, "").trim();
-  if (/^(?:Aborted|Paused|Remaining|Unresolved)\b/i.test(heading)) return "warning";
+  if (/^(?:Aborted|Paused|Remaining|Unresolved|Follow-up items)\b/i.test(heading)) return "warning";
   if (/^(?:Failed|Disapproved|Error)\b/i.test(heading)) return "error";
   if (/^Done\b/i.test(heading)) return /without.*review|no review|impossible|skipped/i.test(heading) ? "warning" : "success";
-  if (/^(?:Next|What Changed|Verification|Evidence)\b/i.test(heading)) return "accent";
+  if (/^(?:Next steps|Next|What changed|What Changed|Verification|Evidence)\b/i.test(heading)) return "accent";
   if (/^(?:Final Repository State|Left out)\b/i.test(heading)) return "dim";
   return "text";
 }
@@ -18,15 +19,17 @@ export function summaryHeadingTone(text: string): SummaryTone {
 function structuralHeading(line: string): string | undefined {
   if (/^#{2,4}\s/.test(line)) return line;
   const plain = line.trim().replace(/^\*\*(.*?)\*\*$/, '$1');
-  return /^(?:Summary|What Changed|Remaining|Verification|Next|Final Repository State)$/.test(plain)
-    ? `### ${plain}` : undefined;
+  // Report shape (field 2026-11-11): `<section> · <area>` is a card section
+  // too, so a collapsed receipt keeps its per-area labels instead of showing
+  // the grouped `What changed` chrome as prose.
+  return cardSectionName(plain) ? `### ${plain}` : undefined;
 }
 
 function labelTone(text: string): SummaryTone | undefined {
   text = stripTerminalSequences(text);
-  if (/^(?:Unresolved|Remaining)$/i.test(text)) return "warning";
+  if (/^(?:Unresolved|Remaining|Follow-up items)$/i.test(text)) return "warning";
   if (/^(?:Failed|Error|Disapproved)$/i.test(text)) return "error";
-  if (/^Next$/i.test(text)) return "accent";
+  if (/^(?:Next|Next steps)$/i.test(text)) return "accent";
   if (/^(?:Left out|Evidence|Note)$/i.test(text)) return "dim";
   return undefined;
 }
@@ -86,8 +89,9 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     for (const block of summaryMarkdownBlocks(content)) {
       const firstLine = block.split("\n")[0] ?? "";
       const heading = structuralHeading(firstLine) ?? "";
+      const sectionName = heading ? cardSectionName(heading.replace(/^#+\s+/, "")) : null;
       const tone = summaryHeadingTone(heading);
-      const verification = /^#+\s+Verification\b/i.test(heading);
+      const verification = sectionName === CARD_SECTION.verification;
       // Current receipts use plain section labels for host compatibility.
       // Promote them only in the display layer so Markdown can style them;
       // durable content and archive text remain unchanged.
