@@ -172,8 +172,11 @@ test("a narrow receipt states the gate inventory as bullets, never raw pipe rows
   const at = (width: number) => stripTerminalSequences(renderer.render(width).join("\n"));
   const narrow = at(NARROW_TABLE_COLUMNS - 1);
   assert.doesNotMatch(narrow, /^\s*\|/m, `no raw pipe row below the fallback width:\n${narrow}`);
-  assert.match(narrow, /- Release gate — npm run release:check — 4552 passed, 0 failed; exit 0/, "the bullet states gate, command and result");
-  assert.match(narrow, /- Typecheck — npm run check — exited 0/, "every gate becomes a bullet");
+  // Wrapping is the renderer's job, so the assertion reads the bullets with
+  // whitespace folded: gate, command and result on one logical line.
+  const folded = narrow.replace(/\s+/g, " ");
+  assert.match(folded, /- Release gate — npm run release:check — 4552 passed, 0 failed; exit 0/, "the bullet states gate, command and result");
+  assert.match(folded, /- Typecheck — npm run check — exited 0/, "every gate becomes a bullet");
   const wide = at(NARROW_TABLE_COLUMNS);
   assert.match(wide, /\| Release gate \| npm run release:check \|/, "at the threshold the table renders normally");
   assert.equal(tableAsBullets(["## Verification", "| Gate | Command | Result |", "| --- | --- | --- |", "| Unit | bun test | PASS: 9 passed |"].join("\n")).join("\n"),
