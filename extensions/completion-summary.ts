@@ -1380,9 +1380,11 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     ...composeRichTerminalLines(parts),
     // Report shape (field 2026-11-11): the archive closes with the same single
     // receipt line the chat card uses, then keeps the verbatim original claim
-    // as a separate forensic appendix.
+    // as a separate forensic appendix. The first segment names the review state
+    // honestly: an audit entry with no verdict (provider wall, auth abort) is
+    // NOT a recorded review and never reads as one.
     `${[
-      receiptSegment(stripApprovalModel(approval)),
+      bannerVerdict(auditRowStatus(history)),
       ...challengeDisclosure(goal).map(receiptSegment),
       receiptSegment(countsLine),
       receiptSegment(`\u2014 record: ${archivePath}`),
