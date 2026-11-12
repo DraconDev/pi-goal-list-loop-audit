@@ -5,5 +5,10 @@
   "source": "registered goal-event production report renderer; installed Pi dark/light theme",
   "durableContentUnchanged": true,
   "maxVisibleWidth": 40,
-  "narrowTableFallback": "bullets"
+  "narrowTableFallback": "bullets",
+  "capture": "real xterm on private Xvfb",
+  "pixels": [
+    380,
+    685
+  ]
 }
