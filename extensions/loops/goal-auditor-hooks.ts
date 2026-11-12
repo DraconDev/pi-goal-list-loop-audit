@@ -36,6 +36,7 @@ import { Type } from "typebox";
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
 
+import { freshGateReceipts, receiptAwareToolTimeoutMs, workingTreeFingerprint } from "../gate-receipts.js";
 import {
   type Goal,
   type Policy,
@@ -262,6 +263,7 @@ import {
   auditorResultFailureClass,
   cancelDetachedGoalCompletionAuditor,
   escalatedAuditorTimeout,
+  MAX_AUDITOR_TOOL_TIMEOUT_MS,
   newDetachedAuditJobAttemptId,
   runAuditorFallbackWithPolicy,
   isAuditorCursorPersistenceFailure,
@@ -1738,6 +1740,11 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       claim.timeoutEscalation ?? 0,
     ),
   };
+  // v0.39.70: the stored claim's gate receipts are reused ONLY while the
+  // working tree is byte-identical to the one they were taken against. A
+  // changed tree (or no fingerprint on either side) drops them, and the
+  // auditor verifies from scratch exactly as before.
+  const gateReceipts = freshGateReceipts(claim.gateReceipts, claim.gateTreeFingerprint, claim.gateReceipts?.length ? workingTreeFingerprint(liveCtx.cwd) : undefined);
   const { model: auditorModel, error: modelError, via, fallbackModels } = resolveAuditorModel(liveCtx, settings.auditorModel, settings.auditorModelFallbacks);
   if (modelError) {
     const modelFailureCopy = providerErrorPresentation(modelError, "completion");
@@ -1820,7 +1827,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         // v0.37.0: the worker gets the SAME budgets via env so the worker's
         // own per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
-        const { toolTimeoutMs, stallMs } = dispatchTimeouts;
+        const { stallMs } = dispatchTimeouts;
+        const toolTimeoutMs = receiptAwareToolTimeoutMs(dispatchTimeouts.toolTimeoutMs, gateReceipts, MAX_AUDITOR_TOOL_TIMEOUT_MS);
         const auditorResume = resolveAuditorResumeForDispatch({
           inspection: settings.auditorInspection === true,
           claim,
@@ -1894,6 +1902,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           // pass too. One shared predicate, so the two parallel branches
           // cannot disagree about it.
           ...(isReworkRound(auditGoal) ? { reworkRound: true } : {}),
+          ...(gateReceipts ? { gateReceipts } : {}),
           model: candidate.model,
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
