@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### The completion summary is an end-of-task report, not an audit log (2026-11-11)
+
+- Operator report: "i am not loving the goal completion summary, that should be more like how opencode does the summary upon task completion." The card had grown one section per internal contract — `Summary`, `What Changed`, `Remaining`, `Verification Evidence`, `Next`, `Final Repository State` — opened with a verdict banner above a second request-echo headline, and closed with four `•` trailer bullets that restated the verdict three times in three voices. A finished goal read as audit bookkeeping attached to a report.
+
+- **One report replaces the section stack.** The card is now `## Done — <result>` headline, prose lede (the rest of the Outcome sentence), `## Summary` carrying the structured Outcome body and one `What changed · <area>` subsection per `findingGroups` entry, `## Verification`, `## Follow-up items` (`Unresolved` plus the deliberate `leftOut`, with a resolving action inline as `→ Next:`), `## Next steps`, the archive-only `Final Repository State`, and ONE closing receipt line (`completion audit approved (N reviews) · record: <path>`). The full report order is what the operator confirmed during drafting.
+
+- **The headline is a title, never a truncation.** The first clause (em-dash break, sentence end, or the last clause break that fits) becomes the headline and the remainder becomes the lede with only its first letter capitalized — no ellipsis, no dropped words, no second headline echoing the objective.
+
+- **The gate inventory is part of the report.** Verification used to be archive-only unless the agent passed `showVerification` after an explicit user request; the reading a person actually got said nothing about what was checked. Chat now renders the compact `Gate | Command | Result` shape and the archive keeps the wide `Quality Gate | Command | Scope | Status | Notes` inventory with its review row. Status stays DERIVED from the notes: `PASS` only on a complete pass parse with zero failures, `FAIL` on any failure evidence, otherwise the row keeps its honest wording instead of borrowing a status word.
+
+- **Narrow terminals get bullets, not broken pipes.** Pi prints a Markdown table's raw pipe rows when the width cannot fit it. Below the table threshold the verification section renders `- <gate> — <command> — <result>` bullets instead, and the capture script now fails if a narrow capture contains a raw pipe row.
+
+- **Every goal-event receipt adopts the vocabulary** — detached-auditor approval, no-audit / user-choice completion, aborted and paused archives, and renders replayed from the durable outbox. An audit entry with no verdict (provider wall, auth abort) still never reads as a reviewed completion.
+
+- **One leaf module owns the section names.** `extensions/card-sections.ts` (no imports) feeds the composer, the collapsed receipt projection and the terminal renderer; putting the vocabulary in `completion-summary.ts` would have closed the cycle `human-handoff → completion-summary → goal-loop-display → human-handoff`. Legacy names (`What Changed`, `Remaining`, `Next`, `Verification Evidence`) stay recognized forever, so a receipt queued by an older build still collapses, colors and keeps its review qualification and record link; its durable text is never rewritten.
+
+- **The claim guidance asks for the report's material.** `complete_goal`'s description and the shared human-handoff guidance now ask for a plain-sentence Outcome, per-area `findingGroups`, and the real `gateRows` with counts, instead of a compact recap whose shape the renderer had to rescue.
+
+- Coverage moved with the shape rather than away from it: the migrated pins keep their original subjects (evidence tokens and derived status, pipe escaping, review qualifications and record links, stale-Next filtering, sanitize bounds, narrow-width fit, no ANSI or control bytes) in the new vocabulary, and `tests/report-card-shape.test.ts` pins the report order, the always-on inventory, the narrow fallback, the legacy replay path and the leaf module's acyclic position. Captures under `audit/summary-captures/` were regenerated from the production renderer at 40 and 120 columns in dark and light.
+
 ## 0.39.69 — the audit lane waits for a quoted reset, uses a fallback, and stops when it stops progressing (2026-11-10)
 
 ### "If the model runs out then the audit never completes"
