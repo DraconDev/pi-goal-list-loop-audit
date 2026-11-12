@@ -40,6 +40,18 @@ export const LEGACY_CARD_SECTIONS = [
   "Verification Summary",
 ] as const;
 
+/** The pre-report chat trailer shape (`• completion audit approved …`,
+ * `• record: …`). A receipt persisted by an older build collapses and colors
+ * on those lines too, so the collapsed projection can still tell them apart
+ * from body prose. */
+export const LEGACY_TRAILER_PREFIX = "\u2022 " as const;
+
+/** Width at which the Markdown gate table is abandoned for bullets. Pi's
+ * Markdown renders a table only when the border overhead (3n + 1 for n
+ * columns) leaves room for one character per cell; below this a three-column
+ * table prints its raw pipe rows instead, which reads as broken output. */
+export const NARROW_TABLE_COLUMNS = 50;
+
 const KNOWN_SECTIONS: readonly string[] = [...Object.values(CARD_SECTION), ...LEGACY_CARD_SECTIONS];
 
 /** The canonical section a heading belongs to, or null when the heading is
@@ -50,5 +62,18 @@ export function cardSectionName(heading: string): string | null {
     .replace(/^\s*#{1,6}\s+/, "")
     .replace(/^\*\*(.*?)\*\*$/, "$1");
   const name = bare.split(/\s*\u00b7\s*/)[0]?.trim() ?? "";
+  const canonical = CANONICAL_ALIASES[name];
+  if (canonical) return canonical;
   return KNOWN_SECTIONS.includes(name) ? name : null;
 }
+
+/** Legacy names map onto the section they now stand for, so one recognizer
+ * answers for both vocabularies (e.g. a queued `Remaining` block still reads
+ * as the follow-up section it became). */
+const CANONICAL_ALIASES: Record<string, string> = {
+  "What Changed": CARD_SECTION.whatChanged,
+  Remaining: CARD_SECTION.followUp,
+  Next: CARD_SECTION.nextSteps,
+  "Verification Evidence": CARD_SECTION.verification,
+  "Verification Summary": CARD_SECTION.verification,
+};
