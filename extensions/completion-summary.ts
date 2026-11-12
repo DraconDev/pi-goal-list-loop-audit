@@ -261,13 +261,15 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
  * transcript + archive human layer); progress cards, status line, and
  * external notifies keep their compact projections.
  * v0.38.55 (full parity): findings, values, and Next render uncapped —
- * the only remaining render-side bounds are the headline echo (80), the
+ * the only remaining render-side bounds are the title/lede split, the
  * evidence-token density (4/finding), and the sanitize trust boundary
  * (12 groups x 20 findings, 10 gate rows); the brief value guard is 10k
  * chars against pathological megabytes. */
 export const RICH_FULL_VALUE_BUDGET = 10_000;
-/** v0.38.50: objective echo clipped to a headline-safe width. */
-export const RICH_OBJECTIVE_ECHO_CHARS = 80;
+/** Field 2026-11-11: the headline is a report title — the first clause of the
+ * outcome, split at a natural boundary (see splitReportTitle) rather than
+ * truncated with an ellipsis. The remainder rides the prose lede. */
+export const RICH_HEADLINE_CHARS = 96;
 /** v0.38.50: findings spanning this many groups render as a table
  * (the 12-row screen-by-screen example); fewer stay nested. */
 export const RICH_TABLE_GROUP_THRESHOLD = 4;
@@ -796,7 +798,6 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
  * only moves existing text, and a single clause with no natural boundary keeps
  * the whole sentence on the headline.
  */
-export const RICH_HEADLINE_CHARS = 96;
 /** A title shorter than this reads as a fragment (`Done. The rest …`). */
 const MIN_TITLE_CHARS = 24;
 /** An em-dash clause break can carry a shorter, punchier title safely — the
