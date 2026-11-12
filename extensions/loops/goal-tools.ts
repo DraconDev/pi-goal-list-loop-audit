@@ -773,7 +773,10 @@ function registerAgentTools(pi: any): void {
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
       showVerification: Type.Optional(Type.Boolean({
-        description: "v0.38.98: set true only when the user explicitly asks to see test/verification details in the human summary. The default chat summary stays focused on what changed and what remains; the archive always retains the full evidence.",
+        description:
+          "v0.38.98, revised in the 2026-11-11 report shape: the verification inventory now always renders on both surfaces, " +
+          "so this flag is no longer needed to unhide it. It only adds one compact aggregate `Verification` sentence for a claim " +
+          "that supplied no gateRows inventory at all.",
       })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ description: "Work-area name (e.g. a subsystem, screen, or phase). The trust boundary clips display labels; the schema never refuses a claim over one." }),
@@ -783,7 +786,7 @@ function registerAgentTools(pi: any): void {
         description:
           "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
           "(subsystem, screen, phase); each finding leads with the primary user-visible outcome, then uses ` — ` for a concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason); never prefix a finding with `Lead:`, `Tests:`, or `Verdict:`. " +
-          "Chat uses nested area sections; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
+          "2026-11-11 report shape: each group becomes a `What changed · <area>` subsection of the Summary on both surfaces; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
           "REQUIRED when the six-label recap's Changed value names 3+ paths: the claim is refused without it. Omit only for genuinely single-area work — the flat six-label render stays the fallback there.",
       })),
@@ -799,12 +802,12 @@ function registerAgentTools(pi: any): void {
         notes: Type.Optional(Type.String({ maxLength: 10000, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed. Bounds match the documented 10k-char value guard." })),
       }), {
         description:
-          "v0.38.52: optional verification gate inventory for the terminal summary. " +
-          "The archive widens its Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
-          "and supersedes the mechanical Tests rows. Default chat omits technical verification; pass showVerification=true only after an explicit user request. " +
+          "v0.38.52, revised in the 2026-11-11 report shape: optional verification gate inventory, and it always renders. " +
+          "Chat shows the compact Gate | Command | Result table (bullets when the terminal is too narrow for a table); " +
+          "the archive keeps the wide Quality Gate | Command | Scope | Status | Notes inventory plus its review row, and the inventory supersedes the mechanical Tests rows. " +
+          "Status is DERIVED from the notes, never claimed: PASS only when the notes say pass with zero failures. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
           "REQUIRED alongside findingGroups when the recap's Changed value names 3+ paths: name each command you actually ran and copy its real counts into notes. " +
-          "Default chat omits technical verification; pass showVerification=true only after an explicit user request. " +
           "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
       })),
     }),
