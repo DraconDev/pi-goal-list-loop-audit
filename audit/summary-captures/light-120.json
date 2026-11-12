@@ -1,13 +1,9 @@
 {
   "width": 120,
-  "rows": 19,
+  "rows": 28,
   "appearance": "light",
-  "source": "registered goal-event production summary renderer; installed Pi dark/light theme",
+  "source": "registered goal-event production report renderer; installed Pi dark/light theme",
   "durableContentUnchanged": true,
   "maxVisibleWidth": 120,
-  "capture": "real xterm on private Xvfb",
-  "pixels": [
-    1100,
-    419
-  ]
+  "narrowTableFallback": "table"
 }

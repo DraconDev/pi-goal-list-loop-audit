@@ -1,13 +1,9 @@
 {
   "width": 40,
-  "rows": 26,
+  "rows": 33,
   "appearance": "dark",
-  "source": "registered goal-event production summary renderer; installed Pi dark/light theme",
+  "source": "registered goal-event production report renderer; installed Pi dark/light theme",
   "durableContentUnchanged": true,
   "maxVisibleWidth": 40,
-  "capture": "real xterm on private Xvfb",
-  "pixels": [
-    380,
-    552
-  ]
+  "narrowTableFallback": "bullets"
 }

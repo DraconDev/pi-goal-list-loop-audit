@@ -1,18 +1,22 @@
-## Done — Completion summaries are easier to scan
+## Done — Completion reports now read as one account of the work
 
-What Changed
-**1. Layout**
-- The menu stays readable at narrow widths
-  - browser probe at 390px confirmed no document overflow
+## Summary
+**What changed · Report shape**
+- **The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt** — sections, not an audit log for · extensions/completion-summary.ts:1200
 
-**2. Evidence**
-- Neutral observations do not imply passing verification
-  - unavailable provider results remain explicitly unknown
+**What changed · Verification**
+- **The gate inventory is always visible, derived from the notes rather than claimed** — impossible gate rows stay REPORTED, never PASS
 
-Remaining
+## Verification
+| Gate | Command | Result |
+| --- | --- | --- |
+| Release gate | npm run release:check | PASS: 4552 passed, 0 failed |
+| Typecheck | npm run check | exited 0 |
+
+## Follow-up items
 - Provider results are still unknown.
 - **Left out** — The narrow-window check is not wired into smoke.
 
-Next
+## Next steps
 - Wire the 390px case into the browser gate.
 
