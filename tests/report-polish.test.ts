@@ -30,6 +30,7 @@ import { extractFindingEvidence } from "../extensions/finding-lead.ts";
 import { workingTreeFingerprint } from "../extensions/gate-receipts.ts";
 import { highStakesScanText, LIGHT_AUDIT_CEILINGS, resolveAuditTier } from "../extensions/goal-loop-auditor-process.ts";
 import { isBillingError, isSpentPlanWall, quotaSignal } from "../extensions/quota-retry.ts";
+import { classifyMainModelFailure, isEagerRetryFailure, isQuotaHorizonExempt } from "../extensions/main-model-recovery.ts";
 import { loadThemeFromPath } from "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/theme.js";
 import { MockPi } from "./harness/mock-pi.ts";
 
@@ -120,8 +121,13 @@ test("#4: contract gate commands are not high-stakes language; real stakes still
 test("#6: a spent plan under a 429 is an account wall; reset-hinted limits stay rate limits", () => {
   const minimax = '429 {"type":"error","error":{"type":"rate_limit_error","message":"Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)"}}';
   assert.equal(isSpentPlanWall(minimax), true);
-  assert.equal(quotaSignal(minimax), "billing");
-  assert.equal(isBillingError(minimax), true);
+  // quota-class (prompt backup rotation in a supervised goal), never billing
+  // (which would first spend the same-model budget on a plan that cannot heal)
+  assert.equal(quotaSignal(minimax), "plan-quota");
+  assert.equal(isBillingError(minimax), false);
+  assert.equal(isQuotaHorizonExempt(minimax), true, "keeps the quota-class cadence and prompt rotation");
+  assert.equal(isEagerRetryFailure(classifyMainModelFailure(minimax)), false, "never hammered on the eager 5s window");
+  assert.equal(isEagerRetryFailure(classifyMainModelFailure("429 rate limit exceeded")), true, "a plain rate limit keeps its eager window");
   assert.equal(quotaSignal("429 usage limit reached, resets at 15:00 UTC. Upgrade your plan for more."), "rate-limit");
   assert.equal(quotaSignal("429 rate limit exceeded"), "rate-limit");
   assert.equal(quotaSignal("429 Too Many Requests"), "rate-limit");

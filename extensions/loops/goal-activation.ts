@@ -207,7 +207,7 @@ import {
   tickLengthContinue,
   type LengthExhaustionDecision,
 } from "../length-continue.js";
-import { isBillingError, isDeterministicProviderError, isSubagentProviderFailure, subagentQuotaEvidenceFrom } from "../quota-retry.js";
+import { isBillingError, isSpentPlanWall, isDeterministicProviderError, isSubagentProviderFailure, subagentQuotaEvidenceFrom } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
 import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } from "../state-root-owner.js";
 import {
