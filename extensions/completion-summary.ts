@@ -1541,7 +1541,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     ...(foldCounts ? [] : [receiptSegment(countsLine)]),
     receiptSegment(input.record),
   ].filter(Boolean);
-  const receiptLine = receiptSegments.join(" \u00b7 ");
+  const receiptLine = `${receiptSegments.join(" \u00b7 ")}.`;
   // Rich voice: banner + headline + report sections, closed by the trailer.
   // Verification rides the report itself (field 2026-11-11) rather than being
   // archive-only trivia; `showVerification` still adds its aggregate sentence
@@ -1562,9 +1562,6 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);
-  // The transcript notice carries the report plus the verdict/disclosure
-  // half of the receipt; the record pointer stays a chat-only affordance
-  // (it is a local path, not part of the terminal notice contract).
   const transcriptReceipt = receiptSegments.slice(0, -1).join(" \u00b7 ");
   return {
     chatLines: [
