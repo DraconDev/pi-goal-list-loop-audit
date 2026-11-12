@@ -408,10 +408,10 @@ export interface RichTerminalParts {
    * value earned the structured path — never a second copy of the
    * clipped headline echo. */
   summaryLines: string[];
-  /** Field 2026-11-11: the prose lede under the short headline — the whole
-   * outcome sentence when the headline had to shorten it. Empty when the
-   * headline already carries the sentence. */
-  ledeLines: string[];
+  /** Field 2026-11-11: the prose lede under the short headline — the rest of
+   * the outcome sentence when the headline only carried its first clause. Empty
+   * or absent when the headline already carries the whole outcome. */
+  ledeLines?: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -1289,7 +1289,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   if (headline !== lines[0]) lines.push(headline, "");
   // The prose lede: the whole outcome sentence under the shortened headline
   // (field 2026-11-11). Absent when the headline already carries it.
-  if (parts.ledeLines.length > 0) lines.push(...parts.ledeLines.map((line) => sanitizeDisplayText(line)), "");
+  if ((parts.ledeLines ?? []).length > 0) lines.push(...(parts.ledeLines ?? []).map((line) => sanitizeDisplayText(line)), "");
   if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
   // Structured-long (field 2026-09-16): the full Outcome body rides its
   // own section between the headline and the findings — findings-first
