@@ -320,6 +320,24 @@
             }
           }
         },
+        "gateReceipts": {
+          "type": "array",
+          "maxItems": 12,
+          "description": "v0.39.70: receipts for contract gates GLLA's deterministic pre-audit ran and passed for this claim. The auditor quotes them instead of re-running the gate; the completion card shows them as GLLA-run rows.",
+          "items": {
+            "type": "object",
+            "required": ["command", "exitCode", "durationMs"],
+            "properties": {
+              "command": { "type": "string" },
+              "exitCode": { "const": 0 },
+              "durationMs": { "type": "integer", "minimum": 0 },
+              "outputTail": { "type": "string" },
+              "cwd": { "type": "string" },
+              "retried": { "type": "boolean" }
+            }
+          }
+        },
+        "gateTreeFingerprint": { "type": "string", "pattern": "^[0-9a-f]{40,64}$", "description": "v0.39.70: working-tree fingerprint (git write-tree over a throwaway index) the gate receipts were taken against. A changed tree drops the receipts." },
         "timeoutEscalation": { "type": "integer", "minimum": 0, "maximum": 100, "description": "v0.37.0: adaptive-timeout escalation index, clamped to [0, 100] on load. A slow model is a machine fact, so a retried claim keeps its position." },
         "requestFullAudit": { "type": "boolean", "description": "v0.38.81: the agent asked for a full-tier audit on this claim. Escalation only." },
         "retryAttempts": { "type": "integer", "minimum": 0 },

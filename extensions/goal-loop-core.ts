@@ -21,6 +21,7 @@ import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
 import { DURABLE_SOLUTION_POLICY, normalizeSolutionJudgment, solutionJudgmentBrief, type SolutionJudgment } from "./durable-solution.js";
 import { sanitizeRecoveryOwner, type RecoveryOwner } from "./recovery-ownership.js";
 import { auditLifecycleLine, auditLifecycleProjection } from "./audit-lifecycle.js";
+import { sanitizeGateReceipts, type MechanicalGateReceipt } from "./gate-receipts.js";
 // Re-exported so display surfaces (which already import values from this
 // module) share ONE lifecycle import edge — the projection, its vocabulary,
 // and the settlement state machine can never drift apart.
