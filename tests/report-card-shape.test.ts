@@ -29,6 +29,7 @@ import { cardSectionName, tableAsBullets as leafTableAsBullets } from "../extens
 import { registerSummaryRenderer } from "../extensions/summary-renderer.js";
 import { compactHumanSummary } from "../extensions/human-handoff.js";
 import type { Goal, FindingGroup, GateRow } from "../extensions/goal-loop-core.js";
+import { HUMAN_HANDOFF_GUIDANCE } from "../extensions/human-handoff.js";
 import { MockPi, seedGoal } from "./harness/mock-pi.js";
 
 const GATES: GateRow[] = [
@@ -265,6 +266,19 @@ test("splitReportTitle prefers a natural boundary and never truncates mid-though
   assert.deepEqual(splitReportTitle("shipped the rich terminal voice"), { title: "shipped the rich terminal voice", lede: "" }, "one clause keeps its whole sentence");
   assert.deepEqual(splitReportTitle("Done. The rest continues here."), { title: "Done. The rest continues here.", lede: "" }, "a too-short opener never becomes the title");
   assert.equal(splitReportTitle("").title, "", "empty stays empty");
+});
+
+test("the agent guidance asks for the report material, not for a shape the renderer must rescue", () => {
+  // The card is built from what the agent claims; guidance that asks for a
+  // compact recap and leaves the report to the renderer is what produced the
+  // audit-log shape the operator rejected.
+  for (const phrase of ["Outcome is the lede", "findingGroups", "gateRows", "real counts", "limitations in Unresolved", "follow-up in Next"]) {
+    assert.ok(HUMAN_HANDOFF_GUIDANCE.includes(phrase), `guidance asks for ${phrase}`);
+  }
+  const journal = fs.readFileSync(path.resolve("extensions/loops/goal-tools.ts"), "utf-8");
+  assert.match(journal, /REPORT SHAPE:/, "complete_goal's own description names the report the claim feeds");
+  assert.match(journal, /findingGroups becomes one `What changed · <area>` subsection per area/, "it names the subsection shape");
+  assert.match(journal, /gateRows becomes the always-visible Verification table/, "it says verification is always visible");
 });
 
 test("the stored chat lines and the source message stay free of ANSI and controls", () => {
