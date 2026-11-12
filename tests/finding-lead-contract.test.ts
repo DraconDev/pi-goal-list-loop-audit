@@ -141,7 +141,7 @@ test("widget projects the normalized outcome without legacy Lead or technical la
   assert.doesNotMatch(widget.join("\n"), /Lead:|Tests:|verdict/);
 });
 
-test("terminal and archive human sections share the What Changed contract", () => {
+test("terminal and archive human sections share the What changed contract", () => {
   const findingGroups = [{ title: "Popup", findings: ["Users can complete a browser-action fill — src/popup.ts:42"] }];
   const rendered = buildTerminalApprovalRender({
     goal: goal(),
@@ -152,8 +152,11 @@ test("terminal and archive human sections share the What Changed contract", () =
   });
   const chat = rendered.chatLines.join("\n");
   const archive = buildRichArchiveSection(goal(), "complete", ".pi-glla/archive/lead-contract.md", findingGroups).join("\n");
-  assert.match(chat, /^What Changed$/m);
-  assert.match(archive, /### What Changed/);
+  // Report shape (field 2026-11-11): chat carries the area label as bold
+  // (`**What changed · Popup**`) and the archive as a real heading, so the two
+  // surfaces share ONE vocabulary while each renders it natively.
+  assert.match(chat, /^\*\*What changed · Popup\*\*$/m);
+  assert.match(archive, /^#### What changed · Popup$/m);
   assert.match(chat, /Users can complete a browser-action fill/);
   assert.match(archive, /Users can complete a browser-action fill/);
   assert.doesNotMatch(chat, /\*\*Lead\*\*|Lead:|Tests:|Test Results|auditor verdict|### Verification Summary/);
