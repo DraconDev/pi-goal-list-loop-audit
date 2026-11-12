@@ -66,5 +66,12 @@ none under a heading's body; `What changed · <area>` displayed as the bold
 area name directly above its bullets (the durable `fixture.md` keeps the full
 label); and `…not an audit log · path:line` without the stranded `for`.
 
-The `.png` rasterizations were **not** regenerated in this pass (no Xvfb run);
-they still show the 2026-11-11 layout. Treat the ANSI rows as current.
+The `.png` rasterizations were then regenerated with
+`timeout 180 python3 scripts/capture-ui-status.py --summaries` (exit 0, private
+Xvfb display). `dark-120` and `light-40` were inspected directly with native
+vision: sections separated by one blank row, `Report shape` / `Verification`
+area labels sitting directly above their bullets with no `What changed ·`
+prefix, the narrow card's gate inventory as bullets, and no stranded `for`
+before the `· path:line` pointer. `dark-40` and `light-120` were rendered but
+not inspected by eye; their ANSI rows match the inspected pair apart from
+color and width.
