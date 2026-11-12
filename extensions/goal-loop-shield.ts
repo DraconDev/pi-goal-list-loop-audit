@@ -335,6 +335,35 @@ export interface MechanicalCheckResult {
   /** v0.35.20: set when the first attempt failed transiently and the single
    * bounded retry passed — honest evidence of the wobble, not a silent mask. */
   recoveredRetryNote?: string;
+  /** v0.39.70: one receipt per contract step that PASSED. GLLA ran these
+   * commands itself (not the executor), so the auditor can quote them instead
+   * of re-running a multi-minute gate under its own per-tool budget, and the
+   * completion card can show what was actually run. Absent on non-pass. */
+  receipts?: MechanicalGateReceipt[];
+}
+
+/** v0.39.70: durable evidence that GLLA itself ran a contract command. */
+export interface MechanicalGateReceipt {
+  command: string;
+  exitCode: 0;
+  durationMs: number;
+  /** Bounded tail of combined output (MECHANICAL_RECEIPT_TAIL_CHARS). */
+  outputTail: string;
+  /** Set when the step ran outside the caller's cwd. */
+  cwd?: string;
+  /** True when the first attempt failed and the bounded retry passed. */
+  retried?: boolean;
+}
+
+/** v0.39.70: how much output a receipt keeps — the runner summary lives at
+ * the end of a test run, so the tail is the evidence. */
+export const MECHANICAL_RECEIPT_TAIL_CHARS = 1_500;
+
+export function receiptTail(output: string): string {
+  const trimmed = output.trim();
+  return trimmed.length > MECHANICAL_RECEIPT_TAIL_CHARS
+    ? "…" + trimmed.slice(-MECHANICAL_RECEIPT_TAIL_CHARS)
+    : trimmed;
 }
 
 /** v0.38.103: mechanical outcome classes. A killed gate is evidence of
@@ -570,6 +599,7 @@ async function runMechanicalPipeline(
   // failure (mirrors the single-command v0.35.20 retry); containment
   // events fail immediately without a second untrusted process tree.
   let firstFailure: { output: string; exitCode: number } | null = null;
+  const pipelineStartedAt = Date.now();
   for (let attempt = 1; attempt <= 2; attempt++) {
     const head = await runMechanicalCommand(cwd, program, args, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
     if (head.timedOut || head.aborted || head.outputLimit || head.processGroupLimit) {
@@ -595,7 +625,7 @@ async function runMechanicalPipeline(
       return { passed: false, outcome: "inconclusive", inconclusiveReason: "filter-incomplete", failedCommand: rawCommand, ...stageFailed };
     }
     if (head.exitCode === 0) {
-      return { passed: true, outcome: "pass" };
+      return { passed: true, outcome: "pass", receipts: [{ command: rawCommand, exitCode: 0, durationMs: Date.now() - pipelineStartedAt, outputTail: receiptTail(stageInput), ...(attempt > 1 ? { retried: true } : {}) }] };
     }
     const evidence = [`[pipeline head exited ${head.exitCode}]`, stageInput || "(no output survived the filters)"]
       .join("\n")
@@ -1044,6 +1074,7 @@ export async function runMechanicalPreAuditChecks(
   const effectiveTimeoutMs = opts?.loadScale === false ? baseTimeoutMs : scaledMechanicalTimeoutMs(baseTimeoutMs);
   const effectiveProcessGroupSize = normalizeMechanicalProcessGroupLimit(maxProcessGroupSize);
   const recoveredRetries: string[] = [];
+  const receipts: MechanicalGateReceipt[] = [];
   // v0.39.x: scripts resolve per DIRECTORY, because a step may name its own
   // cwd. A cross-repo step must canonicalise `bun test` against THAT project's
   // package.json, not the session's.
@@ -1095,6 +1126,7 @@ export async function runMechanicalPreAuditChecks(
         // once per check, never compounded per recursion level.
         const stepResult = await runMechanicalPreAuditChecks(runCwd, [step], baseTimeoutMs, signal, effectiveProcessGroupSize, opts);
         if (!stepResult.passed) return { ...stepResult, failedCommand: rawCommand };
+        for (const receipt of stepResult.receipts ?? []) receipts.push(runCwd === cwd ? receipt : { ...receipt, cwd: receipt.cwd ?? runCwd });
       }
       continue;
     }
@@ -1105,6 +1137,7 @@ export async function runMechanicalPreAuditChecks(
       const pipelineResult = await runMechanicalPipeline(runCwd, pipeline, rawCommand, scriptsFor(runCwd), effectiveTimeoutMs, signal, effectiveProcessGroupSize);
       if (!pipelineResult.passed && cwdNote) pipelineResult.output = cwdNote + (pipelineResult.output ?? "");
       if (!pipelineResult.passed) return pipelineResult;
+      for (const receipt of pipelineResult.receipts ?? []) receipts.push(runCwd === cwd ? receipt : { ...receipt, cwd: runCwd });
       continue;
     }
     if (!isSafeMechanicalCommand(cmd)) {
@@ -1139,10 +1172,19 @@ export async function runMechanicalPreAuditChecks(
     // the returned evidence so the auditor sees it happened.
     let firstFailure: { output: string; exitCode: number } | null = null;
     let passed = false;
+    const stepStartedAt = Date.now();
     for (let attempt = 1; attempt <= 2 && !passed; attempt++) {
       const run = await runMechanicalCommand(runCwd, program, args, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
       if (!run.timedOut && !run.aborted && !run.outputLimit && !run.processGroupLimit && run.exitCode === 0) {
         passed = true;
+        receipts.push({
+          command: rawCommand,
+          exitCode: 0,
+          durationMs: Date.now() - stepStartedAt,
+          outputTail: receiptTail(run.output),
+          ...(runCwd === cwd ? {} : { cwd: runCwd }),
+          ...(attempt > 1 ? { retried: true } : {}),
+        });
         continue;
       }
       const failure = formatMechanicalFailure(run, effectiveTimeoutMs);
@@ -1183,7 +1225,12 @@ export async function runMechanicalPreAuditChecks(
       recoveredRetries.push(`[mechanical check ${rawProgram}: first attempt failed (exit ${firstFailure.exitCode}); automatic retry passed]`);
     }
   }
-  return { passed: true, outcome: "pass", ...(recoveredRetries.length ? { recoveredRetryNote: recoveredRetries.join(" ") } : {}) };
+  return {
+    passed: true,
+    outcome: "pass",
+    ...(recoveredRetries.length ? { recoveredRetryNote: recoveredRetries.join(" ") } : {}),
+    ...(receipts.length ? { receipts } : {}),
+  };
 }
 
 /** v0.38.103: shaped verdict for a non-passing mechanical result — pure so
