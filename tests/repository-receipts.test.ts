@@ -15,7 +15,10 @@ function render(chat: boolean, findings: string[], proofs?: string[]) {
 test("repository-only findings are archive-only, without empty chat groups", () => {
   const chat = render(true, [receipt]);
   assert.doesNotMatch(chat, /Process|Ledger|Four fix entries|docs\/audits/);
-  assert.match(chat, /^\*\*1\. Engine\*\*$/m);
+  // Report shape (field 2026-11-11): the surviving area names its own
+  // `What changed · <area>` subsection; the receipt-only area leaves no trace.
+  assert.match(chat, /^\*\*What changed · Engine\*\*$/m);
+  assert.doesNotMatch(chat, /What changed · Process/, "an all-receipt area drops entirely");
   assert.ok(render(false, [receipt]).includes("Four fix entries were checked"));
   assert.match(chat, /4\/285\/1000/);
   assert.match(chat, /helpers\/contracts/);
