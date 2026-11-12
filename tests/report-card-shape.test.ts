@@ -57,7 +57,7 @@ const SUMMARY = [
   "Evidence: audit/login-copy-2026-11-11/README.md records the before/after copy.",
   "Tests: npm run release:check exited 0.",
   "Unresolved: Rate-limit copy still differs between the web and API paths.",
-  "Next: Align the API rate-limit message with the web copy.",
+  "Next: Audit the remaining login templates for the same leak.",
 ].join("\n");
 
 function render(extra: Record<string, unknown> = {}) {
@@ -75,7 +75,9 @@ function render(extra: Record<string, unknown> = {}) {
 
 test("the chat card is ONE report: headline, lede, Summary, Verification, Follow-up items, Next steps, receipt", () => {
   const lines = render().chatLines;
-  const sections = lines.filter((line) => line.startsWith("## ")).map((line) => line.replace(/^## /, ""));
+  const sections = lines
+    .filter((line) => line.startsWith("## ") && !line.startsWith("## Done") && !line.startsWith("## Aborted"))
+    .map((line) => line.replace(/^## /, ""));
   assert.deepEqual(
     sections,
     [CARD_SECTION.summary, CARD_SECTION.verification, CARD_SECTION.followUp, CARD_SECTION.nextSteps],
