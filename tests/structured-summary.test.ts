@@ -9,6 +9,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import type { Goal } from "../extensions/goal-loop-core.js";
 import {
+  CARD_SECTION,
   buildRichArchiveSection,
   buildRichTerminalParts,
   buildTerminalApprovalRender,
@@ -116,33 +117,38 @@ test("extractor: last line-anchored restatement wins", () => {
   assert.ok(value?.includes("## C"), "body runs to the next label");
 });
 
-test("card: structured Outcome renders a full ### Summary section, headline stays short", () => {
+test("card: structured Outcome renders the full body inside the report Summary, headline stays short", () => {
   const { chatLines } = render(STRUCTURED);
   assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome opens");
-  const summaryIdx = chatLines.indexOf("Summary");
+  // Report shape (field 2026-11-11): the structured body is the Summary's own
+  // document; verification and next steps are their own report sections.
+  const summaryIdx = chatLines.indexOf(`## ${CARD_SECTION.summary}`);
+  const verificationIdx = chatLines.indexOf(`## ${CARD_SECTION.verification}`);
+  const nextIdx = chatLines.indexOf(`## ${CARD_SECTION.nextSteps}`);
   assert.ok(summaryIdx > 0, "Summary section present");
-  const findingsIdx = chatLines.indexOf("What Changed");
-  const verificationIdx = chatLines.indexOf("Verification");
-  const nextIdx = chatLines.indexOf("Next");
-  assert.equal(verificationIdx, -1, "technical verification is hidden by default");
-  assert.ok(summaryIdx < findingsIdx && findingsIdx < nextIdx, "Summary rides the headline, then the change-first account");
-  const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
+  assert.ok(summaryIdx < verificationIdx && verificationIdx < nextIdx, "Summary, then what was checked, then what comes next");
+  const summaryBlock = chatLines.slice(summaryIdx + 1, verificationIdx);
   assert.ok(summaryBlock.includes("| Focus | draw a card |"), "full table text in chat");
   assert.ok(summaryBlock.includes("Slice 1 lands first."), "full prose in chat");
+  assert.ok(summaryBlock.some((line) => line.includes("cards.ts")), "the Changed value rides the same body");
   const headline = chatLines[0] ?? "";
   assert.ok(headline.startsWith("## Done — "), "headline leads with the outcome");
   assert.ok(headline.length < 300, `headline echo stays short, got ${headline.length} chars`);
 });
 
-test("card: unstructured summaries keep today's shape — no Summary section", () => {
+test("card: unstructured summaries keep today's shape — no structured body", () => {
   const { chatLines } = render(PLAIN);
-  assert.ok(!chatLines.includes("Summary"), "no Summary section without structure");
+  // Without a section-structured Outcome there is no document body; the
+  // Summary still carries the report's change bullets.
+  assert.ok(chatLines.includes(`## ${CARD_SECTION.summary}`), "the report Summary is always present");
+  assert.ok(!chatLines.some((line) => line.includes("Part 1: current keywords")), "no structured body without structure");
   assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome-first headline");
 });
 
-test("card: one-action Next survives the structured body", () => {
+test("card: one-action Next steps survives the structured body", () => {
   const { chatLines } = render(STRUCTURED);
-  const nextIdx = chatLines.indexOf("Next");
+  const nextIdx = chatLines.indexOf(`## ${CARD_SECTION.nextSteps}`);
+  assert.ok(nextIdx > 0, "Next steps section present");
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `exactly one Next action, got: ${JSON.stringify(nextBlock)}`);
   assert.match(nextBlock[0] ?? "", /implement slice 1/, "the concrete action survives");
@@ -164,23 +170,25 @@ test("guard: pathological structured values end with an honest pointer", () => {
   assert.ok(text.endsWith("… (truncated for chat — full text in the archived record.)"), "honest truncation pointer");
 });
 
-test("doctrine: horizon lives in Summary, Next names only the immediate move", () => {
+test("doctrine: horizon lives in Summary, Next steps names only the immediate move", () => {
   const withRoadmap = STRUCTURED
     .replace("## Part 2: rollout\nSlice 1 lands first.", "## Part 2: rollout\nSlice 1 lands first.\n## Part 3: later slices\nSlices 2 and 3 follow after slice 1.");
   const { chatLines } = render(withRoadmap);
-  const summaryIdx = chatLines.indexOf("Summary");
-  const findingsIdx = chatLines.indexOf("What Changed");
-  const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
+  const summaryIdx = chatLines.indexOf(`## ${CARD_SECTION.summary}`);
+  const verificationIdx = chatLines.indexOf(`## ${CARD_SECTION.verification}`);
+  const summaryBlock = chatLines.slice(summaryIdx + 1, verificationIdx);
   assert.ok(summaryBlock.some((line) => line.includes("Slices 2 and 3 follow")), "horizon stays visible in Summary");
-  const nextIdx = chatLines.indexOf("Next");
+  const nextIdx = chatLines.indexOf(`## ${CARD_SECTION.nextSteps}`);
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `one immediate move, got: ${JSON.stringify(nextBlock)}`);
   assert.match(nextBlock[0] ?? "", /implement slice 1/, "the immediate move leads");
 });
 
-test("archive human layer carries the same Summary section", () => {
+test("archive human layer carries the same Summary section and one receipt line", () => {
   const section = buildRichArchiveSection(structuredGoal(STRUCTURED), "complete", ".pi-glla/archive/20260916-structured.md");
-  assert.ok(section.includes("### Summary"), "archive parity");
+  assert.ok(section.includes(`### ${CARD_SECTION.summary}`), "archive parity");
   assert.ok(section.includes("| Focus | draw a card |"), "archive keeps full text");
-  assert.ok(section.some((line) => line.startsWith("• record: ")), "record pointer still closes");
+  // The receipt line closes the record with the verdict and the pointer.
+  const last = section[section.length - 1] ?? "";
+  assert.ok(/completion audit approved/.test(last) && last.includes(".pi-glla/archive/20260916-structured.md"), `record pointer closes: ${last}`);
 });
