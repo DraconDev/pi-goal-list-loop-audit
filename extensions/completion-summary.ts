@@ -1092,8 +1092,11 @@ export function buildRichTerminalParts(args: {
       // names the work. Chat renders it as a bold label (the Pi TUI has no
       // heading style) and the archive file as a real `###` heading.
       const area = sanitizeDisplayText(group.title);
+      // v0.39.70 (#8): chat already sits under the `Summary` heading, so the
+      // repeated `What changed ·` prefix was chrome — the area name alone is
+      // the label (Codex/OpenCode shape). The archive keeps its heading form.
       findingLines.push(args.chat
-        ? `**${CARD_SECTION.whatChanged} \u00b7 ${area}**`
+        ? `**${area}**`
         : `#### ${CARD_SECTION.whatChanged} \u00b7 ${area}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));

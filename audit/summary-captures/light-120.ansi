@@ -1,14 +1,16 @@
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;51;126;88mDone — Completion reports now read as one account of the work[39m                                                          [49m
+[48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;59;63;65mSummary[39m                                                                                                                [49m
-[48;2;230;228;238m [38;2;116;89;180mWhat changed · Report shape[39m                                                                                            [49m
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mThe card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt[39m[38;2;59;63;65m[38;2;59;63;65m — sections, not an  [49m
 [48;2;230;228;238m   [38;2;59;63;65maudit log for · extensions/completion-summary.ts:1200[39m                                                                [49m
-[48;2;230;228;238m [38;2;116;89;180mWhat changed · Verification[39m                                                                                            [49m
 [48;2;230;228;238m                                                                                                                        [49m
-[48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mThe gate inventory is always visible, derived from the notes rather than claimed[39m[38;2;59;63;65m[38;2;59;63;65m — impossible gate rows stay         [49m
-[48;2;230;228;238m   [38;2;59;63;65mREPORTED, never PASS[39m                                                                                                 [49m
+[48;2;230;228;238m [38;2;116;89;180mVerification[39m                                                                                                           [49m
+[48;2;230;228;238m                                                                                                                        [49m
+[48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mThe gate inventory is always visible, derived from the notes rather than claimed[39m[38;2;59;63;65m[38;2;135;144;149m — impossible gate rows stay         [49m
+[48;2;230;228;238m   [38;2;135;144;149mREPORTED, never PASS[39m                                                                                                 [49m
+[48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;116;89;180mVerification[39m                                                                                                           [49m
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m ┌──────────────┬───────────────────────┬─────────────────────────────┐                                                 [49m
@@ -18,11 +20,15 @@
 [48;2;230;228;238m ├──────────────┼───────────────────────┼─────────────────────────────┤                                                 [49m
 [48;2;230;228;238m │ [38;2;59;63;65mTypecheck[39m    │ [38;2;59;63;65mnpm run check[39m         │ [38;2;59;63;65mexited 0[39m                    │                                                 [49m
 [48;2;230;228;238m └──────────────┴───────────────────────┴─────────────────────────────┘                                                 [49m
+[48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;143;104;2mFollow-up items[39m                                                                                                        [49m
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;143;104;2m- [39m[38;2;59;63;65mProvider results are still unknown.[39m                                                                                  [49m
 [48;2;230;228;238m [38;2;143;104;2m- [39m[38;2;135;144;149mLeft out[39m[38;2;59;63;65m[38;2;59;63;65m — The narrow-window check is not wired into smoke.[39m                                                          [49m
+[48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;116;89;180mNext steps[39m                                                                                                             [49m
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mWire the 390px case into the browser gate.[39m                                                                           [49m
+[48;2;230;228;238m                                                                                                                        [49m
+[48;2;230;228;238m [38;2;59;63;65mMore details are available in the expanded message and saved record.[39m                                                   [49m
 [48;2;230;228;238m                                                                                                                        [49m

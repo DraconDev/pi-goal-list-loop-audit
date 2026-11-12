@@ -1,10 +1,10 @@
 ## Done — Completion reports now read as one account of the work
 
 ## Summary
-**What changed · Report shape**
+**Report shape**
 - **The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt** — sections, not an audit log for · extensions/completion-summary.ts:1200
 
-**What changed · Verification**
+**Verification**
 - **The gate inventory is always visible, derived from the notes rather than claimed** — impossible gate rows stay REPORTED, never PASS
 
 ## Verification

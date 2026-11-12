@@ -1,5 +1,5 @@
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
-import { Box, Markdown, stripTerminalSequences, truncateToWidth, type MarkdownTheme } from "@earendil-works/pi-tui";
+import { Box, Markdown, Spacer, stripTerminalSequences, truncateToWidth, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { compactHumanSummary } from "./human-handoff.js";
 import { CARD_SECTION, NARROW_TABLE_COLUMNS, cardSectionName, tableAsBullets } from "./card-sections.js";
 
@@ -90,7 +90,14 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     // width. Widths are capped by the caller, so a resize simply re-renders.
     const boxFor = (width: number): Box => {
       const box = new Box(outputPad, 1, text => theme.bg("customMessageBg", text));
+      let firstBlock = true;
       for (const block of summaryMarkdownBlocks(content)) {
+        // v0.39.70 (#7): each block is its own Markdown component, and Pi trims
+        // a component's trailing blank line — so sections ran together while
+        // the heading-to-body gap survived (spacing read inverted). One blank
+        // row BETWEEN sections restores the reading order.
+        if (!firstBlock && block.trim()) box.addChild(new Spacer(1));
+        if (block.trim()) firstBlock = false;
         const firstLine = block.split("\n")[0] ?? "";
         const heading = structuralHeading(firstLine) ?? "";
         const sectionName = heading ? cardSectionName(heading.replace(/^#+\s+/, "")) : null;

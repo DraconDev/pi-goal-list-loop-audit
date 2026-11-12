@@ -1,8 +1,8 @@
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;104;183;141mDone — Completion reports now read as  [49m
 [48;2;58;48;85m [38;2;104;183;141mone account of the work[39m                [49m
+[48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;222;224;225mSummary[39m                                [49m
-[48;2;58;48;85m [38;2;167;152;215mWhat changed · Report shape[39m            [49m
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe card is one document: headline,  [49m
 [48;2;58;48;85m   [38;2;222;224;225mlede, changes, verification,         [49m
@@ -10,24 +10,31 @@
 [48;2;58;48;85m   [38;2;222;224;225msections, not an audit log for ·     [49m
 [48;2;58;48;85m   [38;2;222;224;225mextensions/completion-summary.ts:120 [49m
 [48;2;58;48;85m   [38;2;222;224;225m0[39m                                    [49m
-[48;2;58;48;85m [38;2;167;152;215mWhat changed · Verification[39m            [49m
+[48;2;58;48;85m                                        [49m
+[48;2;58;48;85m [38;2;167;152;215mVerification[39m                           [49m
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe gate inventory is always         [49m
 [48;2;58;48;85m   [38;2;222;224;225mvisible, derived from the notes      [49m
-[48;2;58;48;85m   [38;2;222;224;225mrather than claimed[39m[38;2;222;224;225m[38;2;222;224;225m — impossible     [49m
-[48;2;58;48;85m   [38;2;222;224;225mgate rows stay REPORTED, never PASS[39m  [49m
+[48;2;58;48;85m   [38;2;222;224;225mrather than claimed[39m[38;2;222;224;225m[38;2;126;136;142m — impossible     [49m
+[48;2;58;48;85m   [38;2;126;136;142mgate rows stay REPORTED, never PASS[39m  [49m
+[48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215mVerification[39m                           [49m
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;104;183;141mRelease gate — npm run release:check [49m
 [48;2;58;48;85m   [38;2;104;183;141m— PASS: 4552 passed, 0 failed[39m        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mTypecheck — npm run check — exited 0[39m [49m
+[48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;205;154;34mFollow-up items[39m                        [49m
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;205;154;34m- [39m[38;2;222;224;225mProvider results are still unknown.[39m  [49m
 [48;2;58;48;85m [38;2;205;154;34m- [39m[38;2;126;136;142mLeft out[39m[38;2;222;224;225m[38;2;222;224;225m — The narrow-window check   [49m
 [48;2;58;48;85m   [38;2;222;224;225mis not wired into smoke.[39m             [49m
+[48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215mNext steps[39m                             [49m
 [48;2;58;48;85m                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mWire the 390px case into the browser [49m
 [48;2;58;48;85m   [38;2;222;224;225mgate.[39m                                [49m
+[48;2;58;48;85m                                        [49m
+[48;2;58;48;85m [38;2;222;224;225mMore details are available in the      [49m
+[48;2;58;48;85m [38;2;222;224;225mexpanded message and saved record.[39m     [49m
 [48;2;58;48;85m                                        [49m
