@@ -5,7 +5,7 @@
 // configured candidates, recognizes positively non-recoverable failures, and
 // computes a bounded-but-persistent retry cadence.
 
-import { DEFAULT_QUOTA_RETRY_SEC, isConcurrencyWall, parseQuotaError, quotaSignal, isDeterministicProviderError } from "./quota-retry.js";
+import { DEFAULT_QUOTA_RETRY_SEC, isConcurrencyWall, isSpentPlanWall, parseQuotaError, quotaSignal, isDeterministicProviderError } from "./quota-retry.js";
 
 /** Recovery retries the configured chain promptly, then makes one paced
  * attempt every five minutes for as long as the owning work remains eligible.
@@ -566,6 +566,11 @@ export function isEagerRetryFailure(failure: MainModelFailure | undefined): bool
   // reset hours away would idle a healthy rig behind a limit that already
   // lifted.
   if (isConcurrencyWall(failure.raw)) return true;
+  // v0.39.70 (#6): a spent plan ("upgrade your plan / purchase credits", no
+  // reset hint) cannot heal on a five-second retry — only a purchase or a
+  // different model can. Off the eager window; the quota-class cadence and
+  // prompt backup rotation still apply.
+  if (isSpentPlanWall(failure.raw)) return false;
   if (signal === "rate-limit" || signal === "plan-quota") return quotaResetSleepMs(failure) === undefined;
   if (signal) return false;
   return failure.kind === "transient" || failure.kind === "unknown" || isEmptyProviderResponse(failure.raw);

@@ -473,8 +473,13 @@ export function quotaSignal(error: string | undefined): QuotaSignal | undefined 
   // recovery path keeps retrying it and the optional hourly ticker can add a
   // probe after the start of each hour.
   // v0.39.70 (#6): "upgrade your plan / purchase credits" with no reset hint
-  // is a spent plan even when the provider sends it as a 429.
-  if (isSpentPlanWall(error) && (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error) || BILLING.test(error) || GENERIC_LIMIT_WALL.test(error))) return "billing";
+  // is a SPENT PLAN even when the provider sends it as a 429 — an account
+  // quota wall, not a request-rate wall. `plan-quota` keeps it quota-class, so
+  // a supervised goal rotates to a permitted backup promptly (billing would
+  // first spend the same-model budget on a plan that cannot heal);
+  // isEagerRetryFailure and the unsupervised lane read isSpentPlanWall so
+  // nothing hammers it every few seconds.
+  if (isSpentPlanWall(error) && (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error) || BILLING.test(error) || GENERIC_LIMIT_WALL.test(error))) return "plan-quota";
   if (RATE_LIMIT.test(error)) return "rate-limit";
   if (BILLING.test(error)) return "billing";
   if (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error)) return "plan-quota";
