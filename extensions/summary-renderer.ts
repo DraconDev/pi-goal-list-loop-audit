@@ -84,34 +84,50 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     // Continuations share this custom type. Only durable terminal receipts
     // receive summary styling; the default host renderer handles other events.
     if (!(message.details as { terminalApprovalGoalId?: string } | undefined)?.terminalApprovalGoalId || typeof message.content !== "string") return undefined;
-    const box = new Box(outputPad, 1, text => theme.bg("customMessageBg", text));
     const content = expanded ? message.content : compactHumanSummary(message.content).content;
-    for (const block of summaryMarkdownBlocks(content)) {
-      const firstLine = block.split("\n")[0] ?? "";
-      const heading = structuralHeading(firstLine) ?? "";
-      const sectionName = heading ? cardSectionName(heading.replace(/^#+\s+/, "")) : null;
-      const tone = summaryHeadingTone(heading);
-      const verification = sectionName === CARD_SECTION.verification;
-      // Narrow receipts (field 2026-11-11): Pi prints a Markdown table's RAW
-      // pipe rows when the width cannot fit it, which a reader sees as broken
-      // output. The block is rendered once per width, so the fallback happens
-      // here — a table becomes `- Gate — command — result` bullets when the
-      // card cannot hold it. Both shapes state the same derived facts.
-      const narrow = verification && width < NARROW_TABLE_COLUMNS;
-      const sourceBlock = narrow ? tableAsBullets(block).join("\n") : block;
-      // Current receipts use plain section labels for host compatibility.
-      // Promote them only in the display layer so Markdown can style them;
-      // durable content and archive text remain unchanged.
-      // Pi renders depth >=3 prefixes literally. Depth 2 preserves the
-      // semantic heading style without exposing Markdown hashes.
-      const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
-      box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
-        color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
-      }));
-    }
+    // The box is rebuilt per rendered width: the narrow-table decision lives
+    // below, and a cached box would keep the shape chosen for an earlier
+    // width. Widths are capped by the caller, so a resize simply re-renders.
+    const boxFor = (width: number): Box => {
+      const box = new Box(outputPad, 1, text => theme.bg("customMessageBg", text));
+      for (const block of summaryMarkdownBlocks(content)) {
+        const firstLine = block.split("\n")[0] ?? "";
+        const heading = structuralHeading(firstLine) ?? "";
+        const sectionName = heading ? cardSectionName(heading.replace(/^#+\s+/, "")) : null;
+        const tone = summaryHeadingTone(heading);
+        const verification = sectionName === CARD_SECTION.verification;
+        // Narrow receipts (field 2026-11-11): Pi prints a Markdown table's RAW
+        // pipe rows when the width cannot fit it, which a reader sees as
+        // broken output. A verification table becomes
+        // `- Gate — command — result` bullets when the card cannot hold it;
+        // both shapes state the same derived facts.
+        const sourceBlock = verification && width < NARROW_TABLE_COLUMNS
+          ? tableAsBullets(block).join("\n")
+          : block;
+        // Current receipts use plain section labels for host compatibility.
+        // Promote them only in the display layer so Markdown can style them;
+        // durable content and archive text remain unchanged.
+        // Pi renders depth >=3 prefixes literally. Depth 2 preserves the
+        // semantic heading style without exposing Markdown hashes.
+        const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
+        box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
+          color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
+        }));
+      }
+      return box;
+    };
+    let renderedAt = -1;
+    let rendered: Box | undefined;
     return {
-      render: width => width <= 0 ? [] : box.render(width).map(line => truncateToWidth(line, width, "…")),
-      invalidate: () => box.invalidate(),
+      render: width => {
+        if (width <= 0) return [];
+        if (!rendered || renderedAt !== width) {
+          rendered = boxFor(width);
+          renderedAt = width;
+        }
+        return rendered.render(width).map(line => truncateToWidth(line, width, "…"));
+      },
+      invalidate: () => { rendered?.invalidate(); rendered = undefined; renderedAt = -1; },
     };
   });
 }
