@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
+import { formatReceiptDuration, type MechanicalGateReceipt } from "./gate-receipts.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
 import { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
@@ -414,6 +415,37 @@ export interface RichTerminalParts {
    * the outcome sentence when the headline only carried its first clause. Empty
    * or absent when the headline already carries the whole outcome. */
   ledeLines?: string[];
+}
+
+/** v0.39.70: a gate row, optionally backed by a GLLA-run receipt. */
+type CardGateRow = GateRow & { gllaReceipt?: MechanicalGateReceipt };
+
+function receiptCommandKey(value: string | undefined): string {
+  return (value ?? "").replace(/`/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** "GLLA ran it — exit 0 in 14m02s" (+ retry note). */
+export function gllaReceiptNote(receipt: MechanicalGateReceipt): string {
+  return `GLLA ran it \u2014 exit 0 in ${formatReceiptDuration(receipt.durationMs)}${receipt.retried ? " (after one retry)" : ""}`;
+}
+
+/**
+ * v0.39.70: fold GLLA gate receipts into the agent's gate inventory. A receipt
+ * whose command matches an agent row backs that row; an unmatched receipt gets
+ * its own row. Agent rows keep their order; GLLA-only rows follow.
+ */
+export function mergeReceiptGateRows(gates: readonly GateRow[], receipts: readonly MechanicalGateReceipt[] | undefined): CardGateRow[] {
+  const rows: CardGateRow[] = gates.map((row) => ({ ...row }));
+  for (const receipt of receipts ?? []) {
+    const key = receiptCommandKey(receipt.command);
+    const match = rows.find((row) => !row.gllaReceipt && row.command && receiptCommandKey(row.command) === key);
+    if (match) {
+      match.gllaReceipt = receipt;
+      continue;
+    }
+    rows.push({ gate: "Contract gate", command: receipt.command, scope: "verification contract", gllaReceipt: receipt });
+  }
+  return rows;
 }
 
 function escapeTableCell(value: string): string {
@@ -968,6 +1000,10 @@ export function buildRichTerminalParts(args: {
   durationLine?: string | null;
   groups?: FindingGroup[];
   gates?: GateRow[];
+  /** v0.39.70: contract gates GLLA's own pre-audit ran and passed. Each one
+   * either upgrades the agent's row for the same command or adds its own
+   * row, so the card states what GLLA ran — not only what the agent says. */
+  receipts?: MechanicalGateReceipt[];
   /** v0.38.55: headline voice — Done on the terminal path, Aborted for
    * aborted archive records (which never wear a Done banner). */
   kind?: "Done" | "Aborted";
@@ -1096,7 +1132,7 @@ export function buildRichTerminalParts(args: {
   // zero failures ("Clean exit 0"-style notes honestly stay REPORTED).
   // v0.38.55: every row renders with its repro command when any row
   // carries one (Stage | Command | Result | Notes parity) — no row cap.
-  const gates = args.gates ?? [];
+  const gates = mergeReceiptGateRows(args.gates ?? [], args.receipts);
   // Field 2026-11-11: the gate table is part of the report on BOTH surfaces.
   // Chat earns a compact three-column shape (Gate | Command | Result); the
   // archive keeps the wide inventory (Command + Scope + Status + Notes) and
@@ -1104,8 +1140,12 @@ export function buildRichTerminalParts(args: {
   const showCommand = args.chat ? true : gates.some((row) => row.command?.trim());
   if (gates.length > 0) {
     for (const row of gates) {
-      const safeNotes = row.notes ? sanitizeDisplayText(row.notes).trim() : "";
-      const derived = testsRowStatus(safeNotes);
+      const agentNotes = row.notes ? sanitizeDisplayText(row.notes).trim() : "";
+      // v0.39.70: a GLLA receipt is a proven pass on its own evidence (exit 0,
+      // observed by GLLA) — the agent's wording rides along, never decides it.
+      const receiptNote = row.gllaReceipt ? gllaReceiptNote(row.gllaReceipt) : "";
+      const safeNotes = [receiptNote, agentNotes].filter(Boolean).join(" \u00b7 ");
+      const derived = row.gllaReceipt ? "PASS" : testsRowStatus(safeNotes);
       const notes = args.chat ? chatNarrative(safeNotes) : safeNotes;
       const command = row.command ? sanitizeDisplayText(row.command).trim() : "\u2014";
       const gate = sanitizeDisplayText(row.gate);
