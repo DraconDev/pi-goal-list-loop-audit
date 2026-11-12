@@ -41,16 +41,16 @@ test("pairing: resolving action rides inline under its problem", () => {
   assert.match(arrow!, /Cut a release/, "action prose kept verbatim");
 });
 
-test("pairing: standalone actions stay in ### Next", () => {
+test("pairing: standalone actions stay in the Next steps section", () => {
   const p = parts([PROBLEM, RESOLVING_ACTION, STANDALONE_ACTION]);
   assert.equal(p.nextLines.length, 1, "only the standalone action stays");
   assert.match(p.nextLines[0]!, /Audit the remaining game fixtures/);
   const card = composeRichTerminalLines(p).join("\n");
-  assert.match(card, /^Remaining$/m, "Remaining section renders");
-  assert.match(card, /^Next$/m, "Next section renders for the standalone action");
+  assert.match(card, /^Remaining$/m, "the follow-up section renders");
+  assert.match(card, /^Next$/m, "the Next steps section renders for the standalone action");
 });
 
-test("pairing: fully paired card omits an empty ### Next", () => {
+test("pairing: fully paired card omits an empty Next steps section", () => {
   const card = composeRichTerminalLines(parts([PROBLEM, RESOLVING_ACTION])).join("\n");
   assert.match(card, /^Remaining$/m);
   assert.doesNotMatch(card, /^Next$/m, "no empty Next section");
