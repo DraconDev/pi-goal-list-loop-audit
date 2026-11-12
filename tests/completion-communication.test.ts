@@ -72,13 +72,15 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   await waitFor(() => readState(cwd).goal === null);
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /^## Done — Fixed routing/);
-  assert.match(entries[0].content, /1\. router\.ts/);
-  // Technical verification stays in the archive by default; the human chat
-  // carries the change story and record pointer.
-  assert.doesNotMatch(entries[0].content, /### Verification/);
+  // Report shape (field 2026-11-11): the changed value is a bullet, the
+  // verification is stated, and one receipt line closes the report.
+  assert.match(entries[0].content, /^- \*\*router\.ts\.\*\*$/m);
+  assert.ok(entries[0].content.includes("## Summary"), "the report carries a Summary");
+  assert.ok(entries[0].content.includes("## Verification"), "verification is part of the report");
+  assert.doesNotMatch(entries[0].content, /\| Quality Gate \|/, "the wide inventory stays archival");
   assert.doesNotMatch(entries[0].content, /^Tests:/m);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
-  assert.match(entries[0].content, /• completion audit approved \(1 review\)\./);
+  assert.match(entries[0].content.split("\n").at(-1)!, /^completion audit approved \(1 review\) · record: .*\.md\.$/, "one receipt line closes the report");
   assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), "utf8"))[0].deliveredAt);
   assert.equal(ctx.ui.matching("## Done").length, 0, "no duplicate toast summary");
   await pi.fire("agent_settled", {}, ctx);
@@ -92,12 +94,14 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   await pi.runTool("complete_goal", { completionSummary: summary, verificationSummary: "pinned", leftOut: "the walkthrough artifact surface" }, ctx);
   await waitFor(() => entries.length === 1);
   assert.equal(entries.length, 1);
-  assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
+  assert.match(entries[0].content, /^- \*\*Left out\*\* — the walkthrough artifact surface/m);
   const lines = entries[0].content.split("\n");
-  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. /.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ") || ["What Changed", "Remaining", "Next", "Summary", "Verification"].includes(l)), "posted summary is one change-first voice");
-  const numbered = lines.filter((l: string) => /^\d+\. /.test(l));
-  assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
-  assert.ok(lines[lines.length - 1]!.startsWith("• record:"), "record pointer stays last");
+  // Report shape (field 2026-11-11): `##` report sections, bold area/left-out
+  // labels, plain bullets, and ONE receipt line — one voice, no legacy trailer.
+  assert.ok(lines.every((l: string) => l.startsWith("## ") || l === "" || /^\*[^*].*\*$/.test(l) || l.startsWith("**") || l.startsWith("- ") || l.startsWith("  ") || l.startsWith("| ") || l.startsWith("→ ") || l.startsWith("Auditor session kept") || l.startsWith("completion audit approved")), `posted summary is one report voice:\n${entries[0].content}`);
+  const findings = lines.filter((l: string) => l.startsWith("- "));
+  assert.ok(findings.length >= 1 && findings.length <= 8, `posted summary carries change bullets plus the trailer, got ${findings.length}`);
+  assert.ok(lines[lines.length - 1]!.startsWith("completion audit approved") && lines[lines.length - 1]!.includes("record: "), "the receipt, record pointer last");
 });
 
 test("complete_goal findingGroups ride the claim into the grouped terminal render", async () => {
@@ -116,15 +120,11 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
     { title: "Router", findings: ["Reroute: router.ts:12 pins the path"] },
   ], "the pending claim stores the sanitized groups");
   await waitFor(() => entries.length === 1);
-  assert.match(entries[0].content, /^## Done — Fixed routing\./);
-  assert.ok(entries[0].content.includes("1. Router"), "grouped area subsection reaches the chat");
-  // v0.38.104: the bullet shape is the v0.38.102 gist/evidence split — the
-  // finding is the bullet, the repo-relative evidence rides indented beneath
-  // it. This assertion still described the pre-v0.38.102 one-line
-  // `- **outcome** — evidence` form, which is why it was the one test the
-  // 2026-09-24 rendering change left red.
-  assert.ok(entries[0].content.includes("- pins the path"), "the gist is the bullet");
-  assert.ok(entries[0].content.includes("  - router.ts:12"), "the evidence is indented under the gist");
+  assert.match(entries[0].content, /^## Done — Fixed routing/);
+  // Report shape (field 2026-11-11): each area names its own subsection and
+  // the finding rides ONE bullet with its repo-relative evidence beside it.
+  assert.ok(entries[0].content.includes("**What changed · Router**"), "grouped area subsection reaches the chat");
+  assert.match(entries[0].content, /^- \*\*pins the path\*\* — router\.ts:12$/m, "gist and evidence share one bullet");
 });
 
 test("disapproval remains unfinished, no final success is posted", async () => {

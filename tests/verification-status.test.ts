@@ -47,10 +47,20 @@ for (const [notes, expected] of cases) {
         gates: inventory ? [{ gate: "Verification", notes, command: "fixture-only command" }] : undefined,
       });
       const row = parts.tableLines.find(line => line.startsWith("| Verification |") && line.includes(notes));
-      assert.ok(row, "production verification row exists");
-      const cells = row.split("|").map(cell => cell.trim());
-      const status = cells[inventory ? (chat ? 3 : 4) : 2];
-      assert.equal(status, expected, `${chat ? "chat" : "archive"}/${inventory ? "gate" : "legacy"}: ${row}`);
+      assert.ok(row, `production verification row exists:\n${parts.tableLines.join("\n")}`);
+      // Report shape (field 2026-11-11): chat keeps the compact
+      // `Gate | Command | Result` table, where an unproven row states its raw
+      // wording and a proven PASS row is prefixed `PASS:`; the archive keeps the
+      // wide inventory with the derived status in its own column.
+      if (chat && inventory) {
+        const result = row.split("|").map((cell) => cell.trim())[3] ?? "";
+        if (expected === "PASS") assert.match(result, /^PASS: /, `${row} should be labeled PASS`);
+        else assert.ok(!result.startsWith("PASS: "), `${row} must not claim a pass`);
+      } else {
+        const cells = row.split("|").map(cell => cell.trim());
+        const status = cells[inventory ? 4 : 2];
+        assert.equal(status, expected, `${chat ? "chat" : "archive"}/${inventory ? "gate" : "legacy"}: ${row}`);
+      }
       assert.ok(row.includes(notes), "original notes survive unchanged");
     }
   });

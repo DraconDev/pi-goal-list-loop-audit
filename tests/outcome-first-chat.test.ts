@@ -36,17 +36,22 @@ test("latest approved recap takes precedence for every plain/structured claim co
   }
 });
 
-test("four-area chat is outcome-first and grouped; archive retains detailed evidence", () => {
+test("four-area chat is outcome-first and grouped; the archive keeps the wide evidence", () => {
   const chat = fixtureRender().chatLines.join("\n");
   assert.match(chat.split("\n")[0]!, /Drafting now hands off/);
-  assert.match(chat, /^\*\*1\. Drafting\*\*$/m);
-  assert.doesNotMatch(chat, /\| Area \| Finding|\| Command \||bun test tests\/|node scripts\/live|abc12345|Final Repository State/);
-  assert.doesNotMatch(chat, /### Verification/);
+  // Report shape (field 2026-11-11): every area names its own subsection, and
+  // the gate inventory is part of the report — but the WIDE archive shape
+  // (Area table, Quality Gate columns, hashes, repo state) stays archival.
+  assert.match(chat, /^\*\*What changed · Drafting\*\*$/m);
+  assert.match(chat, /^\*\*What changed · Summaries\*\*$/m);
+  assert.doesNotMatch(chat, /\| Area \| Finding|\| Quality Gate \| Command \||abc12345|Final Repository State/);
   assert.doesNotMatch(chat, /^Tests:/m);
-  assert.doesNotMatch(chat, /12 passed, 0 failed, 1 skipped|Not run — provider unavailable/);
   assert.match(chat, /Live provider not exercised/);
   assert.equal((chat.match(/completion audit approved/g) ?? []).length, 1);
+  // Chat states each gate's real result; the wide inventory stays archival.
+  assert.match(chat, /\| Unit tests \| bun test tests\/ \| PASS: 12 passed, 0 failed, 1 skipped \|/);
   const archive = buildRichArchiveSection(fixtureGoal, "complete", ".pi-glla/archive/fixture.md", fixtureGroups, fixtureGates).join("\n");
+  assert.match(archive, /\| Quality Gate \| Command \| Scope \| Status \| Notes \|/);
   assert.match(archive, /bun test tests\//);
   assert.match(archive, /src\/example\.ts:42/);
 });

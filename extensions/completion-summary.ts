@@ -1653,13 +1653,15 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);
+  // Secondary annotations (inspection-session pointer, …) ride as plain lines
+  // before the receipt: the report's last voiced line is the receipt, and the
+  // record pointer still closes it (field 2026-11-11).
+  const extraLines = (input.extras ?? []).map(receiptSegment).filter((line) => line.length > 0);
   const transcriptReceipt = receiptSegments.slice(0, -1).join(" \u00b7 ");
   return {
     chatLines: [
       ...chatBody,
-      // Extras are secondary annotations, so they sit BEFORE the receipt:
-      // the record pointer stays the last thing on every terminal summary.
-      ...(input.extras ?? []),
+      ...extraLines,
       receiptLine,
     ],
     recap,

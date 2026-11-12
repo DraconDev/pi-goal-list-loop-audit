@@ -103,17 +103,17 @@ test("repair re-claim renders the latest approved recap and archives the origina
   await waitFor(() => entries.length === 1);
   const chat = entries[0]!.content as string;
   assert.match(chat, /^## Done — Completed the search rollout with all edge cases fixed/);
-  assert.match(chat, /• completion audit approved/);
+  assert.match(chat, /completion audit approved/, "the receipt states the verdict");
   assert.doesNotMatch(chat, /Shipped the search rollout end to end|Fixed the empty-query edge case/, "rejected outcomes cannot lead or contaminate the approved render");
-  assert.doesNotMatch(chat, /### Verification/, "verification stays in the archive by default");
-  assert.doesNotMatch(chat, /^Tests:/m, "technical Tests stays in the archive by default");
-  assert.doesNotMatch(chat, /2223 pass/, "test counts are supporting evidence, not the main chat narrative");
+  assert.ok(chat.includes("## Verification"), "verification is part of the report");
+  assert.doesNotMatch(chat, /^Tests:/m, "the raw Tests label stays archival");
+  assert.doesNotMatch(chat, /2223 pass/, "the rejected whole-work counts never reach chat");
   assert.doesNotMatch(chat, /rollout doc plus full suite/, "rejected evidence is not concatenated into approved details");
   assert.match(chat, /search\.ts edge guard/, "approved changes supply the human details");
-  assert.doesNotMatch(chat, /edge-case suite/, "proof stays in the archive by default");
+  assert.doesNotMatch(chat, /edge-case suite/, "the approved proof rides the archive, not the chat body");
   // Archive parity: the final section uses the approved recap while a
   // separate forensic section preserves the original claim verbatim.
-  const record = (chat.match(/• record: (\S+\.md)/) ?? [])[1];
+  const record = (chat.match(/record: (\S+\.md)/) ?? [])[1];
   assert.ok(record, "chat carries the archive record pointer");
   const archiveMd = fs.readFileSync(path.join(cwd, record), "utf-8");
   assert.match(archiveMd, /## Terminal summary/);
