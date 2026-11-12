@@ -1,6 +1,7 @@
 export declare const CHALLENGE_SEPARATOR: string;
 export declare const CONTINUATION_SEPARATOR: string;
 export declare const REWORK_SCOPE_RULES: string[];
+export declare const FIRST_ROUND_CHALLENGE_SCOPE_RULES: string[];
 export declare function buildChallengePrompt(
   originalPrompt: string,
   round1Output: string,
