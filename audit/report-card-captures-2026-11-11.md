@@ -72,6 +72,6 @@ Xvfb display). `dark-120` and `light-40` were inspected directly with native
 vision: sections separated by one blank row, `Report shape` / `Verification`
 area labels sitting directly above their bullets with no `What changed ·`
 prefix, the narrow card's gate inventory as bullets, and no stranded `for`
-before the `· path:line` pointer. `dark-40` and `light-120` were rendered but
-not inspected by eye; their ANSI rows match the inspected pair apart from
-color and width.
+before the `· path:line` pointer. `dark-40` and `light-120` were then
+inspected the same way and show the same layout (narrow bullets on `dark-40`,
+the bordered gate table on `light-120`). All four captures were inspected.
