@@ -443,8 +443,14 @@ const RESET_OR_RETRY_HINT = /\breset(?:s|ting)?\b|retry[\s_-]?after|try\s+again\
 
 /** True when a provider message says the plan is spent and must be bought
  * back, with no reset hint — an account wall even under an HTTP 429. */
+// MiniMax sends two different 429s with the same remedy text: 2062 "Token
+// Plan RATE limit reached" is a short request-rate window (stays rate-limit,
+// pinned in tests/quota-retry.test.ts); 2056 "Token Plan USAGE limit reached"
+// is the spent plan. A prose "rate limit" phrase rules the spent-plan reading
+// out; the JSON type `rate_limit_error` (underscores) does not.
+const PROSE_RATE_LIMIT = /\brate\s+limit/i;
 export function isSpentPlanWall(error: string | undefined): boolean {
-  return typeof error === "string" && SPENT_PLAN_REMEDY.test(error) && !RESET_OR_RETRY_HINT.test(error);
+  return typeof error === "string" && SPENT_PLAN_REMEDY.test(error) && !RESET_OR_RETRY_HINT.test(error) && !PROSE_RATE_LIMIT.test(error);
 }
 
 /** True when the failure is an admission limit on simultaneous requests rather

@@ -130,6 +130,9 @@ test("#6: a spent plan under a 429 is an account wall; reset-hinted limits stay 
   assert.equal(isEagerRetryFailure(classifyMainModelFailure("429 rate limit exceeded")), true, "a plain rate limit keeps its eager window");
   assert.equal(quotaSignal("429 usage limit reached, resets at 15:00 UTC. Upgrade your plan for more."), "rate-limit");
   assert.equal(quotaSignal("429 rate limit exceeded"), "rate-limit");
+  const minimaxRate = '429 {"error":{"type":"rate_limit_error","message":"Token Plan rate limit reached: Upgrade your Token Plan or switch to pay-as-you-go API usage. (2062)"}}';
+  assert.equal(isSpentPlanWall(minimaxRate), false, "2062 is a request-rate window, not a spent plan");
+  assert.equal(quotaSignal(minimaxRate), "rate-limit");
   assert.equal(quotaSignal("429 Too Many Requests"), "rate-limit");
   assert.equal(quotaSignal("membership concurrency limit exceeded: 11/10 — upgrade your plan"), "plan-quota", "a concurrency wall keeps its own lane");
 });
