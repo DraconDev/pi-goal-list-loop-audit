@@ -207,7 +207,7 @@ import {
   tickLengthContinue,
   type LengthExhaustionDecision,
 } from "../length-continue.js";
-import { isBillingError, isSpentPlanWall, isDeterministicProviderError, isSubagentProviderFailure, subagentQuotaEvidenceFrom } from "../quota-retry.js";
+import { isBillingError, isSpentPlanWall, isDeterministicProviderError, isSubagentProviderFailure, quotaSignal, subagentQuotaEvidenceFrom } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
 import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } from "../state-root-owner.js";
 import {
@@ -949,7 +949,7 @@ function maybeScheduleUnsupervisedErrorRetry(
   // retried once a minute against the same dead model for 13 minutes. Only a
   // purchase or a different model ends it; an unsupervised session has no
   // fallback chain, so say so once instead of hammering.
-  if (isSpentPlanWall(raw)) {
+  if (isSpentPlanWall(raw) && quotaSignal(raw) === "plan-quota") {
     appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "spent-plan", kind: failure.kind, display });
     ctx.ui.notify(`glla: the provider says this plan is used up (${display}) — switch model or top up the plan, then reply to retry; not retrying the same model.`, "warning");
     return;

@@ -485,7 +485,7 @@ export function quotaSignal(error: string | undefined): QuotaSignal | undefined 
   // first spend the same-model budget on a plan that cannot heal);
   // isEagerRetryFailure and the unsupervised lane read isSpentPlanWall so
   // nothing hammers it every few seconds.
-  if (isSpentPlanWall(error) && (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error) || BILLING.test(error) || GENERIC_LIMIT_WALL.test(error))) return "plan-quota";
+  if (RATE_LIMIT.test(error) && isSpentPlanWall(error) && (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error) || BILLING.test(error) || GENERIC_LIMIT_WALL.test(error))) return "plan-quota";
   if (RATE_LIMIT.test(error)) return "rate-limit";
   if (BILLING.test(error)) return "billing";
   if (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error)) return "plan-quota";
