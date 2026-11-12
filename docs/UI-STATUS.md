@@ -44,7 +44,7 @@ See [external-check recovery](RECOVERY.md#checking-authorized-external-work) and
 - `extensions/goal-loop-display.ts`: compact/detailed cards and footer, including project-builder branch.
 - `extensions/loops/goal-ui.ts`: production compact-card caller, runtime evidence adapter and notifications.
 - `extensions/goal-commands.ts`: goal/glla shared status projection and on-demand read-only fleet command integration.
-- `extensions/completion-summary.ts`: concise chat projection versus complete durable archive.
+- `extensions/completion-summary.ts`: the end-of-task report card (headline, prose lede, per-area `What changed` subsections, always-on verification, follow-ups, next steps, one receipt line) versus the complete durable archive. Section vocabulary is shared through the leaf module `extensions/card-sections.ts`, which also owns the narrow-width table-to-bullet fallback.
 - `extensions/goal-recovery.ts`: recovery evidence and ownership fencing; preserve retry policy and permission gates.
 
 ## Glance contract
@@ -89,6 +89,6 @@ Surfaces: all modes, compact and detailed cards, footer, status, notifications, 
 
 Fleet: configured-root limits, symlinks, malformed and oversized journals, partial results, closed versus unconfirmed sessions, immutable sibling artifacts and zero dispatch.
 
-Summary: outcome-first grouped changes, one instance of each limitation, one next action, full archive evidence and truthful audit/challenge caveats.
+Summary: the completion report opens with a short result headline over its prose lede, groups the changes by work area, always states the derived verification inventory (bullets when the width cannot hold the table), carries one instance of each limitation and one next action, and closes with a single receipt line; the archive keeps the wide evidence and truthful audit/challenge caveats.
 
 Captures: reproducible actual terminal renderer output for running, quota recovery, workflow rejection, user-blocked, dormant/unconfirmed audit, settling and completed summary at narrow/wide widths. See [native capture inspection](https://github.com/DraconDev/pi-goal-list-loop-audit/blob/main/audit/UI-CAPTURE-INSPECTION.md) for reproduction commands, real private-xterm screenshots and the disposition of the user's older/newer style comparison. These fixtures demonstrate production rendering, not live session execution; final integration gates remain open in the implementation register.
