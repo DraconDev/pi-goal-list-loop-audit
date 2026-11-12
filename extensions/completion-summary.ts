@@ -1361,6 +1361,14 @@ function trailerBullet(line: string): string {
   return `• ${sanitizeDisplayText(line).replace(/^—\s*/, "")}`;
 }
 
+/** One segment of the closing receipt line (field 2026-11-11). The old `•`
+ * trailer voice is stripped to its words so the segments join into a single
+ * `·`-separated line instead of a stack of bullets. A trailing period is
+ * dropped except on the very last segment, where it closes the sentence. */
+function receiptSegment(line: string): string {
+  return sanitizeDisplayText(line).replace(/^\u2022\s*/, "").replace(/^—\s*/, "").replace(/\.\s*$/, "").trim();
+}
+
 /** v0.38.25: the audit-goal counts line — verdict proof ONLY, built from
  * durable goal state. Raw run stats (turns/file-writes/bash calls) read as
  * a machine receipt in user chat (field 2026-09-08 223522/223523); the
@@ -1518,13 +1526,26 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   const foldCounts = history.length === 1
     && history[0]?.approved === true
     && /approved/.test(chatApproval);
-  const approvalBullet = foldCounts
-    ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} review${history.length === 1 ? "" : "s"}).`
-    : trailerBullet(chatApproval);
-  const recordBullet = trailerBullet(input.record);
-  // Rich voice: banner + headline + change/remaining sections + Next,
-  // closed by the pinned trailer. Technical verification is archive-only
-  // unless the user explicitly opts into one compact supporting sentence.
+  // Report shape (field 2026-11-11): the card closes with ONE receipt line —
+  // `completion audit approved (1 review) · record: <path>` — instead of four
+  // `•` bullets stacked under the findings. The old trailer repeated the
+  // verdict three times in different voices (approval, counts, review row) and
+  // read as audit bookkeeping attached to a report. Everything it carried
+  // survives here: the model-free verdict, any falsification disclosure, the
+  // verdict-count news when it is real news, and the record pointer last.
+  const receiptSegments = [
+    foldCounts
+      ? `${receiptSegment(chatApproval)} (${history.length} review${history.length === 1 ? "" : "s"})`
+      : receiptSegment(chatApproval),
+    ...challengeDisclosure(input.goal).map(receiptSegment),
+    ...(foldCounts ? [] : [receiptSegment(countsLine)]),
+    receiptSegment(input.record),
+  ].filter(Boolean);
+  const receiptLine = receiptSegments.join(" \u00b7 ");
+  // Rich voice: banner + headline + report sections, closed by the trailer.
+  // Verification rides the report itself (field 2026-11-11) rather than being
+  // archive-only trivia; `showVerification` still adds its aggregate sentence
+  // for a claim that supplied no gate inventory.
   const richParts = buildRichTerminalParts({
     chat: true,
     showVerification: input.showVerification,
@@ -1541,19 +1562,20 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);
+  // The transcript notice carries the report plus the verdict/disclosure
+  // half of the receipt; the record pointer stays a chat-only affordance
+  // (it is a local path, not part of the terminal notice contract).
+  const transcriptReceipt = receiptSegments.slice(0, -1).join(" \u00b7 ");
   return {
     chatLines: [
       ...chatBody,
-      approvalBullet,
-      ...challengeDisclosure(input.goal),
-      ...(foldCounts ? [] : [trailerBullet(countsLine)]),
-      // Extras are secondary annotations, so they sit BEFORE the record
-      // pointer: the record stays the last line of every terminal summary.
+      // Extras are secondary annotations, so they sit BEFORE the receipt:
+      // the record pointer stays the last thing on every terminal summary.
       ...(input.extras ?? []),
-      recordBullet,
+      receiptLine,
     ],
     recap,
-    transcriptLines: [...transcriptBody, approvalBullet, ...challengeDisclosure(input.goal)],
+    transcriptLines: transcriptReceipt ? [...transcriptBody, transcriptReceipt] : transcriptBody,
     countsLine,
     outcome: richBrief.outcome,
     approval: input.approval,
