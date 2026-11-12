@@ -200,3 +200,23 @@ test("receipt durations read like a person wrote them", () => {
   assert.equal(formatReceiptDuration(192_000), "3m12s");
   assert.equal(formatReceiptDuration(3_840_000), "1h04m");
 });
+
+test("receipts, their tree fingerprint and the goal's start tree survive a reload", async () => {
+  const { readState } = await import("../extensions/goal-loop-core.ts");
+  const { seedState, tmpCwd } = await import("./harness/mock-pi.ts");
+  const cwd = tmpCwd();
+  const fp = "a".repeat(40);
+  seedState(cwd, {
+    goal: seedGoal({
+      startTree: "b".repeat(40),
+      pendingCompletion: { at: new Date().toISOString(), completionSummary: "Outcome: done", gateReceipts: [RECEIPT, { command: "x", exitCode: 2 }], gateTreeFingerprint: fp },
+    }),
+    list: [],
+  });
+  const loaded = readState(cwd).goal!;
+  assert.equal(loaded.startTree, "b".repeat(40));
+  assert.deepEqual(loaded.pendingCompletion?.gateReceipts, [RECEIPT], "sanitized: the failed entry is dropped");
+  assert.equal(loaded.pendingCompletion?.gateTreeFingerprint, fp);
+  seedState(cwd, { goal: seedGoal({ pendingCompletion: { at: new Date().toISOString(), gateTreeFingerprint: "not-a-sha" , gateReceipts: [RECEIPT] } }), list: [] });
+  assert.equal(readState(cwd).goal!.pendingCompletion?.gateTreeFingerprint, undefined, "a junk fingerprint is dropped");
+});
