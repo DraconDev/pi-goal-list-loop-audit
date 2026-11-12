@@ -40,7 +40,7 @@ const GROUPS: FindingGroup[] = [
   { title: "Locked accounts", findings: ["Unlock path: the copy names the unlock route without confirming existence (extensions/login.ts:112)"] },
 ];
 
-function goalWith(summary: string, history: Goal["auditHistory"] = [{ at: "t", approved: true, model: "m" }]): Goal {
+function goalWith(summary: string, history: Goal["auditHistory"] = [{ at: "t", approved: true, disapproved: false, model: "m" }]): Goal {
   return seedGoal({
     id: "20261111-report-shape",
     objective: "make login failures safe to read",
