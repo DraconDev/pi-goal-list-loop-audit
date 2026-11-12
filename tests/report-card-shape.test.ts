@@ -104,11 +104,13 @@ test("the chat card is ONE report: headline, lede, Summary, Verification, Follow
 
 test("the archive carries the same report with its wide inventory and repository state", () => {
   const archive = buildRichArchiveSection(goalWith(SUMMARY), "complete", ".pi-glla/archive/20261111-report-shape.md", GROUPS, GATES);
-  const sections = archive.filter((line) => line.startsWith("### ")).map((line) => line.replace(/^### /, ""));
+  // Report order (field 2026-11-11): what changed → what was checked → what is
+  // still open → what comes next → repository bookkeeping (archive only).
+  const archiveWithRepo = buildRichArchiveSection(goalWith(SUMMARY), "complete", "a.md", GROUPS, GATES);
   assert.deepEqual(
-    sections,
-    [CARD_SECTION.summary, CARD_SECTION.verification, CARD_SECTION.nextSteps, CARD_SECTION.repo].slice(0, sections.length),
-    `archive sections in report order:\n${archive.join("\n")}`,
+    archiveWithRepo.filter((line) => line.startsWith("### ")).map((line) => line.replace(/^### /, "")),
+    [CARD_SECTION.summary, CARD_SECTION.verification, CARD_SECTION.followUp, CARD_SECTION.nextSteps],
+    `archive sections in report order:\n${archiveWithRepo.join("\n")}`,
   );
   assert.ok(archive.includes(`#### ${CARD_SECTION.whatChanged} · Login responses`), "areas keep their subsection as a real heading");
   assert.ok(archive.includes("| Quality Gate | Command | Scope | Status | Notes |"), "the archive keeps the wide gate inventory");
@@ -122,8 +124,15 @@ test("verification is always reported, derives its status, and escapes table pip
   const lines = render().chatLines;
   assert.ok(lines.includes(`## ${CARD_SECTION.verification}`), "chat carries verification without any opt-in");
   assert.ok(lines.includes("| Gate | Command | Result |"), "chat uses its compact three-column shape");
-  // A proven pass is labeled PASS: with the real counts beside it.
-  assert.ok(lines.includes("| Release gate | npm run release:check | PASS: 4552 passed, 0 failed; exit 0 |"), lines.join("\n"));
+  // Unproven wording keeps its own words: `… ; exit 0` carries an unknown
+  // clause, so the row is REPORTED-shaped rather than borrowing a PASS label.
+  assert.ok(lines.includes("| Release gate | npm run release:check | 4552 passed, 0 failed; exit 0 |"), lines.join("\n"));
+  // A complete-parse pass IS labeled PASS: with the real counts beside it.
+  const proven = composeRichTerminalLines({
+    ...buildTerminalPartsFor({ outcome: "x", gates: [{ gate: "Release gate", command: "npm run release:check", notes: "4552 passed, 0 failed" }] }),
+    chat: true,
+  });
+  assert.ok(proven.includes("| Release gate | npm run release:check | PASS: 4552 passed, 0 failed |"), proven.join("\n"));
   // Unproven wording keeps its own words rather than borrowing a status word.
   const bare = composeRichTerminalLines({
     ...buildTerminalPartsFor({
