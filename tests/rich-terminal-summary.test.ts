@@ -84,12 +84,12 @@ test("verification renders on both surfaces; the archive keeps the full inventor
   const chat = render().chatLines;
   const verification = chat.indexOf(section(CARD_SECTION.verification));
   assert.ok(verification > 0, "verification section present in chat");
-  // Chat states the facts a person checks: the gate, its command, its result.
-  assert.ok(chat.some((l) => /^\| Verification \|.*\| PASS: bun test 2075 pass, 0 fail \|$/.test(l)), chat.join("\n"));
+  // Chat states the facts a person checks: the derived status and the notes.
+  assert.ok(chat.some((l) => /^\| Verification \| PASS \| 2075 pass, 0 fail \|$/.test(l)), chat.join("\n"));
   assert.ok(!chat.some((l) => /^Tests:/.test(l)), "technical Tests label never reaches chat");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(archive.includes(section("Verification"), ) || archive.includes("### Verification"), "archive keeps the verification record");
-  assert.ok(archive.some((l) => /^\| Verification \| PASS \| bun test 2075 pass, 0 fail \|$/.test(l)), "archive keeps the derived row");
+  assert.ok(archive.some((l) => /^\| Verification \| PASS \| 2075 pass, 0 fail \|$/.test(l)), "archive keeps the derived row");
   assert.ok(archive.some((l) => /^\| Completion review \| approved \(1 review\) \|/.test(l)), "archive keeps the review row");
 });
 
