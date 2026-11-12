@@ -408,15 +408,6 @@ export interface RichTerminalParts {
    * value earned the structured path — never a second copy of the
    * clipped headline echo. */
   summaryLines: string[];
-  /** Field 2026-11-11: findings arrived as per-area groups, so the card
-   * already carries `What changed · <area>` subsection labels. True keeps
-   * them unwrapped; false (flat findings) renders the legacy numbered list
-   * under a single section label. */
-  grouped?: boolean;
-  /** Field 2026-11-11: one compact receipt line closing the report
-   * (`completion audit approved (1 review) · record: <path>`). Absent keeps
-   * the legacy multi-bullet trailer for direct callers. */
-  footerLines?: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -1255,9 +1246,6 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   }
   if (parts.repoLines.length > 0) {
     lines.push(head(CARD_SECTION.repo), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
-  }
-  if (parts.footerLines && parts.footerLines.length > 0) {
-    lines.push(...parts.footerLines.map((line) => sanitizeDisplayText(line)));
   }
   return lines;
 }

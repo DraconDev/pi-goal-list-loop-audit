@@ -77,3 +77,41 @@ const CANONICAL_ALIASES: Record<string, string> = {
   "Verification Evidence": CARD_SECTION.verification,
   "Verification Summary": CARD_SECTION.verification,
 };
+
+/** Turn a Markdown table into `- <first cell> — <remaining cells>` bullets.
+ *
+ * Pi's Markdown prints a table's RAW pipe rows when the width cannot fit the
+ * border overhead and one character per cell, so a three-column gate table in
+ * a narrow terminal reads as broken output. The narrow receipt therefore
+ * states the same facts as bullets: the gate name first (that is what a reader
+ * scans for), then the command and the result.
+ *
+ * Non-table lines pass through untouched, and a table with no body rows (a
+ * header-only table) yields nothing rather than a stray bullet. */
+export function tableAsBullets(markdown: string): string[] {
+  const out: string[] = [];
+  let headerPending = false;
+  for (const line of markdown.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("|")) {
+      headerPending = false;
+      out.push(line);
+      continue;
+    }
+    // The first pipe row of a table block is its header; the separator row
+    // (if the table carries one) has no cells to report either.
+    if (!headerPending) {
+      headerPending = true;
+      continue;
+    }
+    if (/^\|(?:\s*:?-{2,}:?\s*\|)+$/u.test(trimmed)) continue;
+    const cells = trimmed
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((cell) => cell.trim())
+      .filter((cell) => cell.length > 0 && cell !== "\u2014");
+    if (cells.length > 0) out.push(`- ${cells.join(" \u2014 ")}`);
+  }
+  return out;
+}
