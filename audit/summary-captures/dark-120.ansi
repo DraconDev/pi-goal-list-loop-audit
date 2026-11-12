@@ -3,13 +3,13 @@
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;222;224;225mSummary[39m                                                                                                                [49m
 [48;2;58;48;85m                                                                                                                        [49m
+[48;2;58;48;85m [38;2;222;224;225mReport shape[39m                                                                                                           [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt[39m[38;2;222;224;225m[38;2;222;224;225m — sections, not an  [49m
 [48;2;58;48;85m   [38;2;222;224;225maudit log for · extensions/completion-summary.ts:1200[39m                                                                [49m
 [48;2;58;48;85m                                                                                                                        [49m
-[48;2;58;48;85m [38;2;167;152;215mVerification[39m                                                                                                           [49m
-[48;2;58;48;85m                                                                                                                        [49m
-[48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe gate inventory is always visible, derived from the notes rather than claimed[39m[38;2;222;224;225m[38;2;126;136;142m — impossible gate rows stay         [49m
-[48;2;58;48;85m   [38;2;126;136;142mREPORTED, never PASS[39m                                                                                                 [49m
+[48;2;58;48;85m [38;2;222;224;225mVerification[39m                                                                                                           [49m
+[48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe gate inventory is always visible, derived from the notes rather than claimed[39m[38;2;222;224;225m[38;2;222;224;225m — impossible gate rows stay         [49m
+[48;2;58;48;85m   [38;2;222;224;225mREPORTED, never PASS[39m                                                                                                 [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;167;152;215mVerification[39m                                                                                                           [49m
 [48;2;58;48;85m                                                                                                                        [49m
@@ -29,6 +29,4 @@
 [48;2;58;48;85m [38;2;167;152;215mNext steps[39m                                                                                                             [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mWire the 390px case into the browser gate.[39m                                                                           [49m
-[48;2;58;48;85m                                                                                                                        [49m
-[48;2;58;48;85m [38;2;222;224;225mMore details are available in the expanded message and saved record.[39m                                                   [49m
 [48;2;58;48;85m                                                                                                                        [49m

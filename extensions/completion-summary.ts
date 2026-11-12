@@ -609,7 +609,14 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return { text: stripped, evidence };
+  // v0.39.70 (#11): a pointer at the END of a sentence often hangs off a
+  // preposition ("…an audit log for path:line"). Moving the token out left
+  // "…an audit log for" — a sentence that stops mid-thought. Drop only a
+  // trailing pointer preposition, and only when a token was actually removed.
+  const tidy = evidence.length > 0
+    ? stripped.replace(/[\s,;:]+(?:for|in|at|see|via|from|on|under|per|cf\.?|e\.g\.?|—|–|-)\s*$/i, "").replace(/[\s,;:]+$/, "")
+    : stripped;
+  return { text: tidy, evidence };
 }
 
 /**
@@ -1092,11 +1099,8 @@ export function buildRichTerminalParts(args: {
       // names the work. Chat renders it as a bold label (the Pi TUI has no
       // heading style) and the archive file as a real `###` heading.
       const area = sanitizeDisplayText(group.title);
-      // v0.39.70 (#8): chat already sits under the `Summary` heading, so the
-      // repeated `What changed ·` prefix was chrome — the area name alone is
-      // the label (Codex/OpenCode shape). The archive keeps its heading form.
       findingLines.push(args.chat
-        ? `**${area}**`
+        ? `**${CARD_SECTION.whatChanged} \u00b7 ${area}**`
         : `#### ${CARD_SECTION.whatChanged} \u00b7 ${area}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));

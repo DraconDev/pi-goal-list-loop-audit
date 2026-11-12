@@ -116,7 +116,17 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
         // durable content and archive text remain unchanged.
         // Pi renders depth >=3 prefixes literally. Depth 2 preserves the
         // semantic heading style without exposing Markdown hashes.
-        const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
+        // v0.39.70 (#8): a grouped-change label (`What changed · <area>`) sits
+        // under the Summary heading already, so the display shows the AREA as
+        // a bold label directly above its bullets — not a second heading with
+        // the section name repeated. Durable content keeps the full label (the
+        // collapsed projection and the archive read it).
+        const areaLabel = sectionName === CARD_SECTION.whatChanged
+          ? /\u00b7\s*(.+?)\s*$/.exec(heading.replace(/^#+\s+/, ""))?.[1]
+          : undefined;
+        const displayBlock = areaLabel
+          ? `**${areaLabel}**` + sourceBlock.slice(firstLine.length)
+          : heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
         box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
           color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
         }));
