@@ -42,6 +42,24 @@ export const REWORK_SCOPE_RULES = [
   "- The prior round's evidence still stands. If a prior objection is closed, say so and quote the narrow check that closes it. Re-verify only what the objection requires.",
 ];
 
+/**
+ * v0.39.70: the falsification pass on a FIRST (non-rework) round.
+ *
+ * Round 2 is a fresh process: it sees the first-pass REPORT but none of its
+ * tool output, and "re-verify the load-bearing claims" used to mean re-running
+ * the project's whole verification suite a second time. Field record: the
+ * challenge round is where audits stalled on a full-suite bash call past the
+ * per-tool budget (the worker aborted and the approval was lost). The pass
+ * stays adversarial — it is scoped to the cheapest evidence that can falsify
+ * the approval, and to the GLLA gate receipts that already prove the suite.
+ */
+export const FIRST_ROUND_CHALLENGE_SCOPE_RULES = [
+  "FALSIFY CHEAPLY — scope for this pass:",
+  "- Do NOT re-run the project's full verification suite, its whole test run, its end-to-end harness, or any command listed under GLLA GATE RECEIPTS in the brief. GLLA ran those itself against this tree; re-running them proves nothing new and can exceed your per-tool budget.",
+  "- Target the load-bearing claims in the first-pass report: open the files and lines it cites and confirm they say what the report says, and run the single narrowest command (one test file, one grep) for any claim you doubt.",
+  "- Independent read-only checks (read/grep/find/ls of different files) may be issued together in one turn.",
+];
+
 export function buildChallengePrompt(originalPrompt, round1Output, reworkRound) {
   return [
     "AUDITOR CHALLENGE ROUND (falsification pass).",
@@ -59,7 +77,9 @@ export function buildChallengePrompt(originalPrompt, round1Output, reworkRound) 
       "- Your primary target is the OPEN OBJECTIONS: try to prove that the prior objections are NOT actually closed.",
       "- Do NOT re-verify the whole change from scratch, and do NOT re-run the project's full verification suite, its whole test run, or its end-to-end harness. The first pass established that part already.",
       "- Check the open objections with the narrowest command that produces evidence for them.",
-    ] : []),
+    ] : [
+      ...FIRST_ROUND_CHALLENGE_SCOPE_RULES,
+    ]),
     "RULES:",
     "- If you find ANY genuine gap between the completion claim and the evidence (missing artifact, failing check, untested contract item, hallucinated file, evidence that does not actually show what the report claims), list the concrete gaps, then end your report with a single final line exactly: <disapproved/>",
     "- If the completion genuinely holds up after your adversarial re-check, end with a single final line exactly: <approved/>",
