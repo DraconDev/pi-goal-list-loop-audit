@@ -1297,10 +1297,15 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   });
   return [
     ...composeRichTerminalLines(parts),
-    trailerBullet(stripApprovalModel(approval)),
-    ...challengeDisclosure(goal),
-    trailerBullet(countsLine),
-    trailerBullet(`\u2014 record: ${archivePath}`),
+    // Report shape (field 2026-11-11): the archive closes with the same single
+    // receipt line the chat card uses, then keeps the verbatim original claim
+    // as a separate forensic appendix.
+    `${[
+      receiptSegment(stripApprovalModel(approval)),
+      ...challengeDisclosure(goal).map(receiptSegment),
+      receiptSegment(countsLine),
+      receiptSegment(`\u2014 record: ${archivePath}`),
+    ].filter(Boolean).join(" \u00b7 ")}.`,
     ...(priorWholeWork ? ["", "## Original completion claim (verbatim)", "", priorWholeWork] : []),
   ];
 }
