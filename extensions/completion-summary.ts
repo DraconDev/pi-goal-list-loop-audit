@@ -361,7 +361,7 @@ function stripMachineTokens(line: string): string {
  * opencode's end-of-task summary"). Re-exported from the leaf module
  * ./card-sections.js so the composer, the collapsed chat receipt and the
  * terminal renderer cannot drift apart without adding an import cycle. */
-export { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
+export { CARD_SECTION, LEGACY_CARD_SECTIONS, NARROW_TABLE_COLUMNS, cardSectionName, tableAsBullets } from "./card-sections.js";
 
 /** Full Outcome body for the `### Summary` card section, or null when
  * the value is not section-structured (caller keeps today's budgets).
