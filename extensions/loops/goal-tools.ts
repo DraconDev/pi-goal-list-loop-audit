@@ -316,7 +316,7 @@ import {
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { selectQuotaWaitReroute } from "../quota-retry.js";
-import { buildFinalRepoStateLines, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryChangedPaths, completionSummaryDensityNote, completionSummaryStructureGap } from "../completion-summary.js";
+import { buildChangeStat, buildFinalRepoStateLines, changeStatLine, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryChangedPaths, completionSummaryDensityNote, completionSummaryStructureGap } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { HUMAN_HANDOFF_GUIDANCE, humanCheckTime } from "../human-handoff.js";
 import { auditReworkNotice } from "../audit-rework-handoff.js";
@@ -1883,7 +1883,9 @@ function registerAgentTools(pi: any): void {
           // Built from the terminalGoal local, which survives the archive
           // fence clearing state.goal.
           // v0.38.55 (full parity): final repository state closes the card.
-          const escRepoState = buildFinalRepoStateLines(ctx.cwd);
+          const escChangeStat = buildChangeStat(ctx.cwd, terminalGoal.startTree);
+          const escRepoState = buildFinalRepoStateLines(ctx.cwd, escChangeStat);
+          const escChangeLine = changeStatLine(escChangeStat);
           const escRender = buildTerminalApprovalRender({
             goal: terminalGoal,
             status: "complete",
@@ -1900,6 +1902,7 @@ function registerAgentTools(pi: any): void {
             ...(escGateRows ? { gateRows: escGateRows } : {}),
             ...(escGateReceipts ? { gateReceipts: escGateReceipts } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
+            ...(escChangeLine ? { changeLine: escChangeLine } : {}),
           });
           if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, gateReceipts: escGateReceipts, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: terminalGoal.id, objective: terminalGoal.objective, chatLines: escRender.chatLines } })) {
             return {
@@ -1977,7 +1980,9 @@ function registerAgentTools(pi: any): void {
         const manualArchiveRecord = `— record: ${manualArchivePath}`;
         // v0.38.25: canonical render — same voice as the detached path.
         // v0.38.55 (full parity): final repository state closes the card.
-        const manualRepoState = buildFinalRepoStateLines(ctx.cwd);
+        const manualChangeStat = buildChangeStat(ctx.cwd, state.goal.startTree);
+        const manualRepoState = buildFinalRepoStateLines(ctx.cwd, manualChangeStat);
+        const manualChangeLine = changeStatLine(manualChangeStat);
         const manualRender = buildTerminalApprovalRender({
           goal: state.goal,
           status: "complete",
@@ -1998,6 +2003,7 @@ function registerAgentTools(pi: any): void {
           ...(durableCompletionClaim.gateRows ? { gateRows: durableCompletionClaim.gateRows } : {}),
           ...(durableCompletionClaim.gateReceipts ? { gateReceipts: durableCompletionClaim.gateReceipts } : {}),
           ...(manualRepoState ? { repoState: manualRepoState } : {}),
+          ...(manualChangeLine ? { changeLine: manualChangeLine } : {}),
           // D7 audit: the shared builder sanitizes + shell-quotes the path;
           // the inline twin interpolated it raw (and unquoted) into chat.
           extras: inspectionSessionExtras(inspectionSessionPath),

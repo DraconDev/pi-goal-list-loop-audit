@@ -288,7 +288,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
+import { buildChangeStat, buildFinalRepoStateLines, changeStatLine, buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
 import { AUDIT_ACTIVITY_PERSIST_MS, isSettlingClaim, settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import {
@@ -1253,7 +1253,9 @@ export function settleApprovedCompletion(
   // contact instead of going silent (field 2026-09-07).
   // v0.38.55 (full parity): final repository state closes the card.
   // Best-effort — unreadable state keeps the section out.
-  const approvalRepoState = buildFinalRepoStateLines(ctx.cwd);
+  const approvalChangeStat = buildChangeStat(ctx.cwd, goal.startTree);
+  const approvalRepoState = buildFinalRepoStateLines(ctx.cwd, approvalChangeStat);
+  const approvalChangeLine = changeStatLine(approvalChangeStat);
   const approvalRender = buildTerminalApprovalRender({
     goal,
     status: "complete",
@@ -1274,6 +1276,7 @@ export function settleApprovedCompletion(
     ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
     ...(claim.gateReceipts ? { gateReceipts: claim.gateReceipts } : {}),
     ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
+    ...(approvalChangeLine ? { changeLine: approvalChangeLine } : {}),
     extras: inspectionSessionExtras(inspectionSessionPath),
   });
   const approvalObjective = goal.objective;
