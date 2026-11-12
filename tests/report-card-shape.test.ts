@@ -178,7 +178,11 @@ test("a narrow receipt states the gate inventory as bullets, never raw pipe rows
   assert.match(folded, /- Release gate — npm run release:check — 4552 passed, 0 failed; exit 0/, "the bullet states gate, command and result");
   assert.match(folded, /- Typecheck — npm run check — exited 0/, "every gate becomes a bullet");
   const wide = at(NARROW_TABLE_COLUMNS);
-  assert.match(wide, /\| Release gate \| npm run release:check \|/, "at the threshold the table renders normally");
+  // At the threshold the markdown table renders as a real bordered table
+  // rather than falling back to bullets or printing raw pipes.
+  assert.match(wide, /\u250c[-\u2500\u252c]+\u2510/, `a real table renders at the threshold:\n${wide}`);
+  assert.match(wide.replace(/\s+/g, " "), /Gate .* Command .* Result/, "the column vocabulary survives");
+  assert.doesNotMatch(wide, /^- Release gate/, "no bullet fallback at the threshold");
   assert.equal(tableAsBullets(["## Verification", "| Gate | Command | Result |", "| --- | --- | --- |", "| Unit | bun test | PASS: 9 passed |"].join("\n")).join("\n"),
     ["## Verification", "- Unit — bun test — PASS: 9 passed"].join("\n"), "the fallback keeps the heading and drops header/separator rows");
 });
