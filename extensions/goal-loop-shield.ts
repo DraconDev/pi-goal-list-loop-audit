@@ -1004,6 +1004,39 @@ export async function runMechanicalPreAuditChecks(
   const baseTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
     ? timeoutMs
     : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
+  // v0.39.x (dracon-platform fix): when the goal's cwd is a subdirectory of
+  // the repo (e.g. web/) and a contract's relative path does not resolve there
+  // but DOES resolve at the repo root, run from the repo root. This handles
+  // contracts authored with repo-root-relative paths (the common case for
+  // strategy/docs deliverables) without requiring a `cd` in the contract.
+  // Only activates as a fallback; explicit `cd` targets still win.
+  let effectiveCwd = cwd;
+  try {
+    // walk up to find repo root (.git)
+    let dir = cwd;
+    let repoRoot: string | null = null;
+    for (let depth = 0; depth < 8; depth++) {
+      if (fs.existsSync(path.join(dir, ".git"))) { repoRoot = dir; break; }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    if (repoRoot && repoRoot !== cwd) {
+      // check if any relative test -s/-f/-e path resolves under repoRoot but not cwd
+      const needsFallback = commands.some((entry) => {
+        const c = typeof entry === "string" ? entry : entry.command;
+        const m = c.trim().match(/^test\s+-[a-z]\s+(.+)$/i);
+        if (!m) return false;
+        const p = m[1]!.trim().split(/\s+/)[0]!;
+        if (path.isAbsolute(p)) return false;
+        const underCwd = fs.existsSync(path.resolve(cwd, p));
+        const underRoot = fs.existsSync(path.resolve(repoRoot, p));
+        return !underCwd && underRoot;
+      });
+      if (needsFallback) effectiveCwd = repoRoot;
+    }
+  } catch { /* keep cwd */ }
+  cwd = effectiveCwd;
   // v0.38.103: scale the budget with host load (capped 2×) unless the
   // caller disables it — a gate that needs 25 minutes idle must not be
   // killed at 25:00 sharp on a saturated host and then read as a verdict.
