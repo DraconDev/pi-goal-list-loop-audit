@@ -141,7 +141,7 @@ test("verification is always reported, derives its status, and escapes table pip
     }),
     chat: true,
   });
-  assert.ok(bare.includes("| Typecheck | npm run check | tsc --noEmit exited 0 |"), bare.join("\n"));
+  assert.ok(bare.includes("| Typecheck | npm run check | exited 0 |"), `the row keeps the honest wording (its own command is already in the Command column):\n${bare.join("\n")}`);
   // A failing gate is visible and never softened.
   const failing = composeRichTerminalLines({
     ...buildTerminalPartsFor({ outcome: "x", gates: [{ gate: "Unit", command: "bun test", notes: "3 failed, 9 passed" }] }),
@@ -172,8 +172,8 @@ test("a narrow receipt states the gate inventory as bullets, never raw pipe rows
   const at = (width: number) => stripTerminalSequences(renderer.render(width).join("\n"));
   const narrow = at(NARROW_TABLE_COLUMNS - 1);
   assert.doesNotMatch(narrow, /^\s*\|/m, `no raw pipe row below the fallback width:\n${narrow}`);
-  assert.match(narrow, /- Release gate — npm run release:check — PASS: 4552 passed, 0 failed; exit 0/, "the bullet states gate, command and result");
-  assert.match(narrow, /- Typecheck — npm run check — tsc --noEmit exited 0/, "every gate becomes a bullet");
+  assert.match(narrow, /- Release gate — npm run release:check — 4552 passed, 0 failed; exit 0/, "the bullet states gate, command and result");
+  assert.match(narrow, /- Typecheck — npm run check — exited 0/, "every gate becomes a bullet");
   const wide = at(NARROW_TABLE_COLUMNS);
   assert.match(wide, /\| Release gate \| npm run release:check \|/, "at the threshold the table renders normally");
   assert.equal(tableAsBullets(["## Verification", "| Gate | Command | Result |", "| --- | --- | --- |", "| Unit | bun test | PASS: 9 passed |"].join("\n")).join("\n"),
