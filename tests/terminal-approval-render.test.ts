@@ -15,6 +15,7 @@ import * as path from "node:path";
 import type { Goal } from "../extensions/goal-loop-core.js";
 import { ledgerPath } from "../extensions/goal-loop-core.js";
 import {
+  CARD_SECTION,
   buildApprovalChatLines,
   buildAuditCountsLine,
   buildRichArchiveSection,
@@ -73,42 +74,36 @@ test("canonical render folds a lone approval with the verdict count, model-free"
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   });
   assert.equal(render.chatLines[0], `## Done — ${render.outcome}`, "outcome opens the card");
-  // Rich voice (field 20260911_*): sections + table + trailer. Headers,
-  // numbered findings, table rows, and Next bullets share the chat; the
-  // record pointer stays last.
-  assert.ok(render.chatLines.includes("What Changed"), "change account present");
-  assert.ok(!render.chatLines.includes("### What Changed"), "no literal markdown headings in chat");
-  assert.equal(render.chatLines.includes("Verification"), false, "verification is hidden by default");
-  assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
-  assert.ok(!render.chatLines.some((l) => /^Tests:/.test(l)), "technical Tests stays out of default chat");
-  assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
-  // Change-first order: changes, then Next, then the pinned trailer
-  // (approval, record last).
-  const findingsIdx = render.chatLines.indexOf("What Changed");
-  const tableIdx = render.chatLines.indexOf("Verification");
-  const nextIdx = render.chatLines.indexOf("Next");
-  const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 completion audit approved"));
-  assert.ok(findingsIdx !== -1 && findingsIdx < nextIdx && nextIdx < approvalIdx, "findings precede Next, which closes the card ahead of the trailer");
-  // v0.38.42 (field 20260909_140404): a lone approval folds with the
-  // verdict count — no model ID, no redundant standalone audit bullet.
-  assert.ok(
-    render.chatLines.includes("• completion audit approved on the provider retry (1 review)."),
-    "single approval folds with the count, via-retry news kept",
-  );
-  assert.ok(!render.chatLines.some((l) => l.startsWith("• audit:")), "no standalone audit bullet when it would repeat the approval");
+  // Report shape (field 2026-11-11): what changed, what was checked, what is
+  // still open, what comes next — then ONE receipt line.
+  assert.ok(render.chatLines.includes(`## ${CARD_SECTION.summary}`), "the change body present");
+  assert.ok(!render.chatLines.some((l) => l.startsWith("### ")), "no literal markdown headings in chat");
+  assert.ok(render.chatLines.includes(`## ${CARD_SECTION.verification}`), "verification is part of the report");
+  assert.equal(render.chatLines.includes("1 passed."), false, "no aggregate substitute for the gate row");
+  assert.ok(!render.chatLines.some((l) => /^Tests:/.test(l)), "the raw Tests label stays archival");
+  assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "the mechanical Tests row stays archival");
+  const findingsIdx = render.chatLines.indexOf(`## ${CARD_SECTION.summary}`);
+  const tableIdx = render.chatLines.indexOf(`## ${CARD_SECTION.verification}`);
+  const nextIdx = render.chatLines.indexOf(`## ${CARD_SECTION.nextSteps}`);
+  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx, "changes precede verification, which precedes next steps");
+  // v0.38.42 (field 20260909_140404): a lone approval folds with the count and
+  // carries no model ID. The verdict rides ONE receipt line that closes the
+  // report, with the record pointer last.
+  const last = render.chatLines.at(-1) ?? "";
+  assert.match(last, /completion audit approved on the provider retry (1 review) \u00b7 record: .pi-glla\/archive\/20260907-approval-render\.md\./, last);
+  assert.ok(!render.chatLines.some((l) => l.startsWith("\u2022 ")), "no legacy bullet trailer");
   assert.ok(!render.chatLines.some((l) => /auditor-model/.test(l)), "no model ID anywhere in the chat");
-  const recordIdx = render.chatLines.findIndex((l) => l.startsWith("• record:"));
-  assert.equal(recordIdx, render.chatLines.length - 1, "record pointer is the final line");
   assert.ok(!render.chatLines.some((l) => /^\s*Next\s*:/i.test(l)), "stale pre-verdict Next never reaches the chat");
-  assert.ok(render.transcriptLines.includes("• completion audit approved on the provider retry (1 review)."), "transcript carries the same canonical bullet, model-free");
+  const transcriptLast = render.transcriptLines.at(-1) ?? "";
+  assert.match(transcriptLast, /completion audit approved on the provider retry (1 review)/, "transcript carries the verdict half, model-free");
   assert.ok(!render.transcriptLines.some((l) => /auditor-model/.test(l)), "no model ID in the transcript either");
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
   assert.ok(render.recap.length > 0, "external single line still produced");
-  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^## Done — /, ""), "outcome matches the chat headline under the banner");
+  assert.ok((render.chatLines[0] ?? "").startsWith(`## Done — ${render.outcome}`), "outcome matches the chat headline");
 });
 
-test("standalone audit bullet survives only with news", () => {
+test("the receipt states verdict-count news once, model-free", () => {
   const base = {
     status: "complete" as const,
     stopReason: "auditor m approved (detached)",
@@ -120,13 +115,14 @@ test("standalone audit bullet survives only with news", () => {
   const two = richGoal();
   two.auditHistory = [...(two.auditHistory ?? []), { at: "2026-09-07T01:00:00.000Z", approved: true, disapproved: false, model: "m2" }];
   const multi = buildTerminalApprovalRender({ ...base, goal: two });
-  assert.ok(multi.chatLines.includes("• completion audit approved."), "approval bullet still model-free");
-  assert.ok(multi.chatLines.includes("• completion review: approved (2 reviews)."), "multi-review counts bullet survives");
-  // Lone disapproval: the counts bullet carries the disapproval news.
+  const multiLast = multi.chatLines.at(-1) ?? "";
+  assert.match(multiLast, /completion audit approved \u00b7 completion review: approved \(2 reviews\)/, `multi-review news survives in the receipt: ${multiLast}`);
+  assert.ok(!multi.chatLines.some((l) => /auditor-model|\bm2\b/.test(l)), "no model ID in the multi-review receipt");
+  // Lone disapproval: the counts segment carries the disapproval news.
   const dis = richGoal();
   dis.auditHistory = [{ at: "2026-09-07T01:00:00.000Z", approved: false, disapproved: true, model: "m" }];
   const disRender = buildTerminalApprovalRender({ ...base, goal: dis, approval: "— auditor m disapproved." });
-  assert.ok(disRender.chatLines.some((l) => l.startsWith("• completion review: disapproved")), "disapproval counts bullet survives");
+  assert.match(disRender.chatLines.at(-1) ?? "", /completion review: disapproved/, "disapproval news survives in the receipt");
   // Archive record still carries the full model ID (v0.38.42 contract:
   // the model leaves chat/transcript, never the record).
   const hooks = fs.readFileSync(path.resolve("extensions/loops/goal-auditor-hooks.ts"), "utf-8");
@@ -177,14 +173,17 @@ test("v0.38.37 posted summary carries verifiable-result bullets plus the deliber
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   };
   const withLeftOut = buildTerminalApprovalRender({ ...base, leftOut: "the walkthrough artifact surface" });
-  const numbered = withLeftOut.chatLines.filter((l) => /^\d+\. /.test(l));
-  assert.ok(numbered.length >= 1 && numbered.length <= 8, `numbered findings carry the evidence, got ${numbered.length}`);
-  assert.ok(numbered.some((l) => /extensions\/completion-summary\.ts/.test(l)), "each finding carries its evidence inline");
-  // Rich voice: SIX's concrete `Next: replay on next contact` survives in
-  // the Next section, ahead of the non-do; the trailer closes last.
-  const remainingIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Left out**"));
-  const recordIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("• record:"));
-  assert.ok(remainingIdx > 0 && recordIdx === withLeftOut.chatLines.length - 1, "remaining concern then record pointer last");
+  // Each change is one bullet, outcome first with its evidence folded in; the
+  // bare `Changed:` value is NOT promoted into a second human finding.
+  const bullets = withLeftOut.chatLines.filter((l) => l.startsWith("- "));
+  assert.ok(bullets.length >= 1 && bullets.length <= 8, `change bullets carry the evidence, got ${bullets.length}`);
+  assert.ok(bullets.some((l) => /extensions\/completion-summary\.ts/.test(l)), "the change carries its evidence inline");
+  assert.ok(!withLeftOut.chatLines.some((l) => /^- \*\*gate green/.test(l)), "an Evidence receipt never becomes a change");
+  // The follow-up section carries the non-do; the receipt closes last.
+  const remainingIdx = withLeftOut.chatLines.indexOf(`## ${CARD_SECTION.followUp}`);
+  assert.ok(remainingIdx > 0, "the follow-up section carries the non-do");
+  const recordIdx = withLeftOut.chatLines.findIndex((l) => l.includes("record: "));
+  assert.equal(recordIdx, withLeftOut.chatLines.length - 1, "the record pointer closes the report");
   assert.ok(withLeftOut.chatLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "agent-claimed non-do closes the sections");
   assert.ok(withLeftOut.transcriptLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "transcript surface carries the non-do too");
   const without = buildTerminalApprovalRender(base);
@@ -296,7 +295,7 @@ test("error-only audit history renders an honest archive banner with no review r
     ],
   }) as unknown as Goal;
   const lines = buildRichArchiveSection(goal, "complete", ".pi-glla/archive/20260925-no-review.md");
-  assert.ok(lines.some((l) => l.includes("completed without a recorded completion review")), "banner names the absence");
+  assert.ok(lines.some((l) => l.includes("completed without a recorded completion review")), `receipt names the absence:\n${lines.join("\n")}`);
   assert.ok(!lines.some((l) => /completion review recorded/.test(l)), "no false recorded-review claim");
   assert.ok(!lines.some((l) => /^\| Completion review \| no review \|/.test(l)), "no lowercase review row leaks into the archive table");
 });
