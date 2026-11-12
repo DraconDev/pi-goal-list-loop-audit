@@ -15,8 +15,13 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import type { Goal } from "../extensions/goal-loop-core.js";
-import { CARD_SECTION, composeRichTerminalLines, buildRichTerminalParts, buildTerminalApprovalRender } from "../extensions/completion-summary.js";
+import { CARD_SECTION, buildRichTerminalParts, buildTerminalApprovalRender, composeRichTerminalLines } from "../extensions/completion-summary.js";
 import { seedGoal } from "./harness/mock-pi.js";
+
+/** Section heading line, chat renders depth 2 and archive depth 3. */
+function sectionLine(name: string, depth = 2): string {
+  return `${"#".repeat(depth)} ${name}`;
+}
 
 function render(summary?: string, overrides: Record<string, unknown> = {}) {
   const goal = seedGoal({
@@ -47,54 +52,60 @@ function render(summary?: string, overrides: Record<string, unknown> = {}) {
 
 test("chat report carries the changes, then verification, then the follow-ups, in one voice", () => {
   const lines = render().chatLines;
-  const summary = lines.indexOf(CARD_SECTION.summary);
-  const verification = lines.indexOf(CARD_SECTION.verification);
-  const followUp = lines.indexOf(CARD_SECTION.followUp);
-  // Report order (field 2026-11-11): the changes are the body, the gate table
-  // reports what was checked, and the limitations close it.
-  assert.ok(summary >= 0, "the change body has its own section");
+  const summary = lines.indexOf(sectionLine(CARD_SECTION.summary));
+  const verification = lines.indexOf(sectionLine(CARD_SECTION.verification));
+  const followUp = lines.indexOf(sectionLine(CARD_SECTION.followUp));
+  assert.ok(summary >= 0, `the change body has its own section:\n${lines.join("\n")}`);
   assert.ok(verification > summary, "verification follows the changes");
   assert.ok(followUp > verification, "follow-ups close the report after verification");
   const text = lines.join("\n");
-  // The findings survive as outcome-first prose with their repo-relative
-  // evidence inline — never as a numbered list of opaque fragments.
   assert.ok(text.includes("overlapping saves no longer discard confirmed revisions"), text);
   assert.ok(text.includes("Chrome and Firefox archives now contain matching version manifests"), text);
   assert.ok(text.includes("src/save.ts:42"), "the evidence pointer rides the finding");
   assert.ok(text.includes("The signed-in browser flow was not checked."), "the limitation is reported");
-  // Machine bookkeeping stays out of the default human view.
   assert.doesNotMatch(text, /Quality Gate|wxt build|Tests:/);
 });
 
 test("verification status is derived from the gate notes on both surfaces", () => {
-  const chat = render().chatLines.join("\n");
+  const chatLines = render().chatLines;
   // `747 passed, 0 failed` proves a pass; `PASS; archive created` is agent
-  // wording with no counts, so it stays REPORTED-shaped and never borrows the
-  // first row's status. The chat table prints PASS only where notes prove it.
-  assert.match(chat, /\| Unit tests \| bun test tests\/ \| PASS: 747 passed, 0 failed \|/, chat);
-  assert.match(chat, /\| Chrome build \| wxt build chrome \| PASS; archive created \|/, chat);
-  const whole = buildRichTerminalParts({
+  // wording with no counts, so the chat row keeps the honest raw result instead
+  // of borrowing a PASS label.
+  assert.ok(
+    chatLines.includes("| Unit tests | bun test tests/ | PASS: 747 passed, 0 failed |"),
+    chatLines.join("\n"),
+  );
+  assert.ok(
+    chatLines.includes("| Chrome build | wxt build chrome | PASS; archive created |"),
+    "unproven status never upgrades to PASS",
+  );
+  const archiveTable = buildRichTerminalParts({
     chat: false,
     outcome: "x",
     details: [],
     countsLine: "",
-    gates: render().chatLines.length > 0 ? [
+    gates: [
       { gate: "Unit tests", command: "bun test tests/", notes: "747 passed, 0 failed" },
       { gate: "Chrome build", notes: "PASS; archive created" },
-    ] : [],
-  }).tableLines.join("\n");
-  // The archive keeps the wide inventory with mechanically derived statuses.
-  assert.match(whole, /\| Unit tests \| bun test tests\/ \| — \| PASS \| 747 passed, 0 failed \|/, whole);
-  assert.match(whole, /\| Chrome build \| — \| REPORTED \| PASS; archive created \|/, whole);
+    ],
+  }).tableLines;
+  assert.ok(
+    archiveTable.includes("| Unit tests | bun test tests/ | — | PASS | 747 passed, 0 failed |"),
+    archiveTable.join("\n"),
+  );
+  assert.ok(
+    archiveTable.includes("| Chrome build | — | REPORTED | PASS; archive created |"),
+    "REPORTED is derived, never claimed",
+  );
 });
 
 test("a behavioral limitation reads as a follow-up, never as a second action", () => {
   const lines = render(undefined, {
     leftOut: "the repository-level legacy asset checker was intentionally not changed",
   }).chatLines;
-  const followUp = lines.indexOf(CARD_SECTION.followUp);
-  const nextSteps = lines.indexOf(CARD_SECTION.nextSteps);
-  assert.ok(followUp >= 0, "the deliberate non-do is visible as a follow-up");
+  const followUp = lines.indexOf(sectionLine(CARD_SECTION.followUp));
+  const nextSteps = lines.indexOf(sectionLine(CARD_SECTION.nextSteps));
+  assert.ok(followUp >= 0, `the deliberate non-do is visible as a follow-up:\n${lines.join("\n")}`);
   assert.ok(nextSteps < 0 || followUp < nextSteps, "follow-ups lead any standalone next step");
   assert.ok(
     lines.slice(followUp, nextSteps < 0 ? undefined : nextSteps).join("\n").includes("legacy asset checker"),
@@ -106,9 +117,12 @@ test("a behavioral limitation reads as a follow-up, never as a second action", (
 test("the report closes with one compact receipt line, not a stack of bullets", () => {
   const lines = render().chatLines;
   const last = lines[lines.length - 1] ?? "";
-  assert.match(last, /completion audit approved (1 review) · record: .pi-glla\/archive\/20260923-purpose\.md\./, last);
-  assert.ok(!lines.some((line) => line.startsWith("• ")), `no legacy bullet trailer:\n${lines.join("\n")}`);
-  assert.equal(lines.filter((line) => /completion audit approved/.test(line)).length, 1, "the verdict is stated once");
+  assert.ok(
+    last.startsWith("completion audit approved (1 review)") && last.includes("record: .pi-glla/archive/20260923-purpose.md"),
+    `the receipt closes the report, got: ${last}`,
+  );
+  assert.ok(!lines.some((line) => line.startsWith("\u2022 ")), `no legacy bullet trailer:\n${lines.join("\n")}`);
+  assert.equal(lines.filter((line) => line.includes("completion audit approved")).length, 1, "the verdict is stated once");
 });
 
 test("legacy section names still compose a report instead of leaking as prose", () => {
@@ -121,8 +135,8 @@ test("legacy section names still compose a report instead of leaking as prose", 
     details: ["Unresolved: still open.", "Next: do the thing."],
     groups: [{ title: "Area", findings: ["Change: something happened (src/x.ts:1)"] }],
   })).join("\n");
-  assert.match(legacy, /^## Summary$/m, legacy);
-  assert.match(legacy, /^## Follow-up items$/m, legacy);
-  assert.match(legacy, /^## Next steps$/m, legacy);
-  assert.doesNotMatch(legacy, /^### /m, "chat never leaks literal markdown heading prefixes");
+  assert.ok(legacy.includes(sectionLine(CARD_SECTION.summary)), legacy);
+  assert.ok(legacy.includes(sectionLine(CARD_SECTION.followUp)));
+  assert.ok(legacy.includes(sectionLine(CARD_SECTION.nextSteps)));
+  assert.doesNotMatch(legacy, /### /, "chat never leaks literal markdown heading prefixes");
 });
