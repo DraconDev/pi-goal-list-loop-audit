@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
-import { formatReceiptDuration, type MechanicalGateReceipt } from "./gate-receipts.js";
+import { formatReceiptDuration, workingTreeFingerprint, type MechanicalGateReceipt } from "./gate-receipts.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 import { normalizeFindingLead, clipSummaryValue, trimDanglingPointerWord } from "./finding-lead.js";
 import { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
@@ -415,6 +415,8 @@ export interface RichTerminalParts {
    * the outcome sentence when the headline only carried its first clause. Empty
    * or absent when the headline already carries the whole outcome. */
   ledeLines?: string[];
+  /** v0.39.70 (#9): `N files changed, +A −R` since the goal started. */
+  changeLine?: string;
 }
 
 /** v0.39.70: a gate row, optionally backed by a GLLA-run receipt. */
@@ -969,7 +971,50 @@ function bannerVerdict(auditStatus: string): string {
  * the changed-file list caps at 20 with an overflow count. Total failure
  * still returns undefined and the section stays out (absent is named by
  * omission, never invented). The render call sites own cwd. */
-export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
+/** v0.39.70 (#9): what this goal changed, as a diff stat between the working
+ * tree recorded when the goal started (Goal.startTree) and the tree now. Both
+ * sides are content snapshots (`git write-tree` over a throwaway index), so a
+ * sync daemon's auto-commits neither hide the change nor inflate it — unlike
+ * `git status`, which reads "clean" seconds after every edit in such a repo.
+ * Returns undefined when either snapshot is unavailable (never invented). */
+export interface ChangeStat {
+  files: number;
+  added: number;
+  removed: number;
+  /** `path +A −R` rows, largest change first, capped. */
+  rows: string[];
+  /** Rows omitted past the cap. */
+  more: number;
+}
+
+export const CHANGE_STAT_ROW_CAP = 12;
+
+export function buildChangeStat(cwd: string, startTree: string | undefined, currentTree = startTree ? workingTreeFingerprint(cwd) : undefined): ChangeStat | undefined {
+  if (!startTree || !currentTree) return undefined;
+  if (startTree === currentTree) return { files: 0, added: 0, removed: 0, rows: [], more: 0 };
+  let raw: string;
+  try {
+    raw = execFileSync("git", ["diff", "--numstat", "--no-renames", startTree, currentTree], { cwd, encoding: "utf8", timeout: 5000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  } catch {
+    return undefined;
+  }
+  const entries = raw.split("\n").map((line) => /^(-|\d+)\t(-|\d+)\t(.+)$/.exec(line)).filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => ({ added: m[1] === "-" ? 0 : Number(m[1]), removed: m[2] === "-" ? 0 : Number(m[2]), binary: m[1] === "-", path: sanitizeDisplayText(m[3]!) }));
+  const added = entries.reduce((n, e) => n + e.added, 0);
+  const removed = entries.reduce((n, e) => n + e.removed, 0);
+  const sorted = [...entries].sort((a, b) => (b.added + b.removed) - (a.added + a.removed) || a.path.localeCompare(b.path));
+  const rows = sorted.slice(0, CHANGE_STAT_ROW_CAP).map((e) => e.binary ? `${e.path} (binary)` : `${e.path} +${e.added} \u2212${e.removed}`);
+  return { files: entries.length, added, removed, rows, more: Math.max(0, entries.length - rows.length) };
+}
+
+/** "5 files changed, +120 −30" — the Codex/OpenCode one-liner. */
+export function changeStatLine(stat: ChangeStat | undefined): string | undefined {
+  if (!stat) return undefined;
+  if (stat.files === 0) return "No file changes since the goal started.";
+  return `${stat.files} file${stat.files === 1 ? "" : "s"} changed, +${stat.added} \u2212${stat.removed}`;
+}
+
+export function buildFinalRepoStateLines(cwd: string, stat?: ChangeStat): string[] | undefined {
   const run = (args: string[]): string | undefined => {
     try {
       return execFileSync("git", args, { cwd, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"] }).trim() || undefined;
@@ -992,6 +1037,12 @@ export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
     const shown = files.slice(0, 20).map((line) => `  ${line.trim()}`);
     if (files.length > 20) shown.push(`  \u2026and ${files.length - 20} more`);
     lines.push("Tree changed:", ...shown);
+  }
+  // v0.39.70 (#9): the change this goal made, independent of commit timing.
+  const statLine = changeStatLine(stat);
+  if (stat && statLine) {
+    lines.push(`Since goal start: ${statLine}`, ...stat.rows.map((row) => `  ${row}`));
+    if (stat.more > 0) lines.push(`  \u2026and ${stat.more} more`);
   }
   return lines;
 }
@@ -1020,6 +1071,8 @@ export function buildRichTerminalParts(args: {
    * keeps the `### Summary` section out (unstructured summaries keep
    * today's headline-echo shape). */
   summaryLines?: string[];
+  /** v0.39.70 (#9): diff-stat line since the goal started. */
+  changeLine?: string;
   /** Chat favors explanations; the archive retains raw commands and tables. */
   chat?: boolean;
   /** v0.38.98: opt in to a compact verification tail in chat. The default
@@ -1300,6 +1353,7 @@ export function buildRichTerminalParts(args: {
     repoLines: args.chat ? [] : (args.repoState ?? []).map((line) => sanitizeDisplayText(line)),
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
     ledeLines: reportLede(outcome),
+    ...(args.changeLine ? { changeLine: sanitizeDisplayText(args.changeLine) } : {}),
   };
 }
 
@@ -1337,6 +1391,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // (field 2026-11-11). Absent when the headline already carries it.
   if ((parts.ledeLines ?? []).length > 0) lines.push(...(parts.ledeLines ?? []).map((line) => sanitizeDisplayText(line)), "");
   if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
+  if (parts.changeLine) lines.push(sanitizeDisplayText(parts.changeLine), "");
   // Structured-long (field 2026-09-16): the full Outcome body rides its
   // own section between the headline and the findings — findings-first
   // order is preserved (findings, verification, Next keep their relative
@@ -1564,6 +1619,8 @@ export interface TerminalApprovalRenderInput {
   /** v0.39.70: contract gates GLLA's pre-audit ran and passed for the
    * approved claim. Rendered as GLLA-run rows in the Verification table. */
   gateReceipts?: MechanicalGateReceipt[];
+  /** v0.39.70 (#9): `N files changed, +A −R` since the goal started. */
+  changeLine?: string;
   /** v0.38.98: show a compact verification sentence in the human terminal
    * summary when the user explicitly asks for it. Full evidence remains in
    * the archive regardless. */
@@ -1699,6 +1756,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     groups: input.findingGroups,
     gates: input.gateRows,
     ...(input.gateReceipts ? { receipts: input.gateReceipts } : {}),
+    ...(input.changeLine ? { changeLine: input.changeLine } : {}),
     ...(input.repoState ? { repoState: input.repoState } : {}),
     ...(structured ? { summaryLines: structured } : {}),
   });

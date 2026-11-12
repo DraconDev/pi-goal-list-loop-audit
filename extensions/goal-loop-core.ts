@@ -1106,6 +1106,11 @@ export interface Goal {
    * does not carry this — a crash-restart that drops it leaves the parent
    * visible as a plain queue item rather than mis-handling the cascade). */
   parentId?: string;
+  /** v0.39.70 (#9): working-tree content snapshot (`git write-tree` over a
+   * throwaway index) taken when the goal was created. The completion card
+   * diffs it against the tree at completion for an honest "N files changed"
+   * line that sync-daemon auto-commits cannot hide. Absent outside git. */
+  startTree?: string;
   /** v0.35.1: a control goal created to re-plan suspicious saved intent.
    * It is cleared only after a confirmed task-list re-draft, so the generic
    * repair card cannot complete repeatedly while the original target remains

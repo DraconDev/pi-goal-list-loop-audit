@@ -32,7 +32,7 @@ import { Type } from "typebox";
 // (positioning doc invariant #2). Property reads on the imported binding are
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
-import type { MechanicalGateReceipt } from "../gate-receipts.js";
+import { workingTreeFingerprint, type MechanicalGateReceipt } from "../gate-receipts.js";
 
 import {
   type FindingGroup,
@@ -826,6 +826,9 @@ function createGoal(objective: string, ctx: ExtensionContext, policy: "goal" | "
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
+  // v0.39.70 (#9): snapshot the tree the work starts from (best effort).
+  const startTree = workingTreeFingerprint(ctx.cwd);
+  if (startTree) goal.startTree = startTree;
   return goal;
 }
 
