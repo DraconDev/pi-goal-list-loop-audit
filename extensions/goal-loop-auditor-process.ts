@@ -198,10 +198,28 @@ export type AuditTierName = "light" | "full";
  * spot-check flip rate in /glla stats challenges is the calibration
  * signal, not this comment's confidence. */
 export const LIGHT_AUDIT_CEILINGS = {
-  fileWrites: 12,
-  bashCalls: 20,
-  turns: 80,
+  fileWrites: 25,
+  bashCalls: 60,
+  turns: 150,
 } as const;
+// v0.39.70 (#4, field record): the v1 ceilings (12 writes / 20 bash / 80
+// turns) sat below an ordinary goal's activity, so 239 of 257 recorded tier
+// decisions were full and the light tier was effectively unreachable — every
+// claim paid for the second (falsification) round. The light tier still runs
+// the same brief, shield, tool floor and GLLA gate receipts; only round 2 is
+// skipped, and the 10% spot-check keeps calibrating the ceilings.
+
+/** v0.39.70 (#4): text the high-stakes scan must not read as intent. A
+ * contract that names its own gate (`npm run release:check`) is not a release;
+ * inline code, fenced blocks and `script:name` tokens are commands, so only
+ * the surrounding prose decides the stakes. */
+export function highStakesScanText(value: string): string {
+  return value
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`\n]*`/g, " ")
+    .replace(/\b(?:npm|pnpm|yarn|bun|npx)\s+(?:run\s+)?[\w:.-]+/gi, " ")
+    .replace(/\b[\w.-]+:[\w.-]+\b/g, " ");
+}
 
 /** v1 high-stakes vocabulary (escalation only — agent-written text may
  * push a claim UP to full, never down). Deliberately tight: bare
@@ -257,7 +275,7 @@ export function resolveAuditTier(input: AuditTierInput): AuditTierDecision {
   }
   const hay = [input.objective, input.verificationContract, input.completionSummary, input.verificationSummary]
     .filter((s): s is string => typeof s === "string" && !!s)
-    .map((s) => s.slice(0, 2000))
+    .map((s) => highStakesScanText(s.slice(0, 2000)))
     .join("\n");
   const hit = HIGH_STAKES_RE.exec(hay);
   if (hit) reasons.push(`high-stakes language (match: "${hit[0].toLowerCase().slice(0, 40)}")`);
