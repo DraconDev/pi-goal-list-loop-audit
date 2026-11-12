@@ -1,6 +1,7 @@
 import { classifyInterruption, type InterruptionReason } from "../interruption-policy.js";
 import { assessDraftReadiness, draftReadinessMessage } from "../draft-readiness.js";
-import { effectiveToolTimeoutMs } from "../goal-loop-auditor-process.js";
+import { effectiveToolTimeoutMs, MAX_AUDITOR_TOOL_TIMEOUT_MS } from "../goal-loop-auditor-process.js";
+import { gateReceiptsDigest, receiptAwareToolTimeoutMs, workingTreeFingerprint, type MechanicalGateReceipt } from "../gate-receipts.js";
 import { isReworkRound } from "../goal-loop-auditor.js";
 import { deliverTerminalSummary } from "../terminal-summary-delivery.js";
 import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestrator.js";
