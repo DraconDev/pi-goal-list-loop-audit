@@ -976,8 +976,12 @@ export function buildRichTerminalParts(args: {
       if (args.chat && i > 0) findingLines.push(''); // End prior area's list before the next.
       // Report shape (field 2026-11-11): each area is a `What changed · <area>`
       // subsection rather than `**1. Area**`, so the section, not a number,
-      // names the work. The archive file renders the same label as an `###`.
-      findingLines.push(`#### ${CARD_SECTION.whatChanged} \u00b7 ${sanitizeDisplayText(group.title)}`);
+      // names the work. Chat renders it as a bold label (the Pi TUI has no
+      // heading style) and the archive file as a real `###` heading.
+      const area = sanitizeDisplayText(group.title);
+      findingLines.push(args.chat
+        ? `**${CARD_SECTION.whatChanged} \u00b7 ${area}**`
+        : `#### ${CARD_SECTION.whatChanged} \u00b7 ${area}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));
         // Test proof is supporting evidence, not a second narrative. Keep it
