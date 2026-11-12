@@ -937,6 +937,13 @@ function maybeScheduleUnsupervisedErrorRetry(
     ctx.ui.notify(`glla: provider auth failed (${display}) — fix the key or switch model; not retrying blindly.`, "warning");
     return;
   }
+  // Carve-out: billing is an account wall, not a transient.
+  if (isBillingError(raw)) {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "billing", kind: failure.kind, display });
+    ctx.ui.notify(`glla: provider billing wall (${display}) — manual action needed; not retrying.`, "warning");
+    return;
+  }
+  // (Checked after billing so an account-balance wall keeps its own reason.)
   // v0.39.70 (#6, field 2026-11-10): a spent plan ("Token Plan usage limit
   // reached: Upgrade your Token Plan or purchase Credits", no reset hint) was
   // retried once a minute against the same dead model for 13 minutes. Only a
@@ -945,12 +952,6 @@ function maybeScheduleUnsupervisedErrorRetry(
   if (isSpentPlanWall(raw)) {
     appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "spent-plan", kind: failure.kind, display });
     ctx.ui.notify(`glla: the provider says this plan is used up (${display}) — switch model or top up the plan, then reply to retry; not retrying the same model.`, "warning");
-    return;
-  }
-  // Carve-out: billing is an account wall, not a transient.
-  if (isBillingError(raw)) {
-    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "billing", kind: failure.kind, display });
-    ctx.ui.notify(`glla: provider billing wall (${display}) — manual action needed; not retrying.`, "warning");
     return;
   }
   unsupervisedErrorStreak += 1;
