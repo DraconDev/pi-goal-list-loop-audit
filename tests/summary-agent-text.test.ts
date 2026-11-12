@@ -18,6 +18,7 @@ import {
   composeRichTerminalLines,
   clipSummaryValue,
 } from "../extensions/completion-summary.ts";
+import { cardSectionName } from "../extensions/card-sections.ts";
 
 function chatOf(overrides: Record<string, unknown> = {}): Parameters<typeof composeRichTerminalLines>[0] {
   return {
@@ -42,8 +43,13 @@ test("chat demotes agent-written markdown headings to bold", () => {
     remainingLines: ["### Caveats"],
   }));
   const text = lines.join("\n");
-  assert.ok(!text.split("\n").some((l) => /^\s*#{1,6}\s/.test(l)), `no raw heading reaches chat:\n${text}`);
+  // Card sections are the ONLY `##` lines chat may carry (a report needs
+  // headings); agent-authored headings inside the body must never arrive raw,
+  // because the Pi TUI renders `#` literally.
+  const bodyHeadings = text.split("\n").filter((l) => /^\s*#{1,6}\s/.test(l) && !cardSectionName(l));
+  assert.deepEqual(bodyHeadings, [], `no raw agent heading reaches chat:\n${text}`);
   assert.ok(text.includes("**1. Strict by default**"), "group-style heading becomes bold");
+  assert.ok(text.includes("**What Changed**"), "a legacy section name in the body is bolded, not re-shelved");
   assert.ok(text.includes("**Caveats**"), "remaining heading becomes bold");
   assert.ok(text.includes("- plain bullet stays"), "bullets untouched");
 });
@@ -80,8 +86,10 @@ test('chat removes redundant section labels without erasing archive evidence or 
   assert.ok(!chat.includes('**Unresolved**'));
   assert.ok(!chat.includes('**Next**'));
   assert.ok(chat.includes('**Left out**'), 'intentional omission stays distinguishable from an open risk');
-  assert.ok(archive.includes('**Unresolved**'));
-  assert.ok(archive.includes('**Next**'));
+  // The archive keeps the follow-ups verbatim under its own section rather than
+  // re-prefixing each line with its source label (the section names them).
+  assert.ok(archive.includes('Saved journals cannot prove a live session.'));
+  assert.ok(archive.includes('Use /glla fleet for a read-only health observation.'));
   for (const value of ['Saved journals cannot prove a live session.', 'Background crawling was deliberately excluded.', 'Use /glla fleet for a read-only health observation.']) {
     assert.equal(chat.split(value).length - 1, 1, 'one human instance of each fact');
     assert.ok(archive.includes(value), 'archive retains every fact');
