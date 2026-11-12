@@ -1015,16 +1015,19 @@ export function changeStatLine(stat: ChangeStat | undefined): string | undefined
 }
 
 export function buildFinalRepoStateLines(cwd: string, stat?: ChangeStat): string[] | undefined {
-  const run = (args: string[]): string | undefined => {
+  // v0.39.70: `empty` distinguishes "the command ran and printed nothing"
+  // from "the command failed". The old `trim() || undefined` collapsed both,
+  // so every CLEAN tree read as "Tree state unreadable".
+  const run = (args: string[], empty: "" | undefined = undefined): string | undefined => {
     try {
-      return execFileSync("git", args, { cwd, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"] }).trim() || undefined;
+      return execFileSync("git", args, { cwd, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"] }).trim() || empty;
     } catch {
       return undefined;
     }
   };
   const branchRaw = run(["branch", "--show-current"]);
   const headRaw = run(["log", "-1", "--format=%h %s"]);
-  const shortRaw = run(["status", "--short"]);
+  const shortRaw = run(["status", "--short"], "");
   const branch = branchRaw === undefined ? undefined : sanitizeDisplayText(branchRaw);
   const head = headRaw === undefined ? undefined : sanitizeDisplayText(headRaw);
   const short = shortRaw === undefined ? undefined : shortRaw.split("\n").map((line) => sanitizeDisplayText(line)).join("\n");
