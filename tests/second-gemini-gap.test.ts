@@ -13,7 +13,7 @@ import { __testOnlyResetZombieAutoRetry } from "../extensions/loops/goal-activat
 import { __testOnlyResetZombieRunWatchdog } from "../extensions/goal-heartbeat.js";
 import { resetContinuationDispatchState } from "../extensions/goal-continuation.js";
 import { readState, sanitizeFindingGroups, sanitizeGateRows, type FindingGroup, type GateRow, type Goal } from "../extensions/goal-loop-core.js";
-import { buildRichTerminalParts, buildTerminalApprovalRender } from "../extensions/completion-summary.js";
+import { CARD_SECTION, buildRichTerminalParts, buildTerminalApprovalRender } from "../extensions/completion-summary.js";
 import { MockPi, makeMockCtx, seedGoal, tmpCwd } from "./harness/mock-pi.js";
 import { untilMs } from "./harness/host-budget.js";
 
@@ -189,16 +189,17 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
     { title: "Renderer", findings: ["Widen: completion-summary.ts:460 adds the gate table"], tests: ["gate suite 9/9"] },
   ], "the pending claim stores the parallel test lines");
   await waitFor(() => entries.length === 1);
-  // Chat hides technical verification by default; the full gate table stays
-  // in the archive with commands and hashes.
-  assert.ok(entries[0].content.startsWith("## Done — "), "outcome opens the card");
-  assert.equal(entries[0].content.includes("### Verification"), false, "verification is archive-only by default");
-  assert.equal(entries[0].content.includes("Tests:"), false, "technical Tests stay out of default chat");
-  assert.ok(!entries[0].content.includes("| Quality Gate |"), "gate-by-gate table stays archival");
-  assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
-  assert.ok(!entries[0].content.includes("Evidence:"), "per-finding proof stays archival");
+  // Report shape (field 2026-11-11): verification is part of the report, so
+  // chat states each gate, its repro command and its derived result; the
+  // archive keeps the wide inventory with scope, status and hashes.
+  assert.ok(entries[0].content.startsWith("## Done "), "outcome opens the card");
+  assert.ok(entries[0].content.includes(`## ${CARD_SECTION.verification}`), "verification is in the report");
+  assert.equal(entries[0].content.includes("Tests:"), false, "the raw Tests label never reaches chat");
+  assert.ok(!entries[0].content.includes("| Quality Gate |"), "the wide inventory stays archival");
+  assert.ok(entries[0].content.includes("bun test tests/gate.test.ts"), "chat names the repro command it ran");
+  assert.ok(!entries[0].content.includes("Evidence: gate suite 9/9"), "per-finding proof stays archival");
   assert.ok(!entries[0].content.includes("02871aa6"), "commit hash stays archival");
-  const record = /• record: (\S+\.md)/.exec(entries[0].content)?.[1];
+  const record = /record: (\S+\.md)/.exec(entries[0].content)?.[1];
   assert.ok(record, "record pointer supplied");
   const archived = fs.readFileSync(path.join(cwd, record!), "utf8");
   assert.match(archived, /02871aa6/);
