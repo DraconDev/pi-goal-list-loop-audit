@@ -58,9 +58,11 @@ function hasTechnicalPrefix(text: string): boolean {
  * "…not an audit log for" — a sentence that stops mid-thought. Drop only a
  * trailing pointer word/separator; callers apply it only when a token was
  * actually removed, so authored prose is never edited. */
-const DANGLING_POINTER_TAIL = /[\s,;:]+(?:for|in|at|see|via|from|on|under|per|cf\.?|e\.g\.?|[—–-])\s*$/i;
-export function trimDanglingPointerWord(text: string): string {
-  return text.replace(DANGLING_POINTER_TAIL, "").replace(/[\s,;:]+$/, "");
+const DANGLING_POINTER_TAIL = /[\s,;:]+(?:for|in|at|see|via|from|on|under|per|cf\.?|e\.g\.?|[—–-])\s*([.!?]?)\s*$/i;
+const ENDS_WITH_POINTER = new RegExp(`(?:${EVIDENCE_TOKEN_PATTERN.source})[)\\].,;:\\s]*$`);
+export function trimDanglingPointerWord(text: string, original: string): string {
+  if (!ENDS_WITH_POINTER.test(original.trim())) return text;
+  return text.replace(DANGLING_POINTER_TAIL, "$1").replace(/[\s,;:]+$/, "");
 }
 
 /** Extract repo-relative path:line tokens without interpreting their colons
@@ -75,7 +77,7 @@ export function extractFindingEvidence(text: string): { text: string; evidence: 
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return { text: evidence.length > 0 ? trimDanglingPointerWord(clean) : clean, evidence };
+  return { text: evidence.length > 0 ? trimDanglingPointerWord(clean, text) : clean, evidence };
 }
 
 function hasRepoEvidence(text: string): boolean {

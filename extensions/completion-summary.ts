@@ -613,7 +613,7 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
   // preposition ("…an audit log for path:line"). Moving the token out left
   // "…an audit log for" — a sentence that stops mid-thought. Drop only a
   // trailing pointer preposition, and only when a token was actually removed.
-  const tidy = evidence.length > 0 ? trimDanglingPointerWord(stripped) : stripped;
+  const tidy = evidence.length > 0 ? trimDanglingPointerWord(stripped, sanitizeDisplayText(text)) : stripped;
   return { text: tidy, evidence };
 }
 
