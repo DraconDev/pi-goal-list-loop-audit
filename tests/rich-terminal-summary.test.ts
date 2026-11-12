@@ -89,7 +89,7 @@ test("verification renders on both surfaces; the archive keeps the full inventor
   assert.ok(!chat.some((l) => /^Tests:/.test(l)), "technical Tests label never reaches chat");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(archive.includes(section("Verification"), ) || archive.includes("### Verification"), "archive keeps the verification record");
-  assert.ok(archive.some((l) => /^\| Verification \| PASS \| 2075 pass, 0 fail \|$/.test(l)), "archive keeps the derived row");
+  assert.ok(archive.some((l) => /^\| Verification \| PASS \| bun test 2075 pass, 0 fail \|$/.test(l)), "archive keeps the derived row");
   assert.ok(archive.some((l) => /^\| Completion review \| approved \(1 review\) \|/.test(l)), "archive keeps the review row");
 });
 
@@ -211,7 +211,12 @@ test("detailed receipt keeps the supplied change and next action, not evidence a
       ],
     }) as unknown as Goal,
   });
-  const findings = r.chatLines.filter((l) => l.startsWith("- "));
+  // The change text is ONE finding; `Evidence:` and `Tests:` are saved
+  // separately (the latter in the verification table), and the Next action
+  // bullet lives in its own section.
+  const summaryStart = r.chatLines.indexOf(section(CARD_SECTION.summary));
+  const summaryEnd = r.chatLines.indexOf(section(CARD_SECTION.verification));
+  const findings = r.chatLines.slice(summaryStart, summaryEnd).filter((l) => l.startsWith("- "));
   assert.equal(findings.length, 1, "Changed is the finding; Evidence is saved separately");
   assert.ok(r.chatLines.join("\n").includes("extensions/part-9.ts"));
   assert.ok(r.chatLines.join("\n").includes("ship it"));
@@ -406,7 +411,14 @@ test("gate commands render a Command column on both surfaces; chat abbreviates",
   });
   assert.ok(withCommand.tableLines.includes("| Quality Gate | Command | Scope | Status | Notes |"), "5-col archive header");
   assert.ok(withCommand.tableLines.some((l) => l.includes("bun test tests/")), "repro command in the archive row");
-  const chat = composeRichTerminalLines({ ...withCommand, chat: true }).join("\n");
+  const chatParts = buildRichTerminalParts({
+    chat: true,
+    outcome: "o",
+    details: [],
+    countsLine: "",
+    gates: [{ gate: "Unit Tests", command: "bun test tests/", notes: "9 passed, 0 failed" }],
+  });
+  const chat = composeRichTerminalLines(chatParts).join("\n");
   assert.ok(chat.includes("| Gate | Command | Result |"), chat);
   assert.ok(chat.includes("| Unit Tests | bun test tests/ | PASS: 9 passed, 0 failed |"), "chat states gate, command and result");
   assert.ok(!chat.includes("| Quality Gate | Command | Scope | Status | Notes |"), "the wide inventory stays archival");
