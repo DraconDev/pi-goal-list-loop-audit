@@ -63,7 +63,10 @@ test("chat report carries the changes, then verification, then the follow-ups, i
   assert.ok(text.includes("Chrome and Firefox archives now contain matching version manifests"), text);
   assert.ok(text.includes("src/save.ts:42"), "the evidence pointer rides the finding");
   assert.ok(text.includes("The signed-in browser flow was not checked."), "the limitation is reported");
-  assert.doesNotMatch(text, /Quality Gate|wxt build|Tests:/);
+  // The gate inventory is part of the report now, so a gate command legitimately
+  // appears; what must never appear is the machine layer it replaced: the
+  // `Quality Gate` wide header, the verdict counts row, and a raw `Tests:` label.
+  assert.doesNotMatch(text, /Quality Gate|Tests:|Completion review|completion review:/);
 });
 
 test("verification status is derived from the gate notes on both surfaces", () => {
@@ -90,12 +93,12 @@ test("verification status is derived from the gate notes on both surfaces", () =
     ],
   }).tableLines;
   assert.ok(
-    archiveTable.includes("| Unit tests | bun test tests/ | — | PASS | 747 passed, 0 failed |"),
+    archiveTable.includes("| Unit tests | bun test tests/ | \u2014 | PASS | 747 passed, 0 failed |"),
     archiveTable.join("\n"),
   );
   assert.ok(
-    archiveTable.includes("| Chrome build | — | REPORTED | PASS; archive created |"),
-    "REPORTED is derived, never claimed",
+    archiveTable.includes("| Chrome build | \u2014 | \u2014 | REPORTED | PASS; archive created |"),
+    "REPORTED is derived, never claimed:" + archiveTable.join("\n"),
   );
 });
 
