@@ -408,6 +408,10 @@ export interface RichTerminalParts {
    * value earned the structured path — never a second copy of the
    * clipped headline echo. */
   summaryLines: string[];
+  /** Field 2026-11-11: the prose lede under the short headline — the whole
+   * outcome sentence when the headline had to shorten it. Empty when the
+   * headline already carries the sentence. */
+  ledeLines: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -783,15 +787,82 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
 }
 
 /**
- * v0.38.50: request-echo headline — the title mirrors the ask (the
- * Gemini shape) with the outcome second. Without an objective the legacy
- * `## Done — outcome` shape stays, so direct unit callers are unaffected.
+ * Report shape (field 2026-11-11, confirmed by the operator): the headline is
+ * a report title — the first clause/idea of the outcome, never cut mid-thought
+ * — and the rest rides as the prose lede underneath. A long outcome used to run
+ * across the whole first line, and the archive then printed a SECOND headline
+ * echoing the objective, so a reader had to parse two long sentences before
+ * learning what happened. Nothing is invented and nothing is dropped: the split
+ * only moves existing text, and a single clause with no natural boundary keeps
+ * the whole sentence on the headline.
  */
-export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string | undefined, outcome: string): string {
-  const safeObjective = objective ? sanitizeDisplayText(objective) : "";
-  const safeOutcome = sanitizeDisplayText(outcome);
-  const echo = safeObjective.trim() ? clipSummaryValue(safeObjective.trim(), RICH_OBJECTIVE_ECHO_CHARS) : null;
-  return echo ? `## ${kind}: ${echo} \u2014 ${safeOutcome}` : `## ${kind} \u2014 ${safeOutcome}`;
+export const RICH_HEADLINE_CHARS = 96;
+/** A title shorter than this reads as a fragment (`Done. The rest …`). */
+const MIN_TITLE_CHARS = 24;
+/** An em-dash clause break can carry a shorter, punchier title safely — the
+ * dash itself signals a title/explanation split rather than a sentence cut. */
+const MIN_DASH_TITLE_CHARS = 12;
+/** A remainder shorter than this is a trailing qualifier, not a lede. */
+const MIN_LEDE_CHARS = 12;
+
+/** Split an outcome into a headline title and its prose lede.
+ *
+ * Two natural boundaries, both already present in the text: an em-dash clause
+ * break (`Outcome: X — Y`) and a sentence end (`X. Y`). Either only counts when
+ * the left part is a usable title and the right part is substantial; otherwise
+ * the whole value is the title and there is no lede. */
+export function splitReportTitle(text: string, limit = RICH_HEADLINE_CHARS): { title: string; lede: string } {
+  const safe = sanitizeDisplayText(text).trim();
+  if (!safe) return { title: "", lede: "" };
+  const usable = (title: string, lede: string, minTitle: number): { title: string; lede: string } | null => {
+    const left = title.trim().replace(/[,;:]$/, "").trim();
+    // A clause split turns a continuing sentence into a second sentence, so the
+    // lede's first letter is capitalized. Only the letter case changes — no
+    // word is added, removed or reordered.
+    const right = lede.trim().replace(/^[\u2014\u2013-]\s*/, "").trim();
+    const rightSentence = right ? right.charAt(0).toUpperCase() + right.slice(1) : "";
+    if (left.length < minTitle || left.length > limit) return null;
+    if (rightSentence.length < MIN_LEDE_CHARS) return null;
+    return { title: left, lede: rightSentence };
+  };
+  // 1. An em-dash clause break: `X — Y` (the shape the archived claims use).
+  const dash = /\s\u2014\s/u.exec(safe);
+  if (dash) {
+    const split = usable(safe.slice(0, dash.index), safe.slice(dash.index), MIN_DASH_TITLE_CHARS);
+    if (split) return split;
+  }
+  // 2. An early sentence end, when the value keeps talking after it.
+  for (const match of safe.matchAll(/[.!?](?=\s|$)/gu)) {
+    const end = match.index + 1;
+    if (end > limit) break;
+    const split = usable(safe.slice(0, end - 1), safe.slice(end), MIN_TITLE_CHARS);
+    if (split) return split;
+  }
+  // 3. The LAST clause break inside the title budget: a comma or semicolon
+  // keeps the title informative for as long as it reads cleanly, instead of
+  // cutting the sentence at its first idea.
+  let clauseSplit: { title: string; lede: string } | null = null;
+  for (const match of safe.matchAll(/[,;](?=\s)/gu)) {
+    const at = match.index;
+    if (at > limit) break;
+    const split = usable(safe.slice(0, at), safe.slice(at + 1), MIN_DASH_TITLE_CHARS);
+    if (split) clauseSplit = split;
+  }
+  if (clauseSplit) return clauseSplit;
+  // 4. One long clause with no boundary: the whole sentence is the title. An
+  // ellipsis would read as cut-off text, and wrapping is the renderer's job.
+  return { title: safe, lede: "" };
+}
+
+export function requestEchoHeadline(kind: "Done" | "Aborted", outcome: string): string {
+  return `## ${kind} \u2014 ${splitReportTitle(outcome).title}`;
+}
+
+/** The prose lede under the headline. Empty when the headline already carries
+ * the whole outcome — never a duplicate of the title, never invented. */
+function reportLede(outcome: string): string[] {
+  const lede = splitReportTitle(outcome).lede;
+  return lede ? [lede] : [];
 }
 
 /** Chat-only projection: keep explanations and counts, not command/hash receipts.
@@ -927,9 +998,14 @@ export function buildRichTerminalParts(args: {
   }
   const outcome = sanitizeDisplayText(args.outcome);
   const kind = args.kind ?? "Done";
-  const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
+  // Field 2026-11-11: ONE headline for both surfaces — the short result line.
+  // The archive used to wear a verdict banner (`## Done — completion audit
+  // approved (1 review)`) above a SECOND request-echo headline; the verdict
+  // now closes the report as its receipt line, which is where a reader looks
+  // for it.
+  const headline = requestEchoHeadline(kind, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
-  const banner = args.chat ? headline : `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
+  const banner = headline;
   const groups = (args.groups ?? []).map(group => {
     const entries = group.findings
       .map((finding, i) => ({ finding, proof: group.tests?.[i] }))
@@ -992,19 +1068,24 @@ export function buildRichTerminalParts(args: {
       });
     });
   } else {
-    // v0.38.55: the flat fallback renders every detail — no cap.
-    findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail, i) => {
-    const normalized = normalizeFindingLead(args.chat ? chatNarrative(detail) : detail);
-    if (normalized.technical) {
-      // Archive preserves flat Verdict:/Audit: details in the evidence table
-      // (already routed above — this guards the fallback path); chat drops.
-      return;
-    }
-    const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
-    // Chat reserves emphasis for hierarchy and explicit short labels;
-    // archive styling and evidence remain unchanged.
-    findingLines.push(args.chat ? `${i + 1}. ${normalized.outcome}` : `${i + 1}. **${normalized.outcome}**`);
-    if (reason) findingLines.push(`   - ${reason}`);
+    // Report shape (field 2026-11-11): a claim without per-area groups renders
+    // the same way the grouped shape does — one bullet per change, outcome first
+    // with its evidence folded in — instead of a numbered list whose first item
+    // could be a bare path. The archive keeps its numbered, indented form.
+    findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail) => {
+      const normalized = normalizeFindingLead(args.chat ? chatNarrative(detail) : detail);
+      if (normalized.technical) {
+        // Archive preserves flat Verdict:/Audit: details in the evidence table
+        // (already routed above — this guards the fallback path); chat drops.
+        return;
+      }
+      if (args.chat) {
+        findingLines.push(...findingBullet(detail, true));
+        return;
+      }
+      const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" \u00b7 ");
+      findingLines.push(`- **${normalized.outcome}**`);
+      if (reason) findingLines.push(`  - ${reason}`);
     });
   }
   const tableRows: string[] = [];
@@ -1046,17 +1127,18 @@ export function buildRichTerminalParts(args: {
       tableRows.push(`| Verification | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : sanitizeDisplayText(body))} |`);
     }
   }
-  if (!args.chat && auditStatus !== "NO REVIEW") {
+  if (!args.chat && gates.length > 0 && auditStatus !== "NO REVIEW") {
+    // The review row rides the WIDE archive gate table only; the chat receipt
+    // already closes with the verdict, so the compact three-column shape does
+    // not repeat it as a pseudo-gate (field 2026-11-11).
     const auditBody = sanitizeDisplayText(args.countsLine).replace(/^\u2014\s*/, "").replace(/\.\s*$/, "").replace(/^completion review:\s*/i, "");
-    // v0.38.55 audit: the Audit row's Scope names the row kind — the old
-    // shape duplicated the counts text in Scope and Notes.
-    if (gates.length > 0) {
-      tableRows.push(showCommand
-        ? `| Completion review | \u2014 | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`
-        : `| Completion review | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
-    } else {
-      tableRows.push(`| Completion review | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
-    }
+    tableRows.push(showCommand
+      ? `| Completion review | \u2014 | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`
+      : `| Completion review | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
+  }
+  if (!args.chat && gates.length === 0 && auditStatus !== "NO REVIEW") {
+    const auditBody = sanitizeDisplayText(args.countsLine).replace(/^\u2014\s*/, "").replace(/\.\s*$/, "").replace(/^completion review:\s*/i, "");
+    tableRows.push(`| Completion review | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
   }
   // Chat is an account of what happened, not a test-run transcript. Keep
   // verification out of the default human view; an explicit user request may
@@ -1133,9 +1215,11 @@ export function buildRichTerminalParts(args: {
   const nextLines: string[] = [];
   for (const [actionIdx, detail] of nextDetails.entries()) {
     if (consumedActions.has(actionIdx)) continue;
-    const { lead, body } = leadBody(detail);
+    const { body } = leadBody(detail);
     const [head, ...rest] = expandInlineList(body);
-    nextLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
+    // The section itself names the action, so the per-line `**Next** —` prefix
+    // is dropped on BOTH surfaces (field 2026-11-11).
+    if (head) nextLines.push(`- ${head}`);
     nextLines.push(...rest);
   }
   const remainingLines: string[] = [];
@@ -1169,6 +1253,7 @@ export function buildRichTerminalParts(args: {
     ...(args.chat ? { chat: true } : {}),
     repoLines: args.chat ? [] : (args.repoState ?? []).map((line) => sanitizeDisplayText(line)),
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
+    ledeLines: reportLede(outcome),
   };
 }
 
@@ -1201,6 +1286,9 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   const headline = sanitizeDisplayText(parts.headline);
   const lines = [banner, ""];
   if (headline !== lines[0]) lines.push(headline, "");
+  // The prose lede: the whole outcome sentence under the shortened headline
+  // (field 2026-11-11). Absent when the headline already carries it.
+  if (parts.ledeLines.length > 0) lines.push(...parts.ledeLines.map((line) => sanitizeDisplayText(line)), "");
   if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
   // Structured-long (field 2026-09-16): the full Outcome body rides its
   // own section between the headline and the findings — findings-first
