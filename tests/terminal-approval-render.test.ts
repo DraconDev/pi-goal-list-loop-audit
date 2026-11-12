@@ -90,12 +90,12 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   // carries no model ID. The verdict rides ONE receipt line that closes the
   // report, with the record pointer last.
   const last = render.chatLines.at(-1) ?? "";
-  assert.match(last, /completion audit approved on the provider retry (1 review) \u00b7 record: .pi-glla\/archive\/20260907-approval-render\.md\./, last);
+  assert.match(last, /completion audit approved on the provider retry \(1 review\) \u00b7 record: .pi-glla\/archive\/20260907-approval-render\.md\./, last);
   assert.ok(!render.chatLines.some((l) => l.startsWith("\u2022 ")), "no legacy bullet trailer");
   assert.ok(!render.chatLines.some((l) => /auditor-model/.test(l)), "no model ID anywhere in the chat");
   assert.ok(!render.chatLines.some((l) => /^\s*Next\s*:/i.test(l)), "stale pre-verdict Next never reaches the chat");
   const transcriptLast = render.transcriptLines.at(-1) ?? "";
-  assert.match(transcriptLast, /completion audit approved on the provider retry (1 review)/, "transcript carries the verdict half, model-free");
+  assert.match(transcriptLast, /completion audit approved on the provider retry \(1 review\)/, "transcript carries the verdict half, model-free");
   assert.ok(!render.transcriptLines.some((l) => /auditor-model/.test(l)), "no model ID in the transcript either");
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
