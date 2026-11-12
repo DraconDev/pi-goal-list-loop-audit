@@ -77,8 +77,17 @@ export function workingTreeFingerprint(cwd: string): string | undefined {
   let tmpDir: string | undefined;
   try {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-tree-"));
-    const env = { ...process.env, GIT_INDEX_FILE: path.join(tmpDir, "index") };
-    const opts = { cwd, env, encoding: "utf8" as const, timeout: 15_000, stdio: ["ignore", "pipe", "ignore"] as ["ignore", "pipe", "ignore"] };
+    const tmpIndex = path.join(tmpDir, "index");
+    const baseOpts = { cwd, encoding: "utf8" as const, timeout: 15_000, stdio: ["ignore", "pipe", "ignore"] as ["ignore", "pipe", "ignore"] };
+    // Seed the throwaway index from the real one so git's stat cache skips
+    // unchanged files — only modified paths are rehashed. Read-only on the
+    // real index; a missing index just means a cold (slower) hash.
+    try {
+      const realIndex = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-path", "index"], baseOpts).trim();
+      if (realIndex && fs.existsSync(realIndex)) fs.copyFileSync(realIndex, tmpIndex);
+    } catch { /* cold index */ }
+    const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
+    const opts = { ...baseOpts, env };
     execFileSync("git", ["add", "-A", "--", "."], opts);
     const tree = execFileSync("git", ["write-tree"], opts).trim();
     return /^[0-9a-f]{40,64}$/.test(tree) ? tree : undefined;
