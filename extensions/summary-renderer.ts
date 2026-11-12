@@ -1,7 +1,7 @@
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { Box, Markdown, stripTerminalSequences, truncateToWidth, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { compactHumanSummary } from "./human-handoff.js";
-import { CARD_SECTION, cardSectionName } from "./card-sections.js";
+import { CARD_SECTION, NARROW_TABLE_COLUMNS, cardSectionName, tableAsBullets } from "./card-sections.js";
 
 export type SummaryTone = "success" | "warning" | "error" | "accent" | "dim" | "text";
 
@@ -92,12 +92,19 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
       const sectionName = heading ? cardSectionName(heading.replace(/^#+\s+/, "")) : null;
       const tone = summaryHeadingTone(heading);
       const verification = sectionName === CARD_SECTION.verification;
+      // Narrow receipts (field 2026-11-11): Pi prints a Markdown table's RAW
+      // pipe rows when the width cannot fit it, which a reader sees as broken
+      // output. The block is rendered once per width, so the fallback happens
+      // here — a table becomes `- Gate — command — result` bullets when the
+      // card cannot hold it. Both shapes state the same derived facts.
+      const narrow = verification && width < NARROW_TABLE_COLUMNS;
+      const sourceBlock = narrow ? tableAsBullets(block).join("\n") : block;
       // Current receipts use plain section labels for host compatibility.
       // Promote them only in the display layer so Markdown can style them;
       // durable content and archive text remain unchanged.
       // Pi renders depth >=3 prefixes literally. Depth 2 preserves the
       // semantic heading style without exposing Markdown hashes.
-      const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + block.slice(firstLine.length) : block;
+      const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
       box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
         color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
       }));
