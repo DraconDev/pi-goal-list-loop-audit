@@ -1268,9 +1268,9 @@ function terminalizeHeadings(line: string): string {
 
 /** Compose parts into the end-of-task report card.
  *
- * Field 2026-11-11 ("more like opencode's end-of-task summary"): the card
- * is ONE document — headline, then `## Summary` carrying the outcome and
- * one `What changed · <area>` subsection per work area, then the always-on
+ * Field 2026-11-11 ("more like opencode's end-of-task summary"): the card is
+ * ONE document — headline, prose lede, `## Summary` carrying the outcome and
+ * one `What changed · <area>` subsection per work area, the always-on
  * `## Verification` gate table, `## Follow-up items`, `## Next steps`, the
  * archive-only repository state, and a single compact receipt line. The
  * pre-report shape split the same facts across Summary / What Changed /
@@ -1278,9 +1278,10 @@ function terminalizeHeadings(line: string): string {
  * `•` trailer bullets, which is what made a finished goal read as an audit
  * log.
  *
- * Ordering guarantees kept from v0.38.55: findings precede verification,
- * verification precedes the follow-ups, and a resolved problem carries its
- * action inline (`→ Next:`) instead of restating it under Next steps. */
+ * Order is the report order the operator confirmed: what changed → what was
+ * checked → what is still open → what comes next. A resolved problem still
+ * carries its action inline (`→ Next:`) instead of restating it under Next
+ * steps. */
 export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   const banner = sanitizeDisplayText(parts.banner ?? parts.headline);
   const headline = sanitizeDisplayText(parts.headline);
@@ -1321,9 +1322,6 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // explicit Left out distinction and preserve all archive labels verbatim.
   const sectionLine = (line: string): string => contentLine(parts.chat
     ? line.replace(/^(\s*-\s+)\*\*(?:Unresolved|Next)\*\*\s+—\s+/, '$1') : line);
-  if (parts.remainingLines.length > 0) {
-    lines.push(head(CARD_SECTION.followUp), ...parts.remainingLines.map(sectionLine), "");
-  }
   if (parts.verificationSummaryLine) {
     lines.push(head(CARD_SECTION.verification), contentLine(parts.verificationSummaryLine), "");
   } else if (parts.tableLines.length > 0) {
@@ -1332,6 +1330,9 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
     // trivia. The archive widens the same table with commands and its review
     // row; chat drops only the mechanical narrow-width columns.
     lines.push(head(CARD_SECTION.verification), ...parts.tableLines.map((line) => contentLine(line)), "");
+  }
+  if (parts.remainingLines.length > 0) {
+    lines.push(head(CARD_SECTION.followUp), ...parts.remainingLines.map(sectionLine), "");
   }
   if (parts.nextLines.length > 0) {
     lines.push(head(CARD_SECTION.nextSteps), ...parts.nextLines.map(sectionLine), "");
