@@ -1572,12 +1572,15 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // A legacy/incomplete recap can still have useful human fields. Read those
   // directly for display; keep the strict recorded-facts resolver unchanged
   // for the durable archive and independent audit.
+  // The Tests: label rides the brief so the verification section can always
+  // state what was checked (field 2026-11-11). It is routed to the gate table
+  // by partitionRichDetails, never shown as a human change finding.
   const richBrief = humanCompletionBrief(
     humanSource,
     140,
     RICH_FULL_VALUE_BUDGET,
     input.priorCompletionSummary,
-    input.showVerification === true,
+    true,
   );
   // Structured-long (field 2026-09-16): a section-structured Outcome
   // earns the full `### Summary` section on the terminal card (and the
