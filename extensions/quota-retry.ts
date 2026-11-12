@@ -402,7 +402,7 @@ const RATE_LIMIT = /\b429\b|too[\s_-]+many[\s_-]+requests|rate[\s_-]*limit|throt
 const PLAN_QUOTA = /(?:quota|usage[\s_-]*(?:limit|quota)|token[\s_-]*plan|plan[\s_-]*(?:limit|quota)|monthly\s+(?:limit|quota)|daily\s+(?:limit|quota)|weekly\s+(?:limit|quota)|key[\s_-]*(?:limit|quota)(?:\s+exceeded)?)/i;
 const PLAN_QUOTA_REVERSE = /(?:monthly|daily|weekly|key|usage|token[\s_-]*plan|plan).{0,80}(?:limit\s+(?:reached|exceeded|exhausted|depleted)|quota|exhausted|depleted)/i;
 const GENERIC_LIMIT_WALL = /\blimit\s+(?:reached|exceeded|exhausted|depleted)\b/i;
-const BILLING = /insufficient[\s_-]+(?:credits?|balance|quota)|(?:credits?|balance)\s+(?:exhausted|depleted|used\s+up)|billing\s+(?:required|issue|failure)|payment\s+required|buy\s+credits?/i;
+const BILLING = /insufficient[\s_-]+(?:credits?|balance|quota)|(?:credits?|balance)\s+(?:exhausted|depleted|used\s+up)|billing\s+(?:required|issue|failure)|payment\s+required|(?:buy|purchase)\s+(?:more\s+)?credits?/i;
 // v0.34.125: explicitly-TEMPORARY quota wording (note.md 2026-08-10 "we
 // received some quota message that would have been temporary but we gave up
 // and waited for a bigger reset"). "temporarily over quota" / "temporarily
@@ -424,6 +424,28 @@ const TEMPORARY_QUOTA = /temporar(?:y|ily)[^.\n]{0,60}(?:quota|limit|throttl|too
 // `unknown`/deterministic, and the delay policy so it is not parked at the
 // reset instant.
 const CONCURRENCY_WALL = /\btier[_\s-]*limit|concurrency\s+(?:limit|cap|quota)|concurrent\s+(?:request|session|connection)s?\b|too\s+many\s+(?:concurrent|parallel|in[\s-]?flight)|(?:in[\s-]?flight|parallel|simultaneous)\s+(?:request|session)s?\s+(?:limit|cap|exceeded)/i;
+
+// v0.39.70 (#6, field 2026-11-10): a SPENT plan that arrives as a 429.
+//
+//   429 {"type":"rate_limit_error","message":"Token Plan usage limit reached:
+//   Upgrade your Token Plan or purchase Credits for more usage. (2056)"}
+//
+// The status says request-rate, the words say the plan is used up and only a
+// purchase restores it. Filed as a rate limit it was retried once a minute
+// against the same dead model (16 attempts in 13 minutes, then 45 minutes of
+// nothing until a person switched model). An explicit "upgrade your plan" /
+// "purchase credits" instruction WITHOUT any reset or retry-after hint is an
+// account wall: stop hammering it, let the fallback chain or the person act.
+// A message that also names a reset ("…limit reached, resets at 15:00") stays
+// a rate limit — that window lifts on its own.
+const SPENT_PLAN_REMEDY = /\b(?:upgrade|purchase|buy|top[\s-]?up|recharge|add)\s+(?:your\s+|more\s+|some\s+)?(?:[\w-]+\s+){0,2}(?:plan|credits?|balance|subscription|tokens)\b/i;
+const RESET_OR_RETRY_HINT = /\breset(?:s|ting)?\b|retry[\s_-]?after|try\s+again\s+(?:in|at|after)|available\s+(?:again\s+)?(?:in|at)\b|\bwait\s+\d/i;
+
+/** True when a provider message says the plan is spent and must be bought
+ * back, with no reset hint — an account wall even under an HTTP 429. */
+export function isSpentPlanWall(error: string | undefined): boolean {
+  return typeof error === "string" && SPENT_PLAN_REMEDY.test(error) && !RESET_OR_RETRY_HINT.test(error);
+}
 
 /** True when the failure is an admission limit on simultaneous requests rather
  * than exhausted quota: retry promptly, do not sleep to the quoted reset. */
@@ -450,6 +472,9 @@ export function quotaSignal(error: string | undefined): QuotaSignal | undefined 
   // An explicit 429/rate-limit signal is never a token-limit label. The
   // recovery path keeps retrying it and the optional hourly ticker can add a
   // probe after the start of each hour.
+  // v0.39.70 (#6): "upgrade your plan / purchase credits" with no reset hint
+  // is a spent plan even when the provider sends it as a 429.
+  if (isSpentPlanWall(error) && (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error) || BILLING.test(error) || GENERIC_LIMIT_WALL.test(error))) return "billing";
   if (RATE_LIMIT.test(error)) return "rate-limit";
   if (BILLING.test(error)) return "billing";
   if (PLAN_QUOTA.test(error) || PLAN_QUOTA_REVERSE.test(error)) return "plan-quota";
