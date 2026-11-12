@@ -1023,6 +1023,14 @@ gateRows?: GateRow[];
    * model is a machine fact, not an attempt fact. Clamped to [0, 100] on
    * load. */
   timeoutEscalation?: number;
+  /** v0.39.70: receipts for the contract gates GLLA's deterministic pre-audit
+   * ran and PASSED for this claim (see extensions/gate-receipts.ts). The
+   * auditor quotes them instead of re-running multi-minute gates, and the
+   * completion card shows them as rows GLLA ran. */
+  gateReceipts?: MechanicalGateReceipt[];
+  /** v0.39.70: working-tree fingerprint the receipts were taken against. A
+   * later dispatch re-checks it; a changed tree drops the receipts. */
+  gateTreeFingerprint?: string;
   /** Durable generic retry accounting; survives reloads and worker restarts. */
   retryAttempts?: number;
   retryFirstAt?: string;
@@ -3481,6 +3489,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     exhaustedChain: _exhaustedChain,
     auditorThinkingLevel: _auditorThinkingLevel,
     timeoutEscalation: _timeoutEscalation,
+    gateReceipts: _gateReceipts,
+    gateTreeFingerprint: _gateTreeFingerprint,
     showVerification: _showVerification,
     preAuditCompaction: _preAuditCompaction,
     preAuditCompactionRevision: _preAuditCompactionRevision,
@@ -3604,6 +3614,11 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   // half-structured projection.
   const sanitizedGates = sanitizeGateRows(raw.gateRows);
   const showVerification = _showVerification === true ? true : undefined;
+  // v0.39.70: GLLA-run gate receipts — sanitized, bounded, exit-0 only.
+  const gateReceipts = sanitizeGateReceipts(_gateReceipts);
+  const gateTreeFingerprint = typeof _gateTreeFingerprint === "string" && /^[0-9a-f]{40,64}$/.test(_gateTreeFingerprint)
+    ? _gateTreeFingerprint
+    : undefined;
   return {
     ...canonicalOrUnknown,
     ...(_preAuditCompaction === true ? { preAuditCompaction: true } : {}),
@@ -3633,6 +3648,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorRevision !== undefined ? { auditorRevision } : {}),
     ...(auditorAbortCause ? { auditorAbortCause } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
+    ...(gateReceipts ? { gateReceipts } : {}),
+    ...(gateReceipts && gateTreeFingerprint ? { gateTreeFingerprint } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
     ...(showVerification ? { showVerification: true } : {}),
