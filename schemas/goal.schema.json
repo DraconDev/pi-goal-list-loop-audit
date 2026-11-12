@@ -290,12 +290,12 @@
         "priorCompletionSummary": { "type": "string" },
         "leftOut": {
           "type": "string",
-          "description": "v0.38.37: what the agent deliberately left out of this turn's work. Renders as the closing non-do bullet in the terminal summary."
+          "description": "v0.38.37: what the agent deliberately left out of this turn's work. In the 2026-11-11 report shape it renders under Follow-up items, distinct from an open risk."
         },
-        "showVerification": { "type": "boolean", "description": "v0.38.98: opt in to a compact verification sentence in the human terminal summary. Full evidence stays in the archive." },
+        "showVerification": { "type": "boolean", "description": "v0.38.98, revised in the 2026-11-11 report shape: the verification inventory always renders on both surfaces, so this flag only adds one compact aggregate sentence for a claim that supplied no gateRows inventory." },
         "findingGroups": {
           "type": "array",
-          "description": "v0.38.50: agent-structured finding groups for the grouped terminal render. Absent keeps the flat six-label fallback.",
+          "description": "v0.38.50: agent-structured finding groups. In the 2026-11-11 report shape each group is a `What changed · <area>` subsection of the Summary on both surfaces; absent keeps the flat recap fallback.",
           "items": {
             "type": "object",
             "required": ["title", "findings"],
@@ -308,7 +308,7 @@
         },
         "gateRows": {
           "type": "array",
-          "description": "v0.38.52: agent-supplied verification gate rows for the widened terminal table. Absent keeps the mechanical 3-col table.",
+          "description": "v0.38.52: agent-supplied verification gate rows for the always-visible Verification section. Absent keeps the mechanical 3-col table.",
           "items": {
             "type": "object",
             "required": ["gate"],
