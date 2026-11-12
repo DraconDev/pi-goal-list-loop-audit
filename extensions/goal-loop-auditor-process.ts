@@ -2257,6 +2257,9 @@ export function validateCompletedAuditorResult(args: {
   strictChallenge: boolean;
   startedAt: number;
   nowMs: number;
+  /** v0.39.70: GLLA-run gate receipts handed to this audit. Defaults to the
+   * claim's persisted receipts. */
+  gateReceipts?: MechanicalGateReceipt[];
   lastProgress?: AuditorProgressFile;
   onProgress?: AuditorProgressCallback;
   reportStall: (info: Omit<AuditorStalledInfo, "attemptId" | "cost">) => void;
@@ -2345,7 +2348,8 @@ export function validateCompletedAuditorResult(args: {
     return stampToken({ approved: false, disapproved: true, output: `${output}\n\n${floorNote}\n<disapproved/>`, model, thinkingLevel, challenge }, capturedRevisionToken);
   }
   if (parsed.approved && goal.verificationContract?.trim()) {
-    const shield = checkRegressionShield(output, goal.verificationContract);
+    const receiptCommands = (args.gateReceipts ?? goal.pendingCompletion?.gateReceipts ?? []).map((r) => r.command);
+    const shield = checkRegressionShield(output, goal.verificationContract, receiptCommands);
     if (!shield.passed) {
       // The auditor's semantic verdict was approval; the separate
       // regression shield blocked acceptance because the report did

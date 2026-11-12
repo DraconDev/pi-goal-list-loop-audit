@@ -110,7 +110,25 @@ function normalizeForMatch(s: string): string {
  *      prose punctuation glued on ("file/element.") — three real approved
  *      audits on hegemon were converted to disapprovals that way.
  */
-export function checkRegressionShield(report: string, contract: string): RegressionShieldResult {
+/** v0.39.70: one normalization for receipt-vs-contract matching — case and
+ * whitespace insensitive, backticks dropped. */
+function normalizeCommandForMatch(value: string): string {
+  return value.replace(/`/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** v0.39.70: true when a contract item names a command that GLLA's own
+ * deterministic pre-audit ran and passed (a gate receipt). Such an item is
+ * already evidenced by GLLA, not by the executor, so the shield does not
+ * demand the auditor re-run and re-paste it. */
+export function contractItemCoveredByReceipt(item: string, receiptCommands: readonly string[]): boolean {
+  const hay = normalizeCommandForMatch(item);
+  return receiptCommands.some((command) => {
+    const needle = normalizeCommandForMatch(command);
+    return needle.length >= 4 && hay.includes(needle);
+  });
+}
+
+export function checkRegressionShield(report: string, contract: string, receiptCommands: readonly string[] = []): RegressionShieldResult {
   const evidenceMatch = /<evidence>[\t\n\r ]*([\s\S]*?)<\/evidence>/i.exec(report);
   const hasEvidenceBlock = evidenceMatch !== null;
   const items = contractItems(contract);
@@ -129,9 +147,10 @@ export function checkRegressionShield(report: string, contract: string): Regress
       .filter((w) => w.length >= 5)
       .sort((a, b) => b.length - a.length)
       .slice(0, 3);
-    const addressed = candidates.length > 0
+    const addressed = (candidates.length > 0
       ? candidates.some((c) => tokenPresent(c, evidenceLower))
-      : evidenceLower.includes(normalizeForMatch(item));
+      : evidenceLower.includes(normalizeForMatch(item)))
+      || contractItemCoveredByReceipt(item, receiptCommands);
     if (!addressed) missingItems.push(item);
   }
   return {
