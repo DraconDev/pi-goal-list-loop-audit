@@ -1053,7 +1053,7 @@ export async function runMechanicalPreAuditChecks(
   const baseTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
     ? timeoutMs
     : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
-  // v0.39.x (dracon-platform fix): when the goal's cwd is a subdirectory of
+  // v0.39.x (field report fix): when the goal's cwd is a subdirectory of
   // the repo (e.g. web/) and a contract's relative path does not resolve there
   // but DOES resolve at the repo root, run from the repo root. This handles
   // contracts authored with repo-root-relative paths (the common case for
