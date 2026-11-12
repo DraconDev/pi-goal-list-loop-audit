@@ -119,28 +119,48 @@ Executors should supply a full objective-level recap on each corrected claim,
 not depend on a rejected predecessor to fill in omitted work.
 The human layer follows two different purposes:
 
-- Chat and transcript explain **what happened**: outcome first, then a
-  change-first `What Changed` account grouped by area, followed by material
-  `Remaining` limitations and one concrete `Next` action. Tests, verification,
-  gate tables, commands, hashes, and machine evidence stay out of the default
-  user view. If the user explicitly asks for verification, the terminal render
-  may add one compact `Verification` sentence; the archive always retains the
-  complete evidence. The default terminal view previews structured results
-  and a few primary changes; expansion retains the complete saved message.
-  Required actions, Remaining limitations, review qualifications and the saved
-  record link are not lost to that preview. Evidence-only recap fields are
-  not reclassified as changes. Legacy incomplete recaps may supply useful
-  human fields, but a missing result stays explicitly missing: telemetry is
-  not a substitute for an explanation.
+- Chat, transcript and archive all read as **one end-of-task report**
+  (field 2026-11-11 — "more like opencode's end-of-task summary"):
+  `## Done — <result>` headline, a prose lede carrying the rest of the
+  `Outcome` sentence, `## Summary` with the structured Outcome body and one
+  `What changed · <area>` subsection per `findingGroups` entry, an
+  always-visible `## Verification` gate inventory (chat compact
+  `Gate | Command | Result`, archive wide
+  `Quality Gate | Command | Scope | Status | Notes` plus its review row),
+  `## Follow-up items` (`Unresolved` and the deliberate `leftOut`, with a
+  resolving action inline as `→ Next:`), `## Next steps` (standalone actions),
+  the archive-only `Final Repository State`, and ONE closing receipt line
+  (`completion audit approved (N reviews) · record: <path>`).
+  Status words in the inventory are derived from the gate notes, never claimed:
+  `PASS` only on a complete pass parse with zero failures, `FAIL` on any
+  failure evidence, otherwise the row keeps its honest `REPORTED` shape.
+- Chat headings are depth 2 (the Pi TUI renders them without the `##`
+  prefix); the archived markdown keeps `###`/`####`. Below the narrow-table
+  threshold the chat verification section renders as
+  `- <gate> — <command> — <result>` bullets, because Pi prints a Markdown
+  table's raw pipe rows when the width cannot fit it.
+- The section vocabulary lives in one leaf module (`extensions/card-sections.ts`)
+  consumed by the composer, the collapsed receipt projection and the terminal
+  renderer. Legacy section names (`What Changed`, `Remaining`, `Next`,
+  `Verification Evidence`) stay recognized so a receipt queued by an older
+  build still collapses, colors, and keeps its review qualification and record
+  link; their durable text is never rewritten.
+- The default terminal view previews structured results and a few primary
+  changes; expansion retains the complete saved message. Required actions,
+  follow-up limitations, review qualifications and the saved record link are
+  not lost to that preview. Evidence-only recap fields are not reclassified as
+  changes. Legacy incomplete recaps may supply useful human fields, but a
+  missing result stays explicitly missing: telemetry is not a substitute for
+  an explanation.
 - The archive's `## Terminal summary` remains forensic and complete: detailed
   findings grouped or tabulated at 4+ groups, per-finding proof, the full
-  Verification Summary table (Quality Gate | Command | Scope | Status | Notes
-  when supplied), and Final Repository State.
+  Verification table (Quality Gate | Command | Scope | Status | Notes when
+  supplied), and Final Repository State.
 
 Both surfaces retain the independent completion review and access to the full
-six-label machine recap in the saved record. A lone approval may be promoted
-to the chat headline because it is a durable review fact, not because tests
-passed. Goal-approval external notifications use the short human outcome,
+six-label machine recap in the saved record. The verdict is stated once, in
+that closing receipt line, rather than as an archive banner above a second
+headline. Goal-approval external notifications use the short human outcome,
 not telemetry or a projection of every machine label.
 Every terminal goal notification, including version-bearing already-shipped
 claims and explicit cancellation, carries the change-first human view or the
