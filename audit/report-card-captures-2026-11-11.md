@@ -55,3 +55,16 @@ Treat the light captures as rendered-but-unaudited-by-eye.
 
 PNG rasterization is static evidence of the renderer output; it is not proof
 of a live session, a live provider, or an auditor round.
+
+## Update (2026-11-12) — spacing, area labels, dangling pointer words
+
+`scripts/summary-readability-capture.ts` was re-run after the v0.39.70 card
+changes (`CHANGELOG.md` → `## Unreleased` → "The final audit stops re-running
+gates GLLA already ran, and the card reads like a report"). The `.ansi`,
+`.json` and `fixture.md` files now show: one blank row between sections and
+none under a heading's body; `What changed · <area>` displayed as the bold
+area name directly above its bullets (the durable `fixture.md` keeps the full
+label); and `…not an audit log · path:line` without the stranded `for`.
+
+The `.png` rasterizations were **not** regenerated in this pass (no Xvfb run);
+they still show the 2026-11-11 layout. Treat the ANSI rows as current.
