@@ -47,7 +47,7 @@ import {
 import { isAuditorAccountFailure } from "../scripts/auditor-provider-failure.mjs";
 import { ModelSelector, type ModelFallbackEvent } from "./model-selector.js";
 import { buildGoalAuditorPrompt } from "./goal-loop-auditor.js";
-import { checkRegressionShield, parseAuditorVerdict } from "./goal-loop-shield.js";
+import { checkRegressionShield, parseAuditorVerdict, type MechanicalGateReceipt } from "./goal-loop-shield.js";
 import { renameWithWindowsRetry } from "../scripts/goal-auditor-launch.mjs";
 import { resolveAuditorAllowedExtensions } from "./auditor-extensions.js";
 
@@ -1977,8 +1977,8 @@ export function auditorEnvAllowlistFor(env: NodeJS.ProcessEnv): string[] {
   return Object.keys(env).filter((name) => typeof env[name] === "string").sort();
 }
 
-function buildPrompt(goal: Goal, completionSummary?: string | null, verificationSummary?: string | null): string {
-  return buildGoalAuditorPrompt(goal, completionSummary, verificationSummary);
+function buildPrompt(goal: Goal, completionSummary?: string | null, verificationSummary?: string | null, gateReceipts?: MechanicalGateReceipt[]): string {
+  return buildGoalAuditorPrompt(goal, completionSummary, verificationSummary, gateReceipts);
 }
 
 function assertAttemptId(attemptId: string): void {
@@ -2526,6 +2526,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
    * the whole change, and the falsification pass is scoped to those
    * objections too. Part of the request hash (present only when true). */
   reworkRound?: boolean;
+  /** v0.39.70: GLLA-run gate receipts, already checked fresh for the current
+   * working tree by the caller. Rendered into the brief (so they are part of
+   * the request hash through the prompt) and accepted by the regression
+   * shield for the contract items they cover. */
+  gateReceipts?: MechanicalGateReceipt[];
   /** v0.39.55: resume lineage for a CONTINUED audit. Read only by the public
    * wrapper (stamped onto the result) so the worker request and its hash are
    * unchanged — the worker does not need to know it was resumed. */
@@ -2705,7 +2710,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       protocolVersion: PROTOCOL_VERSION,
       attemptId,
       cwd: args.cwd,
-      prompt: buildPrompt(args.goal, args.completionSummary, args.verificationSummary),
+      prompt: buildPrompt(args.goal, args.completionSummary, args.verificationSummary, args.gateReceipts),
       model,
       thinkingLevel,
       createdAt: new Date(startedAt).toISOString(),
@@ -2933,6 +2938,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           return validateCompletedAuditorResult({
             result, goal: args.goal, model, thinkingLevel, capturedRevisionToken,
             strictChallenge, startedAt, nowMs: now(), lastProgress,
+            ...(args.gateReceipts ? { gateReceipts: args.gateReceipts } : {}),
             onProgress: args.onProgress, reportStall,
           });
         } catch (error) {
