@@ -86,7 +86,7 @@ test("the runner executes the step in the named directory", async () => {
   const sub = makeProbeProject(root);
   try {
     const res = await runMechanicalPreAuditChecks(root, [{ command: "bun run probe", cwd: "sub" }], 60_000);
-    assert.equal(res.passed, true, res.output);
+    assert.equal(res.passed, true, res.output ?? "");
     assert.equal(fs.existsSync(path.join(sub, "probe.txt")), true, "the script must have run inside sub/");
     assert.equal(fs.existsSync(path.join(root, "probe.txt")), false, "and must NOT have run in the caller's cwd");
   } finally {
