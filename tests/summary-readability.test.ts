@@ -68,12 +68,13 @@ test('plain finding prose and bold area hierarchy preserve complete claims and a
   const finding = 'The narrow-window layout stays readable without document overflow';
   const chat = composeRichTerminalLines(buildRichTerminalParts({ outcome: 'Readable', countsLine: '', chat: true,
     details: [], groups: [{ title: 'Layout', findings: [finding + ' — browser probe at 390px'] }] })).join('\n');
-  assert.ok(chat.includes('**1. Layout**'));
-  assert.ok(chat.includes('- ' + finding));
-  assert.ok(!chat.includes('**' + finding + '**'));
+  // Report shape (field 2026-11-11): the area label names the section and the
+  // work area, instead of numbering an opaque list.
+  assert.ok(chat.includes('**What changed \u00b7 Layout**'), chat);
+  assert.ok(chat.includes('- **' + finding + '**'), 'the complete claim stays the bullet, bold as its lead');
+  assert.ok(chat.includes('browser probe at 390px'), 'its evidence rides the same bullet');
   const flat = render(['Changed: ' + finding]);
-  assert.ok(flat.includes('1. ' + finding));
-  assert.ok(!flat.includes('**' + finding + '**'));
+  assert.ok(flat.includes('- **' + finding + '**'), flat);
   assert.ok(render(['Changed: ' + finding], false).includes('**' + finding + '**'));
   assert.doesNotMatch(chat + flat, /\x1b/);
 });
