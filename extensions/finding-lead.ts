@@ -53,6 +53,16 @@ function hasTechnicalPrefix(text: string): boolean {
   }
 }
 
+/** v0.39.70 (#11): a pointer at the END of a sentence often hangs off a
+ * preposition ("…not an audit log for path:line"). Moving the token out left
+ * "…not an audit log for" — a sentence that stops mid-thought. Drop only a
+ * trailing pointer word/separator; callers apply it only when a token was
+ * actually removed, so authored prose is never edited. */
+const DANGLING_POINTER_TAIL = /[\s,;:]+(?:for|in|at|see|via|from|on|under|per|cf\.?|e\.g\.?|[—–-])\s*$/i;
+export function trimDanglingPointerWord(text: string): string {
+  return text.replace(DANGLING_POINTER_TAIL, "").replace(/[\s,;:]+$/, "");
+}
+
 /** Extract repo-relative path:line tokens without interpreting their colons
  * as label separators. Absolute paths are intentionally not evidence. */
 export function extractFindingEvidence(text: string): { text: string; evidence: string[] } {
@@ -65,7 +75,7 @@ export function extractFindingEvidence(text: string): { text: string; evidence: 
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return { text: clean, evidence };
+  return { text: evidence.length > 0 ? trimDanglingPointerWord(clean) : clean, evidence };
 }
 
 function hasRepoEvidence(text: string): boolean {

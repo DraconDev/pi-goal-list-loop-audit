@@ -2,7 +2,7 @@
 
 ## Summary
 **What changed · Report shape**
-- **The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt** — sections, not an audit log for · extensions/completion-summary.ts:1200
+- **The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt** — sections, not an audit log · extensions/completion-summary.ts:1200
 
 **What changed · Verification**
 - **The gate inventory is always visible, derived from the notes rather than claimed** — impossible gate rows stay REPORTED, never PASS

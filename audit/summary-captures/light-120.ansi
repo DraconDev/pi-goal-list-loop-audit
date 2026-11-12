@@ -5,7 +5,7 @@
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;59;63;65mReport shape[39m                                                                                                           [49m
 [48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mThe card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt[39m[38;2;59;63;65m[38;2;59;63;65m — sections, not an  [49m
-[48;2;230;228;238m   [38;2;59;63;65maudit log for · extensions/completion-summary.ts:1200[39m                                                                [49m
+[48;2;230;228;238m   [38;2;59;63;65maudit log · extensions/completion-summary.ts:1200[39m                                                                    [49m
 [48;2;230;228;238m                                                                                                                        [49m
 [48;2;230;228;238m [38;2;59;63;65mVerification[39m                                                                                                           [49m
 [48;2;230;228;238m [38;2;116;89;180m- [39m[38;2;59;63;65mThe gate inventory is always visible, derived from the notes rather than claimed[39m[38;2;59;63;65m[38;2;59;63;65m — impossible gate rows stay         [49m

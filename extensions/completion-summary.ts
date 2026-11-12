@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { formatReceiptDuration, type MechanicalGateReceipt } from "./gate-receipts.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
-import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
+import { normalizeFindingLead, clipSummaryValue, trimDanglingPointerWord } from "./finding-lead.js";
 import { CARD_SECTION, LEGACY_CARD_SECTIONS } from "./card-sections.js";
 export { clipSummaryValue };
 
@@ -613,9 +613,7 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
   // preposition ("…an audit log for path:line"). Moving the token out left
   // "…an audit log for" — a sentence that stops mid-thought. Drop only a
   // trailing pointer preposition, and only when a token was actually removed.
-  const tidy = evidence.length > 0
-    ? stripped.replace(/[\s,;:]+(?:for|in|at|see|via|from|on|under|per|cf\.?|e\.g\.?|—|–|-)\s*$/i, "").replace(/[\s,;:]+$/, "")
-    : stripped;
+  const tidy = evidence.length > 0 ? trimDanglingPointerWord(stripped) : stripped;
   return { text: tidy, evidence };
 }
 
