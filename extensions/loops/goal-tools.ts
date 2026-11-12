@@ -1313,6 +1313,9 @@ function registerAgentTools(pi: any): void {
       // BEFORE the post-audit clear — the approval notify uses it to point
       // the user at the kept resumable session.
       let inspectionSessionPath: string | undefined;
+      // v0.39.70: receipts for the contract gates the deterministic pre-audit
+      // ran and passed just before this dispatch. Set below, read by runAudit.
+      let gateReceipts: MechanicalGateReceipt[] | undefined;
       const runAudit = (candidate: AuditorModelCandidate) => {
         // v0.39.43: the SESSION model — the auditor's default and its last
         // resort — runs at the SESSION's thinking level. The auditor's
@@ -1342,7 +1345,10 @@ function registerAgentTools(pi: any): void {
         // v0.37.0: the worker gets the SAME budgets via env so its own
         // per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
-        const { toolTimeoutMs, stallMs } = dispatchTimeouts;
+        const { stallMs } = dispatchTimeouts;
+        // v0.39.70 (#5): never hand the auditor a per-tool budget below a gate
+        // GLLA just watched take longer — that is a guaranteed cancellation.
+        const toolTimeoutMs = receiptAwareToolTimeoutMs(dispatchTimeouts.toolTimeoutMs, gateReceipts, MAX_AUDITOR_TOOL_TIMEOUT_MS);
         return runDetachedGoalCompletionAuditor({
           cwd: ctx.cwd,
           goal: auditGoal,
@@ -1357,6 +1363,7 @@ function registerAgentTools(pi: any): void {
           // pass too. One shared predicate, so the two parallel branches
           // cannot disagree about it.
           ...(isReworkRound(auditGoal) ? { reworkRound: true } : {}),
+          ...(gateReceipts ? { gateReceipts } : {}),
           model: candidate.model,
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
@@ -1440,6 +1447,32 @@ function registerAgentTools(pi: any): void {
         const mechanicalResult = await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal, undefined, {
           loadScale: settings.mechanicalLoadScale !== false,
         });
+        if (mechanicalResult.passed && mechanicalResult.receipts?.length) {
+          // v0.39.70: keep what GLLA just proved. The receipts ride the claim
+          // (fenced to this working tree) so the auditor quotes them instead
+          // of re-running the gates, a later retry can reuse them while the
+          // tree is unchanged, and the completion card can show them.
+          gateReceipts = mechanicalResult.receipts;
+          const gateTreeFingerprint = workingTreeFingerprint(ctx.cwd);
+          const current = state.goal?.pendingCompletion;
+          if (current && current.attemptId === auditAttemptId) {
+            updateGoal({
+              pendingCompletion: {
+                ...current,
+                gateReceipts,
+                ...(gateTreeFingerprint ? { gateTreeFingerprint } : { gateTreeFingerprint: undefined }),
+              },
+            }, ctx);
+          }
+          appendLedger(ctx.cwd, "gate_receipts_recorded", {
+            goalId: auditGoalId,
+            attemptId: auditAttemptId,
+            count: gateReceipts.length,
+            longestMs: Math.max(...gateReceipts.map((r) => r.durationMs)),
+            digest: gateReceiptsDigest(gateReceipts),
+            fingerprinted: gateTreeFingerprint !== undefined,
+          });
+        }
         if (!mechanicalResult.passed) {
         // v0.38.103: fail verdicts keep the historical fast-fail; inconclusive
         // (killed/limited gates) becomes an infra error — it enters the
