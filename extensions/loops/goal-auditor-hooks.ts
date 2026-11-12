@@ -1272,6 +1272,7 @@ export function settleApprovedCompletion(
     // v0.38.52: same for the gate inventory.
     ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
     ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
+    ...(claim.gateReceipts ? { gateReceipts: claim.gateReceipts } : {}),
     ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
     extras: inspectionSessionExtras(inspectionSessionPath),
   });
@@ -1279,6 +1280,7 @@ export function settleApprovedCompletion(
   const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, {
     findingGroups: claim.findingGroups,
     gateRows: claim.gateRows,
+    gateReceipts: claim.gateReceipts,
     priorCompletionSummary: claim.priorCompletionSummary,
     terminalRender: { goalId, objective: approvalObjective, chatLines: approvalRender.chatLines },
   });

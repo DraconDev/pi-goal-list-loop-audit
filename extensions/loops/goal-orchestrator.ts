@@ -32,6 +32,7 @@ import { Type } from "typebox";
 // (positioning doc invariant #2). Property reads on the imported binding are
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
+import type { MechanicalGateReceipt } from "../gate-receipts.js";
 
 import {
   type FindingGroup,
@@ -1297,7 +1298,7 @@ export function archiveCurrentGoal(
   // v0.38.50: agent-structured finding groups ride the audited claim into
   // the archive rich section only — abort/wip paths omit it (flat fallback).
   // v0.38.52: same for the gate inventory.
-  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; priorCompletionSummary?: string; terminalRender?: { goalId: string; objective: string; chatLines: string[] } },
+  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; gateReceipts?: MechanicalGateReceipt[]; priorCompletionSummary?: string; terminalRender?: { goalId: string; objective: string; chatLines: string[] } },
   persistence: SettlementPersistence = settlementPersistence,
 ): boolean {
   const { writeArchiveIntent, clearArchiveIntent, updateArchiveIntentPhase,
@@ -1352,7 +1353,7 @@ export function archiveCurrentGoal(
   // it carries the same rich markdown as chat over the verbatim
   // six-label machine record. Built from the terminal goal AFTER the
   // summary fence resolves, so chat and archive cannot disagree.
-  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows, opts?.priorCompletionSummary ?? goal.pendingCompletion?.priorCompletionSummary);
+  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows, opts?.priorCompletionSummary ?? goal.pendingCompletion?.priorCompletionSummary, opts?.gateReceipts ?? goal.pendingCompletion?.gateReceipts);
   const richMd = `${md}\n## Terminal summary\n\n${richSection.join("\n")}\n`;
   // An existing same-id archive is an immutable fence. Check it before
   // publishing an intent so an unrelated/sentinel winner can never make the

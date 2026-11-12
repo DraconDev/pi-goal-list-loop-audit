@@ -1389,7 +1389,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
  * raw six-label recap stays verbatim in `## Completion summary` as the
  * machine layer. Headline follows terminal status; aborted records never
  * wear a `Done` headline. */
-export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[], priorWholeWorkOverride?: string): string[] {
+export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[], priorWholeWorkOverride?: string, gateReceipts?: MechanicalGateReceipt[]): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
   // Preserve the original claim verbatim for forensic history only. The
@@ -1413,6 +1413,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     durationLine: buildDurationLine(goal),
     groups: findingGroups,
     gates: gateRows,
+    ...((gateReceipts ?? goal.pendingCompletion?.gateReceipts) ? { receipts: gateReceipts ?? goal.pendingCompletion?.gateReceipts } : {}),
     // v0.38.55: aborted records never wear a Done banner/headline.
     kind: status === "complete" ? "Done" : "Aborted",
     ...(structured ? { summaryLines: structured } : {}),
@@ -1555,6 +1556,9 @@ export interface TerminalApprovalRenderInput {
    * 3-col verification table.
    */
   gateRows?: GateRow[];
+  /** v0.39.70: contract gates GLLA's pre-audit ran and passed for the
+   * approved claim. Rendered as GLLA-run rows in the Verification table. */
+  gateReceipts?: MechanicalGateReceipt[];
   /** v0.38.98: show a compact verification sentence in the human terminal
    * summary when the user explicitly asks for it. Full evidence remains in
    * the archive regardless. */
@@ -1689,6 +1693,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     durationLine: buildDurationLine(input.goal),
     groups: input.findingGroups,
     gates: input.gateRows,
+    ...(input.gateReceipts ? { receipts: input.gateReceipts } : {}),
     ...(input.repoState ? { repoState: input.repoState } : {}),
     ...(structured ? { summaryLines: structured } : {}),
   });

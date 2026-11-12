@@ -1833,6 +1833,7 @@ function registerAgentTools(pi: any): void {
         const escLeftOut = state.goal.pendingCompletion?.leftOut;
         const escFindingGroups = state.goal.pendingCompletion?.findingGroups;
         const escGateRows = state.goal.pendingCompletion?.gateRows;
+        const escGateReceipts = state.goal.pendingCompletion?.gateReceipts;
         const escShowVerification = state.goal.pendingCompletion?.showVerification;
         updateGoal({
           status: "active",
@@ -1897,9 +1898,10 @@ function registerAgentTools(pi: any): void {
             ...(escShowVerification ? { showVerification: true } : {}),
             ...(escFindingGroups ? { findingGroups: escFindingGroups } : {}),
             ...(escGateRows ? { gateRows: escGateRows } : {}),
+            ...(escGateReceipts ? { gateReceipts: escGateReceipts } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
           });
-          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: terminalGoal.id, objective: terminalGoal.objective, chatLines: escRender.chatLines } })) {
+          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, gateReceipts: escGateReceipts, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: terminalGoal.id, objective: terminalGoal.objective, chatLines: escRender.chatLines } })) {
             return {
               content: [{ type: "text", text: "The audit was aborted, but the terminal archive could not be persisted. The goal remains active; fix persistence and retry." }],
               details: {},
@@ -1994,6 +1996,7 @@ function registerAgentTools(pi: any): void {
           // v0.38.52: same for the gate inventory.
           ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
           ...(durableCompletionClaim.gateRows ? { gateRows: durableCompletionClaim.gateRows } : {}),
+          ...(durableCompletionClaim.gateReceipts ? { gateReceipts: durableCompletionClaim.gateReceipts } : {}),
           ...(manualRepoState ? { repoState: manualRepoState } : {}),
           // D7 audit: the shared builder sanitizes + shell-quotes the path;
           // the inline twin interpolated it raw (and unquoted) into chat.
@@ -2001,7 +2004,7 @@ function registerAgentTools(pi: any): void {
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
-        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: manualGoalId, objective: manualObjective, chatLines: manualRender.chatLines } });
+        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, gateReceipts: durableCompletionClaim.gateReceipts, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: manualGoalId, objective: manualObjective, chatLines: manualRender.chatLines } });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
           // persistence warning. The APPROVED claim stays: it is the durable
