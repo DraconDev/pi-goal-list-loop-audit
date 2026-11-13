@@ -90,7 +90,10 @@ export function workingTreeFingerprint(cwd: string): string | undefined {
     } catch { /* cold index */ }
     const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
     const opts = { ...baseOpts, env };
-    execFileSync("git", ["add", "-A", "--", "."], opts);
+    // GLLA's own runtime state (`.pi-glla/`) changes on every event; it is
+    // never part of the work, and a project that does not gitignore it would
+    // otherwise invalidate every receipt within seconds.
+    execFileSync("git", ["add", "-A", "--", ".", ":(exclude).pi-glla", ":(exclude)**/.pi-glla/**"], opts);
     const tree = execFileSync("git", ["write-tree"], opts).trim();
     return /^[0-9a-f]{40,64}$/.test(tree) ? tree : undefined;
   } catch {
