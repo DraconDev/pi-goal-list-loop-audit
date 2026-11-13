@@ -1954,7 +1954,7 @@ export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFact
       const extra = (changedFiles.length - Math.min(changedFiles.length, 20)) + changedOverflow;
       return `files written: ${shown}${extra > 0 ? ` (+${extra} more)` : ""}`;
     }
-    if ((goal.telemetry?.fileWrites ?? 0) > 0) return `${goal.telemetry!.fileWrites} file write(s) were recorded; the paths were not captured`;
+    if ((goal.telemetry?.fileWrites ?? 0) > 0) return `${goal.telemetry!.fileWrites} file-write signal(s) were recorded; changed paths were not captured`;
     return "not recorded — no file write was captured";
   })();
   const tests = goal.verificationContract
