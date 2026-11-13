@@ -1467,13 +1467,19 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   // archiveCurrentGoal captures history before pendingCompletion clears.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
+  // v0.39.71 (E): a recorded-facts recap's Evidence line is machine telemetry
+  // (goal id, counters). It stays in the verbatim machine record; the human
+  // layer does not render it as a change.
+  const briefDetails = isRecordedFactsRecap(summary)
+    ? brief.details.filter((detail) => !/^\s*Evidence\s*:/i.test(detail))
+    : brief.details;
   const structured = structuredSummaryLines(summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const countsLine = buildAuditCountsLine(goal);
   const parts = buildRichTerminalParts({
     outcome: brief.outcome,
-    details: withoutStaleNext(brief.details),
+    details: withoutStaleNext(briefDetails),
     countsLine,
     auditHistory: history,
     objective: goal.objective,
@@ -1495,7 +1501,9 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     `${[
       bannerVerdict(auditRowStatus(history), status),
       ...challengeDisclosure(goal).map(receiptSegment),
-      receiptSegment(countsLine),
+      // The verdict segment already says "no completion review"; do not
+      // repeat it as a counts segment.
+      ...(auditRowStatus(history) === "NO REVIEW" && /no review recorded/i.test(countsLine) ? [] : [receiptSegment(countsLine)]),
       receiptSegment(`\u2014 record: ${archivePath}`),
     ].filter(Boolean).join(" \u00b7 ")}.`,
     ...(priorWholeWork ? ["", "## Original completion claim (verbatim)", "", priorWholeWork] : []),
@@ -1681,7 +1689,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // A persisted fallback already satisfies the six-label validator. Detect
   // the system's reserved template as well as newly resolved fallbacks;
   // otherwise replaying an archived receipt resurrects telemetry as changes.
-  const persistedFallback = /^Outcome: (?:Objective ".*" archived with status=\w+\.|Stopped before completion — .*\. Objective: ".*"\.|Completed: ".*"\.)$/m.test(candidate ?? "")
+  const persistedFallback = RECORDED_FACTS_OUTCOME.test(candidate ?? "")
     && /^Evidence: goal .*; .*; .*\.$/m.test(candidate ?? "")
     && /^Tests: not recorded — .*terminal test result was captured/m.test(candidate ?? "");
   const humanSource = persistedFallback ? undefined : resolution.usedFallback ? candidate : resolution.summary;
@@ -1855,6 +1863,12 @@ function executionEvidence(goal: Goal): string {
  * intentionally does not inspect the working tree or infer that a command
  * passed: absent facts are named as absent instead of being invented.
  */
+const RECORDED_FACTS_OUTCOME = /^Outcome: (?:Objective ".*" archived with status=\w+\.|.+ — the objective was not finished: ".*"\.|Completed: ".*"\.)$/m;
+/** True for the system's own recorded-facts recap (current or legacy shape). */
+export function isRecordedFactsRecap(summary: string | undefined): boolean {
+  return RECORDED_FACTS_OUTCOME.test(summary ?? "") && /^Evidence: goal .*; .*; .*\.$/m.test(summary ?? "");
+}
+
 /** v0.39.71 (E): a stop reason in plain words. Machine reasons ("user wipe
  * (/glla wipe)", a raw 402 payload) stay verbatim in the archive's own
  * Stop reason field; the recap names the cause a person acts on. */
@@ -1932,9 +1946,10 @@ export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFact
     ? "not recorded"
     : tasks.length > 0
       ? `${doneTasks} of ${tasks.length} tasks done${openTask ? `; next open task: ${clipSummaryValue(openTask.title, 140)}` : ""}`
-      : "the objective was not finished";
+      : "no completion claim or review was recorded, so any work in the tree is unverified";
+  const reasonText = humanStopReason(reason);
   const outcome = stopped
-    ? `Stopped before completion — ${humanStopReason(reason)}. Objective: "${objectiveExcerpt(goal.objective)}".`
+    ? `${reasonText.charAt(0).toUpperCase()}${reasonText.slice(1)} — the objective was not finished: "${clipSummaryValue(goal.objective, 90)}".`
     : `Completed: "${objectiveExcerpt(goal.objective)}".`;
   const next = stopped
     ? stoppedNextAction(reason)
