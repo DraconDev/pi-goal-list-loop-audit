@@ -3150,12 +3150,7 @@ async function handleHotLengthExhaustion(
       interruptedTurnPrompt = undefined;
     }
     if (await handleMainModelAgentEnd(ctx, rawLastA, lastA)) return;
-    // v0.25.2: per-goal turn telemetry (/glla stats).
-    if (state.goal && state.goal.status === "active") {
-      const t = state.goal.telemetry ?? { turns: 0, fileWrites: 0, bashCalls: 0 };
-      t.turns++;
-      state.goal.telemetry = t;
-    }
+    // v0.39.71 (D): turn telemetry moved to turn_end — see the handler there.
     ensureAgentToolsReady(ctx);
     // v0.27.3: nudge accounting — substantive analytical turns (long, novel
     // text) reset the counter even with no tool calls. Polis-session
@@ -3596,6 +3591,16 @@ async function handleHotLengthExhaustion(
       return;
     }
     if (isForeignCtx(ctx)) return;
+    // v0.39.71 (D, field record): per-goal turn telemetry counts MODEL turns.
+    // It used to count on agent_end, i.e. once per whole agent run — and a
+    // continuation queued into a still-running agent never ends that run, so
+    // 11 of 14 archived records said "0 turns" next to 15–283 bash calls. The
+    // light-audit ceiling and /glla stats both mean model turns.
+    if (state.goal && state.goal.status === "active") {
+      const t = state.goal.telemetry ?? { turns: 0, fileWrites: 0, bashCalls: 0 };
+      t.turns++;
+      state.goal.telemetry = t;
+    }
     if (consumeStaleContinuationRearm(ctx, "turn_end")) {
       if (state.goal?.status === "active" && !continuationTimerPending() && !pendingContinuationDispatchRef()) {
         scheduleContinuation(ctx, true);
