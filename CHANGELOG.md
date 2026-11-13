@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Status cards: one place for the version, and an honest "waiting for the conversation" state (2026-11-13)
+
+- **The version always folds onto the card's final row.** It folded only when that row already read `└─`; a card whose last row was still `├─` (the closer is fixed up afterwards) got a separate `└─ v0.40.0` row instead, so the same fact sat in two different places on two cards. Any final tree row now takes it.
+- **A compact card trimmed to its row budget keeps the version.** The fold rode the closer that the trim then dropped, leaving `└─ more: /glla status` with no version; the footer now re-attaches any folded fact (version, supervisor pause, queue depth) no kept row still shows.
+- **A fresh pi with no conversation loaded says so.** GLLA deliberately waits for the transcript before resuming, and the notice said exactly that — but the card under it projected the previous session's state: `EXECUTION UNCONFIRMED`, the durable-vs-defer plaques of a decision already made, and `next: /glla status to inspect execution`. The status projection now has a `loadPending` input: the card reads `BLOCKED`, `next: Load or resume the conversation in pi, or run /glla resume`, `why: Waiting for pi to load the conversation`. Because that is a user action, the compact card hides the plaques (existing rule), and the paused-lifecycle row no longer offers a competing `next: retry scheduled (unconfirmed)` for a retry that cannot run until the conversation loads.
+- Coverage: `tests/status-card-consistency.test.ts`.
+
 ## 0.40.0 — completion reports, faster audits, and leaner prompts (2026-11-13)
 
 ### Second re-audit: honest turn counts, stopped-goal cards, observed gate runs, leaner prompts (2026-11-13)
