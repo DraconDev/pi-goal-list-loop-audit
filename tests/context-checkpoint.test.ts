@@ -195,10 +195,14 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // removed == count - 1) and the flat-growth invariant are unchanged;
   // only the per-payload constant moved. Measured with
   // scripts/measure-context-growth.mjs.
+  // v0.39.71 (2026-11-13): the continuation template drops its stale
+  // completion-communication guidance and the operator-specific daemon
+  // detail — −3,808 serialized bytes on the one retained payload
+  // (32697 → 28889). Cardinality and the flat-growth invariant unchanged.
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 32697, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;

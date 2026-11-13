@@ -747,9 +747,7 @@ function registerAgentTools(pi: any): void {
           "Tests: <bounded commands + pass/fail, or `not run — <reason>`> · Unresolved: <remaining risk, or `none`> · " +
           "Next: <one follow-up hint, or `none`>. " +
           "REPORT SHAPE: the human card is built from this material — Outcome opens as a short headline plus the prose lede, findingGroups becomes one `What changed · <area>` subsection per area, gateRows becomes the always-visible Verification table, Unresolved becomes Follow-up items, and Next becomes Next steps. Write Outcome as one or two plain sentences (the first clause becomes the headline), put per-area findings in findingGroups, and put the commands you actually ran in gateRows with real counts in their notes so status can be derived instead of claimed. Keep the human explanation short; put detailed findings in findingGroups and proof in verificationSummary/gateRows. " +
-          "MULTI-AREA WORK NEEDS STRUCTURE: when the Changed value names 3+ paths (or the work spans several areas), the claim is refused until it carries one findingGroups entry per area plus gateRows for the commands you ran — a flat paragraph for multi-file work produces an unreadable card and a thin archive record, which is the durable complaint this contract exists to prevent. Single-area work stays a flat recap. " +
-          "Structured-long Outcome and findings remain available in the detailed record. " +
-          "See audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md and docs/DESIGN-long-running-supervision.md. Free-form prose is allowed but discouraged; incomplete input receives a recorded-facts-only fallback at terminalization.",
+          "Policy: audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md. Incomplete input gets a recorded-facts-only fallback.",
       })),
       outcomeClaims: Type.Optional(Type.Array(Type.Object({
         required: Type.Union([Type.Literal("loaded"), Type.Literal("executed")]),
@@ -758,58 +756,42 @@ function registerAgentTools(pi: any): void {
       }), { maxItems: 20, description: "Optional explicit loaded/executed claims. Install-only and journal-marker evidence is refused before audit; actual observations still require independent review." })),
       verificationSummary: Type.Optional(Type.String({
         description:
-          "Per-item evidence for the verification contract. " +
-          "Stays independent of completionSummary: the detached auditor receives both fields separately " +
-          "and cross-checks the verification claim against real artifacts (see audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md).",
+          "Per-item evidence for the verification contract; the auditor cross-checks it against real artifacts.",
       })),
       newObjective: Type.Optional(Type.String({ description: "Propose a legitimate objective amendment before completion. Any changed objective/contract requires explicit per-amendment user confirmation, even with draft auto-accept enabled; rejection changes nothing. After confirmation the revision changes atomically before fresh audit. Never use this to evade unfinished work." })),
       leftOut: Type.Optional(Type.String({
         maxLength: 10000,
         description:
-          "v0.38.37: what this turn deliberately left out (scope cut, deferred item + why, in plain words). " +
-          "Renders under `### Remaining` in the user-facing terminal summary. " +
-          "Bounds match the documented 10k-char value guard — longer input clips at a clause boundary, never a refusal. " +
-          "Never repeat a fact already covered by Unresolved: Unresolved names open problems and risks, leftOut names deliberately deferred scope and why. " +
-          "When both would say the same thing, put it in Unresolved once and omit leftOut. " +
-          "Omit when nothing was deliberately left out — absent stays absent, never invented.",
+          "What you deliberately left out and why (scope cut, deferred item), in plain words; shown under Follow-up items. " +
+          "Unresolved names open problems/risks, leftOut names deferred scope — never say the same thing in both. Omit when nothing was left out.",
       })),
       showVerification: Type.Optional(Type.Boolean({
         description:
-          "v0.38.98, revised in the 2026-11-11 report shape: the verification inventory now always renders on both surfaces, " +
-          "so this flag is no longer needed to unhide it. It only adds one compact aggregate `Verification` sentence for a claim " +
-          "that supplied no gateRows inventory at all.",
+          "Adds one aggregate Verification sentence for a claim with no gateRows. Rarely needed: gate rows always render.",
       })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
-        title: Type.String({ description: "Work-area name (e.g. a subsystem, screen, or phase). The trust boundary clips display labels; the schema never refuses a claim over one." }),
-        findings: Type.Array(Type.String({ maxLength: 10000 }), { description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (bounds match the documented 10k-char value guard; the trust boundary caps count)." }),
-        tests: Type.Optional(Type.Array(Type.String({ maxLength: 10000 }), { description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy. Bounds match the documented 10k-char value guard." })),
+        title: Type.String({ description: "Work-area name (subsystem, screen, or phase)." }),
+        findings: Type.Array(Type.String({ maxLength: 10000 }), { description: "Findings as `<user-visible outcome> — <concrete evidence/reason>`; no `Lead:`/`Tests:`/`Verdict:` prefixes." }),
+        tests: Type.Optional(Type.Array(Type.String({ maxLength: 10000 }), { description: "Optional per-finding proof lines, aligned by index (tests[i] proves findings[i]); archive detail only." })),
       }), {
         description:
-          "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
-          "(subsystem, screen, phase); each finding leads with the primary user-visible outcome, then uses ` — ` for a concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason); never prefix a finding with `Lead:`, `Tests:`, or `Verdict:`. " +
-          "2026-11-11 report shape: each group becomes a `What changed · <area>` subsection of the Summary on both surfaces; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
-          "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
-          "REQUIRED when the six-label recap's Changed value names 3+ paths: the claim is refused without it. Omit only for genuinely single-area work — the flat six-label render stays the fallback there.",
+          "One group per work area; each finding leads with the user-visible outcome, then ` — ` and concrete evidence (repo-relative `path:line`, count/version, or a reason — never invented). " +
+          "Each group becomes an area subsection of the card's Summary. " +
+          "REQUIRED when the recap's Changed value names 3+ paths (the claim is refused without it, together with gateRows); omit for single-area work.",
       })),
       requestFullAudit: Type.Optional(Type.Boolean({
         description:
-          "v0.38.81: pass true to ask for a full-tier audit on this claim (audit plus falsification round — 'check me carefully'). " +
-          "Escalation only: the agent can demand full, never light. Omit or pass false for the default risk-tiered dispatch.",
+          "Pass true to ask for a full-tier audit (adds the falsification round). Escalation only; omit for the default risk-tiered dispatch.",
       })),
       gateRows: Type.Optional(Type.Array(Type.Object({
-        gate: Type.String({ description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build). The trust boundary clips display labels; the schema never refuses a claim over one." }),
-        command: Type.Optional(Type.String({ maxLength: 10000, description: "Repro command for this gate (e.g. bun test src/). Retained in the archive Command column, omitted from compact chat. Bounds match the documented 10k-char value guard." })),
-        scope: Type.Optional(Type.String({ maxLength: 10000, description: "What the gate covered (e.g. suites, tiers, invariants). Bounds match the documented 10k-char value guard." })),
-        notes: Type.Optional(Type.String({ maxLength: 10000, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed. Bounds match the documented 10k-char value guard." })),
+        gate: Type.String({ description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)." }),
+        command: Type.Optional(Type.String({ maxLength: 10000, description: "Exact repro command (e.g. bun test src/)." })),
+        scope: Type.Optional(Type.String({ maxLength: 10000, description: "What the gate covered (suites, tiers, invariants)." })),
+        notes: Type.Optional(Type.String({ maxLength: 10000, description: "Real counts (e.g. 743 passed, 0 failed). Status is derived from these notes: PASS only for pass with zero failures." })),
       }), {
         description:
-          "v0.38.52, revised in the 2026-11-11 report shape: optional verification gate inventory, and it always renders. " +
-          "Chat shows the compact Gate | Command | Result table (bullets when the terminal is too narrow for a table); " +
-          "the archive keeps the wide Quality Gate | Command | Scope | Status | Notes inventory plus its review row, and the inventory supersedes the mechanical Tests rows. " +
-          "Status is DERIVED from the notes, never claimed: PASS only when the notes say pass with zero failures. " +
-          "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
-          "REQUIRED alongside findingGroups when the recap's Changed value names 3+ paths: name each command you actually ran and copy its real counts into notes. " +
-          "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
+          "The gates you actually ran, one row each, with real counts in notes; always shown as the card's Verification table (status derived, never claimed). " +
+          "GLLA adds rows for contract gates it ran or observed itself. REQUIRED alongside findingGroups when the recap's Changed value names 3+ paths.",
       })),
     }),
     async execute(_id, params, signal, _onUpdate, execCtx) {
