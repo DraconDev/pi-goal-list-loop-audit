@@ -179,7 +179,8 @@ test("v0.36.0: terminal notification projection resolves generic claims from dur
   });
   for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
   assert.doesNotMatch(compact, /Tests:/, "technical Tests stays out of the default terminal recap");
-  assert.match(compact, /user cancelled/);
+  // v0.39.71: the stop reason is stated as the cause a person acts on.
+  assert.match(compact, /stopped on request/);
   assert.match(compact, /not recorded|recorded/);
   assert.doesNotMatch(compact, /done/);
 });
@@ -223,7 +224,7 @@ test("v0.36.0: archive boundary replaces a validator annotation with recorded fa
     const files = fs.readdirSync(path.join(cwd, ".pi-glla", "archive"));
     assert.equal(files.length, 1);
     const markdown = fs.readFileSync(path.join(cwd, ".pi-glla", "archive", files[0]!), "utf8");
-    assert.match(markdown, /^Outcome: Objective/m, "archive contains the recorded-facts Outcome");
+    assert.match(markdown, /^Outcome: .+ — ".*" was not finished\.$/m, "archive contains the recorded-facts Outcome (v0.39.71 wording)");
     assert.doesNotMatch(markdown, /done — NOTE:/, "archive does not preserve the annotation as the recap");
     assert.match(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8"), /completion_summary_fallback/);
   } finally {
@@ -279,7 +280,7 @@ test("v0.38.104: the recorded-facts archive summary never emits a lone surrogate
   } as never);
   const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
   assert.doesNotMatch(summary, loneSurrogate, "no unpaired UTF-16 surrogate reaches the archive");
-  assert.match(summary, /archived with status=/, "the fallback still renders");
+  assert.match(summary, /^Outcome: Completed: "/m, "the fallback still renders (v0.39.71 wording)");
   assert.ok(summary.includes("🚀") || summary.length < objective.length, "either the glyph survived whole or the value was clipped cleanly");
 
   // A short objective is untouched by the clipper (the old code also passed it

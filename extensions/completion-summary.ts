@@ -1950,8 +1950,8 @@ export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFact
     }
     if (stat && stat.files === 0) return "no file changes since the goal started";
     if (changedFiles.length > 0 || changedOverflow > 0) {
-      const shown = changedFiles.slice(0, 12).join(", ");
-      const extra = (changedFiles.length - Math.min(changedFiles.length, 12)) + changedOverflow;
+      const shown = changedFiles.slice(0, 20).join(", ");
+      const extra = (changedFiles.length - Math.min(changedFiles.length, 20)) + changedOverflow;
       return `files written: ${shown}${extra > 0 ? ` (+${extra} more)` : ""}`;
     }
     if ((goal.telemetry?.fileWrites ?? 0) > 0) return `${goal.telemetry!.fileWrites} file write(s) were recorded; the paths were not captured`;

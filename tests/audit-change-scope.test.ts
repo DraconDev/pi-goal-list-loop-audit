@@ -144,7 +144,8 @@ test("change-scope: the fallback summary names recorded paths, bounded", () => {
     goal: seedGoal({ objective: "shipped thing", telemetry: { turns: 9, fileWrites: 2, bashCalls: 0, files: ["src/a.ts", "src/b.ts"] } }) as any,
     status: "complete",
   });
-  assert.match(withFiles, /2 file-write signal\(s\) touched: src\/a\.ts, src\/b\.ts/);
+  // v0.39.71: repo-relative "files written:" replaced the counter wording.
+  assert.match(withFiles, /files written: src\/a\.ts, src\/b\.ts/);
   const many = buildRecordedFactsCompletionSummary({
     goal: seedGoal({ objective: "shipped thing", telemetry: { turns: 9, fileWrites: 130, bashCalls: 0, files: Array.from({ length: 100 }, (_, i) => `f${i}.ts`), filesOverflow: 30 } }) as any,
     status: "complete",

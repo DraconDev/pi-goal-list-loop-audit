@@ -119,8 +119,9 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
   assert.ok(handler.indexOf('length_continue_deferred_context_full') > lengthIdx, "context-starvation ledger is emitted by the defer path");
   // before the no-tool nudge accounting (stall brake) …
   assert.ok(lengthIdx < handler.indexOf("accountTurnForNudges"), "before nudge accounting");
-  // … before per-goal telemetry …
-  assert.ok(lengthIdx < handler.indexOf("state.goal.telemetry"), "before telemetry");
+  // … per-goal turn telemetry moved to turn_end in v0.39.71 (it counts model
+  // turns, not agent runs), so agent_end no longer touches it at all …
+  assert.equal(handler.indexOf("t.turns++"), -1, "turn telemetry is not counted in agent_end");
   // … and before the "no goal → return" gate (works in plain sessions)
   // v0.38.10: window 20000 → 20500 — the starvation branch gained the
   // emergency-compactor trigger (one fire-and-forget call + one comment
