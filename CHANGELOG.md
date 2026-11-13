@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.40.0 — completion reports, faster audits, and leaner prompts (2026-11-13)
+
 ### Second re-audit: honest turn counts, stopped-goal cards, observed gate runs, leaner prompts (2026-11-13)
 
 Measured against the local record (1,740 continuation sends, 483 audit verdicts, the 40 most recent archives, the registered tool definitions).
