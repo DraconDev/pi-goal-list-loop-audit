@@ -378,7 +378,12 @@ function appendFactsToCard(
   // Rows carry a `cont` flag: a row that continues the previous fact renders
   // with the `│  ` indent so the tree does not claim a new sibling item.
   const rows: Array<{ text: string; cont: boolean }> = [];
-  const canAppend = prefix === '└─ ';
+  // v0.40.1 (field Screenshot_20261113_115338 / _115355): the version used
+  // to fold onto the last row only when that row already read `└─`; a card
+  // whose last row was still `├─` (the closer is fixed up afterwards) got a
+  // separate `└─ v0.40.0` row instead. Same fact, two placements. Any tree row
+  // is the card's final row here, so the fold always lands on it.
+  const canAppend = prefix === '└─ ' || prefix === '├─ ' || prefix === '│  ' || prefix === '│ ';
   let used = canAppend ? tuiVisibleWidth(stripAnsi(lastLine)) + sepWidth : rowPrefixWidth;
   let cur = '';
   let curCont = false;
