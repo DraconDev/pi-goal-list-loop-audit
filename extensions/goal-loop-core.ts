@@ -2457,8 +2457,94 @@ const LEDGER_SEGMENTS_DIR = "ledger-segments";
 const LEDGER_ROTATION_LOCK = "ledger-rotation.lock";
 const LEDGER_ROTATION_STALE_LOCK_MS = 5 * 60_000;
 
+/** How many rotated ledger segments to KEEP.
+ *
+ * The segment directory is append-only and was never pruned, so the corpus
+ * grew without limit: a long-lived downstream project was observed holding
+ * 334 segments (2.7 GiB). That is what made a single recursive scan over
+ * it pathological — the corpus, not the scan, was the defect. A bounded
+ * corpus keeps every full-history read (and every ad-hoc scan over it)
+ * proportional to a known budget instead of to the project's age.
+ *
+ * At the 8 MiB rotation size, 64 segments is 512 MiB of history — ample
+ * for any forensic read, and a hard ceiling on the corpus.
+ *
+ * `0` disables pruning entirely (keep everything). */
+export const LEDGER_SEGMENT_MAX_COUNT = 64;
+
+/** A segment younger than this is NEVER pruned.
+ *
+ * Pruning is destructive, so it must not race a forensic read or an
+ * in-flight audit job that is still walking the corpus. A week of
+ * segments is always kept regardless of the count cap, so the retention
+ * window is a floor on recency and the count cap is a ceiling on size. */
+const LEDGER_SEGMENT_MIN_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 export function ledgerSegmentDir(cwd: string): string {
   return path.join(piGlaDir(cwd), LEDGER_SEGMENTS_DIR);
+}
+
+/** Prune the oldest rotated segments beyond a count cap.
+ *
+ * WHY: the segment directory was append-only and never pruned, so the
+ * corpus grew without limit (334 segments / 2.7 GiB was observed in the
+ * field). A corpus with no ceiling makes every full-history read — and
+ * every ad-hoc scan over it — cost the project's age instead of a
+ * known budget. The corpus was the defect behind a runaway recursive
+ * scan; bounding it is the durable fix.
+ *
+ * SAFETY:
+ * - The newest `maxSegments` are NEVER pruned.
+ * - A segment younger than `LEDGER_SEGMENT_MIN_AGE_MS` is NEVER pruned,
+ *   so pruning cannot race a forensic read or an in-flight audit job.
+ * - Symlinks are never followed or deleted.
+ * - A segment directory that cannot be read is left entirely alone
+ *   (fail closed): an unreadable directory is not evidence that a
+ *   segment is disposable.
+ * - Each removal is recorded, so a pruned segment is never silent.
+ *
+ * Returns the names of the pruned segments (empty when nothing was
+ * pruned, including when pruning is disabled with `maxSegments = 0`). */
+export function pruneLedgerSegments(
+  cwd: string,
+  maxSegments: number = LEDGER_SEGMENT_MAX_COUNT,
+  nowMs: number = Date.now(),
+): string[] {
+  if (!Number.isSafeInteger(maxSegments) || maxSegments <= 0) return [];
+  const segmentDir = ledgerSegmentDir(cwd);
+  let names: string[];
+  try {
+    const stat = fs.lstatSync(segmentDir);
+    if (stat.isSymbolicLink()) return [];
+    if (!stat.isDirectory()) return [];
+    names = fs
+      .readdirSync(segmentDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.startsWith("segment-") && entry.name.endsWith(".jsonl"))
+      .map((entry) => entry.name)
+      .sort();
+  } catch (err) {
+    // A missing segment directory is normal; anything else is left alone.
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") return [];
+    return [];
+  }
+  if (names.length <= maxSegments) return [];
+  // Oldest first: the names carry a leading millisecond timestamp, and the
+  // sort above is lexicographic over that prefix.
+  const excess = names.length - maxSegments;
+  const pruned: string[] = [];
+  for (const name of names.slice(0, excess)) {
+    const file = path.join(segmentDir, name);
+    try {
+      const stat = fs.lstatSync(file);
+      if (!stat.isFile()) continue;
+      if (nowMs - stat.mtimeMs < LEDGER_SEGMENT_MIN_AGE_MS) continue;
+      fs.unlinkSync(file);
+      pruned.push(name);
+    } catch {
+      // A segment that vanished or cannot be removed is left in place.
+    }
+  }
+  return pruned;
 }
 
 /** Return immutable ledger segments oldest-first, followed by the live file.
