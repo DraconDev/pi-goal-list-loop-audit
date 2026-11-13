@@ -30,7 +30,7 @@ import {
   formatMainModelRecoveryStatus,
   sanitizeDisplayText,
   isStaleApiError,
-  scanLedgerRecords,
+  scanLedgerRecordsSince,
   nowIso,
   resolveEffectiveAggressiveSettings,
   sumNewAssistantTokens,
@@ -893,9 +893,25 @@ async function runLoopTickInner(initialCtx: ExtensionContext, event?: any): Prom
   let specItemProgress = 0;
   if (iterStartAt) {
     try {
-      scanLedgerRecords(ctx.cwd, (entry) => {
-        if (entry.type === "spec_item_progress" && entry.at && entry.at >= iterStartAt) specItemProgress++;
-      });
+      // The question is TIME-BOUNDED — "spec-item progress since this
+      // iteration started" — so the READ must be bounded too.
+      //
+      // `scanLedgerRecords` reads EVERY ledger byte: the segments are
+      // append-only and never pruned, so at a long-lived downstream
+      // project the corpus grows without limit (334 segments / 2.7 GiB
+      // was observed in the field). That made a question worth one
+      // bounded slice cost a full-history synchronous main-thread read.
+      //
+      // `scanLedgerRecordsSince` visits the segments newest-first and
+      // stops at the first one that contributes no qualifying row, so
+      // the cost is proportional to the ANSWER rather than to the
+      // history. Same rows, bounded work.
+      const sinceMs = Date.parse(iterStartAt);
+      if (Number.isFinite(sinceMs)) {
+        scanLedgerRecordsSince(ctx.cwd, sinceMs, (entry) => {
+          if (entry.type === "spec_item_progress" && entry.at && entry.at >= iterStartAt) specItemProgress++;
+        });
+      }
     } catch { /* no ledger yet */ }
   }
   // v0.33.2: respec spec drift + checkbox progress — hash compared per
