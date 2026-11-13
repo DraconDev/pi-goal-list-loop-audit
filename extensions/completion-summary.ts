@@ -1484,10 +1484,11 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   // archiveCurrentGoal captures history before pendingCompletion clears.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
-  // v0.39.71 (E): a recorded-facts recap's Evidence line is machine telemetry
-  // (goal id, counters). It stays in the verbatim machine record; the human
-  // layer does not render it as a change.
-  const briefDetails = isRecordedFactsRecap(summary)
+  // v0.39.71 (E): for a STOPPED goal, a recorded-facts recap's Evidence line
+  // is machine telemetry (goal id, counters) — it stays in the verbatim
+  // machine record, not in the human report. An approved goal's archive keeps
+  // it (the evidence behind an approval with an incomplete claim).
+  const briefDetails = status !== "complete" && isRecordedFactsRecap(summary)
     ? brief.details.filter((detail) => !/^\s*Evidence\s*:/i.test(detail))
     : brief.details;
   const structured = structuredSummaryLines(summary);
