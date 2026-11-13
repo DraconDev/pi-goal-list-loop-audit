@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import * as path from "node:path";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { formatReceiptDuration, workingTreeFingerprint, type MechanicalGateReceipt } from "./gate-receipts.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
@@ -34,6 +35,10 @@ export interface CompletionSummaryFacts {
   status: Status;
   stopReason?: string;
   archivePath?: string;
+  /** v0.39.71 (E): the checkout the goal ran in. Lets the recorded-facts
+   * recap name changed files repo-relative and add the diff stat since the
+   * goal started. Absent (a later re-render) keeps the persisted text. */
+  cwd?: string;
 }
 
 /**
@@ -231,7 +236,7 @@ const STALE_NEXT_LEAD_NOUN = /(auditor|verdict|approval|audit|settlement).{0,24}
 /** The recorded-facts fallback Next is concrete (`review the durable
  * record at …`) and must survive the stale-Next filter (v0.38.45 audit:
  * /review/i ate it, leaving fallback approval chats with no next action). */
-const RECORDED_FACTS_NEXT_PATTERN = /review the durable/i;
+const RECORDED_FACTS_NEXT_PATTERN = /review the durable|start it again with \/goal|nothing is required — /i;
 export function withoutStaleNext(details: string[] | undefined): string[] {
   const kept: string[] = [];
   let actionKept = false;
@@ -954,7 +959,9 @@ function isRepositoryReceipt(value: string, proof = ""): boolean {
  * table and machine layer. */
 /** v0.38.55 (full parity): the verdict banner's second half, built from
  * the mechanically derived audit status — never agent-claimed. */
-function bannerVerdict(auditStatus: string): string {
+function bannerVerdict(auditStatus: string, status: Status = "complete"): string {
+  // v0.39.71 (E): a goal that STOPPED was not "completed" — say so.
+  if (auditStatus === "NO REVIEW" && status !== "complete") return "stopped before completion; no completion review";
   if (auditStatus === "NO REVIEW") return "completed without a recorded completion review";
   if (auditStatus.startsWith("approved")) return `completion audit approved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
   if (auditStatus.startsWith("disapproved")) return `completion audit disapproved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
@@ -1463,9 +1470,6 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   const structured = structuredSummaryLines(summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
-  const approval = latest
-    ? `\u2014 completion audit ${latest.approved ? "approved" : latest.disapproved ? "disapproved" : latest.impossible ? "impossible" : "left no review"}.`
-    : "\u2014 completed without a recorded completion review.";
   const countsLine = buildAuditCountsLine(goal);
   const parts = buildRichTerminalParts({
     outcome: brief.outcome,
@@ -1489,7 +1493,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     // honestly: an audit entry with no verdict (provider wall, auth abort) is
     // NOT a recorded review and never reads as one.
     `${[
-      bannerVerdict(auditRowStatus(history)),
+      bannerVerdict(auditRowStatus(history), status),
       ...challengeDisclosure(goal).map(receiptSegment),
       receiptSegment(countsLine),
       receiptSegment(`\u2014 record: ${archivePath}`),
@@ -1677,7 +1681,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // A persisted fallback already satisfies the six-label validator. Detect
   // the system's reserved template as well as newly resolved fallbacks;
   // otherwise replaying an archived receipt resurrects telemetry as changes.
-  const persistedFallback = /^Outcome: Objective ".*" archived with status=\w+\.$/m.test(candidate ?? "")
+  const persistedFallback = /^Outcome: (?:Objective ".*" archived with status=\w+\.|Stopped before completion — .*\. Objective: ".*"\.|Completed: ".*"\.)$/m.test(candidate ?? "")
     && /^Evidence: goal .*; .*; .*\.$/m.test(candidate ?? "")
     && /^Tests: not recorded — .*terminal test result was captured/m.test(candidate ?? "");
   const humanSource = persistedFallback ? undefined : resolution.usedFallback ? candidate : resolution.summary;
@@ -1851,35 +1855,93 @@ function executionEvidence(goal: Goal): string {
  * intentionally does not inspect the working tree or infer that a command
  * passed: absent facts are named as absent instead of being invented.
  */
+/** v0.39.71 (E): a stop reason in plain words. Machine reasons ("user wipe
+ * (/glla wipe)", a raw 402 payload) stay verbatim in the archive's own
+ * Stop reason field; the recap names the cause a person acts on. */
+export function humanStopReason(reason: string | undefined): string {
+  const raw = (reason ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return "the reason was not recorded";
+  if (/\/glla wipe|\bwipe\b/i.test(raw)) return "stopped on request (/glla wipe)";
+  if (/\b(?:cancel(?:led)?|user stop|user abort|stopped by the user)\b/i.test(raw)) return "stopped on request";
+  if (/\b402\b|insufficient[_\s-]+(?:balance|credits?|quota)|plan[_\s-]+(?:exhausted|quota)|quota is exhausted|usage limit reached|purchase credits|top up/i.test(raw)) return "the model's plan or quota ran out";
+  if (/\b429\b|rate[\s_-]*limit|too many requests/i.test(raw)) return "the provider kept rate-limiting the model";
+  if (/superseded|replaced by a new (?:goal|objective)/i.test(raw)) return "a new objective replaced it";
+  return clipSummaryValue(raw, 160);
+}
+
+/** v0.39.71 (E): the one action that actually moves a stopped goal forward. */
+function stoppedNextAction(reason: string | undefined): string {
+  const human = humanStopReason(reason);
+  if (human.startsWith("stopped on request")) return "nothing is required — it stopped on request; start it again with /goal if it is still wanted";
+  if (human.startsWith("the model's plan or quota")) return "restore model access (top up the plan or configure a fallback model), then start it again with /goal";
+  if (human.startsWith("the provider kept rate-limiting")) return "wait for the rate limit to clear or configure a fallback model, then start it again with /goal";
+  if (human.startsWith("a new objective replaced it")) return "nothing is required — the newer objective carries the work";
+  return "start it again with /goal if the objective is still wanted";
+}
+
+function repoRelativePath(file: string, cwd: string | undefined): string {
+  if (!cwd || !path.isAbsolute(file)) return file;
+  const rel = path.relative(cwd, file);
+  return rel && !rel.startsWith("..") && !path.isAbsolute(rel) ? rel : file;
+}
+
+/**
+ * Build a fallback from facts already present in durable GLLA state, plus the
+ * working-tree diff stat since the goal started when the caller supplies the
+ * checkout (`facts.cwd`) and the goal recorded a start snapshot. It never
+ * infers that a command passed: absent facts are named as absent.
+ *
+ * v0.39.71 (E, field record): the old recap for a goal that stopped without a
+ * claim never said WHY it stopped, said "completed without a recorded
+ * completion review" on an aborted goal, listed absolute paths behind
+ * "file-write signal(s)", and offered "review the durable record" as the only
+ * next step. It now leads with the reason, names the change set in repo terms,
+ * says what is unfinished, and gives one concrete next action.
+ */
 export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFacts): string {
-  const { goal, status, stopReason, archivePath } = facts;
-  const hasFileSignals = (goal.telemetry?.fileWrites ?? 0) > 0;
-  // v0.38.100: execution now records the touched paths behind the counter —
-  // name them (bounded) instead of reporting them missing. Pre-tracking
-  // goals keep the old sentence.
-  const changedFiles = (goal.telemetry?.files ?? []).filter((f): f is string => typeof f === "string" && f.length > 0);
+  const { goal, status, stopReason, cwd } = facts;
+  const stopped = status !== "complete";
+  const reason = stopReason ?? goal.stopReason;
+  const changedFiles = (goal.telemetry?.files ?? []).filter((f): f is string => typeof f === "string" && f.length > 0)
+    .map((f) => repoRelativePath(f, cwd));
   const changedOverflow = goal.telemetry?.filesOverflow ?? 0;
-  const changed = !hasFileSignals
-    ? "not recorded — no file-write signal was captured"
-    : changedFiles.length === 0 && changedOverflow === 0
-      ? `${goal.telemetry!.fileWrites} file-write signal(s) were recorded; changed paths were not captured`
-      : (() => {
-          const shown = changedFiles.slice(0, 20).join(", ");
-          const extra = (changedFiles.length - Math.min(changedFiles.length, 20)) + changedOverflow;
-          return `${goal.telemetry!.fileWrites} file-write signal(s) touched: ${shown}${extra > 0 ? ` (+${extra} more)` : ""}`;
-        })();
+  const stat = cwd ? buildChangeStat(cwd, goal.startTree) : undefined;
+  const statLine = changeStatLine(stat);
+  const changed = (() => {
+    if (stat && stat.files > 0) {
+      const shown = stat.rows.slice(0, 8).join(", ");
+      const more = stat.files - Math.min(stat.files, 8);
+      return `${statLine} since the goal started (${shown}${more > 0 ? `, +${more} more` : ""})`;
+    }
+    if (stat && stat.files === 0) return "no file changes since the goal started";
+    if (changedFiles.length > 0 || changedOverflow > 0) {
+      const shown = changedFiles.slice(0, 12).join(", ");
+      const extra = (changedFiles.length - Math.min(changedFiles.length, 12)) + changedOverflow;
+      return `files written: ${shown}${extra > 0 ? ` (+${extra} more)` : ""}`;
+    }
+    if ((goal.telemetry?.fileWrites ?? 0) > 0) return `${goal.telemetry!.fileWrites} file write(s) were recorded; the paths were not captured`;
+    return "not recorded — no file write was captured";
+  })();
   const tests = goal.verificationContract
     ? "not recorded — a verification contract was present, but no terminal test result was captured"
     : "not recorded — no terminal test result was captured";
-  const unresolved = stopReason
-    ? `terminal reason: ${stopReasonExcerpt(stopReason)}`
-    : "not recorded";
-  const next = archivePath
-    ? `review the durable record at ${archivePath}`
-    : "review the durable archived record";
+  const tasks = goal.taskList?.tasks ?? [];
+  const doneTasks = tasks.filter((t) => t.status === "complete").length;
+  const openTask = tasks.find((t) => t.status !== "complete");
+  const unresolved = !stopped
+    ? "not recorded"
+    : tasks.length > 0
+      ? `${doneTasks} of ${tasks.length} tasks done${openTask ? `; next open task: ${clipSummaryValue(openTask.title, 140)}` : ""}`
+      : "the objective was not finished";
+  const outcome = stopped
+    ? `Stopped before completion — ${humanStopReason(reason)}. Objective: "${objectiveExcerpt(goal.objective)}".`
+    : `Completed: "${objectiveExcerpt(goal.objective)}".`;
+  const next = stopped
+    ? stoppedNextAction(reason)
+    : facts.archivePath ? `review the durable record at ${facts.archivePath}` : "review the durable archived record";
 
   return [
-    `Outcome: Objective "${objectiveExcerpt(goal.objective)}" archived with status=${status}.`,
+    `Outcome: ${outcome}`,
     `Changed: ${changed}.`,
     `Evidence: goal ${safeFact(goal.id)}; ${executionEvidence(goal)}; ${auditEvidence(goal)}.`,
     `Tests: ${tests}.`,

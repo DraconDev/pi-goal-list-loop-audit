@@ -1346,6 +1346,7 @@ export function archiveCurrentGoal(
     status,
     stopReason,
     archivePath,
+    cwd: ctx.cwd,
   }, terminalBase.completionSummary);
   const terminalGoal: Goal = {
     ...terminalBase,
@@ -1710,6 +1711,7 @@ function terminalizeImpossibleGoal(
     status: "aborted",
     stopReason,
     archivePath,
+    cwd: ctx.cwd,
   }, factsGoal.completionSummary).summary;
   const archived = archiveCurrentGoal(ctx, "aborted", stopReason, auditHistory ? { auditHistory } : {});
   return { archived, summary };
