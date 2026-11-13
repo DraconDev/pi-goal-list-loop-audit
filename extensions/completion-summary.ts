@@ -1863,7 +1863,7 @@ function executionEvidence(goal: Goal): string {
  * intentionally does not inspect the working tree or infer that a command
  * passed: absent facts are named as absent instead of being invented.
  */
-const RECORDED_FACTS_OUTCOME = /^Outcome: (?:Objective ".*" archived with status=\w+\.|.+ — the objective was not finished: ".*"\.|Completed: ".*"\.)$/m;
+const RECORDED_FACTS_OUTCOME = /^Outcome: (?:Objective ".*" archived with status=\w+\.|.+ — ".*" was not finished\.|Completed: ".*"\.)$/m;
 /** True for the system's own recorded-facts recap (current or legacy shape). */
 export function isRecordedFactsRecap(summary: string | undefined): boolean {
   return RECORDED_FACTS_OUTCOME.test(summary ?? "") && /^Evidence: goal .*; .*; .*\.$/m.test(summary ?? "");
@@ -1949,7 +1949,7 @@ export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFact
       : "no completion claim or review was recorded, so any work in the tree is unverified";
   const reasonText = humanStopReason(reason);
   const outcome = stopped
-    ? `${reasonText.charAt(0).toUpperCase()}${reasonText.slice(1)} — the objective was not finished: "${clipSummaryValue(goal.objective, 90)}".`
+    ? `${reasonText.charAt(0).toUpperCase()}${reasonText.slice(1)} — "${clipSummaryValue(goal.objective, 70)}" was not finished.`
     : `Completed: "${objectiveExcerpt(goal.objective)}".`;
   const next = stopped
     ? stoppedNextAction(reason)
