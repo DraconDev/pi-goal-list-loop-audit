@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.40.1 — status cards and an honest "waiting for the conversation" state (2026-11-13)
+
 ### Status cards: one place for the version, and an honest "waiting for the conversation" state (2026-11-13)
 
 - **The version always folds onto the card's final row.** It folded only when that row already read `└─`; a card whose last row was still `├─` (the closer is fixed up afterwards) got a separate `└─ v0.40.0` row instead, so the same fact sat in two different places on two cards. Any final tree row now takes it.
