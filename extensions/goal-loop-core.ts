@@ -3286,14 +3286,18 @@ export function rotateLedgerIfNeeded(cwd: string, latestStateLine: string, thres
     // forever, and every full-history read over it costs the project's age
     // (334 segments / 2.7 GiB was observed in the field).
     const pruned = pruneLedgerSegments(cwd, maxSegments);
-    for (const name of pruned) {
-      // Recorded, not silent: a pruned segment is a removed piece of
-      // history and the operator must be able to see that it happened.
+    if (pruned.length > 0) {
+      // Recorded in the journal, not silently: a pruned segment is a
+      // removed piece of history and the operator must be able to see that
+      // it happened. The record goes to the LIVE ledger (not a rotated
+      // segment), so it survives the next rotation.
       try {
-        fs.appendFileSync(
-          path.join(piGlaDir(cwd), "archive-intent.json.log"),
-          `${JSON.stringify({ at: new Date().toISOString(), what: "ledger-segment-pruned", segment: name })}\n`,
-        );
+        const record = JSON.stringify({
+          type: "ledger_segment_pruned",
+          at: new Date().toISOString(),
+          value: { count: pruned.length, segments: pruned },
+        });
+        fs.appendFileSync(ledgerPath(cwd), `${record}\n`, { encoding: "utf8" });
       } catch { /* the pruning itself already succeeded */ }
     }
     return true;
