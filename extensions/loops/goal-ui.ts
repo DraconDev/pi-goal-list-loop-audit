@@ -852,6 +852,7 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
       : {}),
   }, audit);
   if (isPersistenceDegraded()) context.persistenceHold = `Persistence failed: ${lastPersistenceFailure()?.what ?? 'state write'}`;
+  if ((globalThis as { initialSessionLoadPending?: boolean }).initialSessionLoadPending === true) context.loadPending = true;
   return context;
 }
 

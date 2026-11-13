@@ -31,6 +31,9 @@ export interface UiStatusContext {
   workflowIssue?: string;
   /** Observed persistence hold from the admitted host, never a dispatch gate here. */
   persistenceHold?: string;
+  /** v0.40.1: pi started without a loaded conversation; GLLA defers resume
+   * until the transcript loads (or the user runs /glla resume). */
+  loadPending?: boolean;
 }
 export interface UiStatus {
   mode: 'goal' | 'list' | 'loop' | 'project' | 'idle';
@@ -117,6 +120,11 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   if (context.persistenceHold) return finish('blocked', 'user', 'Resolve persistence failure before continuing; /glla status for details', context.persistenceHold);
   if (typeof state.supervisorPausedAt === 'number') return finish('blocked', 'user', '/glla resume releases the supervisor hold', 'Supervisor paused');
   if (typeof state.loadHoldAt === 'number') return finish('blocked', 'user', '/glla resume grants continuation consent', 'Held on session restore');
+  // v0.40.1 (field Screenshot_20261113_115355): a fresh pi with no
+  // conversation loaded yet. GLLA deliberately waits, so the saved work is
+  // neither "unconfirmed execution" nor whatever the previous session's last
+  // pause said ("provider error") — it is waiting on the user to load it.
+  if (context.loadPending) return finish('blocked', 'user', 'Load or resume the conversation in pi, or run /glla resume', 'Waiting for pi to load the conversation');
   const evidence = context.evidence;
   const matches = evidence && context.generation !== undefined && evidence.generation === context.generation
     && evidence.ownerKey === ownerKey && validTime(evidence.observedAt, now)

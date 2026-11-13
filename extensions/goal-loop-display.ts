@@ -1854,8 +1854,13 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
     const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
     const observedTransition = status.execution === 'retry-armed'
       ? `${pausedLastActivity(g, extras, now)} · next: ${status.retryKind === 'hourly' ? 'hourly recovery probe armed' : `recovery timer armed${status.retryAt ? ` · ${Date.parse(status.retryAt) > now ? `in ${fmtElapsed(Date.parse(status.retryAt) - now)}` : 'deadline due'}` : ''}`}` : transition;
-    rows.push(row('├─ ', lifecycle));
-    rows.push(row('│  ', observedTransition));
+    // v0.40.1: while pi has no conversation loaded, nothing is scheduled to
+    // run — a lifecycle row promising "next: retry scheduled" would compete
+    // with the one real next action (load the conversation).
+    if (!extras?.uiStatusContext?.loadPending) {
+      rows.push(row('├─ ', lifecycle));
+      rows.push(row('│  ', observedTransition));
+    }
   }
   // Durable-vs-defer judgment plaques render durable-first on every card
   // (production refreshUI contract) — same builder as the legacy card.
@@ -2522,6 +2527,9 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
   // that strip retired in favour of the card, the card must carry them or
   // they vanish from the screen. Rendered as the dim closer detail so a
   // stale session is still visible at a glance without a second surface.
+  // Facts folded onto the card's closer (version, supervisor pause, queue
+  // depth). Kept so a compact trim that drops the closer can re-attach them.
+  let cardFoldFacts: string[] = [];
   if (withAgents && withAgents.length > 0) {
     const versionTail = (extras?.cardVersionTail ?? extras?.versionTail)?.trim();
     const supervisorPaused = typeof state.supervisorPausedAt === 'number';
@@ -2544,6 +2552,7 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
       // the same count). Compare against the whole rendered card, ANSI-free.
       const plainCard = withAgents.join("\n").replace(/\u001b\[[0-9;]*m/g, "");
       const uniqueFacts = foldFacts.filter((fact) => !plainCard.includes(fact));
+      cardFoldFacts = uniqueFacts;
       if (uniqueFacts.length === 0) {
         // nothing to fold — the card is already complete
       } else {
@@ -2613,7 +2622,16 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
           const range = selected.filter(index => index >= start && index < end);
           if (range.length && Array.from({ length: end - start }, (_, offset) => start + offset).some(index => !kept.has(index))) omitted.add(range[range.length - 1]!);
         }
-        lines = [...selected.map(i => omitted.has(i) ? tuiTruncateToWidth(`${lines![i]} …`, Math.max(1, (width ?? 120) - WIDGET_HORIZONTAL_MARGIN), '…') : lines![i]!), footer];
+        const keptLines = selected.map(i => omitted.has(i) ? tuiTruncateToWidth(`${lines![i]} …`, Math.max(1, (width ?? 120) - WIDGET_HORIZONTAL_MARGIN), '…') : lines![i]!);
+        // v0.40.1 (field Screenshot_20261113_115355): the folded facts rode
+        // the closer the trim just dropped, so a long compact card lost its
+        // version. Re-attach any fact no kept row still shows.
+        const keptPlain = keptLines.join("\n").replace(/\u001b\[[0-9;]*m/g, "");
+        const lostFacts = cardFoldFacts.filter((fact) => !keptPlain.includes(fact));
+        const footerWithFacts = lostFacts.length > 0
+          ? `${footer}${paint(theme, 'dim', ` · ${lostFacts.join(' · ')}`)}`
+          : footer;
+        lines = [...keptLines, footerWithFacts];
       }
     }
   }
