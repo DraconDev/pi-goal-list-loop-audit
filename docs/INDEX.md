@@ -34,7 +34,7 @@
 ## Versions and shipped content
 
 [CHANGELOG.md](../CHANGELOG.md) records the full release history from
-v0.1.0-alpha.1 (2026-07-19) through v0.39.69 (2026-11-10), including an audit
+v0.1.0-alpha.1 (2026-07-19) through v0.40.0 (2026-11-13), including an audit
 lane that waits for the provider's quoted reset (even a weekly one) instead of
 re-arming a five-minute timer, uses a configured fallback model instead of
 re-walking the failed one, and stops to ask after six hours without a verdict
