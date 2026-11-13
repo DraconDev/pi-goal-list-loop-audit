@@ -1277,6 +1277,7 @@ export function settleApprovedCompletion(
     ...(claim.gateReceipts ? { gateReceipts: claim.gateReceipts } : {}),
     ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
     ...(approvalChangeLine ? { changeLine: approvalChangeLine } : {}),
+    ...(approvalChangeStat?.rows.length ? { changeFiles: approvalChangeStat.rows } : {}),
     extras: inspectionSessionExtras(inspectionSessionPath),
   });
   const approvalObjective = goal.objective;

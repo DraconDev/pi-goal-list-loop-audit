@@ -422,6 +422,8 @@ export interface RichTerminalParts {
   ledeLines?: string[];
   /** v0.39.70 (#9): `N files changed, +A −R` since the goal started. */
   changeLine?: string;
+  /** v0.39.71 (F): largest changed files (`path +A −R`) under the change line. */
+  changeFiles?: string[];
 }
 
 /** v0.39.70: a gate row, optionally backed by a GLLA-run receipt. */
@@ -996,6 +998,8 @@ export interface ChangeStat {
 }
 
 export const CHANGE_STAT_ROW_CAP = 12;
+/** v0.39.71 (F): files listed on the card under the change line. */
+export const CHANGE_FILES_SHOWN = 5;
 
 export function buildChangeStat(cwd: string, startTree: string | undefined, currentTree = startTree ? workingTreeFingerprint(cwd) : undefined): ChangeStat | undefined {
   if (!startTree || !currentTree) return undefined;
@@ -1084,6 +1088,8 @@ export function buildRichTerminalParts(args: {
   summaryLines?: string[];
   /** v0.39.70 (#9): diff-stat line since the goal started. */
   changeLine?: string;
+  /** v0.39.71 (F): largest changed files (`path +A −R`) under the change line. */
+  changeFiles?: string[];
   /** Chat favors explanations; the archive retains raw commands and tables. */
   chat?: boolean;
   /** v0.38.98: opt in to a compact verification tail in chat. The default
@@ -1365,6 +1371,12 @@ export function buildRichTerminalParts(args: {
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
     ledeLines: reportLede(outcome),
     ...(args.changeLine ? { changeLine: sanitizeDisplayText(args.changeLine) } : {}),
+    // v0.39.71 (F): only 5 of 40 recent claims grouped their changes by area,
+    // so most cards said WHAT changed only in prose. Without groups, name the
+    // largest files (Codex/OpenCode shape); with groups, the areas do it.
+    ...(args.changeFiles?.length && groups.length === 0
+      ? { changeFiles: args.changeFiles.slice(0, CHANGE_FILES_SHOWN).map((row) => sanitizeDisplayText(row)) }
+      : {}),
   };
 }
 
@@ -1402,7 +1414,11 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // (field 2026-11-11). Absent when the headline already carries it.
   if ((parts.ledeLines ?? []).length > 0) lines.push(...(parts.ledeLines ?? []).map((line) => sanitizeDisplayText(line)), "");
   if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
-  if (parts.changeLine) lines.push(sanitizeDisplayText(parts.changeLine), "");
+  if (parts.changeLine) {
+    lines.push(sanitizeDisplayText(parts.changeLine));
+    for (const row of parts.changeFiles ?? []) lines.push(`- \`${sanitizeDisplayText(row).replace(/`/g, "")}\``);
+    lines.push("");
+  }
   // Structured-long (field 2026-09-16): the full Outcome body rides its
   // own section between the headline and the findings — findings-first
   // order is preserved (findings, verification, Next keep their relative
@@ -1637,6 +1653,8 @@ export interface TerminalApprovalRenderInput {
   gateReceipts?: MechanicalGateReceipt[];
   /** v0.39.70 (#9): `N files changed, +A −R` since the goal started. */
   changeLine?: string;
+  /** v0.39.71 (F): largest changed files (`path +A −R`) under the change line. */
+  changeFiles?: string[];
   /** v0.38.98: show a compact verification sentence in the human terminal
    * summary when the user explicitly asks for it. Full evidence remains in
    * the archive regardless. */
@@ -1773,6 +1791,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     gates: input.gateRows,
     ...(input.gateReceipts ? { receipts: input.gateReceipts } : {}),
     ...(input.changeLine ? { changeLine: input.changeLine } : {}),
+    ...(input.changeFiles?.length ? { changeFiles: input.changeFiles } : {}),
     ...(input.repoState ? { repoState: input.repoState } : {}),
     ...(structured ? { summaryLines: structured } : {}),
   });

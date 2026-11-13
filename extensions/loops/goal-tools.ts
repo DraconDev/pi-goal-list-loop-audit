@@ -1905,6 +1905,7 @@ function registerAgentTools(pi: any): void {
             ...(escGateReceipts ? { gateReceipts: escGateReceipts } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
             ...(escChangeLine ? { changeLine: escChangeLine } : {}),
+            ...(escChangeStat?.rows.length ? { changeFiles: escChangeStat.rows } : {}),
           });
           if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, gateReceipts: escGateReceipts, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: terminalGoal.id, objective: terminalGoal.objective, chatLines: escRender.chatLines } })) {
             return {
@@ -2006,6 +2007,7 @@ function registerAgentTools(pi: any): void {
           ...(durableCompletionClaim.gateReceipts ? { gateReceipts: durableCompletionClaim.gateReceipts } : {}),
           ...(manualRepoState ? { repoState: manualRepoState } : {}),
           ...(manualChangeLine ? { changeLine: manualChangeLine } : {}),
+          ...(manualChangeStat?.rows.length ? { changeFiles: manualChangeStat.rows } : {}),
           // D7 audit: the shared builder sanitizes + shell-quotes the path;
           // the inline twin interpolated it raw (and unquoted) into chat.
           extras: inspectionSessionExtras(inspectionSessionPath),

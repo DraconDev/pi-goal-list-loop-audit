@@ -1360,6 +1360,10 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   // .pi-glla/settings.json — the project's per-tool policy wins over the
   // external allowlist (allow) or over the session default (hide).
   let toolHealNotified = false;
+  const RESPEC_BUILDER_TOOL_NAMES = [
+    "propose_project_requirements", "plan_project_increment", "claim_project_task", "audit_project_increment",
+    "block_project_requirement", "unblock_project_requirement", "propose_project_refinement",
+  ] as const;
   function ensureAgentToolsActive(pi: ExtensionAPI, ctx: ExtensionContext): void {
     try {
       const active = pi.getActiveTools();
@@ -1367,6 +1371,19 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       const overrides = loadSettings(ctx.cwd).toolOverrides;
       let next = [...active, ...missing];
       let changed = missing.length > 0;
+      // v0.39.71 (C): the seven project-builder tools only work inside a
+      // `/loop respec` build (each one answers "No active respec project
+      // builder" otherwise), yet their definitions rode every request — about
+      // 830 tokens. Expose them exactly while a builder project exists; this
+      // runs at before_agent_start, so a build started by command has them on
+      // its first turn. An explicit per-tool allow override still wins.
+      const builderActive = !!state.loop?.builder;
+      const forcedAllow = new Set(overrides?.allow ?? []);
+      for (const name of RESPEC_BUILDER_TOOL_NAMES) {
+        const has = next.includes(name);
+        if (builderActive && !has && (typeof pi.getAllTools !== "function" || pi.getAllTools().some((t: { name: string }) => t.name === name))) { next.push(name); changed = true; }
+        if (!builderActive && has && !forcedAllow.has(name)) { next = next.filter((t) => t !== name); changed = true; }
+      }
       // Apply per-tool allowlist — force tools visible despite an external modlist.
       if (overrides?.allow && overrides.allow.length > 0) {
         const toAdd = overrides.allow.filter((t) => !next.includes(t));
