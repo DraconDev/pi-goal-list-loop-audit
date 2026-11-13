@@ -207,6 +207,8 @@ import {
   tickLengthContinue,
   type LengthExhaustionDecision,
 } from "../length-continue.js";
+import { observedGateReceipt, sanitizeGateReceipts, upsertObservedReceipt, workingTreeFingerprint } from "../gate-receipts.js";
+import { extractMechanicalCheckSteps } from "../goal-loop-shield.js";
 import { isBillingError, isSpentPlanWall, isDeterministicProviderError, isSubagentProviderFailure, quotaSignal, subagentQuotaEvidenceFrom } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
 import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } from "../state-root-owner.js";
@@ -1875,6 +1877,17 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
         const metrics = loop.iterMetrics ?? { fileWrites: 0 };
         metrics.fileWrites++;
         loop.iterMetrics = metrics;
+      }
+    }
+    // v0.39.71 (A): an exact contract-gate run that exited 0 in the executor's
+    // own bash call is a receipt GLLA observed (exit code from the tool
+    // transport). The fingerprint is taken only on a match (~40 ms).
+    if (state.goal && state.goal.status === "active" && state.goal.verificationContract?.trim()
+      && String(event?.toolName ?? "") === "bash" && event?.structuredContent?.exit_code === 0) {
+      const observed = observedGateReceipt(event, extractMechanicalCheckSteps(state.goal.verificationContract), () => workingTreeFingerprint(eventCtx.cwd));
+      if (observed) {
+        state.goal.observedGateReceipts = upsertObservedReceipt(sanitizeGateReceipts(state.goal.observedGateReceipts), observed);
+        appendLedger(eventCtx.cwd, "gate_receipt_observed", { goalId: state.goal.id, command: observed.command, durationMs: observed.durationMs });
       }
     }
     // v0.25.2: per-goal tool telemetry (/glla stats premature detection).

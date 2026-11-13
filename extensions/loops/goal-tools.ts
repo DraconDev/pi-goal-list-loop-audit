@@ -1,7 +1,7 @@
 import { classifyInterruption, type InterruptionReason } from "../interruption-policy.js";
 import { assessDraftReadiness, draftReadinessMessage } from "../draft-readiness.js";
 import { effectiveToolTimeoutMs, MAX_AUDITOR_TOOL_TIMEOUT_MS } from "../goal-loop-auditor-process.js";
-import { gateReceiptsDigest, receiptAwareToolTimeoutMs, workingTreeFingerprint, type MechanicalGateReceipt } from "../gate-receipts.js";
+import { gateReceiptsDigest, observedReceiptsCoveringContract, receiptAwareToolTimeoutMs, sanitizeGateReceipts, workingTreeFingerprint, type MechanicalGateReceipt } from "../gate-receipts.js";
 import { isReworkRound } from "../goal-loop-auditor.js";
 import { deliverTerminalSummary } from "../terminal-summary-delivery.js";
 import { archiveCurrentGoal, refuseUnfinishedCompletion } from "./goal-orchestrator.js";
@@ -1445,9 +1445,29 @@ function registerAgentTools(pi: any): void {
       // the main pi event loop or strand descendants on timeout.
       try {
         const mechanicalCmds = extractMechanicalCheckSteps(auditGoal.verificationContract ?? "");
-        const mechanicalResult = await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal, undefined, {
-          loadScale: settings.mechanicalLoadScale !== false,
-        });
+        // v0.39.71 (A): when the executor's own run of EVERY contract step was
+        // observed exit 0 against this exact tree, those receipts stand in for
+        // the re-run (one full gate run saved per claim). Any edit since, any
+        // step that cannot be observed (pipeline, own cd), or no fingerprint
+        // falls through to the pre-audit exactly as before.
+        const observedCover = observedReceiptsCoveringContract(
+          mechanicalCmds,
+          sanitizeGateReceipts(auditGoal.observedGateReceipts),
+          auditGoal.observedGateReceipts?.length ? workingTreeFingerprint(ctx.cwd) : undefined,
+        );
+        if (observedCover) {
+          appendLedger(ctx.cwd, "gate_receipts_reused_observed", {
+            goalId: auditGoalId,
+            attemptId: auditAttemptId,
+            count: observedCover.length,
+            savedMs: observedCover.reduce((n, r) => n + r.durationMs, 0),
+          });
+        }
+        const mechanicalResult = observedCover
+          ? { passed: true, outcome: "pass" as const, receipts: observedCover }
+          : await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal, undefined, {
+            loadScale: settings.mechanicalLoadScale !== false,
+          });
         if (mechanicalResult.passed && mechanicalResult.receipts?.length) {
           // v0.39.70: keep what GLLA just proved. The receipts ride the claim
           // (fenced to this working tree) so the auditor quotes them instead

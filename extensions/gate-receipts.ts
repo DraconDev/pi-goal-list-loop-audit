@@ -58,6 +58,8 @@ export function sanitizeGateReceipts(raw: unknown): MechanicalGateReceipt[] | un
       outputTail: typeof r.outputTail === "string" ? r.outputTail.slice(-MAX_RECEIPT_TAIL_CHARS) : "",
       ...(typeof r.cwd === "string" && r.cwd ? { cwd: r.cwd.slice(0, 400) } : {}),
       ...(r.retried === true ? { retried: true } : {}),
+      ...(r.observed === true ? { observed: true as const } : {}),
+      ...(typeof r.treeFingerprint === "string" && /^[0-9a-f]{40,64}$/.test(r.treeFingerprint) ? { treeFingerprint: r.treeFingerprint } : {}),
     });
   }
   return out.length > 0 ? out : undefined;
@@ -149,7 +151,7 @@ export function gateReceiptPromptLines(
   if (!receipts || receipts.length === 0) return [];
   const lines = [
     "",
-    "GLLA GATE RECEIPTS — commands GLLA itself ran against this exact working tree immediately before this audit (deterministic pre-audit; NOT executor-written):",
+    "GLLA GATE RECEIPTS — commands GLLA ran itself, or observed exit 0 in the executor's own run, against this exact working tree (exit codes come from the tool transport; NOT executor-written text):",
     "- Each receipt below exited 0. Treat it as already-inspected raw evidence: quote its output tail in <evidence> for the contract item it covers instead of re-running the command.",
     "- Do NOT re-run these commands, the project's full suite, or an equivalent gate to re-establish what a receipt already shows — a re-run costs minutes, can exceed your per-tool budget, and a cancelled call can void your approval.",
     "- Spend your tool calls on what a receipt cannot show: that the changed paths actually implement the claim, that tests exercise the new behaviour, and anything the contract asks for that no receipt covers. A narrow, targeted command (one test file, one grep) is fine.",
@@ -158,7 +160,7 @@ export function gateReceiptPromptLines(
   for (const r of receipts) {
     lines.push(
       `Receipt: ${escape(r.command)}`,
-      `Result: exit 0 in ${formatReceiptDuration(r.durationMs)}${r.retried ? " (first attempt failed, bounded retry passed)" : ""}${r.cwd ? ` · cwd ${escape(r.cwd)}` : ""}`,
+      `Result: exit 0 in ${formatReceiptDuration(r.durationMs)}${r.retried ? " (first attempt failed, bounded retry passed)" : ""}${r.observed ? " (observed in the executor's own run — exit code read from the bash tool result, tree unchanged since)" : ""}${r.cwd ? ` · cwd ${escape(r.cwd)}` : ""}`,
       "Output tail:",
       escape(r.outputTail || "(no output)"),
       "",
@@ -172,4 +174,100 @@ export function gateReceiptPromptLines(
 export function gateReceiptsDigest(receipts: MechanicalGateReceipt[] | undefined): string | undefined {
   if (!receipts || receipts.length === 0) return undefined;
   return crypto.createHash("sha256").update(JSON.stringify(receipts.map((r) => [r.command, r.durationMs]))).digest("hex").slice(0, 16);
+}
+
+// ---------------------------------------------------------------------------
+// v0.39.71 (A): receipts OBSERVED in the executor's own gate run.
+//
+// The executor usually runs the contract gate itself right before claiming,
+// and the pre-audit then ran the same gate again (about 14 minutes in this
+// repository) before the auditor could start. Pi's bash tool result carries
+// the exit code and wall time in `structuredContent` — evidence GLLA reads
+// from the tool transport, not from anything the model wrote. A run counts
+// only when:
+//   - the command is EXACTLY a contract step (whitespace-normalized; a
+//     trailing `2>&1` is allowed) — a pipeline (`… | tail`) reports the last
+//     program's exit code, so it never counts, and a step with its own `cd`
+//     target is left to the pre-audit;
+//   - `structuredContent.exit_code === 0` and the result is not an error;
+//   - the working tree is byte-identical (fingerprint) when the claim's
+//     pre-audit would run. Any edit afterwards voids it.
+// ---------------------------------------------------------------------------
+
+export function normalizeGateCommand(command: string): string {
+  return command.replace(/\s+2>&1\s*$/, "").replace(/\s+/g, " ").trim();
+}
+
+/** A contract step the executor's own run may satisfy (no pipe, no cwd). */
+export function observableGateStep(step: { command: string; cwd?: string }): boolean {
+  return !step.cwd && !/[|;&<>`$]/.test(normalizeGateCommand(step.command));
+}
+
+interface BashResultLike {
+  toolName?: unknown;
+  isError?: unknown;
+  input?: unknown;
+  content?: unknown;
+  structuredContent?: unknown;
+}
+
+/** The receipt an exact, exit-0 contract-gate run proves — or undefined. */
+export function observedGateReceipt(
+  event: BashResultLike,
+  steps: ReadonlyArray<{ command: string; cwd?: string }>,
+  treeFingerprint: () => string | undefined,
+): MechanicalGateReceipt | undefined {
+  if (event.toolName !== "bash" || event.isError === true) return undefined;
+  const input = event.input as { command?: unknown } | undefined;
+  if (typeof input?.command !== "string") return undefined;
+  const sc = event.structuredContent as { exit_code?: unknown; wall_time_seconds?: unknown; output?: unknown } | undefined;
+  if (!sc || sc.exit_code !== 0) return undefined;
+  const ran = normalizeGateCommand(input.command);
+  const step = steps.find((s) => observableGateStep(s) && normalizeGateCommand(s.command) === ran);
+  if (!step) return undefined;
+  const fingerprint = treeFingerprint();
+  if (!fingerprint) return undefined;
+  const text = typeof sc.output === "string"
+    ? sc.output
+    : Array.isArray(event.content)
+      ? event.content.map((c) => (c && typeof c === "object" && typeof (c as { text?: unknown }).text === "string" ? (c as { text: string }).text : "")).join("\n")
+      : "";
+  const seconds = typeof sc.wall_time_seconds === "number" && Number.isFinite(sc.wall_time_seconds) && sc.wall_time_seconds >= 0 ? sc.wall_time_seconds : 0;
+  const tail = text.trim();
+  return {
+    command: step.command,
+    exitCode: 0,
+    durationMs: Math.round(seconds * 1000),
+    outputTail: tail.length > 1_500 ? "…" + tail.slice(-1_500) : tail,
+    observed: true,
+    treeFingerprint: fingerprint,
+  };
+}
+
+/** Insert or replace the observed receipt for its command (latest wins). */
+export function upsertObservedReceipt(list: MechanicalGateReceipt[] | undefined, receipt: MechanicalGateReceipt): MechanicalGateReceipt[] {
+  const key = normalizeGateCommand(receipt.command);
+  return [...(list ?? []).filter((r) => normalizeGateCommand(r.command) !== key), receipt].slice(-MAX_GATE_RECEIPTS);
+}
+
+/**
+ * Observed receipts that cover EVERY contract step for the tree as it is now,
+ * in contract order — or undefined (the pre-audit then runs as before). A
+ * contract with any step that cannot be observed is never satisfied here.
+ */
+export function observedReceiptsCoveringContract(
+  steps: ReadonlyArray<{ command: string; cwd?: string }>,
+  observed: MechanicalGateReceipt[] | undefined,
+  currentFingerprint: string | undefined,
+): MechanicalGateReceipt[] | undefined {
+  if (steps.length === 0 || !observed?.length || !currentFingerprint) return undefined;
+  const out: MechanicalGateReceipt[] = [];
+  for (const step of steps) {
+    if (!observableGateStep(step)) return undefined;
+    const match = observed.find((r) => r.observed === true && r.treeFingerprint === currentFingerprint
+      && normalizeGateCommand(r.command) === normalizeGateCommand(step.command));
+    if (!match) return undefined;
+    out.push(match);
+  }
+  return out;
 }

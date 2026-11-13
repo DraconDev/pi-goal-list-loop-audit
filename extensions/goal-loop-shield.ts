@@ -372,6 +372,12 @@ export interface MechanicalGateReceipt {
   cwd?: string;
   /** True when the first attempt failed and the bounded retry passed. */
   retried?: boolean;
+  /** v0.39.71 (A): observed in the executor's own bash run — the exit code
+   * and wall time came from Pi's bash tool result, not from model prose. */
+  observed?: true;
+  /** v0.39.71 (A): working-tree fingerprint when an OBSERVED receipt was
+   * taken. GLLA-run receipts are fenced by the claim's gateTreeFingerprint. */
+  treeFingerprint?: string;
 }
 
 /** v0.39.70: how much output a receipt keeps — the runner summary lives at

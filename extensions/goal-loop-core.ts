@@ -1111,6 +1111,11 @@ export interface Goal {
    * diffs it against the tree at completion for an honest "N files changed"
    * line that sync-daemon auto-commits cannot hide. Absent outside git. */
   startTree?: string;
+  /** v0.39.71 (A): contract-gate runs GLLA OBSERVED exit 0 in the executor's
+   * own bash calls (exit code from the tool transport), each fenced to the
+   * working-tree fingerprint at that moment. The claim's pre-audit reuses
+   * them instead of re-running the gate when the tree is unchanged. */
+  observedGateReceipts?: MechanicalGateReceipt[];
   /** v0.35.1: a control goal created to re-plan suspicious saved intent.
    * It is cleared only after a confirmed task-list re-draft, so the generic
    * repair card cannot complete repeatedly while the original target remains

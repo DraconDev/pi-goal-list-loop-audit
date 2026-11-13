@@ -433,7 +433,8 @@ function receiptCommandKey(value: string | undefined): string {
 
 /** "GLLA ran it — exit 0 in 14m02s" (+ retry note). */
 export function gllaReceiptNote(receipt: MechanicalGateReceipt): string {
-  return `GLLA ran it \u2014 exit 0 in ${formatReceiptDuration(receipt.durationMs)}${receipt.retried ? " (after one retry)" : ""}`;
+  const verb = receipt.observed ? "GLLA saw it pass" : "GLLA ran it";
+  return `${verb} \u2014 exit 0 in ${formatReceiptDuration(receipt.durationMs)}${receipt.retried ? " (after one retry)" : ""}`;
 }
 
 /**

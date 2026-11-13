@@ -37,6 +37,23 @@
     },
     "autoContinue": { "type": "boolean" },
     "runToDone": { "type": "boolean", "description": "v0.38.73 run-to-done: draft-time user consent to carry the goal to completion without supervised pauses (session-start auto-resume + immediate decision auto-default). Hard stops still park; the auditor is never skipped. Beats global autoResume:false." },
+    "observedGateReceipts": {
+      "type": "array",
+      "maxItems": 12,
+      "description": "v0.39.71: contract-gate runs GLLA observed exit 0 in the executor's own bash calls (exit code from Pi's bash tool result), each fenced to the working-tree fingerprint at that moment. The pre-audit reuses them when the tree is unchanged.",
+      "items": {
+        "type": "object",
+        "required": ["command", "exitCode", "durationMs", "observed", "treeFingerprint"],
+        "properties": {
+          "command": { "type": "string" },
+          "exitCode": { "const": 0 },
+          "durationMs": { "type": "integer", "minimum": 0 },
+          "outputTail": { "type": "string" },
+          "observed": { "const": true },
+          "treeFingerprint": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" }
+        }
+      }
+    },
     "startTree": { "type": "string", "pattern": "^[0-9a-f]{40,64}$", "description": "v0.39.70: working-tree content snapshot taken when the goal was created; the completion card diffs it against the tree at completion." },
     "fullAudit": { "type": "boolean", "description": "v0.38.81: draft-time user consent to full-tier audits for every claim (never light). Escalation only." },
     "taskList": {
