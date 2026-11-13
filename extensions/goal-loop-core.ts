@@ -3258,7 +3258,7 @@ function acquireLedgerRotationLock(cwd: string): number | undefined {
  * snapshot lands, the segment still contains the newest complete state and
  * `readState` can recover it. The fresh active file contains only that full
  * projection, keeping future cold loads bounded. */
-export function rotateLedgerIfNeeded(cwd: string, latestStateLine: string, thresholdBytes = LEDGER_ROTATION_BYTES): boolean {
+export function rotateLedgerIfNeeded(cwd: string, latestStateLine: string, thresholdBytes = LEDGER_ROTATION_BYTES, maxSegments: number = LEDGER_SEGMENT_MAX_COUNT): boolean {
   if (stateRootPending() || !ledgerRotationOwned(cwd)) return false;
   const active = ledgerPath(cwd);
   let size: number;
@@ -3280,6 +3280,21 @@ export function rotateLedgerIfNeeded(cwd: string, latestStateLine: string, thres
       fs.renameSync(temp, active);
     } finally {
       try { if (fs.existsSync(temp)) fs.unlinkSync(temp); } catch { /* recovery scans the segment */ }
+    }
+    // The rotation is the moment the corpus grows, so it is the moment the
+    // corpus is bounded. Without this the segment directory is append-only
+    // forever, and every full-history read over it costs the project's age
+    // (334 segments / 2.7 GiB was observed in the field).
+    const pruned = pruneLedgerSegments(cwd, maxSegments);
+    for (const name of pruned) {
+      // Recorded, not silent: a pruned segment is a removed piece of
+      // history and the operator must be able to see that it happened.
+      try {
+        fs.appendFileSync(
+          path.join(piGlaDir(cwd), "archive-intent.json.log"),
+          `${JSON.stringify({ at: new Date().toISOString(), what: "ledger-segment-pruned", segment: name })}\n`,
+        );
+      } catch { /* the pruning itself already succeeded */ }
     }
     return true;
   } catch {
