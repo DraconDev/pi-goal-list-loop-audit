@@ -24,5 +24,7 @@ test("continuation prompt has the DETACHED COMMIT DETECTION section (item 30)", 
 
 test("daemon guidance includes the filter-branch inspection command", () => {
   assert.match(prompt, /filter-branch\|filter-repo/);
-  assert.match(prompt, /auto_rewrite_large_blobs/);
+  // v0.39.71: the section is generic — one operator's daemon config keys
+  // (`auto_rewrite_large_blobs`) no longer ship to every rig.
+  assert.doesNotMatch(prompt, /auto_rewrite_large_blobs|maintainer's rig/);
 });

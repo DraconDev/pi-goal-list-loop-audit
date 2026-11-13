@@ -142,28 +142,7 @@ continue inline only when the subagent itself cannot be recovered.
 
 ## DETACHED COMMIT DETECTION
 
-If your commits keep getting rewritten away (same content, new SHA — or worse, content reverted), check for an **auto-commit daemon** BEFORE diagnosing yourself as stuck or broken. **Skip this section entirely if your rig has no auto-committer** — most rigs don't. (The maintainer's rigs run one called `dracon-sync`; yours may run a different one, or none.)
-
-Generic forensics (safe everywhere):
-
-```bash
-git reflog --date=iso | grep -E "filter-branch|filter-repo"
-git reflog --date=iso | grep -E ": reset:"
-```
-
-If those show rewrites you didn't make, find the daemon (example for the maintainer's rig — adapt the pattern to yours):
-
-```bash
-ps -fea | grep -E "dracon-sync|filter-repo" | grep -v grep
-```
-
-An auto-committer may be rewriting your commits (e.g. `dracon-sync daemon` running `auto_rewrite_large_blobs`). The fix is NOT to keep re-committing — it is to:
-
-1. Pause the daemon if one exists (on the maintainer's rigs: `dracon-sync pause`, or write the `.pi-glla/.pause-auto-commit` sentinel via the goal tools).
-2. Investigate the rewrite trigger (for `dracon-sync`: daemon config `max_push_blob_bytes`, `auto_rewrite_large_blobs`).
-3. Add `.pi-glla/` to the daemon's exclude list.
-
-Do NOT conclude "the loop is too eager" or "I am broken" before checking what a daemon is doing — a daemon rewriting your commits makes YOUR loop look broken when it is not.
+If your commits keep vanishing or getting new SHAs, check for an **auto-committer** before diagnosing yourself as stuck (skip this if the rig has none): `git reflog --date=iso | grep -E "filter-branch|filter-repo|: reset:"`, then `ps -fea | grep -iE "sync|commit|filter-repo" | grep -v grep` to find it. If one is rewriting history, pause the daemon (or write the `.pi-glla/.pause-auto-commit` sentinel via the goal tools), exclude `.pi-glla/` from it, and report the trigger — do not keep re-committing.
 
 ## TASK WORKFLOW
 
@@ -216,9 +195,7 @@ The orchestrator's backstop is the stall watchdog: three consecutive turns with 
 
 ### Completion communication
 
-`complete_goal` submits a nonterminal claim, not a completion verdict. While the detached audit is pending, do not say the goal is done/complete/approved or present a final success summary. Do not wait or poll. If a response is needed, give one brief pending-status sentence. GLLA posts the concrete outcome-first summary into chat after verified approval and durable archive, without needing another user prompt. Do not duplicate that summary. A rejected claim remains unfinished and repair work continues.
-
-The agent-written completionSummary is user-facing evidence, not a step log: open with the outcome in plain words, then one durable result per label. The posted chat is a human account of what happened: lead with the behavior/code changes and remaining limitations. Tests, verification, gate tables, commands, hashes, and machine evidence are archive-only by default; the user can explicitly ask for a compact verification sentence, in which case pass `showVerification: true` to complete_goal. The archive always retains the full commands, statuses, hashes, and machine evidence. Keep Outcome and Changed to one or two plain sentences about the result and changed behavior, not file inventories or an implementation diary. Put detailed findings and proof in the saved record; the default display is a short overview, with expansion for detail. Do not pad the human account with audit mechanics; cite human-readable proof (counts, versions, repo-relative paths, PR numbers) and never machine paths (sidecar/log/tarball paths under /tmp or /var/tmp — those live in the archive only; gate repro commands, commit hashes and repository bookkeeping stay in the durable archive, not chat). Cut values at clause boundaries, never mid-word; write Next: as one concrete follow-up action or none (audit-self-referential lines like "verdict decides" are stripped at render); pass what was deliberately left out as the complete_goal leftOut parameter — it renders under Remaining and is omitted when absent. When the work spans distinct areas (subsystems, screens, phases), group the findings with the complete_goal findingGroups parameter — one group per area, each finding leads with the primary user-visible outcome, then uses ` — ` for concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason; never invent proof). `Lead:` is a semantic role, not a UI label: do not prefix findings with `Lead:`, `Tests:`, or `Verdict:`. The compact chat view shows a few primary changes; expansion and the archive retain detailed area findings. Do not depend on a long finding inventory to explain the result. Add per-finding test proof with the parallel `tests` array (tests[i] proves findings[i]) only when it demonstrates behavior; it is detailed archive support, not default chat copy. When the work ran named quality gates (unit, typecheck, E2E, build, invariants), pass the complete_goal gateRows inventory — one row per gate with scope and outcome notes, plus the repro `command` when one exists. The archive retains the Quality Gate | Command | Scope | Status | Notes table with mechanically derived statuses (PASS only when the notes say pass with zero failures); chat shows these only after an explicit `showVerification: true` request, as one aggregate sentence. Single-area work omits findingGroups — the flat human change render stays the fallback; work with no gate inventory omits gateRows — the archive uses its mechanical Tests row while chat omits technical Tests by default. Verification is supporting evidence, never the main body of the change story.
+`complete_goal` submits a claim, not a verdict: until the detached audit approves, never call the goal done, and do not wait, poll, or pre-write the final summary — GLLA posts the report card after approval. Write the claim as report material (see `complete_goal`'s REPORT SHAPE): Outcome as one or two plain sentences, `findingGroups` per work area (`<user-visible outcome> — <repo-relative path:line or reason>`), `gateRows` for the gates you actually ran with real counts, limitations in Unresolved, deferred scope in `leftOut`, one concrete Next. GLLA adds the gates it ran or observed itself, and the files changed since the goal started. Never cite /tmp paths, hashes or invented proof.
 
 ### Pausing and waiting: write a human handoff
 
