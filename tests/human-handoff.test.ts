@@ -163,3 +163,33 @@ test("time and preview projections are timezone explicit, safe and honest about 
   assert.doesNotMatch(value, /\x1b|\n/);
   assert.ok(value.length < 340);
 });
+
+test("collapsed reports retain results from every work area after a busy first area", () => {
+  const source = [
+    "## Done — Saves and release packages are consistent", "", "## Summary",
+    "**What changed · Persistence**",
+    ...Array.from({ length: 6 }, (_, i) => `- Persistence result ${i}`),
+    "**What changed · Packaging**", "- Both browser packages contain matching manifests.",
+    "**What changed · Recovery**", "- Interrupted saves recover the last confirmed edit.",
+    "## Verification", "- Regression checks: 12 passed, 0 failed.",
+    "## Follow-up items", "- Signed-in browser behavior was not checked.",
+    "completion audit approved (1 review) · record: saved.md.",
+  ].join("\n");
+  const compact = compactHumanSummary(source);
+  assert.equal(compact.omitted, true);
+  assert.doesNotMatch(compact.content, /Persistence result 4/);
+  for (const result of ["Both browser packages contain matching manifests.",
+    "Interrupted saves recover the last confirmed edit.", "12 passed, 0 failed.",
+    "Signed-in browser behavior was not checked.", "record: saved.md."]) {
+    assert.ok(compact.content.includes(result), result);
+  }
+});
+
+test("collapsed opening prose keeps the explanation beyond a notification budget", () => {
+  const explanation = "The saved version now advances only after the write succeeds, so an interrupted request cannot replace a confirmed edit with an older revision. " +
+    "Switching panels retains pending edits and reopening the project restores the last confirmed save, including when a background retry finishes late.";
+  const compact = compactHumanSummary(`## Done — Saves keep confirmed edits\n## Summary\n${explanation}\n## Verification\n12 passed, 0 failed.`);
+  assert.ok(explanation.length > 280);
+  assert.ok(compact.content.includes(explanation));
+  assert.equal(compact.omitted, false);
+});

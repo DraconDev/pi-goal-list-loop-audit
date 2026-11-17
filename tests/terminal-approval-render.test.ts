@@ -448,3 +448,21 @@ test('a broken store is reported once per distinct broken file, not on every rea
     .map(l => JSON.parse(l)).filter(l => l.type === 'terminal_approval_render_store_invalid');
   assert.equal(rows2.length, 2, 'a changed broken store is reported again');
 });
+
+test("rich completion preserves the complete result explanation in chat, transcript and archive", () => {
+  const title = "Overlapping saves now keep the latest confirmed edit";
+  const explanation = "You can switch panels without losing pending changes, and reopening the project restores the last confirmed save even when an older background retry finishes late. The signed-in browser flow still needs a manual check.";
+  const completionSummary = [`Outcome: ${title}. ${explanation}`,
+    "Changed: Save ordering rejects stale revisions.", "Evidence: tests/save-order.test.ts:42.",
+    "Tests: 12 passed, 0 failed.", "Unresolved: Signed-in behavior was not checked.",
+    "Next: Check the signed-in browser flow."].join("\n");
+  const goal = seedGoal({ objective: "Preserve confirmed edits across concurrent saves", completionSummary }) as unknown as Goal;
+  const rendered = buildTerminalApprovalRender({ goal, status: "complete", approval: "— approved.", record: "— record: saved.md" });
+  for (const lines of [rendered.chatLines, rendered.transcriptLines, buildRichArchiveSection(goal, "complete", "saved.md")]) {
+    const text = lines.join("\n");
+    assert.equal(lines[0], `## Done — ${title}`);
+    assert.ok(text.includes(explanation), text);
+    assert.equal(text.split(explanation).length - 1, 1, "explanation appears once");
+    assert.doesNotMatch(text, /…/);
+  }
+});
