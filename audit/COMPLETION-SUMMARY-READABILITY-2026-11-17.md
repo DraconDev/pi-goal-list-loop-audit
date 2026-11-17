@@ -41,6 +41,8 @@ remain visible after Persistence exceeds its collapsed allowance.
 ## Verification
 
 - Seven summary/rendering suites: 90 passed, 0 failed.
+- Ten completion/audit/delivery suites: 92 passed, 0 failed.
+- Typecheck, generated inventory, and private-name checks passed.
 - Regression fixtures cover complete outcome preservation across all rich
   surfaces, visibility of later work areas, intact opening prose, and retained
   verification, limitations, and archive pointer.
