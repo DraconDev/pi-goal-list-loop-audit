@@ -10,7 +10,7 @@ import { CARD_SECTION, LEGACY_CARD_SECTIONS, cardSectionName } from "./card-sect
  * one finding group per work area, the real gate rows, the follow-ups and the
  * one next step — instead of asking the agent to write a compact recap and
  * then relying on the renderer to rescue its shape. */
-export const HUMAN_HANDOFF_GUIDANCE = `HUMAN HANDOFF: Write for the person using the project, not for an audit log. Say what changed or what is preventing progress in one or two plain sentences. Name the user's next action separately, or say no action is needed. Do not put investigation history, file inventories, tool counts, model names, hashes or verifier mechanics into the human explanation. Keep evidence in verificationSummary/gateRows (completion) or interruption.evidence (pause). Preserve real limitations; never claim an unobserved result. COMPLETION REPORT: Outcome is the lede — one or two plain sentences on the result, because the card uses its first clause as the headline and the rest as the prose lede. Group the work by area with findingGroups (subsystem, screen, or phase), each finding written as \`<user-visible outcome> — <concrete evidence>\` with a repo-relative path:line where one exists. Add gateRows for the commands you actually ran, with their real counts in notes: the report always shows them, and status is derived from those notes, never claimed. Put limitations in Unresolved, deliberately deferred scope in leftOut, and one concrete follow-up in Next (extra actions belong in findingGroups or leftOut, not a second Next). Finding groups are detailed supporting material, not an excuse to repeat the whole report. For pause_goal keep reason to the unmet prerequisite and use suggestedAction for concrete steps, the relevant document or exact command; a resume command alone does not resolve a blocker. For waits explain the condition, not the scheduler, and do not promise completion at the next check.`;
+export const HUMAN_HANDOFF_GUIDANCE = `HUMAN HANDOFF: Write for the person using the project, not for an audit log. Say what changed or what is preventing progress in one or two plain sentences. Name the user's next action separately, or say no action is needed. Do not put investigation history, file inventories, tool counts, model names, hashes or verifier mechanics into the human explanation. Keep evidence in verificationSummary/gateRows (completion) or interruption.evidence (pause). Preserve real limitations; never claim an unobserved result. COMPLETION REPORT: Summarize the whole objective, including work completed before audit rework, rather than only the last fix or test run. Lead with the concrete result and why it matters to the user. For example, write "Overlapping saves now keep the latest confirmed edit. You can switch panels without losing changes" rather than "Implemented persistence improvements". Explain significant behavior changes and decisions in ordinary language; file paths support the explanation rather than replace it. Scale detail to the work: a small fix needs a short paragraph and verification, while a broad objective needs a few meaningful work areas. Do not invent sections or follow-up work to fill the template. Outcome is the lede — one or two plain sentences on the result, because the card uses its first clause as the headline and the rest as the prose lede. Group the work by area with findingGroups (subsystem, screen, or phase), each finding written as \`<user-visible outcome> — <concrete evidence>\` with a repo-relative path:line where one exists. Add gateRows for the commands you actually ran, with their real counts in notes: the report always shows them, and status is derived from those notes, never claimed. Put limitations in Unresolved, deliberately deferred scope in leftOut, and one concrete follow-up in Next (extra actions belong in findingGroups or leftOut, not a second Next). Finding groups are detailed supporting material, not an excuse to repeat the whole report. For pause_goal keep reason to the unmet prerequisite and use suggestedAction for concrete steps, the relevant document or exact command; a resume command alone does not resolve a blocker. For waits explain the condition, not the scheduler, and do not promise completion at the next check.`;
 
 /** A visibly abbreviated projection, never a semantic rewrite. Callers must
  * offer expansion or a durable record whenever this omits source content. */
@@ -58,15 +58,17 @@ export function compactHumanSummary(content: string): { content: string; omitted
     const sectionName = cardSectionName(heading);
     if (sectionName) {
       section = sectionName;
+      // Each work area gets its own allowance. A global counter let a busy
+      // first area erase every result from the rest of the objective.
+      if (section === CARD_SECTION.whatChanged) findings = 0;
       result.push(line);
       continue;
     }
     const isChangeArea = /^#{2,4}\s+What changed\s*\u00b7/i.test(line) || /^\*\*What changed\s*\u00b7/i.test(line);
     if (section === CARD_SECTION.summary && line.trim()) {
       if (/^#{2,4}\s|^\*\*.*\*\*$/.test(line) || ++summaryLines > 2) { omitted = true; continue; }
-      const preview = humanTextPreview(line);
-      if (preview !== line.trim()) omitted = true;
-      result.push(preview);
+      // Keep the opening explanation intact; wrapping belongs to the TUI.
+      result.push(line);
       continue;
     }
     if (section === CARD_SECTION.whatChanged || section === LEGACY_CARD_SECTIONS[0]) {

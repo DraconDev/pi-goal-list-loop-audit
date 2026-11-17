@@ -1483,7 +1483,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   // final card must use the corrected terminal recap, not a rejected one.
   // archiveCurrentGoal captures history before pendingCompletion clears.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
-  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
+  const brief = humanCompletionBrief(summary, RICH_FULL_VALUE_BUDGET, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
   // v0.39.71 (E): for a STOPPED goal, a recorded-facts recap's Evidence line
   // is machine telemetry (goal id, counters) — it stays in the verbatim
   // machine record, not in the human report. An approved goal's archive keeps
@@ -1699,12 +1699,10 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     archivePath: input.archivePath,
   };
   const candidate = input.completionSummary ?? input.goal.completionSummary;
-  // Rich voice (field 20260911_*): the chat/transcript render uses a
-  // verbose brief (200-char values) while the outcome headline keeps
-  // the 140-char budget. Filler drops via the same briefValueContent
-  // filter; absent stays absent.
-  // v0.38.55 (full parity): values ride unclipped — the card shares
-  // everything the archive knows.
+  // Preserve the outcome before splitting its title from the explanation.
+  // A notification-sized budget here silently discarded the second sentence
+  // even though the rich report has room to wrap it. Compact callers retain
+  // their own budgets; rich chat and archive share the bounded full value.
   const resolution = resolveCompletionSummary(facts, candidate);
   // A persisted fallback already satisfies the six-label validator. Detect
   // the system's reserved template as well as newly resolved fallbacks;
@@ -1721,7 +1719,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // by partitionRichDetails, never shown as a human change finding.
   const richBrief = humanCompletionBrief(
     humanSource,
-    140,
+    RICH_FULL_VALUE_BUDGET,
     RICH_FULL_VALUE_BUDGET,
     input.priorCompletionSummary,
     true,
