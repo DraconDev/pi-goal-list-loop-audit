@@ -1051,6 +1051,13 @@ function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
   else if (patch.status === "paused" || patch.pauseReason !== undefined) {
     next.pauseSource = patch.pauseSource ?? "system";
   }
+  // The pause-episode stamp every auto-select clock measures from. Only the
+  // ENTRY into a pause (or an explicit caller stamp) starts a new episode: a
+  // later touch-up of the same pause (a counter bump, a suggested-action
+  // refresh, a history append) must NOT restart the clock, or an active goal
+  // could push its own question out forever.
+  if (next.status !== "paused") next.pauseDecidedAt = undefined;
+  else if (patch.status === "paused") next.pauseDecidedAt = patch.pauseDecidedAt ?? nowIso();
   const file = goalMdPath(ctx.cwd, next.id);
   const nextGoal: Goal = { ...next, activePath: path.relative(ctx.cwd, file) || file };
   // v0.35.72: the transaction snapshot closes the crash window between the
