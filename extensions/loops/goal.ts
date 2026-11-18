@@ -26,7 +26,7 @@ import { pendingListOperations, __testOnlyResetOwnerSession, __testOnlyResetStal
 import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch, __testOnlyResetPostCompactDebt } from "./goal-ui.js";
 import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
 import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettlement, resumeCompletedCompletionAudit, resumeSettlingCompletionAudit } from "./goal-auditor-hooks.js";
-import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
+import { __testOnlyResetDecisionAutoSelect, __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
 import { __testOnlyResetCompactor } from "../goal-compactor.js";
 import { __testOnlyResetInvalidSettingReports } from "../goal-settings.js";
 import { __testOnlyResetLedgerIndexReadBytes, __testOnlyResetLedgerScanRecordsCalls } from "../goal-loop-core.js";
@@ -75,7 +75,7 @@ import {
 } from "../goal-recovery.js";
 import { createGoalHeartbeat, getSubagentAgentsSnapshot, type HeartbeatDeps, type HeartbeatFlags } from "../goal-heartbeat.js";
 import { __testOnlyResetBackgroundWaitRuntime } from "../background-wait-runtime.js";
-import { createGoalCommands, type CommandDeps, type CommandFlags } from "../goal-commands.js";
+import { adoptRecommendedDecisionNow, createGoalCommands, type CommandDeps, type CommandFlags } from "../goal-commands.js";
 import { clearLoopTimer, createGoalLoop, type LoopDeps, type LoopFlags } from "../goal-loop.js";
 
 export {
@@ -295,6 +295,7 @@ export function __testOnlyResetProcessState(): void {
   __testOnlyResetOwnerHeartbeat();
   __testOnlyResetStandDownNotice();
   __testOnlyResetBackgroundWaitRuntime();
+  __testOnlyResetDecisionAutoSelect();
 }
 
 // decomposition step 5 (v0.34.113): the continuation cluster (schedule/send,
@@ -471,6 +472,9 @@ const heartbeatDeps: HeartbeatDeps = {
   continuationUnansweredMs: CONTINUATION_UNANSWERED_MS,
   continuationUnansweredThrottleMs: CONTINUATION_UNANSWERED_THROTTLE_MS,
   abortZombieRun,
+  // The stuck-question clock: goal-commands owns the pause actions, so the
+  // adoption path lives beside the picker — the heartbeat only decides WHEN.
+  adoptRecommendedDecision: (ctx, minutes) => adoptRecommendedDecisionNow(ctx, minutes),
 };
 createGoalHeartbeat(heartbeatFlags, heartbeatDeps);
 
