@@ -34,6 +34,7 @@ import {
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
+import { decisionAutoSelectDue, resolveDecisionAutoSelectMinutes } from "./decision-auto-select.js";
 import { isCompactionInFlightSince, classifyMainModelFailure, isEagerRetryFailure, type MainModelFailureKind } from "./main-model-recovery.js";
 import {
   HEARTBEAT_STALL_MS,
@@ -124,6 +125,11 @@ export interface HeartbeatDeps {
   continuationUnansweredThrottleMs: number;
   /** Abort and durably park the owner of a confirmed zero-stream turn. */
   abortZombieRun(ctx: ExtensionContext, generation: number, goalId: string | undefined, lastStreamActivityAt: number): boolean;
+  /** v0.39.x (the stuck-question clock): adopt the RECOMMENDED continue-work
+   * option of a decision pause whose configured delay elapsed. Injected from
+   * goal.ts (goal-commands owns the pause actions, so the adoption path lives
+   * beside the picker — the heartbeat must stay acyclic). */
+  adoptRecommendedDecision(ctx: ExtensionContext, minutes: number): Promise<"adopted" | "refused" | "stale">;
 }
 
 let flags: HeartbeatFlags;
@@ -150,6 +156,7 @@ let goalNoun: HeartbeatDeps["goalNoun"];
 let continuationUnansweredMs: HeartbeatDeps["continuationUnansweredMs"];
 let continuationUnansweredThrottleMs: HeartbeatDeps["continuationUnansweredThrottleMs"];
 let abortZombieRun: HeartbeatDeps["abortZombieRun"];
+let adoptRecommendedDecision: HeartbeatDeps["adoptRecommendedDecision"];
 
 export function createGoalHeartbeat(flagsArg: HeartbeatFlags, d: HeartbeatDeps): void {
   flags = flagsArg;
@@ -174,6 +181,7 @@ export function createGoalHeartbeat(flagsArg: HeartbeatFlags, d: HeartbeatDeps):
   continuationUnansweredMs = d.continuationUnansweredMs;
   continuationUnansweredThrottleMs = d.continuationUnansweredThrottleMs;
   abortZombieRun = d.abortZombieRun;
+  adoptRecommendedDecision = d.adoptRecommendedDecision;
 }
 
 // ----------------------------------------------------------------------------
