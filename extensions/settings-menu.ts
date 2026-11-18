@@ -313,6 +313,15 @@ export function buildSettingsRows(
         "max agent-authored decision pauses per goal before auto-default (0 = relentless from the first; unset = pause every time)",
     },
     {
+      id: "decisionAutoSelectMinutes",
+      section: "keep-going",
+      label: "Auto-select stuck decisions (minutes)",
+      valueText: show("decisionAutoSelectMinutes", "off"),
+      sourceText: src("decisionAutoSelectMinutes"),
+      description:
+        "after this long with no answer, adopt the RECOMMENDED continue-work option; cancel/accept/tweak/pause and contract amendments still wait for you (unset = never)",
+    },
+    {
       id: "autoAcceptDrafts",
       section: "keep-going",
       label: "Auto-accept drafts",

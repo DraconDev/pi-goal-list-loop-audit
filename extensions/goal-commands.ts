@@ -3896,6 +3896,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("auditCapHard", "auditCapHard"),
       fmt("mechanicalLoadScale", "mechanicalLoadScale"),
       fmt("decisionPauseBudget", "decisionPauseBudget"),
+      fmt("decisionAutoSelectMinutes", "decisionAutoSelectMinutes (unset = off; recommended continue-work only)"),
       fmt("auditFeedbackChars", "auditFeedbackChars"),
       fmt("aggressiveMode", "aggressiveMode"),
       fmt("stuckMaxInterventions", "stuckMaxInterventions"),
