@@ -1102,8 +1102,18 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
   try {
     const title = `Decision needed — ${displaySlice(g.objective, 72)}${g.pauseReason ? ` · ${displaySlice(sanitizeProviderDisplayText(g.pauseReason), 80)}` : ""}`;
     const options = g.pauseOptions!.map((o, i) => (g.pauseRecommended === i + 1 ? `${o}  (recommended)` : o));
-    const pick = await ctx.ui.select(title, options);
-    if (!pick) return true; // Escape — the widget card remains the fallback
+    const minutes = loadSettings(ctx.cwd).decisionAutoSelectMinutes;
+    const countdownMs = decisionAutoSelectCountdownMs(g, minutes, Date.now());
+    const pick = await ctx.ui.select(title, options, countdownMs === undefined ? undefined : { timeout: countdownMs });
+    if (!pick) {
+      // Escape and a host timeout both resolve undefined. A pick-less close is
+      // only an ADOPTION when the durable clock says the delay elapsed — a
+      // deliberate Escape before the deadline leaves the pause for the card.
+      if (pendingDecision() === g && decisionAutoSelectDue(g, minutes, Date.now())) {
+        await adoptRecommendedDecision(g, ctx, resolveDecisionAutoSelectMinutes(minutes));
+      }
+      return true; // The widget card remains the fallback
+    }
     if (warnIfStaleAtEntry(ctx, "/goal decide selection")) return true;
     if (pendingDecision() !== g) {
       ctx.ui.notify("Decision changed while the picker was open — selection was not applied. /goal decide shows the current choice.", "info");
