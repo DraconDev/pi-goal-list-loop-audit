@@ -4144,7 +4144,7 @@ async function handleHotLengthExhaustion(
           lastError: hygiene.dropped[hygiene.dropped.length - 1]?.errorMessage?.slice(0, 160),
           generation: sessionGeneration,
         };
-        const hygieneFingerprint = JSON.stringify(hygieneValue);
+        const hygieneFingerprint = `${ctx.cwd}\u0000${JSON.stringify(hygieneValue)}`;
         if (hygieneFingerprint !== lastContextHygieneFingerprint) {
           lastContextHygieneFingerprint = hygieneFingerprint;
           appendLedger(ctx.cwd, "context_hygiene_dropped", {

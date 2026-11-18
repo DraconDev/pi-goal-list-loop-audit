@@ -150,6 +150,20 @@ test("wiring: the context event drops accumulated error turns and ledgeres the h
   assert.equal(events[0]!.value!.dropped, 11);
   assert.match(String(events[0]!.value!.lastError), /503/);
 
+  // A host retrying against a dead provider re-sends the identical history
+  // every few seconds. The projection still runs each time, but identical
+  // repeats are silent; the next CHANGE lands once and reports them.
+  for (let i = 0; i < 5; i++) {
+    const again = await handler({ type: "context", messages: bloated }, ctx) as { messages?: unknown[] };
+    assert.equal(again!.messages!.length, 4, "every repeat is still projected");
+  }
+  assert.equal(ledger(cwd).filter((e) => e.type === "context_hygiene_dropped").length, 1, "identical repeats add no ledger line");
+  const grown = [...bloated.slice(0, -1), failedTurn("503 status code (no body) #12"), userTurn("retry")];
+  await handler({ type: "context", messages: grown }, ctx);
+  const afterChange = ledger(cwd).filter((e) => e.type === "context_hygiene_dropped");
+  assert.equal(afterChange.length, 2, "a changed projection lands");
+  assert.equal(afterChange[1]!.value!.suppressedRepeats, 5, "the suppressed repeats ride the next change");
+
   // Clean history: no drops, no ledger noise.
   const before = ledger(cwd).length;
   const clean = await handler({ type: "context", messages: [userTurn("hi"), okTurn("hello")] }, ctx) as { messages?: unknown[] };
