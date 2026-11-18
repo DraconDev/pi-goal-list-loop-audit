@@ -24,7 +24,7 @@ import os from "node:os";
 import path from "node:path";
 import { stripTerminalSequences, type Component } from "@earendil-works/pi-tui";
 
-import { registerSummaryRenderer } from "../extensions/summary-renderer.ts";
+import { SUMMARY_DISPLAY_HEADING, registerSummaryRenderer } from "../extensions/summary-renderer.ts";
 import { buildChangeStat, buildFinalRepoStateLines, buildRichTerminalParts, changeStatLine, composeRichTerminalLines, extractEvidenceTokens } from "../extensions/completion-summary.ts";
 import { extractFindingEvidence } from "../extensions/finding-lead.ts";
 import { workingTreeFingerprint } from "../extensions/gate-receipts.ts";
@@ -56,7 +56,10 @@ const CARD = composeRichTerminalLines(buildRichTerminalParts({
 test("#7: one blank row separates sections; the heading sits directly on its body", () => {
   const rows = render(CARD);
   const at = (text: string) => rows.findIndex((row) => row === text);
-  for (const heading of ["Summary", "Verification", "Next steps"]) {
+  // The durable `Summary` section displays as `What changed`: the lede above
+  // it already is the summary, so a second "Summary" read as a repeat.
+  assert.ok(!rows.includes("Summary"), `no repeated Summary heading on screen:\n${rows.join("\n")}`);
+  for (const heading of [SUMMARY_DISPLAY_HEADING, "Verification", "Next steps"]) {
     const i = at(heading);
     assert.ok(i > 0, `${heading} rendered:\n${rows.join("\n")}`);
     assert.equal(rows[i - 1], "", `a blank row precedes ${heading}`);
