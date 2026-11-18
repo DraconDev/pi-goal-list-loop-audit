@@ -201,7 +201,7 @@ test("restart: a finished settlement is approved once — one render, and the re
     assert.equal(stored.length, 1, "the terminal summary is queued exactly once");
     assert.equal(stored[0]!.goalId, goalId);
     const text = stored[0]!.chatLines.join("\n");
-    assert.match(text, /## Done — shipped the thing\./, "the queued render is the user-facing recap card");
+    assert.match(text, /## Done — Shipped the thing\./, "the queued render is the user-facing recap card");
     assert.match(text, /completion audit approved after session recovery/, "the card says the audit approved");
     assert.ok(!text.includes("auditor: settling"), "the card never reports an unresolved audit as finished");
 
