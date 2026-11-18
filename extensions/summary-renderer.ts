@@ -79,6 +79,9 @@ function summaryTheme(theme: Theme, sectionTone: SummaryTone): MarkdownTheme {
   };
 }
 
+/** Display label for the durable `Summary` section (see the render loop). */
+export const SUMMARY_DISPLAY_HEADING = "What changed";
+
 export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageRenderer">): void {
   pi.registerMessageRenderer("goal-event", (message, { outputPad, expanded }, theme) => {
     // Continuations share this custom type. Only durable terminal receipts
@@ -124,9 +127,14 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
         const areaLabel = sectionName === CARD_SECTION.whatChanged
           ? /\u00b7\s*(.+?)\s*$/.exec(heading.replace(/^#+\s+/, ""))?.[1]
           : undefined;
+        // The prose lede above the first section already IS the summary, so a
+        // second `Summary` heading read as a repeat. The display names the
+        // section for what it holds; durable content keeps `Summary` (the
+        // collapsed projection and replayed receipts key on it).
+        const displayHeading = sectionName === CARD_SECTION.summary ? `## ${SUMMARY_DISPLAY_HEADING}` : heading;
         const displayBlock = areaLabel
           ? `**${areaLabel}**` + sourceBlock.slice(firstLine.length)
-          : heading ? heading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
+          : heading ? displayHeading.replace(/^#{2,4}\s+/, '## ') + sourceBlock.slice(firstLine.length) : sourceBlock;
         box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
           color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
         }));

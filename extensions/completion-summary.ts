@@ -424,6 +424,33 @@ export interface RichTerminalParts {
   changeLine?: string;
   /** v0.39.71 (F): largest changed files (`path +A −R`) under the change line. */
   changeFiles?: string[];
+  /** Chat only: a one-line reminder of what was asked (`Goal: …`). A long
+   * autonomous goal ends hours after it was set, so the card restates the ask
+   * next to the result. The archive already carries the full `## Objective`. */
+  goalLine?: string;
+}
+
+/** Sentence-case a human line the agent wrote in lower case (`all six
+ * complaints …` → `All six complaints …`). Only a plain lower-case leading
+ * WORD is touched — a path, command, identifier or token with digits/dots
+ * (`note.md`, `npm run …`, `iOS`) keeps its exact spelling. */
+const CODE_LEAD_WORDS = new Set(["npm", "npx", "bun", "bunx", "git", "node", "tsc", "pnpm", "yarn", "pi", "gh", "cd", "ls", "rm"]);
+export function sentenceCase(text: string): string {
+  const match = /^([a-z][a-z'\u2019-]*)(?=\s)/u.exec(text);
+  if (!match || CODE_LEAD_WORDS.has(match[1]!)) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The objective as a one-line reminder: its first line, first sentence when
+ * that sentence is a usable title, clipped to one terminal row. Markdown
+ * emphasis characters are dropped so the excerpt cannot break the italics it
+ * rides in. */
+export function objectiveReminder(objective: string | undefined, limit = 110): string | undefined {
+  const first = sanitizeDisplayText(objective ?? "").split(/\n/).map((l) => l.trim()).find(Boolean)
+    ?.replace(/^>\s*/, "").replace(/[*_`]/g, "").trim();
+  if (!first) return undefined;
+  const sentence = /^(.{24,}?[.!?])(?=\s|$)/u.exec(first)?.[1] ?? first;
+  return clipSummaryValue(sentence.replace(/[.]$/, ""), limit);
 }
 
 /** v0.39.70: a gate row, optionally backed by a GLLA-run receipt. */
@@ -563,7 +590,11 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   // card): token extraction can strand leading punctuation when the
   // evidence tokens ride mid-sentence, so strip a leading `,;:` husk.
   // Content words are untouched — only the join seam is cleaned.
-  const normalizedReason = [...new Set(reasonParts)].join(" · ").trim().replace(/^[,;:]+/, "").trim();
+  // A token moved out of `… existed · path:line` left the reason ending in a
+  // bare `·`, which the join below then doubled (`existed · · path`). Trim
+  // separator husks from every part before joining.
+  const seam = (part: string): string => part.replace(/^[\s\u00b7,;:]+|[\s\u00b7,;:]+$/gu, "");
+  const normalizedReason = [...new Set(reasonParts.map(seam).filter(Boolean))].join(" · ").trim().replace(/^[,;:]+/, "").trim();
   // v0.39.23 (field 2026-10-10 — Clean-Web card `- , - with …`): the same
   // stranded-punctuation husk can lead the outcome when the agent doubles
   // punctuation around the em-dash split. Strip it like the reason husk.
@@ -571,7 +602,7 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   return {
     // Chat removes machine receipts; the archive keeps the full evidence
     // prose. The outcome/reason split itself is shared by both surfaces.
-    outcome: stripHusk(chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome)),
+    outcome: sentenceCase(stripHusk(chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome))),
     reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
     evidence: parsed.evidence,
   };
@@ -903,7 +934,7 @@ export function splitReportTitle(text: string, limit = RICH_HEADLINE_CHARS): { t
 }
 
 export function requestEchoHeadline(kind: "Done" | "Aborted", outcome: string): string {
-  return `## ${kind} \u2014 ${splitReportTitle(outcome).title}`;
+  return `## ${kind} \u2014 ${sentenceCase(splitReportTitle(outcome).title)}`;
 }
 
 /** The prose lede under the headline. Empty when the headline already carries
@@ -1335,14 +1366,14 @@ export function buildRichTerminalParts(args: {
     const [head, ...rest] = expandInlineList(body);
     // The section itself names the action, so the per-line `**Next** —` prefix
     // is dropped on BOTH surfaces (field 2026-11-11).
-    if (head) nextLines.push(`- ${head}`);
+    if (head) nextLines.push(`- ${sentenceCase(head)}`);
     nextLines.push(...rest);
   }
   const remainingLines: string[] = [];
   for (const detail of next.filter((d) => /^\s*(?:Left out|Unresolved)\s*:/i.test(d))) {
     const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
     const [head, ...rest] = expandInlineList(body);
-    remainingLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
+    remainingLines.push(`- **${lead}** — ${sentenceCase(head ?? "")}`.trimEnd());
     remainingLines.push(...rest);
     if (/^\s*Unresolved\s*:/i.test(detail)) {
       // Paired actions relocate verbatim (the ### Next rendering, moved
@@ -1371,6 +1402,7 @@ export function buildRichTerminalParts(args: {
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
     ledeLines: reportLede(outcome),
     ...(args.changeLine ? { changeLine: sanitizeDisplayText(args.changeLine) } : {}),
+    ...(args.chat && objectiveReminder(args.objective) ? { goalLine: `Goal: ${objectiveReminder(args.objective)}` } : {}),
     // v0.39.71 (F): only 5 of 40 recent claims grouped their changes by area,
     // so most cards said WHAT changed only in prose. Without groups, name the
     // largest files (Codex/OpenCode shape); with groups, the areas do it.
@@ -1413,8 +1445,16 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // The prose lede: the whole outcome sentence under the shortened headline
   // (field 2026-11-11). Absent when the headline already carries it.
   if ((parts.ledeLines ?? []).length > 0) lines.push(...(parts.ledeLines ?? []).map((line) => sanitizeDisplayText(line)), "");
-  if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
-  if (parts.changeLine) {
+  // Context block (chat): what was asked, then how long it took and how much
+  // changed on ONE line. The diff stat folds into the meta line unless a file
+  // list follows it, in which case it heads that list.
+  const foldChange = Boolean(parts.changeLine && !(parts.changeFiles ?? []).length && parts.durationLine && parts.chat);
+  const meta = parts.durationLine
+    ? (foldChange ? parts.durationLine.replace(/\*$/, ` \u00b7 ${sanitizeDisplayText(parts.changeLine!).replace(/[*]/g, "")}*`) : parts.durationLine)
+    : null;
+  if (parts.goalLine) lines.push(`*${sanitizeDisplayText(parts.goalLine).replace(/[*]/g, "")}*`, "");
+  if (meta) lines.push(sanitizeDisplayText(meta), "");
+  if (parts.changeLine && !foldChange) {
     lines.push(sanitizeDisplayText(parts.changeLine));
     for (const row of parts.changeFiles ?? []) lines.push(`- \`${sanitizeDisplayText(row).replace(/`/g, "")}\``);
     lines.push("");
@@ -1779,6 +1819,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // for a claim that supplied no gate inventory.
   const richParts = buildRichTerminalParts({
     chat: true,
+    kind: input.status === "complete" ? "Done" : "Aborted",
     showVerification: input.showVerification,
     outcome: richBrief.outcome,
     details: withoutStaleNext(richDetails),
