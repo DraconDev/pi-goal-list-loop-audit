@@ -7,7 +7,9 @@ import {
   buildContinuationContent,
   buildMarkerContent,
   continuationPrompt,
+  forgetDeliveredReworkContext,
   needsFullContinuation,
+  __testOnlyRecordDeliveredPendingTasks,
   resetContinuationInitialSend,
   sendContinuation,
 } from "../extensions/goal-continuation.js";
@@ -159,6 +161,48 @@ test("v0.38.94: rebind reset re-arms the one full brief (fresh context)", async 
   await tick(80);
   assert.equal(pi.sent.length, 3, "post-rebind send dispatches");
   assertFullBrief(pi.sent[2]?.message.content ?? "", cleanGoal({ id }));
+});
+
+test("an auditor TODO list already delivered rides the marker; a changed list goes full", () => {
+  const goal = cleanGoal({ id: "20261118000000-todos01", pendingTasks: ["fix the race", "pin it"] });
+  assert.equal(needsFullContinuation(goal), true, "an undelivered TODO list teaches in a full brief");
+  __testOnlyRecordDeliveredPendingTasks(goal.id, goal.pendingTasks);
+  assert.equal(needsFullContinuation(goal), false, "the same list on the next turn is steady state");
+  assert.equal(needsFullContinuation({ ...goal, pendingTasks: ["fix the race", "pin it", "and the docs"] }), true, "a changed list is a delta");
+  assert.equal(needsFullContinuation({ ...goal, id: "20261118000000-todos02" }), true, "delivery is per goal");
+  forgetDeliveredReworkContext();
+  assert.equal(needsFullContinuation(goal), true, "after compaction the list teaches again");
+});
+
+test("field 2026-11-18: rework turns send the TODO brief once, then markers", async () => {
+  const cwd = tmpCwd();
+  const id = `20261118000001-todos${Date.now() % 100000}`;
+  const goal = cleanGoal({ id, pendingTasks: ["fix the race in the settle path"] });
+  setGlobalAutoResume(true);
+  seedState(cwd, { goal, list: [] });
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `todos-${id}` } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick(80);
+  await sendContinuation(id);
+  await tick(80);
+  const first = pi.sent[0]?.message.content ?? "";
+  assert.match(first, /AUDITOR TODO LIST/, "the first send carries the TODO list");
+  await pi.fire("before_agent_start", { prompt: first }, ctx);
+  await tick(80);
+  await sendContinuation(id);
+  await tick(80);
+  assert.equal(pi.sent.length, 2);
+  assert.equal(pi.sent[1]?.message.content, buildMarkerContent(id), "an unchanged TODO list does not resend ~28 KB");
+});
+
+test("session_compact forgets delivered rework context", () => {
+  const src = fs.readFileSync(new URL("../extensions/loops/goal-activation.ts", import.meta.url), "utf-8");
+  const at = src.indexOf('appendLedger(ctx.cwd, "session_compact", {});');
+  assert.ok(at > 0);
+  assert.ok(src.slice(at, at + 400).includes("forgetDeliveredReworkContext()"), "compaction re-arms the full brief for the audit report and TODO list");
 });
 
 test("sendContinuation wires the delta-only branch with kind ledger", () => {
