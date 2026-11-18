@@ -315,7 +315,7 @@ export function buildSettingsRows(
     {
       id: "decisionAutoSelectMinutes",
       section: "keep-going",
-      label: "Auto-select stuck decisions (minutes)",
+      label: "Stuck-decision auto-select",
       valueText: show("decisionAutoSelectMinutes", "off"),
       sourceText: src("decisionAutoSelectMinutes"),
       description:

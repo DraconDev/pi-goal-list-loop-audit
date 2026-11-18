@@ -194,7 +194,12 @@ export class MockUi {
   statuses: Record<string, string | undefined> = {};
   widgets: Record<string, unknown> = {};
   confirmImpl: ((title: string, message: string) => Promise<boolean>) | undefined = async () => true;
-  selectImpl: ((title: string, options: string[]) => Promise<string | undefined>) | undefined = async () => undefined;
+  /** v0.39.x: the third argument carries the host dialog options (a timeout
+   * renders pi's countdown and auto-dismisses). Recorded in `selectOpts` so a
+   * test can prove the stuck-question clock actually reaches the dialog. */
+  selectImpl: ((title: string, options: string[], opts?: { timeout?: number }) => Promise<string | undefined>) | undefined = async () => undefined;
+  /** Options of the last select() call: `{ timeout }` when a countdown was armed. */
+  lastSelectOpts: { timeout?: number } | undefined;
   inputImpl: ((title: string, placeholder?: string) => Promise<string | undefined>) | undefined = async () => undefined;
   // Default undefined so `custom()` reaches its own documented fallback: with no
   // explicit answer configured the card is decided from `confirmImpl` (true =
@@ -223,8 +228,9 @@ export class MockUi {
   confirm(title: string, message: string): Promise<boolean> {
     return this.confirmImpl ? this.confirmImpl(title, message) : Promise.resolve(true);
   }
-  select(title: string, options: string[]): Promise<string | undefined> {
-    return this.selectImpl ? this.selectImpl(title, options) : Promise.resolve(undefined);
+  select(title: string, options: string[], opts?: { timeout?: number }): Promise<string | undefined> {
+    this.lastSelectOpts = opts;
+    return this.selectImpl ? this.selectImpl(title, options, opts) : Promise.resolve(undefined);
   }
   input(title: string, placeholder?: string): Promise<string | undefined> {
     return this.inputImpl ? this.inputImpl(title, placeholder) : Promise.resolve(undefined);
