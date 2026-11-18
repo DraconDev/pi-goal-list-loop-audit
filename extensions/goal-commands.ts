@@ -1038,7 +1038,19 @@ async function actOnDecisionOption(
  *
  * Returns "adopted" | "refused" | "stale" (the decision changed under us).
  */
-async function adoptRecommendedDecision(
+/** Adopt the recommended decision for the goal's OWN current pause — the
+ * heartbeat's entry point (it has no captured Goal handle). Returns "stale"
+ * when the pause moved on, so a caller never adopts a different question. */
+export async function adoptRecommendedDecisionNow(
+  ctx: ExtensionContext,
+  minutes: number,
+): Promise<"adopted" | "refused" | "stale"> {
+  const g = pendingDecision();
+  if (!g) return "stale";
+  return adoptRecommendedDecision(g, ctx, minutes);
+}
+
+export async function adoptRecommendedDecision(
   g: Goal,
   ctx: ExtensionContext,
   minutes?: number,
