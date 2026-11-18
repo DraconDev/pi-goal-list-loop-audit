@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### A decision pause can answer itself after a delay, so an odd question never parks the work forever (2026-11-18)
+
+- **New setting `decisionAutoSelectMinutes` (off by default).** Turn it on in `/glla` → **Keep-going** → *Stuck-decision auto-select* (2 / 10 / 30 minutes). After that long with nobody answering, the RECOMMENDED decision option is adopted and the work continues. When it is unset, a decision pause waits for you forever — exactly as before.
+- **Only a continue-work answer may be adopted.** `/goal resume`, `/list resume`, `/list next`, `/loop resume`, and a prose/content option the picker would steer to the agent are eligible. Cancel, accept-with-follow-ups, tweak, pause, stop/clear, wipe, any `/glla` action, and verification-contract amendments are NOT: those end or rewrite the work, so they keep waiting. An ineligible recommendation still reports once (`decision_auto_select_refused`) that your deadline passed and why it declined.
+- **Both surfaces share one clock.** The `/goal decide` picker carries pi's own dialog countdown and adopts at expiry; a heartbeat backstop adopts the same pause when no dialog ever opened (headless rig, Decision popup off, an Escape, a restart mid-question). An Escape *before* the deadline leaves the pause alone — the adoption happens only when the durable clock says the delay elapsed.
+- **The clock measures the pause EPISODE.** A new `pauseDecidedAt` stamp is written when a pause lands; later goal writes (counter bumps, history appends) do not restart the fuse, so an active goal cannot push its own question out of reach.
+- **The adoption is an assumption, not a silent choice.** It is ledgered (`decision_auto_select_adopted` with the waited time and the option) and recorded on the goal's `autoDefaultLog`, which is what the agent carries into the completion recap. The widget card also states it plainly: `auto-answers with option N in Xm unless you decide first`.
+- **Your own holds still win.** `/glla pause` and the automatic load hold freeze the clock exactly as they freeze every other automatic dispatch, and a stale/handed-off host never consumes a pause it cannot resume.
+- Coverage: `tests/decision-auto-select.test.ts`.
+
 ## 0.40.1 — status cards and an honest "waiting for the conversation" state (2026-11-13)
 
 ### Status cards: one place for the version, and an honest "waiting for the conversation" state (2026-11-13)
