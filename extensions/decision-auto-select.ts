@@ -2,67 +2,87 @@
  * decision-auto-select.ts — the "don't get stuck on an odd question" clock.
  *
  * A decision pause waits for a human. When nobody is there (a long goal, an
- * unattended window, a popup the user walked away from), that wait has no
- * clock and the objective parks indefinitely — field complaint: "we get
- * stuck in case we are thrown an odd question".
+ * unattended window, a picker the user walked away from), that wait has no
+ * clock and the objective parks indefinitely — field complaint: "we get stuck
+ * in case we are thrown an odd question".
  *
  * The operator opts in with `decisionAutoSelectMinutes` (off by default; the
- * menu default delay is 10 minutes). When armed, the RECOMMENDED option may
- * be adopted automatically after that delay — but only when it is a
- * continue-work action. Cancel, accept-as-complete, tweak, wipe, contract
- * amendments and generic prose choices are never adopted: those either end
- * the work, rewrite its scope, or decide content the operator was asked
- * about. Adopting them unattended would be a consent substitution, not an
- * unsticking.
+ * menu shows 10 minutes as the suggested fuse). When armed, the RECOMMENDED
+ * option may be adopted after that delay — but only a continue-work answer:
+ *
+ *   - a continue-work glla command (`/goal resume`, `/list resume`,
+ *     `/list next`, `/loop resume`) is executed, or
+ *   - a prose/content choice is delivered to the agent as the picker itself
+ *     does, then the work resumes.
+ *
+ * Cancel, accept-as-complete, tweak, pause, clear, stop, wipe, `/glla`
+ * actions and verification-contract amendments are NEVER adopted: each one
+ * ends the work, rewrites its scope, or answers content the operator was the
+ * one asked about. An absent agent may not substitute consent for those.
  *
  * Two surfaces share this module so they cannot drift:
- *   - the `/goal decide` picker renders the host countdown and adopts at
+ *   - the `/goal decide` picker renders the remaining time and adopts at
  *     expiry (goal-commands.ts);
  *   - the heartbeat's durable backstop adopts a lingering decision pause even
  *     when no dialog ever opened (headless, popup disabled, Escape, restart).
  *
- * Pure module: types only, no settings/state/UI imports — the caller supplies
- * the configured delay and the observation time.
+ * Pure module: types only, no settings/state/UI imports — callers supply the
+ * configured delay and the observation time.
  */
 
 import type { Goal } from "./goal-loop-core.js";
 
-/** Default delay the menu shows when the operator turns auto-select on. */
+/** Suggested fuse the menu offers when the operator turns auto-select on. */
 export const DECISION_AUTO_SELECT_DEFAULT_MINUTES = 10;
 /** Upper bound keeps a saved value sane; a longer fuse is just "off". */
 export const DECISION_AUTO_SELECT_MAX_MINUTES = 24 * 60;
+/** A picker countdown shorter than this is pointless — below it, adopt now. */
+export const DECISION_AUTO_SELECT_MIN_COUNTDOWN_MS = 5_000;
 
-/** The only decision actions an absent operator may adopt: they keep the
- * objective moving. Everything else (cancel, accept, tweak, wipe, contract
- * amendment) needs a person. */
-const CONTINUE_WORK_COMMANDS: ReadonlyArray<{ group: string; verb: string }> = [
+/** Actions an absent operator MAY adopt: they keep the objective moving. */
+const CONTINUE_WORK_ACTIONS: ReadonlyArray<{ group: string; verb: string }> = [
   { group: "goal", verb: "resume" },
-  { group: "list", verb: "next" },
   { group: "list", verb: "resume" },
+  { group: "list", verb: "next" },
   { group: "loop", verb: "resume" },
 ];
 
+/** Actions that end, rewrite, or park the work — a person's call, always. */
+const RESERVED_ACTIONS: ReadonlyArray<{ group: string; verb: string }> = [
+  { group: "goal", verb: "cancel" },
+  { group: "goal", verb: "accept" },
+  { group: "goal", verb: "tweak" },
+  { group: "goal", verb: "pause" },
+  { group: "list", verb: "cancel" },
+  { group: "list", verb: "pause" },
+  { group: "list", verb: "clear" },
+  { group: "list", verb: "remove" },
+  { group: "list", verb: "rm" },
+  { group: "loop", verb: "stop" },
+  { group: "loop", verb: "cancel" },
+  { group: "loop", verb: "pause" },
+  { group: "loop", verb: "finish" },
+];
+
 /** A glla slash command named inside an option label. */
-interface NamedCommand {
+interface NamedAction {
   group: string;
   verb: string;
-  /** `(…/goal resume)` — the picker runs it; otherwise the label is prose
-   * that the picker steers to the agent before resuming. */
-  executable: boolean;
 }
 
-function namedCommands(label: string): NamedCommand[] {
-  const out: NamedCommand[] = [];
-  const re = /\/(goal|list|loop|glla)\s+([a-z]+)/g;
-  for (const match of label.matchAll(re)) {
-    const group = match[1]!;
-    const verb = match[2]!;
-    // The picker's executable form is `(<group> <verb>)` at the end of the
-    // label; that regex is duplicated in goal-commands.ts by contract.
-    out.push({ group, verb, executable: new RegExp(`^\\(\\/${group}\\s+${verb}\\)`, "i").test(label.slice(match.index - 1)) });
+/** The picker's executable suffix form: `Label (/goal resume)`. */
+const EXECUTABLE_SUFFIX = /\(\/(goal|list|loop|glla)\s+([a-z]+)\)\s*$/;
+
+function namedActions(label: string): NamedAction[] {
+  const out: NamedAction[] = [];
+  for (const match of label.matchAll(/\/(goal|list|loop|glla)\s+([a-z]+)/g)) {
+    out.push({ group: match[1]!, verb: match[2]! });
   }
   return out;
 }
+
+const isNamed = (action: NamedAction, table: ReadonlyArray<NamedAction>): boolean =>
+  table.some((entry) => entry.group === action.group && entry.verb === action.verb);
 
 /** The clean option text (the picker appends "  (recommended)" for display). */
 export function decisionOptionText(option: string): string {
@@ -70,42 +90,40 @@ export function decisionOptionText(option: string): string {
 }
 
 export type AutoSelectVerdict =
-  | { adoptable: true; shape: "command" | "steer"; verb: string }
+  | { adoptable: true; shape: "command" | "steer" }
   | { adoptable: false; reason: string };
 
 /**
  * Can an absent operator adopt this recommended option?
  *
- * The rule is mechanical, never a judgment about the prose: exactly one glla
- * command may appear in the label, it must be a continue-work verb, and no
- * `/glla` action may appear at all (a recommendation that asks the operator
- * to change settings is a person's task, not work to resume).
+ * Mechanical, never a judgment about the prose: a label that NAMES a reserved
+ * action is out; a label that names a `/glla` action is out (that is the
+ * operator's own settings task); anything else is a continue-work answer —
+ * either an executable continue command, or content the picker delivers to
+ * the agent before resuming.
  */
 export function classifyAutoSelectOption(option: string | undefined): AutoSelectVerdict {
   const label = option ? decisionOptionText(option).trim() : "";
   if (!label) return { adoptable: false, reason: "the option text was empty" };
-  const commands = namedCommands(label);
-  if (commands.length === 0) {
-    return {
-      adoptable: false,
-      reason: "it is a prose choice with no continue-work command (only `/goal resume`-class options can be adopted)",
-    };
+  const actions = namedActions(label);
+  const reserved = actions.find((action) => isNamed(action, RESERVED_ACTIONS));
+  if (reserved) {
+    return { adoptable: false, reason: `\`/${reserved.group} ${reserved.verb}\` ends, rewrites, or parks the work` };
   }
-  if (commands.some((command) => command.group === "glla")) {
-    return { adoptable: false, reason: "it names a /glla action, which is the operator's own task" };
+  const settingsTask = actions.find((action) => action.group === "glla");
+  if (settingsTask) {
+    return { adoptable: false, reason: "it asks for a /glla change, which is the operator's own task" };
   }
-  if (commands.length > 1) {
-    return { adoptable: false, reason: "it names more than one action, so the real choice is still open" };
+  const executable = label.match(EXECUTABLE_SUFFIX);
+  if (executable) {
+    const [, group, verb] = executable;
+    const action = { group: group!, verb: verb! };
+    // An executable continue-work command is the picker's own action. Any
+    // other executable command that is neither reserved nor continue-work
+    // (a verb this build does not know) stays a plain resume of the prose.
+    return { adoptable: true, shape: isNamed(action, CONTINUE_WORK_ACTIONS) ? "command" : "steer" };
   }
-  const only = commands[0]!;
-  const allowed = CONTINUE_WORK_COMMANDS.some((entry) => entry.group === only.group && entry.verb === only.verb);
-  if (!allowed) {
-    return {
-      adoptable: false,
-      reason: `\`/${only.group} ${only.verb}\` does not keep the work going`,
-    };
-  }
-  return { adoptable: true, shape: only.executable ? "command" : "steer", verb: `/${only.group} ${only.verb}` };
+  return { adoptable: true, shape: "steer" };
 }
 
 /** The configured delay, or undefined when the feature is off. */
@@ -130,48 +148,73 @@ export interface DecisionAutoSelectCandidate {
   verdict: AutoSelectVerdict;
 }
 
+type AutoSelectGoal = Pick<Goal,
+  "status" | "pauseKind" | "pauseOptions" | "pauseRecommended" | "pauseContractAmendment">;
+
 /** Everything the two surfaces need before they advertise or adopt a pick. */
-export function decisionAutoSelectCandidate(
-  goal: Pick<Goal, "status" | "pauseKind" | "pauseOptions" | "pauseRecommended" | "pauseContractAmendment"> | null | undefined,
-): DecisionAutoSelectCandidate | undefined {
+export function decisionAutoSelectCandidate(goal: AutoSelectGoal | null | undefined): DecisionAutoSelectCandidate | undefined {
   if (!goal || goal.status !== "paused" || goal.pauseKind !== "decision") return undefined;
   if (!goal.pauseOptions || goal.pauseOptions.length === 0) return undefined;
   const index = typeof goal.pauseRecommended === "number" ? Math.floor(goal.pauseRecommended) : 0;
   if (index < 1 || index > goal.pauseOptions.length) return undefined;
   const option = goal.pauseOptions[index - 1]!;
-  // A contract amendment changes what "done" means. Its recommended option
-  // is Accept, and that needs a person even when the command inside happens
-  // to be a plain test command.
+  // A contract amendment changes what "done" means. Its recommended option is
+  // Accept, and that needs a person even when the command inside it is plain.
   const verdict: AutoSelectVerdict = goal.pauseContractAmendment
     ? { adoptable: false, reason: "it proposes a verification-contract amendment, which needs your explicit consent" }
     : classifyAutoSelectOption(option);
   return { index, option, verdict };
 }
 
-/** Is this pause past its configured delay? */
-export function decisionAutoSelectDue(
-  goal: Pick<Goal, "status" | "pauseKind" | "pauseOptions" | "pauseRecommended" | "pauseContractAmendment" | "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
-  minutes: unknown,
-  now: number,
-): boolean {
-  const resolved = resolveDecisionAutoSelectMinutes(minutes);
-  if (resolved === undefined) return false;
-  if (!decisionAutoSelectCandidate(goal)) return false;
-  const since = decisionPauseSince(goal);
-  if (since === undefined) return false;
-  return now - since >= resolved * 60_000;
-}
-
 /** Remaining milliseconds until the durable adoption, or undefined when the
- * clock is off. Negative/zero means "due now". */
+ * clock is off. Zero/negative means "due now". */
 export function decisionAutoSelectRemainingMs(
-  goal: Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
   minutes: unknown,
   now: number,
 ): number | undefined {
   const resolved = resolveDecisionAutoSelectMinutes(minutes);
   if (resolved === undefined) return undefined;
+  const candidate = decisionAutoSelectCandidate(goal);
+  if (!candidate || !candidate.verdict.adoptable) return undefined;
   const since = decisionPauseSince(goal);
   if (since === undefined) return undefined;
   return since + resolved * 60_000 - now;
+}
+
+/** Is this pause past its configured delay? */
+export function decisionAutoSelectDue(
+  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  minutes: unknown,
+  now: number,
+): boolean {
+  const remaining = decisionAutoSelectRemainingMs(goal, minutes, now);
+  return remaining !== undefined && remaining <= 0;
+}
+
+/** The picker countdown: the durable clock, floored so a just-due pick can
+ * still be read and cancelled. Undefined keeps the picker timeless. */
+export function decisionAutoSelectCountdownMs(
+  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  minutes: unknown,
+  now: number,
+): number | undefined {
+  const remaining = decisionAutoSelectRemainingMs(goal, minutes, now);
+  if (remaining === undefined) return undefined;
+  return Math.max(DECISION_AUTO_SELECT_MIN_COUNTDOWN_MS, remaining);
+}
+
+/** One-line card truth for an armed pause, or undefined when the clock is off
+ * or the recommendation may not be adopted. */
+export function decisionAutoSelectCardLine(
+  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  minutes: unknown,
+  now: number,
+): string | undefined {
+  const candidate = decisionAutoSelectCandidate(goal);
+  if (!candidate || !candidate.verdict.adoptable) return undefined;
+  const remaining = decisionAutoSelectRemainingMs(goal, minutes, now);
+  if (remaining === undefined) return undefined;
+  const when = remaining <= 0 ? "now" : `in ${Math.max(1, Math.ceil(remaining / 60_000))}m`;
+  return `auto-answers with option ${candidate.index} ${when} unless you decide first`;
 }
