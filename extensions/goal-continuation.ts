@@ -326,6 +326,31 @@ let continuationInitialFullSentFor: string | null = null;
 export function resetContinuationInitialSend(): void {
   continuationInitialFullSentFor = null;
   deliveredAuditFingerprints.clear();
+  deliveredPendingTasks.clear();
+}
+
+/** Field 2026-11-18: per-goal hash of the auditor TODO list already delivered
+ * in a full brief. `pendingTasks` forced a full ~28 KB send on EVERY rework
+ * turn: in the local record 160 of 258 recent full sends carried an unchanged
+ * TODO list the model had already been given. A new or edited list still goes
+ * full; an unchanged one rides the marker like any other steady-state turn. */
+const deliveredPendingTasks = new Map<string, string>();
+function pendingTasksFingerprint(tasks: readonly string[] | undefined): string | undefined {
+  if (!tasks || tasks.length === 0) return undefined;
+  return createHash("sha256").update(JSON.stringify(tasks), "utf8").digest("hex").slice(0, 16);
+}
+
+/** A compaction may summarize away the full brief that carried the audit
+ * report and the TODO list, so the next send must teach them again. Cheaper
+ * than the alternative: one full send per compaction during rework instead of
+ * one per turn. */
+export function forgetDeliveredReworkContext(): void {
+  deliveredAuditFingerprints.clear();
+  deliveredPendingTasks.clear();
+}
+export function __testOnlyRecordDeliveredPendingTasks(goalId: string, tasks: readonly string[] | undefined): void {
+  const fp = pendingTasksFingerprint(tasks);
+  if (fp) deliveredPendingTasks.set(goalId, fp); else deliveredPendingTasks.delete(goalId);
 }
 export function __testOnlyRecordDeliveredAudit(goalId: string, fp: AuditEvidenceFingerprint | undefined): void {
   if (fp) deliveredAuditFingerprints.set(goalId, fp); else deliveredAuditFingerprints.delete(goalId);
@@ -1579,7 +1604,8 @@ export function buildMarkerContent(goalId: string): string {
 export function needsFullContinuation(goal: Goal): boolean {
   if (goal.repairTarget) return true;
   if (goal.autoResumedAt) return true;
-  if (!auditorSurfaceSuppressed(goal.id) && goal.pendingTasks && goal.pendingTasks.length > 0) return true;
+  if (!auditorSurfaceSuppressed(goal.id) && goal.pendingTasks && goal.pendingTasks.length > 0
+    && pendingTasksFingerprint(goal.pendingTasks) !== deliveredPendingTasks.get(goal.id)) return true;
   const lastAudit = goal.auditHistory?.[goal.auditHistory.length - 1];
   if (lastAudit && lastAudit.report && !auditorSurfaceSuppressed(goal.id)) {
     const fp = auditEvidenceFingerprint(lastAudit);
@@ -1779,6 +1805,10 @@ export function sendContinuation(goalId: string): void {
       continuationInitialFullSentFor = goalId;
       const fp = auditEvidenceFingerprint(goalForSend.auditHistory?.[goalForSend.auditHistory.length - 1]);
       if (fp) deliveredAuditFingerprints.set(goalId, fp);
+      // The TODO list rides the full brief only while the auditor surface is
+      // shown; a suppressed surface delivered nothing, so record nothing.
+      const tasksFp = auditorSurfaceSuppressed(goalId) ? undefined : pendingTasksFingerprint(goalForSend.pendingTasks);
+      if (tasksFp) deliveredPendingTasks.set(goalId, tasksFp); else deliveredPendingTasks.delete(goalId);
     }
     continuationRearmStreak = 0; continuationRearmSince = 0; // v0.28.5 (E3): an accepted dispatch clears the storm
     appendLedger(ctx.cwd, "goal_continuation_sent", { goalId, attemptId: attempt.id, generation: attempt.generation, kind, payloadChars: content.length, ...(busyBypass ? { busyBypass: true } : {}) });

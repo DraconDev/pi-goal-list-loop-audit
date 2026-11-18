@@ -190,6 +190,7 @@ import {
   setContinuationRearmSince,
   resetContinuationDispatchState,
   resetContinuationInitialSend,
+  forgetDeliveredReworkContext,
   noteUserMessageForDispatch,
   sendTerminalCompletionNotice,
   type ContinuationFlags,
@@ -1683,6 +1684,9 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     if (!isSupervising()) return;
     clearBoundaryCompactionAttempt(ctx);
     appendLedger(ctx.cwd, "session_compact", {});
+    // The compacted history may no longer hold the audit report or the TODO
+    // list, so the next send re-teaches them in a full brief.
+    forgetDeliveredReworkContext();
     // v0.28.24: a compaction is LEGITIMATE busy time — reset the send-rearm
     // storm streaks (π-web nearly escalated a "send-retry storm" pause during
     // a 3.5-minute compact) and open the post-compaction stall grace.
