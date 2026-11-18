@@ -34,6 +34,9 @@ import { Type } from "typebox";
 // (positioning doc invariant #2). Property reads on the imported binding are
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
+// The stuck-question clock's suggested fuse (single source with the module
+// that classifies which answers may be adopted).
+import { DECISION_AUTO_SELECT_DEFAULT_MINUTES } from "../decision-auto-select.js";
 
 import {
   type Goal,
@@ -2021,6 +2024,27 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         saveSettings("global", ctx, { mechanicalLoadScale: v.startsWith("off") ? false : undefined });
         ctx.ui.notify(v.startsWith("off") ? "Mechanical load scaling OFF — fixed gate budgets." : "Mechanical load scaling ON — budgets scale to 2× under saturation.", "info");
       }
+      return;
+    }
+    case "decisionAutoSelectMinutes": {
+      // The stuck-question clock: after this long with nobody answering, the
+      // RECOMMENDED continue-work option is adopted (and logged as an
+      // assumption). Everything that ends or rewrites the work still waits.
+      const v = await ctx.ui.select("Auto-select stuck decisions — adopt the recommended continue-work option when nobody answers for", [
+        `10 minutes — suggested fuse (default)`,
+        "2 minutes — short fuse, fastest unsticking",
+        "30 minutes — long fuse, you almost always decide first",
+        "off — decision pauses wait for you forever (default)",
+      ]);
+      if (!v) return;
+      if (v.startsWith("off")) {
+        saveSettings("global", ctx, { decisionAutoSelectMinutes: undefined });
+        ctx.ui.notify("Decision auto-select OFF — every decision pause waits for you.", "info");
+        return;
+      }
+      const minutes = v.startsWith("2") ? 2 : v.startsWith("30") ? 30 : DECISION_AUTO_SELECT_DEFAULT_MINUTES;
+      saveSettings("global", ctx, { decisionAutoSelectMinutes: minutes });
+      ctx.ui.notify(`Decision auto-select ON after ${minutes}m — only the recommended continue-work option is adopted; cancel, accept, tweak, pause and contract amendments still wait for you. /goal decide answers sooner.`, "info");
       return;
     }
     case "decisionPauseBudget": {
