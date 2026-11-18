@@ -187,7 +187,14 @@ export function decisionAutoSelectRemainingMs(
   return since + resolved * 60_000 - now;
 }
 
-/** Is this pause past its configured delay? */
+/** Is this pause past its configured delay (for ANY recommended option)?
+ *
+ * Armed means "the operator's own deadline passed". It does NOT mean an
+ * adoption may happen: eligibility is `decisionAutoSelectAdoptable`. The
+ * distinction is what lets a reserved recommendation (cancel, accept, tweak…)
+ * still tell the operator that their clock expired while refusing to answer
+ * the question for them.
+ */
 export function decisionAutoSelectDue(
   goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
   minutes: unknown,
@@ -195,6 +202,18 @@ export function decisionAutoSelectDue(
 ): boolean {
   const remaining = decisionAutoSelectRemainingMs(goal, minutes, now);
   return remaining !== undefined && remaining <= 0;
+}
+
+/** Is the RECOMMENDED option both eligible for unattended adoption AND due?
+ * This is the ONE gate the picker and the heartbeat share before adopting. */
+export function decisionAutoSelectAdoptable(
+  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  minutes: unknown,
+  now: number,
+): boolean {
+  const candidate = decisionAutoSelectCandidate(goal);
+  if (!candidate || !candidate.verdict.adoptable) return false;
+  return decisionAutoSelectDue(goal, minutes, now);
 }
 
 /** The picker countdown: the durable clock, floored so a just-due pick can

@@ -42,6 +42,7 @@ import { readState } from "../extensions/goal-loop-core.js";
 import {
   DECISION_AUTO_SELECT_DEFAULT_MINUTES,
   classifyAutoSelectOption,
+  decisionAutoSelectAdoptable,
   decisionAutoSelectCardLine,
   decisionAutoSelectCountdownMs,
   decisionAutoSelectDue,
@@ -219,7 +220,8 @@ test("an ineligible recommendation has no clock at all", () => {
     pauseDecidedAt: new Date(Date.now() - 600 * 60_000).toISOString(),
     updatedAt: new Date().toISOString(),
   } as Parameters<typeof decisionAutoSelectDue>[0];
-  assert.equal(decisionAutoSelectDue(goal, 10, Date.now()), false, "cancel is never auto-adopted");
+  assert.equal(decisionAutoSelectAdoptable(goal, 10, Date.now()), false, "cancel is never auto-adopted");
+  assert.equal(decisionAutoSelectDue(goal, 10, Date.now()), true, "but the operator's clock still expired — that is reported once");
   assert.equal(decisionAutoSelectCardLine(goal, 10, Date.now()), undefined, "and the card makes no promise");
   assert.equal(
     decisionAutoSelectCardLine({ ...goal, pauseOptions: ["Continue (/goal resume)"], pauseRecommended: 1 }, 10, Date.now()),
@@ -242,7 +244,8 @@ test("a contract amendment never gets a clock, even with a plain command inside"
     pauseDecidedAt: new Date(Date.now() - 600 * 60_000).toISOString(),
     updatedAt: new Date().toISOString(),
   } as Parameters<typeof decisionAutoSelectDue>[0];
-  assert.equal(decisionAutoSelectDue(goal, 5, Date.now()), false, "criteria changes need a person");
+  assert.equal(decisionAutoSelectAdoptable(goal, 5, Date.now()), false, "criteria changes need a person");
+  assert.equal(decisionAutoSelectCardLine(goal, 5, Date.now()), undefined, "and the card promises nothing");
 });
 
 // ---------------------------------------------------------------------------
@@ -380,7 +383,8 @@ test("a reserved recommendation stays parked and is refused once, not every tick
     assert.equal(g.status, "paused", "accept-and-archive must never happen without a person");
     assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_adopted").length, 0);
     assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_refused").length, 1, "said once per episode");
-    assert.ok(pi.matching("auto-select declined").length >= 1, "the operator is told why it waited");
+    assert.ok(ledger(cwd).some((e) => e.type === "decision_auto_select_refused" && /ends, rewrites, or parks/.test(String(e.value?.reason))),
+      "the refusal names the real reason instead of a generic message");
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }

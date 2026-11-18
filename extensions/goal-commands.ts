@@ -23,8 +23,8 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 import { state, replaceState } from "./goal-state.js";
 import {
   decisionAutoSelectCandidate,
+  decisionAutoSelectAdoptable,
   decisionAutoSelectCountdownMs,
-  decisionAutoSelectDue,
   decisionOptionText,
   resolveDecisionAutoSelectMinutes,
 } from "./decision-auto-select.js";
@@ -1109,7 +1109,7 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
       // Escape and a host timeout both resolve undefined. A pick-less close is
       // only an ADOPTION when the durable clock says the delay elapsed — a
       // deliberate Escape before the deadline leaves the pause for the card.
-      if (pendingDecision() === g && decisionAutoSelectDue(g, minutes, Date.now())) {
+      if (pendingDecision() === g && decisionAutoSelectAdoptable(g, minutes, Date.now())) {
         await adoptRecommendedDecision(g, ctx, resolveDecisionAutoSelectMinutes(minutes));
       }
       return true; // The widget card remains the fallback
