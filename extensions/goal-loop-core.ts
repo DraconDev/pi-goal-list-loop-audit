@@ -1145,6 +1145,12 @@ export interface Goal {
   pauseOptions?: string[];
   /** v0.28.22: 1-based index into pauseOptions the agent recommends. */
   pauseRecommended?: number;
+  /** v0.39.x: ISO time the current pause EPISODE began — stamped by every
+   * pause write that lands fresh pause fields, so the auto-select clock
+   * (`decisionAutoSelectMinutes`) measures the real waiting time instead of
+   * `updatedAt` (which later touches bump). Absent on legacy records; readers
+   * fall back to `updatedAt`, which the pause write itself stamped. */
+  pauseDecidedAt?: string;
   /** Concrete consent proposal; acceptance must match this base before writing. */
   pauseContractAmendment?: { baseContract: string; baseRevision: number; amendment: ContractAmendment };
   /** v0.38.69 (Antigravity port): mid-run decision-pause accounting — every
