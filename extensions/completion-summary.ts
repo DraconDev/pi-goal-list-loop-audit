@@ -1452,7 +1452,12 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   const meta = parts.durationLine
     ? (foldChange ? parts.durationLine.replace(/\*$/, ` \u00b7 ${sanitizeDisplayText(parts.changeLine!).replace(/[*]/g, "")}*`) : parts.durationLine)
     : null;
-  if (parts.goalLine) lines.push(`*${sanitizeDisplayText(parts.goalLine).replace(/[*]/g, "")}*`, "");
+  // A Markdown hard break (two trailing spaces) keeps the ask and the meta in
+  // one block: two rows, no gap, no paragraph merge.
+  if (parts.goalLine) {
+    const goalRow = `*${sanitizeDisplayText(parts.goalLine).replace(/[*]/g, "")}*`;
+    lines.push(...(meta ? [`${goalRow}  `] : [goalRow, ""]));
+  }
   if (meta) lines.push(sanitizeDisplayText(meta), "");
   if (parts.changeLine && !foldChange) {
     lines.push(sanitizeDisplayText(parts.changeLine));
