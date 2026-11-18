@@ -79,6 +79,22 @@ use a genuine pause for decisions, user holds or manual-action blockers. Unknown
 worker ids are rejected. Legacy saved standby records have no provable ownership:
 GLLA requests an assessment once eligible, rather than promising automatic wake.
 
+**A decision pause can carry a clock of its own.** With
+`decisionAutoSelectMinutes` set (`/glla` → **Keep-going** → *Stuck-decision
+auto-select*), a decision that sits unanswered that long adopts its RECOMMENDED
+**continue-work** answer and the work continues. Only `/goal resume`,
+`/list resume`, `/list next`, `/loop resume`, and the content choice the picker
+would steer to the agent are eligible — cancel, accept-with-follow-ups, tweak,
+pause, stop/clear, wipe, any `/glla` action and verification-contract
+amendments keep waiting for you, and name once why they did
+(`decision_auto_select_refused`). The adoption is ledgered
+(`decision_auto_select_adopted`), stamped into the goal's `autoDefaultLog`, and
+shown on the card as `auto-answers with option N in Xm unless you decide
+first`, so it reaches the completion recap as an assumption rather than a
+silent choice. Unset (the default) keeps every decision paused indefinitely;
+`/glla pause` and the load hold freeze the clock like every other automatic
+dispatch.
+
 Use `/goal status`, `/list show`, or `/loop status` to inspect the checkpoint.
 On reload, GLLA reads only the saved identity-matching public status artifacts;
 completed, failed, stopped or missing results are assessed without discarding
