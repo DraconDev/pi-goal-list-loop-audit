@@ -166,17 +166,21 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   // v0.39.71 (2026-11-13): the template drops stale completion guidance and
   // operator-specific daemon detail — 25_372 chars / 25_470 UTF-8 bytes
   // per payload. Regenerated with scripts/measure-context-growth.mjs.
-  assert.equal(payload.length, 25_372);
-  assert.equal(new TextEncoder().encode(payload).byteLength, 25_470);
+  // Unreleased (2026-11-18): HUMAN_HANDOFF_GUIDANCE asks for a whole-objective
+  // summary with a worked example — +378 chars / +378 UTF-8 bytes / +382
+  // serialized bytes per payload (25_372 → 25_750 chars). Every row below
+  // moved by exactly that constant × continuations; shape is unchanged.
+  assert.equal(payload.length, 25_750);
+  assert.equal(new TextEncoder().encode(payload).byteLength, 25_848);
   assert.deepEqual(one, {
     messageCount: 3,
-    serializedBytes: 25_984,
-    textChars: 25_424,
-    estimatedTokens: 6_356,
+    serializedBytes: 26_366,
+    textChars: 25_802,
+    estimatedTokens: 6_451,
     gllaMessageCount: 1,
-    gllaSerializedBytes: 25_801,
-    gllaTextChars: 25_372,
-    gllaEstimatedTokens: 6_343,
+    gllaSerializedBytes: 26_183,
+    gllaTextChars: 25_750,
+    gllaEstimatedTokens: 6_438,
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 0,
     repeatedGllaSerializedBytes: 0,
@@ -212,16 +216,16 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   assert.equal(twelve.failedErrorOnlyCount, 0);
   assert.deepEqual(twelve, {
     messageCount: 14,
-    serializedBytes: 309_795,
-    textChars: 304_516,
-    estimatedTokens: 76_129,
+    serializedBytes: 314_379,
+    textChars: 309_052,
+    estimatedTokens: 77_263,
     gllaMessageCount: 12,
-    gllaSerializedBytes: 309_612,
-    gllaTextChars: 304_464,
-    gllaEstimatedTokens: 76_116,
+    gllaSerializedBytes: 314_196,
+    gllaTextChars: 309_000,
+    gllaEstimatedTokens: 77_250,
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 11,
-    repeatedGllaSerializedBytes: 283_811,
+    repeatedGllaSerializedBytes: 288_013,
     failedErrorOnlyCount: 0,
     unserializableMessageCount: 0,
     provider: {
@@ -305,10 +309,10 @@ test("reported checkpoint shape stays pinned across all probe sizes", () => {
   // scripts/measure-context-growth.mjs.
   assert.deepEqual(rows, [
     { continuations: 0,  messageCount: 2,  serializedBytes: 183,  textChars: 52,  estimatedTokens: 13,  gllaMessageCount: 0,  gllaSerializedBytes: 0,  gllaTextChars: 0,  gllaEstimatedTokens: 0,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,  provider: { sampleCount: 0,  inputTokens: 0,  outputTokens: 0,  cacheReadTokens: 0,  cacheWriteTokens: 0,  totalTokens: 0,  firstInputTokens: null,  latestInputTokens: null,    inputTokenDelta: null, incompleteSampleCount: 0 } },
-    { continuations: 1,  messageCount: 3,  serializedBytes: 25_984,  textChars: 25_424,  estimatedTokens: 6_356,  gllaMessageCount: 1,  gllaSerializedBytes: 25_801,  gllaTextChars: 25_372,  gllaEstimatedTokens: 6_343,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,  provider: { sampleCount: 1,  inputTokens: 8_000,  outputTokens: 100,  cacheReadTokens: 0,  cacheWriteTokens: 0,  totalTokens: 8_100,  firstInputTokens: 8_000,  latestInputTokens: 8_000,    inputTokenDelta: 0, incompleteSampleCount: 0 } },
-    { continuations: 5,  messageCount: 7,  serializedBytes: 129_188,  textChars: 126_912,  estimatedTokens: 31_728,  gllaMessageCount: 5,  gllaSerializedBytes: 129_005,  gllaTextChars: 126_860,  gllaEstimatedTokens: 31_715,  repeatedGllaPayloadCount: 4,  repeatedGllaSerializedBytes: 103_204,  provider: { sampleCount: 5,  inputTokens: 60_000,  outputTokens: 510,  cacheReadTokens: 100,  cacheWriteTokens: 4,  totalTokens: 60_614,  firstInputTokens: 8_000,  latestInputTokens: 16_000,    inputTokenDelta: 8_000, incompleteSampleCount: 0 } },
-    { continuations: 12,  messageCount: 14,  serializedBytes: 309_795,  textChars: 304_516,  estimatedTokens: 76_129,  gllaMessageCount: 12,  gllaSerializedBytes: 309_612,  gllaTextChars: 304_464,  gllaEstimatedTokens: 76_116,  repeatedGllaPayloadCount: 11,  repeatedGllaSerializedBytes: 283_811,  provider: { sampleCount: 12,  inputTokens: 228_000,  outputTokens: 1_266,  cacheReadTokens: 660,  cacheWriteTokens: 12,  totalTokens: 229_938,  firstInputTokens: 8_000,  latestInputTokens: 30_000,    inputTokenDelta: 22_000, incompleteSampleCount: 0 } },
-    { continuations: 25,  messageCount: 27,  serializedBytes: 645_208,  textChars: 634_352,  estimatedTokens: 158_588,  gllaMessageCount: 25,  gllaSerializedBytes: 645_025,  gllaTextChars: 634_300,  gllaEstimatedTokens: 158_575,  repeatedGllaPayloadCount: 24,  repeatedGllaSerializedBytes: 619_224,  provider: { sampleCount: 25,  inputTokens: 800_000,  outputTokens: 2_800,  cacheReadTokens: 3_000,  cacheWriteTokens: 24,  totalTokens: 805_824,  firstInputTokens: 8_000,  latestInputTokens: 56_000,    inputTokenDelta: 48_000, incompleteSampleCount: 0 } },
+    { continuations: 1,  messageCount: 3,  serializedBytes: 26_366,  textChars: 25_802,  estimatedTokens: 6_451,  gllaMessageCount: 1,  gllaSerializedBytes: 26_183,  gllaTextChars: 25_750,  gllaEstimatedTokens: 6_438,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,  provider: { sampleCount: 1,  inputTokens: 8_000,  outputTokens: 100,  cacheReadTokens: 0,  cacheWriteTokens: 0,  totalTokens: 8_100,  firstInputTokens: 8_000,  latestInputTokens: 8_000,    inputTokenDelta: 0, incompleteSampleCount: 0 } },
+    { continuations: 5,  messageCount: 7,  serializedBytes: 131_098,  textChars: 128_802,  estimatedTokens: 32_201,  gllaMessageCount: 5,  gllaSerializedBytes: 130_915,  gllaTextChars: 128_750,  gllaEstimatedTokens: 32_188,  repeatedGllaPayloadCount: 4,  repeatedGllaSerializedBytes: 104_732,  provider: { sampleCount: 5,  inputTokens: 60_000,  outputTokens: 510,  cacheReadTokens: 100,  cacheWriteTokens: 4,  totalTokens: 60_614,  firstInputTokens: 8_000,  latestInputTokens: 16_000,    inputTokenDelta: 8_000, incompleteSampleCount: 0 } },
+    { continuations: 12,  messageCount: 14,  serializedBytes: 314_379,  textChars: 309_052,  estimatedTokens: 77_263,  gllaMessageCount: 12,  gllaSerializedBytes: 314_196,  gllaTextChars: 309_000,  gllaEstimatedTokens: 77_250,  repeatedGllaPayloadCount: 11,  repeatedGllaSerializedBytes: 288_013,  provider: { sampleCount: 12,  inputTokens: 228_000,  outputTokens: 1_266,  cacheReadTokens: 660,  cacheWriteTokens: 12,  totalTokens: 229_938,  firstInputTokens: 8_000,  latestInputTokens: 30_000,    inputTokenDelta: 22_000, incompleteSampleCount: 0 } },
+    { continuations: 25,  messageCount: 27,  serializedBytes: 654_758,  textChars: 643_802,  estimatedTokens: 160_951,  gllaMessageCount: 25,  gllaSerializedBytes: 654_575,  gllaTextChars: 643_750,  gllaEstimatedTokens: 160_938,  repeatedGllaPayloadCount: 24,  repeatedGllaSerializedBytes: 628_392,  provider: { sampleCount: 25,  inputTokens: 800_000,  outputTokens: 2_800,  cacheReadTokens: 3_000,  cacheWriteTokens: 24,  totalTokens: 805_824,  firstInputTokens: 8_000,  latestInputTokens: 56_000,    inputTokenDelta: 48_000, incompleteSampleCount: 0 } },
   ]);
 });
 
