@@ -1069,27 +1069,25 @@ export async function adoptRecommendedDecision(
   };
   if (!updateGoal({ autoDefaultLog: [...(g.autoDefaultLog ?? []), entry].slice(-20) }, ctx)) return "refused";
   const waitedMs = g.pauseDecidedAt ? Date.now() - Date.parse(g.pauseDecidedAt) : undefined;
-  appendLedger(ctx.cwd, "decision_auto_select_adopted", {
+  const details = {
     goalId: g.id,
     minutes,
     shape: candidate.verdict.shape,
     optionIndex: candidate.index,
     chosen: entry.chosen,
     ...(waitedMs !== undefined && Number.isFinite(waitedMs) ? { waitedMs } : {}),
-  });
+  };
   const delivered = await actOnDecisionOption(g, candidate.option, ctx);
+  // The adoption row claims the WORK MOVED, so it is written only after the
+  // answer actually landed. A refused delivery (a stale handle, an
+  // undeliverable steer) keeps the pause parked and records the failure instead
+  // — reporting "adopted" over a still-parked goal is the exact dishonesty the
+  // paused-is-safe invariant exists to prevent.
   if (!delivered) {
-    // The answer could not be carried (a stale handle, a refused steer). The
-    // pause is still parked and the assumption is logged, so say so and stop
-    // the automatic promotion instead of quietly pretending the clock worked.
-    appendLedger(ctx.cwd, "decision_auto_select_delivery_failed", {
-      goalId: g.id,
-      minutes,
-      optionIndex: candidate.index,
-      chosen: entry.chosen,
-    });
+    appendLedger(ctx.cwd, "decision_auto_select_delivery_failed", { ...details, reason: "the answer could not be delivered" });
     return "refused";
   }
+  appendLedger(ctx.cwd, "decision_auto_select_adopted", details);
   ctx.ui.notify(`Decision auto-selected after ${minutes ?? "?"}m without an answer — option ${candidate.index}: ${entry.chosen}. It is expected in the completion recap as an assumption; ${activeGoalSurfaceCommand("cancel")} still stops the work.`, "info");
   return "adopted";
 }
