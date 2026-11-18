@@ -22,11 +22,10 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 
 import { state, replaceState } from "./goal-state.js";
 import {
-  classifyAutoSelectOption,
   decisionAutoSelectCandidate,
   decisionAutoSelectCountdownMs,
   decisionAutoSelectDue,
-  decisionAutoSelectRemainingMs,
+  decisionOptionText,
   resolveDecisionAutoSelectMinutes,
 } from "./decision-auto-select.js";
 import {
@@ -4014,7 +4013,6 @@ function warnOnCommandCollision(ctx: ExtensionContext): void {
 /* ------------------------------------------------------------------ */
 
 export {
-  adoptRecommendedDecisionNow,
   addSingleItem,
   autoNotifyCmd,
   cmdGoal,
