@@ -223,8 +223,9 @@ test("an ineligible recommendation has no clock at all", () => {
   assert.equal(decisionAutoSelectAdoptable(goal, 10, Date.now()), false, "cancel is never auto-adopted");
   assert.equal(decisionAutoSelectDue(goal, 10, Date.now()), true, "but the operator's clock still expired — that is reported once");
   assert.equal(decisionAutoSelectCardLine(goal, 10, Date.now()), undefined, "and the card makes no promise");
+  const continueGoal = { ...goal, pauseOptions: ["Continue (/goal resume)"], pauseRecommended: 1 };
   assert.equal(
-    decisionAutoSelectCardLine({ ...goal, pauseOptions: ["Continue (/goal resume)"], pauseRecommended: 1 }, 10, Date.now()),
+    decisionAutoSelectCardLine(continueGoal, 10, Date.now()),
     "auto-answers with option 1 now unless you decide first",
   );
 });
