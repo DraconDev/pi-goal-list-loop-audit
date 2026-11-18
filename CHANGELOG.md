@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### The completion card reminds you what was asked, and rework turns stop resending the whole brief (2026-11-18)
+
+Measured against the local record (the active ledger plus all retained segments: 2,091 continuation sends, 2,231 active-ledger events).
+
+- **The card restates the goal.** A long autonomous goal ends hours after it was set, and the card never said what had been asked. The chat card now carries `Goal: <first sentence of the objective>` directly above the meta line, in one block (Markdown hard break). The archive is unchanged: it already opens with the full `## Objective`.
+- **One meta line.** When no file list follows, the diff stat joins the meta line (`3h 00m elapsed · 1 audit · 14 files changed, +620 −88`) instead of sitting in its own block.
+- **Sentence case.** Agent text written in lower case (`all six complaints are addressed`, `an in-dialog toggle is not possible`) read as fragments. The headline, finding leads, follow-ups and next steps now start with a capital. Only a plain lower-case leading word is touched; paths, commands and identifiers (`note.md`, `npm run …`, `handleClick`, `iOS`) keep their spelling.
+- **No `· ·`.** A `path:line` pointer moved out of `… existed · path:line` left a bare separator that the join then doubled.
+- **The second "Summary" heading reads as "What changed".** The prose lede above it already is the summary. This is display-only: durable content keeps `Summary`, so the collapsed projection and replayed receipts are unchanged.
+- **A non-complete render never wears `Done`.** `buildTerminalApprovalRender` passed no headline kind, so a stopped goal rendered through it read `## Done — Work stopped`. Every production caller passes `complete` today; the headline now follows the status anyway.
+- **Rework turns ride the marker.** `pendingTasks` (the auditor TODO list) forced a full ~28 KB continuation on *every* turn while rework was open: 160 of the 258 most recent full sends carried a TODO list the model had already been given. Delivery is now fingerprinted per goal, as the audit report already was. A new or edited list still goes full, and an unchanged one sends the 46-char marker. `session_compact` forgets both delivered fingerprints, because a compaction may summarize the brief away. The next send re-teaches it: one full brief per compaction instead of one per turn.
+- **`context_hygiene_dropped` is de-duplicated.** The `context` hook runs once per provider request. While a host retried against a dead provider (402 plan exhausted, 429 token plan), GLLA ledgered the identical projection every 10–30 s: 1,114 of 2,231 active-ledger events. Identical repeats are now silent and counted (`suppressedRepeats` on the next change), matching `payload_guard_eviction`. The projection itself still runs on every request.
+- `tests/context-checkpoint.test.ts` re-pinned: the expanded `HUMAN_HANDOFF_GUIDANCE` (already in Unreleased) adds 382 serialized bytes to the retained payload.
+- Coverage: `tests/summary-human-reminder.test.ts`, `tests/delta-only-continuation.test.ts`, `tests/context-hygiene.test.ts`. Summary pins were migrated to the sentence-cased wording.
+
 ### A decision pause can answer itself after a delay, so an odd question never parks the work forever (2026-11-18)
 
 - **New setting `decisionAutoSelectMinutes` (off by default).** Turn it on in `/glla` → **Keep-going** → *Stuck-decision auto-select* (2 / 10 / 30 minutes). After that long with nobody answering, the RECOMMENDED decision option is adopted and the work continues. When it is unset, a decision pause waits for you forever — exactly as before.
