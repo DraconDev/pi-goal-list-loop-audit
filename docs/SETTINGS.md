@@ -69,7 +69,8 @@ copies are ignored (GLLA reads the global file for these policies):
 `compactionTokenThreshold`,
 `auditorModel`, `auditorModelFallbacks`, `auditorToolTimeoutMs`, `auditorStallMs`,
 `auditJobRetentionMs`, `auditSpotCheckRate`, `auditorStrictChallenge`, `auditorInspection`,
-`autoAcceptDrafts`, `versionDisplay`, `auditorThinkingLevel`.
+`autoAcceptDrafts`, `versionDisplay`, `auditorThinkingLevel`,
+`decisionAutoSelectMinutes`.
 
 This list is `GLOBAL_ONLY_KEYS` in `extensions/goal-settings.ts`, and a
 project-scope write to any of them is stripped on read. Every other key —
@@ -146,6 +147,7 @@ This authority boundary applies before settings-value normalization.
 | `wedgeAlertMinutes` | unset (30, or off while aggressive mode is on — the default) | Busy-but-silent minutes before the wedge alert; `0` = off. The menu shows the effective value. |
 | `autoResume` | `false` | Restored goals/loops/lists auto-resume in fresh sessions. Global-only. |
 | `decisionPopup` | `true` | Decision pauses pop the picker (`false` = widget card only). |
+| `decisionAutoSelectMinutes` | unset (off) | The stuck-question clock: minutes a decision pause may sit before its RECOMMENDED **continue-work** answer is adopted automatically (`/goal resume`, `/list resume`, `/list next`, `/loop resume`, or the content the picker would steer to the agent). Cancel, accept-with-follow-ups, tweak, pause, stop/clear, wipe and verification-contract amendments are never adopted — they end or rewrite the work, so they keep waiting for you. The adoption is ledgered (`decision_auto_select_adopted`) and recorded on the goal's `autoDefaultLog` so the agent carries it into the recap as an assumption. Both the `/goal decide` picker countdown and a heartbeat backstop honour it, so a popup that never opened still unsticks. Global-only. |
 | `decisionPauseBudget` | unset (unlimited) | Budget for unattended decline of promoted suggestions: after N admitted decisions, proceed without executing the suggestion and record the declined command in `autoDefaultLog` and `decision_budget_auto_default` (or `run_to_done_auto_default` for run-to-done). `0` permits that safe decline immediately. It never supplies consent or waives criteria: classified material exceptions remain paused; unclassified human decisions require local classification; known authorized mechanical/reversible work continues without a decision. Run-to-done follows the same consent boundary. |
 | `carryover` | `"pause"` | Stale carryover on new activation: `"pause"` / `"clear"` / `"resume"`. |
 | `autoAcceptDrafts` | `false` | Drafts activate without the Confirm dialog (unattended rigs). |

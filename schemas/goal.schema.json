@@ -80,6 +80,7 @@
     "pauseKind": { "type": "string", "enum": ["decision", "error", "wait", "blocked", "standby"] },
     "pauseOptions": { "type": "array", "items": { "type": "string" } },
     "pauseRecommended": { "type": "number" },
+    "pauseDecidedAt": { "type": "string", "description": "ISO time the current pause episode began; the decision auto-select clock measures from it." },
     "pauseContractAmendment": {
       "type": "object",
       "required": ["baseContract", "baseRevision", "amendment"],
