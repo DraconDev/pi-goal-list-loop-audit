@@ -2044,7 +2044,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       const minutes = v.startsWith("2") ? 2 : v.startsWith("30") ? 30 : DECISION_AUTO_SELECT_DEFAULT_MINUTES;
       saveSettings("global", ctx, { decisionAutoSelectMinutes: minutes });
-      ctx.ui.notify(`Decision auto-select ON after ${minutes}m — only the recommended continue-work option is adopted; cancel, accept, tweak, pause and contract amendments still wait for you. /goal decide answers sooner.`, "info");
+      ctx.ui.notify(`Decision auto-select ON after ${minutes}m — only the recommended continue-work option is adopted; cancel, accept, tweak, pause and contract amendments still wait for you. ${activeGoalSurfaceCommand("decide")} answers sooner.`, "info");
       return;
     }
     case "decisionPauseBudget": {
