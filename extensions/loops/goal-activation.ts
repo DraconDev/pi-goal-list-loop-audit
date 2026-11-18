@@ -591,6 +591,13 @@ let lengthExhaustionEpisodes = 0;
 // fingerprint — first occurrence lands, identical repeats are silent, and
 // any value change (or generation bump) re-arms.
 let lastPayloadEvictionFingerprint = "";
+// Field 2026-11-18: the same rule for error-turn hygiene. The `context` hook
+// runs once per provider request, so a host retrying against a dead provider
+// re-projected the identical failed turn every ~10-30s: 1,114 of 2,231 events
+// in one active ledger were byte-identical `context_hygiene_dropped` lines.
+// First occurrence lands; repeats are counted and ride the next change.
+let lastContextHygieneFingerprint = "";
+let suppressedContextHygieneRepeats = 0;
 /** A manual resume starts a fresh relentless cycle: a user pause between
 an episode-1 wedge and the next one must not make that wedge park one
 cycle early. */
@@ -4130,13 +4137,24 @@ async function handleHotLengthExhaustion(
     if (projection.evicted.length === 0 && hygiene.dropped.length === 0 && checkpointProjection.removedPayloads === 0) return {};
     try {
       if (hygiene.dropped.length > 0) {
-        appendLedger(ctx.cwd, "context_hygiene_dropped", {
+        const hygieneValue = {
           dropped: hygiene.dropped.length,
           droppedDispatchPayloads: hygiene.dropped.filter(turn => turn.triggerMessageIndex !== undefined).length,
           kept: hygiene.kept,
           lastError: hygiene.dropped[hygiene.dropped.length - 1]?.errorMessage?.slice(0, 160),
           generation: sessionGeneration,
-        });
+        };
+        const hygieneFingerprint = JSON.stringify(hygieneValue);
+        if (hygieneFingerprint !== lastContextHygieneFingerprint) {
+          lastContextHygieneFingerprint = hygieneFingerprint;
+          appendLedger(ctx.cwd, "context_hygiene_dropped", {
+            ...hygieneValue,
+            ...(suppressedContextHygieneRepeats > 0 ? { suppressedRepeats: suppressedContextHygieneRepeats } : {}),
+          });
+          suppressedContextHygieneRepeats = 0;
+        } else {
+          suppressedContextHygieneRepeats++;
+        }
       }
       if (projection.evicted.length > 0) {
         const evictionFingerprint = `${sessionGeneration}:${projection.evicted.length}:${projection.totalImageBytes - projection.remainingImageBytes}:${projection.remainingImageBytes}:${projection.remainingImageCount}`;
