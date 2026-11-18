@@ -199,10 +199,13 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // completion-communication guidance and the operator-specific daemon
   // detail — −3,808 serialized bytes on the one retained payload
   // (32697 → 28889). Cardinality and the flat-growth invariant unchanged.
+  // Unreleased (2026-11-18): HUMAN_HANDOFF_GUIDANCE asks for a whole-objective
+  // summary with a worked example — +382 serialized bytes on the one retained
+  // payload (28889 → 29271). Measured with scripts/measure-context-growth.mjs.
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 28889, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 29271, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 29271, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 29271, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;
