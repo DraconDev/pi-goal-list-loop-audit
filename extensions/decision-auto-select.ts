@@ -151,6 +151,10 @@ export interface DecisionAutoSelectCandidate {
 type AutoSelectGoal = Pick<Goal,
   "status" | "pauseKind" | "pauseOptions" | "pauseRecommended" | "pauseContractAmendment">;
 
+/** A goal record as the clock needs it: the pause fields plus the timestamps
+ * the episode is measured from. */
+export type AutoSelectGoalRecord = AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt">;
+
 /** Everything the two surfaces need before they advertise or adopt a pick. */
 export function decisionAutoSelectCandidate(goal: AutoSelectGoal | null | undefined): DecisionAutoSelectCandidate | undefined {
   if (!goal || goal.status !== "paused" || goal.pauseKind !== "decision") return undefined;
@@ -175,7 +179,7 @@ export function decisionAutoSelectCandidate(goal: AutoSelectGoal | null | undefi
  * deadline passed on a question only they can answer (one
  * `decision_auto_select_refused` line). Only the ADOPTION is restricted. */
 export function decisionAutoSelectRemainingMs(
-  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoalRecord | null | undefined,
   minutes: unknown,
   now: number,
 ): number | undefined {
@@ -196,7 +200,7 @@ export function decisionAutoSelectRemainingMs(
  * the question for them.
  */
 export function decisionAutoSelectDue(
-  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoalRecord | null | undefined,
   minutes: unknown,
   now: number,
 ): boolean {
@@ -207,7 +211,7 @@ export function decisionAutoSelectDue(
 /** Is the RECOMMENDED option both eligible for unattended adoption AND due?
  * This is the ONE gate the picker and the heartbeat share before adopting. */
 export function decisionAutoSelectAdoptable(
-  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoalRecord | null | undefined,
   minutes: unknown,
   now: number,
 ): boolean {
@@ -221,7 +225,7 @@ export function decisionAutoSelectAdoptable(
  * is deliberate for a recommendation the clock may NOT adopt (the dialog
  * must not dismiss itself on a question only the operator can answer). */
 export function decisionAutoSelectCountdownMs(
-  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoalRecord | null | undefined,
   minutes: unknown,
   now: number,
 ): number | undefined {
@@ -235,7 +239,7 @@ export function decisionAutoSelectCountdownMs(
 /** One-line card truth for an armed pause, or undefined when the clock is off
  * or the recommendation may not be adopted. */
 export function decisionAutoSelectCardLine(
-  goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
+  goal: AutoSelectGoalRecord | null | undefined,
   minutes: unknown,
   now: number,
 ): string | undefined {

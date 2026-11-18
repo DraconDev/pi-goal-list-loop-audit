@@ -49,6 +49,7 @@ import {
   decisionAutoSelectRemainingMs,
   decisionOptionText,
   resolveDecisionAutoSelectMinutes,
+  type AutoSelectGoalRecord,
 } from "../extensions/decision-auto-select.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
 
@@ -203,7 +204,7 @@ test("the fuse measures from pauseDecidedAt, and a later touch does not restart 
     pauseRecommended: 1,
     pauseDecidedAt: since,
     updatedAt: new Date().toISOString(), // a later touch
-  } as Parameters<typeof decisionAutoSelectDue>[0];
+  } as AutoSelectGoalRecord;
   assert.equal(decisionAutoSelectDue(goal, 10, Date.now()), true, "30m > 10m from the episode start");
   assert.equal(decisionAutoSelectDue(goal, 60, Date.now()), false, "60m fuse still has 30m to run");
   const remaining = decisionAutoSelectRemainingMs(goal, 60, Date.now());
@@ -219,7 +220,7 @@ test("an ineligible recommendation has no clock at all", () => {
     pauseRecommended: 1,
     pauseDecidedAt: new Date(Date.now() - 600 * 60_000).toISOString(),
     updatedAt: new Date().toISOString(),
-  } as Parameters<typeof decisionAutoSelectDue>[0];
+  } as AutoSelectGoalRecord;
   assert.equal(decisionAutoSelectAdoptable(goal, 10, Date.now()), false, "cancel is never auto-adopted");
   assert.equal(decisionAutoSelectDue(goal, 10, Date.now()), true, "but the operator's clock still expired — that is reported once");
   assert.equal(decisionAutoSelectCardLine(goal, 10, Date.now()), undefined, "and the card makes no promise");
@@ -244,7 +245,7 @@ test("a contract amendment never gets a clock, even with a plain command inside"
     pauseContractAmendment: amendment,
     pauseDecidedAt: new Date(Date.now() - 600 * 60_000).toISOString(),
     updatedAt: new Date().toISOString(),
-  } as Parameters<typeof decisionAutoSelectDue>[0];
+  } as AutoSelectGoalRecord;
   assert.equal(decisionAutoSelectAdoptable(goal, 5, Date.now()), false, "criteria changes need a person");
   assert.equal(decisionAutoSelectCardLine(goal, 5, Date.now()), undefined, "and the card promises nothing");
 });
