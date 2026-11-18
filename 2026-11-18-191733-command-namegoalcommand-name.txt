@@ -1,0 +1,1811 @@
+ ▐▛███▛█   Claude Code v2.1.322
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~/Dev/pi-plugins/pi-goal-list-loop-audit
+
+
+❯ /goal can we write a much better human usable summary after the objective and 
+also we can look into how loop owrkis if we nimprove it                         
+  ⎿  Goal set: can we write a much better human usable summary after the
+     objective and also we can look into how loop owrkis if we nimprove it
+
+● I'll improve the human-readable summary shown after the goal objective, then
+  look at how the loop works for anything worth fixing. First, exploring the
+  repo.
+
+  Searched for 1 pattern, read 1 file, listed 1 directory, ran 2 shell commands (ctrl+o to expand)
+
+● Let me look at what the current card actually looks like.
+
+  Searched for 1 pattern, read 1 file, listed 1 directory, ran 3 shell commands (ctrl+o to expand)
+
+● I found the summary pipeline in completion-summary.ts and summary-renderer.ts,
+  and an earlier session already reshaped the card. Next I'll render real cards
+  from your archived goals to see what a reader sees today. · summary
+
+  Listed 1 directory, ran 3 shell commands (ctrl+o to expand)
+
+● Now I'll render the current card from a realistic claim (the real "six
+  complaints" completion) to see what a person reads today.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The card's headline is lowercase, a redundant Summary heading repeats the
+  lede, every area is labelled "What changed · …", a stray separator appears
+  when evidence is folded in, and the reader isn't reminded of the original ask.
+  I'm checking for a goal that stops without finishing next. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Found a bug: a stopped goal's chat card shows "Done — Work stopped" and drops
+  the cause and next action, since recorded-facts recaps get discarded as
+  fallback. I'm checking whether production reaches that path. · summary
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● No production caller renders a stopped goal that way, since all callers pass
+  "complete." I'll still make the headline follow the status as a safeguard,
+  then move on to the section vocabulary module. · summary
+
+  Searched for 2 patterns, ran 1 shell command (ctrl+o to expand)
+
+● The renderer already rewrites some of this at display time; for example, it
+  shows What changed · Area as just Area. So I'll judge the actual rendered
+  output, not the raw markdown.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The card's layout is mostly fine, but five fixes would make it read better for
+  a person: restate the goal, capitalize the headline and bullets, remove the
+  doubled separator, put elapsed time, audits and the diff stat on one line, and
+  retitle the summary as "What changed". · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Making the edits now. First the composer in completion-summary.ts:
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Applying the composer edits with a script, since there are several precise
+  replacements:
+
+● Bash(python3 - <<'EOF'
+      import pathlib,re…)
+  ⎿  936:export function requestEchoHeadline(kind: "Done" | "Aborted", outc
+     ome: string): string {
+     1111:  kind?: "Done" | "Aborted";
+     … +2 lines (ctrl+o to expand)
+  ⎿  Updated extensions/completion-summary.ts (+48 -7)
+      424    changeLine?: string;
+      425    /** v0.39.71 (F): largest changed files (`path +A −R`) under
+            the change line. */
+      426    changeFiles?: string[];
+      427 +  /** Chat only: a one-line reminder of what was asked (`Goal:
+          + …`). A long                                                  
+      428 +   * autonomous goal ends hours after it was set, so the card 
+          +restates the ask                                              
+      429 +   * next to the result. The archive already carries the full 
+          +`## Objective`. */                                            
+      430 +  goalLine?: string;                                          
+      431  }
+      432  
+      433 +/** Sentence-case a human line the agent wrote in lower case (
+          +`all six                                                      
+      434 + * complaints …` → `All six complaints …`). Only a plain lower
+          +-case leading                                                 
+      435 + * WORD is touched — a path, command, identifier or token with
+          + digits/dots                                                  
+      436 + * (`note.md`, `npm run …`, `iOS`) keeps its exact spelling. *
+          +/                                                             
+      437 +const CODE_LEAD_WORDS = new Set(["npm", "npx", "bun", "bunx", 
+          +"git", "node", "tsc", "pnpm", "yarn", "pi", "gh", "cd", "ls", 
+          +"rm"]);                                                       
+      438 +export function sentenceCase(text: string): string {          
+      439 +  const match = /^([a-z][a-z'\u2019-]*)(?=\s)/u.exec(text);   
+      440 +  if (!match || CODE_LEAD_WORDS.has(match[1]!)) return text;  
+      441 +  return text.charAt(0).toUpperCase() + text.slice(1);        
+      442 +}                                                             
+      443 +                                                              
+      444 +/** The objective as a one-line reminder: its first line, firs
+          +t sentence when                                               
+      445 + * that sentence is a usable title, clipped to one terminal ro
+          +w. Markdown                                                   
+      446 + * emphasis characters are dropped so the excerpt cannot break
+          + the italics it                                               
+      447 + * rides in. */                                               
+      448 +export function objectiveReminder(objective: string | undefine
+          +d, limit = 110): string | undefined {                         
+      449 +  const first = sanitizeDisplayText(objective ?? "").split(/\n
+          +/).map((l) => l.trim()).find(Boolean)                         
+      450 +    ?.replace(/^>\s*/, "").replace(/[*_`]/g, "").trim();      
+      451 +  if (!first) return undefined;                               
+      452 +  const sentence = /^(.{24,}?[.!?])(?=\s|$)/u.exec(first)?.[1]
+          + ?? first;                                                    
+      453 +  return clipSummaryValue(sentence.replace(/[.]$/, ""), limit)
+          +;                                                             
+      454 +}                                                             
+      455 +                                                              
+      456  /** v0.39.70: a gate row, optionally backed by a GLLA-run rece
+           ipt. */
+      457  type CardGateRow = GateRow & { gllaReceipt?: MechanicalGateRec
+           eipt };
+      458  
+     ...
+      590    // card): token extraction can strand leading punctuation wh
+           en the
+      591    // evidence tokens ride mid-sentence, so strip a leading `,;
+           :` husk.
+      592    // Content words are untouched — only the join seam is clean
+           ed.
+      566 -  const normalizedReason = [...new Set(reasonParts)].join(" · 
+          -").trim().replace(/^[,;:]+/, "").trim();                      
+      593 +  // A token moved out of `… existed · path:line` left the rea
+          +son ending in a                                               
+     … 71 more lines (ctrl+o to expand)
+
+● Next, summary-renderer.ts displays the Summary heading as What changed. This
+  is a display-only change, so stored cards and their legacy recognition stay
+  untouched.
+
+● Update(extensions/summary-renderer.ts)
+  ⎿  Added 6 lines, removed 1 line
+      124          const areaLabel = sectionName === CARD_SECTION.whatCha
+           nged
+      125            ? /\u00b7\s*(.+?)\s*$/.exec(heading.replace(/^#+\s+/
+           , ""))?.[1]
+      126            : undefined;
+      127 +        // The prose lede above the first section already IS t
+          +he summary, so a                                              
+      128 +        // second `Summary` heading read as a repeat. The disp
+          +lay names the                                                 
+      129 +        // section for what it holds; durable content keeps `S
+          +ummary` (the                                                  
+      130 +        // collapsed projection and replayed receipts key on i
+          +t).                                                           
+      131 +        const displayHeading = sectionName === CARD_SECTION.su
+          +mmary ? `## ${SUMMARY_DISPLAY_HEADING}` : heading;            
+      132          const displayBlock = areaLabel
+      133            ? `**${areaLabel}**` + sourceBlock.slice(firstLine.l
+           ength)
+      129 -          : heading ? heading.replace(/^#{2,4}\s+/, '## ') + s
+          -ourceBlock.slice(firstLine.length) : sourceBlock;             
+      134 +          : heading ? displayHeading.replace(/^#{2,4}\s+/, '##
+          + ') + sourceBlock.slice(firstLine.length) : sourceBlock;      
+      135          box.addChild(new Markdown(displayBlock, 0, 0, summaryT
+           heme(theme, tone), {
+      136            color: text => theme.fg(verification ? summaryVerifi
+           cationTone(stripTerminalSequences(text)) : tone === "dim" ? "d
+           im" : "text", text),
+      137          }));
+
+● Bash(sed -i 's|^export function registerSummaryRenderer|/** Display label for
+      the durable `Summary` section (see the render loop). */\nexport const
+      SUMMARY_DISPLAY_H…)
+  ⎿  ## Done — All six note.md complaints are addressed, and one of them tu
+     rned out not to be a bug
+     … +119 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to 
+     /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit
+  ⎿  Updated extensions/summary-renderer.ts (+3 -0)
+      79    };
+      80  }
+      81  
+      82 +/** Display label for the durable `Summary` section (see the re
+         +nder loop). */                                                 
+      83 +export const SUMMARY_DISPLAY_HEADING = "What changed";         
+      84 +                                                               
+      85  export function registerSummaryRenderer(pi: Pick<ExtensionAPI, 
+          "registerMessageRenderer">): void {
+      86    pi.registerMessageRenderer("goal-event", (message, { outputPa
+          d, expanded }, theme) => {
+      87      // Continuations share this custom type. Only durable termi
+          nal receipts
+
+● The Goal line and the stats line are separated by a blank row. A Markdown hard
+  break should keep them together as one context block; testing that:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● That works. Wiring it into the composer:
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿   Done — All six note.md complaints are addressed, and one of them turn
+     ed out not to be a bug
+     … +15 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to 
+     /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit
+  ⎿  Updated extensions/completion-summary.ts (+6 -1)
+      1452    const meta = parts.durationLine
+      1453      ? (foldChange ? parts.durationLine.replace(/\*$/, ` \u00b
+            7 ${sanitizeDisplayText(parts.changeLine!).replace(/[*]/g, ""
+            )}*`) : parts.durationLine)
+      1454      : null;
+      1455 -  if (parts.goalLine) lines.push(`*${sanitizeDisplayText(part
+           -s.goalLine).replace(/[*]/g, "")}*`, "");                     
+      1455 +  // A Markdown hard break (two trailing spaces) keeps the as
+           +k and the meta in                                            
+      1456 +  // one block: two rows, no gap, no paragraph merge.        
+      1457 +  if (parts.goalLine) {                                      
+      1458 +    const goalRow = `*${sanitizeDisplayText(parts.goalLine).r
+           +eplace(/[*]/g, "")}*`;                                       
+      1459 +    lines.push(...(meta ? [`${goalRow}  `] : [goalRow, ""]));
+      1460 +  }                                                          
+      1461    if (meta) lines.push(sanitizeDisplayText(meta), "");
+      1462    if (parts.changeLine && !foldChange) {
+      1463      lines.push(sanitizeDisplayText(parts.changeLine));
+
+● The card reads well now. Running the summary test suites:
+
+  Listed 2 directories, ran 4 shell commands (ctrl+o to expand)
+● The card changes are in, and 23 of the 249 summary tests now fail. I'll update
+  the ones that pin old wording and check the rest for real regressions. 
+  · summary
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● The first few are incidental pins: the new Goal line shifted line indices,
+  wording is capitalized, and the display heading was renamed. I'll go through
+  all 23 the same way.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Most of the hits are the intended sentence-casing change (shipped … → Shipped 
+  …). I'm checking the less obvious ones next, including the count of 16 and the
+  entries at summary-purpose:62, summary-agent-text:75,
+  rich-terminal-summary:172/222 and terminal-approval-render:187. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Every failure is just a casing mismatch: the "16 bullets" exclusion filter
+  expects lowercase "replay on next contact" but now sees "Replay…". Since none
+  is a real regression, I'm updating the expected literals. · summary
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(set -e
+      f=tests/rich-terminal-summary.test.ts…)
+  ⎿    assert.match(entries[0].content, /^- \*\*Pins the path\*\* — router\
+     .ts:12$/m, "gist and evidence share one bullet");
+         status: "complete",
+     … +60 lines (ctrl+o to expand)
+  ⎿  Updated tests/rich-terminal-summary.test.ts (+9 -9)
+      69  
+      70  test("card opens with the outcome, then a report body with find
+          ings and verification", () => {
+      71    const { chatLines } = render();
+      72 -  assert.equal(chatLines[0], "## Done — shipped the rich termin
+         -al voice");                                                    
+      72 +  assert.equal(chatLines[0], "## Done — Shipped the rich termin
+         +al voice");                                                    
+      73    assert.equal(chatLines.filter(line => line.startsWith("## Don
+          e")).length, 1, "one outcome headline");
+      74    const findingsIdx = chatLines.indexOf(section(CARD_SECTION.su
+          mmary));
+      75    assert.ok(findingsIdx > 0, "the change body has its own secti
+          on");
+     ...
+      169    const { chatLines, transcriptLines } = render();
+      170    const nextIdx = chatLines.indexOf(section(CARD_SECTION.nextS
+           teps));
+      171    assert.ok(nextIdx > 0, "Next steps section present");
+      172 -  assert.ok(chatLines.some((l) => /^- replay on next contact$/
+          -.test(l)), "concrete Next survives without repeating its secti
+          -on label");                                                   
+      172 +  assert.ok(chatLines.some((l) => /^- Replay on next contact$/
+          +.test(l)), "concrete Next survives without repeating its secti
+          +on label");                                                   
+      173    const stale = render({
+      174      goal: seedGoal({
+      175        id: "20260911-rich-stale",
+     ...
+      234  
+      235  test("archive carries the same report as chat, and aborted rec
+           ords never wear a Done headline", () => {
+      236    const done = buildRichArchiveSection(richGoal(), "complete",
+            ".pi-glla/archive/20260911-rich-voice.md");
+      237 -  assert.equal(done[0], "## Done — shipped the rich terminal v
+          -oice", "the archive opens with the same result headline");    
+      237 +  assert.equal(done[0], "## Done — Shipped the rich terminal v
+          +oice", "the archive opens with the same result headline");    
+      238    assert.ok(done.includes(`### ${CARD_SECTION.summary}`), "arc
+           hive carries the change body");
+      239    assert.ok(done.includes("### Verification"), "archive carrie
+           s the table");
+      240    assert.ok(done.at(-1)?.startsWith("completion audit approved
+           "), `archive closes with the receipt: ${done.at(-1)}`);
+     ...
+      249  
+      250  test("duration line closes the meta footnote; unknown facts st
+           ay absent", () => {
+      251    const { chatLines } = render({ findingGroups: GROUPS });
+      252 -  assert.match(chatLines[0] ?? "", /^## Done — shipped the ric
+          -h terminal voice$/);                                          
+      252 +  assert.match(chatLines[0] ?? "", /^## Done — Shipped the ric
+          +h terminal voice$/);                                          
+      253    assert.equal(chatLines[1], "", "blank line after headline");
+      254    // Report shape (field 2026-11-11): the meta line is a dim i
+           talic footnote
+      255    // rather than a bare `—` line that reads as a broken bullet
+           .
+     ...
+      266    assert.equal(chatLines[bodyIdx + 1], `**${CARD_SECTION.whatC
+           hanged} · Sound manager**`, "the area names its own subsection
+           ");
+      267    // Report shape: ONE bullet per finding — the outcome leads,
+            its evidence
+      268    // follows on the same line, so the reader gets gist and pro
+           of together.
+      269 -  assert.equal(chatLines[bodyIdx + 2], "- **mutes WebAudio** —
+          - soundManager.ts:333", "finding prose is a single bullet");   
+      269 +  assert.equal(chatLines[bodyIdx + 2], "- **Mutes WebAudio** —
+          + soundManager.ts:333", "finding prose is a single bullet");   
+      270    assert.equal(chatLines[bodyIdx + 4], `**${CARD_SECTION.whatC
+           hanged} · Simulation**`, "second area follows");
+      271    assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), 
+           "no table below the archive threshold");
+      272    assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slic
+           e(0, 3), "transcript shares headline and meta");
+     … 27 more lines (ctrl+o to expand)
+  ⎿  Updated tests/structured-summary.test.ts (+5 -5)
+      86    const headline = chatLines[0] ?? "";
+      87    assert.ok(headline.startsWith("## Done — "), "headline leads 
+          with the outcome");
+      88    assert.doesNotMatch(headline, /## Part|### /, `no flattened m
+          arkdown in the headline, got: ${headline}`);
+      89 -  assert.match(headline, /shipped the keyword review/, "the lea
+         -d outcome text survives");                                     
+      89 +  assert.match(headline, /Shipped the keyword review/, "the lea
+         +d outcome text survives");                                     
+      90  });
+      91  
+      92  test("detector: two ##/### headers earn the structured path, on
+          e does not", () => {
+     ...
+      119  
+      120  test("card: structured Outcome renders the full body inside th
+           e report Summary, headline stays short", () => {
+      121    const { chatLines } = render(STRUCTURED);
+      122 -  assert.equal(chatLines[0], "## Done — shipped the keyword re
+          -view", "outcome opens");                                      
+      122 +  assert.equal(chatLines[0], "## Done — Shipped the keyword re
+          +view", "outcome opens");                                      
+      123    // Report shape (field 2026-11-11): the structured body is t
+           he Summary's own
+      124    // document; verification and next steps are their own repor
+           t sections.
+      125    const summaryIdx = chatLines.indexOf(`## ${CARD_SECTION.summ
+           ary}`);
+     ...
+      142    // Summary still carries the report's change bullets.
+      143    assert.ok(chatLines.includes(`## ${CARD_SECTION.summary}`), 
+           "the report Summary is always present");
+      144    assert.ok(!chatLines.some((line) => line.includes("Part 1: c
+           urrent keywords")), "no structured body without structure");
+      145 -  assert.equal(chatLines[0], "## Done — shipped the keyword re
+          -view", "outcome-first headline");                             
+      145 +  assert.equal(chatLines[0], "## Done — Shipped the keyword re
+          +view", "outcome-first headline");                             
+      146  });
+      147  
+      148  test("card: one-action Next steps survives the structured body
+           ", () => {
+     ...
+      151    assert.ok(nextIdx > 0, "Next steps section present");
+      152    const nextBlock = chatLines.slice(nextIdx + 1).filter((line)
+            => line.startsWith("- "));
+      153    assert.equal(nextBlock.length, 1, `exactly one Next action, 
+           got: ${JSON.stringify(nextBlock)}`);
+      154 -  assert.match(nextBlock[0] ?? "", /implement slice 1/, "the c
+          -oncrete action survives");                                    
+      154 +  assert.match(nextBlock[0] ?? "", /Implement slice 1/, "the c
+          +oncrete action survives");                                    
+      155  });
+      156  
+      157  test("card: machine paths stay archive-only inside structured 
+           lines", () => {
+     ...
+      181    const nextIdx = chatLines.indexOf(`## ${CARD_SECTION.nextSte
+           ps}`);
+      182    const nextBlock = chatLines.slice(nextIdx + 1).filter((line)
+            => line.startsWith("- "));
+      183    assert.equal(nextBlock.length, 1, `one immediate move, got: 
+           ${JSON.stringify(nextBlock)}`);
+      184 -  assert.match(nextBlock[0] ?? "", /implement slice 1/, "the i
+          -mmediate move leads");                                        
+      184 +  assert.match(nextBlock[0] ?? "", /Implement slice 1/, "the i
+          +mmediate move leads");                                        
+      185  });
+      186  
+      187  test("archive human layer carries the same Summary section and
+            one receipt line", () => {
+  ⎿  Updated tests/summary-purpose.test.ts (+1 -1)
+      59    assert.ok(verification > summary, "verification follows the c
+          hanges");
+      60    assert.ok(followUp > verification, "follow-ups close the repo
+          rt after verification");
+      61    const text = lines.join("\n");
+      62 -  assert.ok(text.includes("overlapping saves no longer discard 
+         -confirmed revisions"), text);                                  
+      62 +  assert.ok(text.includes("Overlapping saves no longer discard 
+         +confirmed revisions"), text);                                  
+      63    assert.ok(text.includes("Chrome and Firefox archives now cont
+          ain matching version manifests"), text);
+      64    assert.ok(text.includes("src/save.ts:42"), "the evidence poin
+          ter rides the finding");
+      65    assert.ok(text.includes("The signed-in browser flow was not c
+          hecked."), "the limitation is reported");
+  ⎿  Updated tests/summary-agent-text.test.ts (+1 -1)
+      72    });
+      73    const text = composeRichTerminalLines({ ...parts, chat: true 
+          }).join("\n");
+      74    assert.ok(!/\*\*,/.test(text), `no comma husk bullet:\n${text
+          }`);
+      75 -  assert.ok(text.includes("doubled punctuation outcome"), "outc
+         -ome words survive the strip");                                 
+      75 +  assert.ok(text.includes("Doubled punctuation outcome"), "outc
+         +ome words survive the strip");                                 
+      76  });
+      77  
+      78  test('chat removes redundant section labels without erasing arc
+          hive evidence or deliberate scope cuts', () => {
+  ⎿  Updated tests/report-card-shape.test.ts (+1 -1)
+      286    const joined = hostile.chatLines.join("\n");
+      287    assert.ok(!joined.includes("\u001b"), "no terminal escape su
+           rvives the trust boundary");
+      288    assert.ok(!joined.includes("\u202E"), "no bidi override surv
+           ives");
+      289 -  assert.ok(joined.includes("the walkthrough surface"), "the h
+          -uman words remain");                                          
+      289 +  assert.ok(joined.includes("The walkthrough surface"), "the h
+          +uman words remain");                                          
+      290  });
+  ⎿  … 2 more files changed
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  Updated tests/report-card-shape.test.ts (+5 -2)
+       92      "And a locked account is told how to unlock without leakin
+           g whether it exists.",
+       93      "the sentence remainder rides the lede, capitalized, word-
+           for-word",
+       94    );
+       95 -  // One meta footnote, then the sections.                    
+       96 -  assert.match(lines[4] ?? "", /^\*9 turns · .+ elapsed · 1 au
+          -dit\*$/, `meta footnote: ${lines[4]}`);                       
+       95 +  // The ask, then one meta footnote in the same block (Markdo
+          +wn hard break),                                               
+       96 +  // then the sections. A long goal ends hours after it was se
+          +t; the card                                                   
+       97 +  // restates what was asked next to what happened.           
+       98 +  assert.match(lines[4] ?? "", /^\*Goal: .+\*  $/, `goal remin
+          +der: ${lines[4]}`);                                           
+       99 +  assert.match(lines[5] ?? "", /^\*9 turns · .+ elapsed · 1 au
+          +dit\*$/, `meta footnote: ${lines[5]}`);                       
+      100    // Every work area is its own subsection under the body.
+      101    assert.ok(lines.includes(`**${CARD_SECTION.whatChanged} · Lo
+           gin responses**`), "first area names its subsection");
+      102    assert.ok(lines.includes(`**${CARD_SECTION.whatChanged} · Lo
+           cked accounts**`), "second area names its subsection");
+  ⎿  Updated tests/terminal-approval-render.test.ts (+1 -1)
+      73      approval: "— auditor auditor-model approved on the provider
+           retry.",
+      74      record: "— record: .pi-glla/archive/20260907-approval-rende
+          r.md",
+      75    });
+      76 -  assert.equal(render.chatLines[0], `## Done — ${render.outcome
+         -}`, "outcome opens the card");                                 
+      76 +  assert.equal(render.chatLines[0], `## Done — ${sentenceCase(r
+         +ender.outcome)}`, "outcome opens the card, sentence-cased");   
+      77    // Report shape (field 2026-11-11): what changed, what was ch
+          ecked, what is
+      78    // still open, what comes next — then ONE receipt line.
+      79    assert.ok(render.chatLines.includes(`## ${CARD_SECTION.summar
+          y}`), "the change body present");
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Bash(sed -i '18s/  CARD_SECTION,/  CARD_SECTION,\n  sentenceCase,/'
+      tests/terminal-approval-render.test.ts && sed -n 50,64p
+      tests/report-polish.test.ts && grep -n "S…)
+  ⎿    ],
+       details: ["Next: Ship it."],
+       gates: [{ gate: "Typecheck", command: "npm run check", notes: "exite
+     … +45 lines (ctrl+o to expand)
+  ⎿  Updated tests/terminal-approval-render.test.ts (+1 -0)
+      16  import { ledgerPath } from "../extensions/goal-loop-core.js";
+      17  import {
+      18    CARD_SECTION,
+      19 +  sentenceCase,                                                
+      20    buildApprovalChatLines,
+      21    buildAuditCountsLine,
+      22    buildRichArchiveSection,
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  exit 1
+      69 pass
+      21 fail
+     … +37 lines (ctrl+o to expand)
+  ⎿  Updated tests/report-polish.test.ts (+5 -2)
+      24  import path from "node:path";
+      25  import { stripTerminalSequences, type Component } from "@earend
+          il-works/pi-tui";
+      26  
+      27 -import { registerSummaryRenderer } from "../extensions/summary-
+         -renderer.ts";                                                  
+      27 +import { SUMMARY_DISPLAY_HEADING, registerSummaryRenderer } fro
+         +m "../extensions/summary-renderer.ts";                         
+      28  import { buildChangeStat, buildFinalRepoStateLines, buildRichTe
+          rminalParts, changeStatLine, composeRichTerminalLines, extractE
+          videnceTokens } from "../extensions/completion-summary.ts";
+      29  import { extractFindingEvidence } from "../extensions/finding-l
+          ead.ts";
+      30  import { workingTreeFingerprint } from "../extensions/gate-rece
+          ipts.ts";
+     ...
+      56  test("#7: one blank row separates sections; the heading sits di
+          rectly on its body", () => {
+      57    const rows = render(CARD);
+      58    const at = (text: string) => rows.findIndex((row) => row === 
+          text);
+      59 -  for (const heading of ["Summary", "Verification", "Next steps
+         -"]) {                                                          
+      59 +  // The durable `Summary` section displays as `What changed`: 
+         +the lede above                                                 
+      60 +  // it already is the summary, so a second "Summary" read as a
+         + repeat.                                                       
+      61 +  assert.ok(!rows.includes("Summary"), `no repeated Summary hea
+         +ding on screen:\n${rows.join("\n")}`);                         
+      62 +  for (const heading of [SUMMARY_DISPLAY_HEADING, "Verification
+         +", "Next steps"]) {                                            
+      63      const i = at(heading);
+      64      assert.ok(i > 0, `${heading} rendered:\n${rows.join("\n")}`
+          );
+      65      assert.equal(rows[i - 1], "", `a blank row precedes ${headi
+          ng}`);
+  ⎿  (timeout 10m)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Those 18 load errors come from running many node:test files in one Bun
+  process, not from my changes. Switching to the project's runner, which
+  isolates files:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The sync daemon has already committed my edits, so --changed finds nothing.
+  Passing the files explicitly:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The remaining four are the same kinds of pins: casing, the Goal line shifting
+  the meta line's index, and a line-shape regex that needs to allow the
+  hard-break trailing spaces.
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿   56 pass
+      0 fail
+     Ran 56 tests across 3 files. [25.39s]
+     [run-tests] finished in 25s (exit 0)
+  ⎿  Updated tests/rich-terminal-summary.test.ts (+4 -2)
+      219    const findings = r.chatLines.slice(summaryStart, summaryEnd)
+           .filter((l) => l.startsWith("- "));
+      220    assert.equal(findings.length, 1, "Changed is the finding; Ev
+           idence is saved separately");
+      221    assert.ok(r.chatLines.join("\n").includes("extensions/part-9
+           .ts"));
+      222 -  assert.ok(r.chatLines.join("\n").includes("ship it"));      
+      222 +  assert.ok(r.chatLines.join("\n").includes("Ship it"));      
+      223  });
+      224  
+      225  test("no audit history means no invented review row, and the r
+           eceipt names the real shape", () => {
+     ...
+      253    assert.equal(chatLines[1], "", "blank line after headline");
+      254    // Report shape (field 2026-11-11): the meta line is a dim i
+           talic footnote
+      255    // rather than a bare `—` line that reads as a broken bullet
+           .
+      256 -  assert.match(chatLines[2] ?? "", /^\*9 turns · .+ elapsed · 
+          -1 audit\*$/, `meta line, got: ${chatLines[2]}`);              
+      256 +  // The ask rides directly above the meta line (one block, ha
+          +rd break).                                                    
+      257 +  assert.match(chatLines[2] ?? "", /^\*Goal: restyle the termi
+          +nal summary\*  $/, `goal reminder, got: ${chatLines[2]}`);    
+      258 +  assert.match(chatLines[3] ?? "", /^\*9 turns · .+ elapsed · 
+          +1 audit\*$/, `meta line, got: ${chatLines[3]}`);              
+      259    assert.equal(buildDurationLine({} as Goal), null, "nothing k
+           nown means no meta line");
+      260    const bare = buildDurationLine({ telemetry: { turns: 2, file
+           Writes: 0, bashCalls: 0 } } as Goal);
+      261    assert.equal(bare, "*2 turns*", "only known facts render");
+  ⎿  Updated tests/completion-communication.test.ts (+1 -1)
+       98    const lines = entries[0].content.split("\n");
+       99    // Report shape (field 2026-11-11): `##` report sections, bo
+           ld area/left-out
+      100    // labels, plain bullets, and ONE receipt line — one voice, 
+           no legacy trailer.
+      101 -  assert.ok(lines.every((l: string) => l.startsWith("## ") || 
+          -l === "" || /^\*[^*].*\*$/.test(l) || l.startsWith("**") || l.
+          -startsWith("- ") || l.startsWith("  ") || l.startsWith("| ") |
+          -| l.startsWith("→ ") || l.startsWith("Auditor session kept") |
+          -| l.startsWith("completion audit approved")), `posted summary 
+          -is one report voice:\n${entries[0].content}`);                
+      101 +  assert.ok(lines.every((l: string) => l.startsWith("## ") || 
+          +l === "" || /^\*[^*].*\*(?:  )?$/.test(l) || l.startsWith("**"
+          +) || l.startsWith("- ") || l.startsWith("  ") || l.startsWith(
+          +"| ") || l.startsWith("→ ") || l.startsWith("Auditor session k
+          +ept") || l.startsWith("completion audit approved")), `posted s
+          +ummary is one report voice:\n${entries[0].content}`);         
+      102    const findings = lines.filter((l: string) => l.startsWith("-
+            "));
+      103    assert.ok(findings.length >= 1 && findings.length <= 8, `pos
+           ted summary carries change bullets plus the trailer, got ${fin
+           dings.length}`);
+      104    assert.ok(lines[lines.length - 1]!.startsWith("completion au
+           dit approved") && lines[lines.length - 1]!.includes("record: "
+           ), "the receipt, record pointer last");
+  ⎿  Updated tests/terminal-approval-render.test.ts (+1 -1)
+      101    assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/
+           i.test(l)), "transcript strips the stale Next too");
+      102    assert.equal(render.approval, "— auditor auditor-model appro
+           ved on the provider retry.", "the shared approval field keeps 
+           the full string for archive/persist consumers");
+      103    assert.ok(render.recap.length > 0, "external single line sti
+           ll produced");
+      104 -  assert.ok((render.chatLines[0] ?? "").startsWith(`## Done — 
+          -${render.outcome}`), "outcome matches the chat headline");    
+      104 +  assert.ok((render.chatLines[0] ?? "").startsWith(`## Done — 
+          +${sentenceCase(render.outcome)}`), "outcome matches the chat h
+          +eadline");                                                    
+      105  });
+      106  
+      107  test("the receipt states verdict-count news once, model-free",
+            () => {
+  ⎿  (timeout 10m)
+
+● The summary suites pass. Now a new test file pins the new behavior directly,
+  so it doesn't rely only on updated literals:
+
+● Write(tests/summary-human-reminder.test.ts)
+  ⎿  Wrote 95 lines to tests/summary-human-reminder.test.ts
+       1 // The end-of-task card restates what was asked, reads in senten
+         ce case, and
+       2 // keeps its meta on one block (field 2026-11-18: "a much better
+          human usable
+       3 // summary after the objective").
+       4 import { test } from "node:test";
+       5 import * as assert from "node:assert/strict";
+       6 import type { Goal } from "../extensions/goal-loop-core.js";
+       7 import {
+       8   buildRichTerminalParts,
+     … +87 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Part 1 is done: the new tests pass (7/7) and tsc is clean. Now part 2, how the
+  loop works. I'll start with what the runtime records about it.
+
+  Listed 1 directory, ran 2 shell commands (ctrl+o to expand)
+
+● Half the ledger (1,114 of 2,231 events) is one event, context_hygiene_dropped,
+  with identical content. Checking its cadence and what drives it:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The hygiene events lack the fingerprint de-duplication that the neighbouring
+  eviction events have, and the 142 identical 402 entries suggest requests went
+  out about every 10 seconds against an exhausted plan. I'm tracking down which
+  component is sending them. · summary
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● GLLA sent no continuations during that window, and the context hook firing
+  every ~28 s comes from outside it, so I'm de-duplicating GLLA's repeated
+  ledger lines the same way I handled the eviction event. · summary
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  tests/context-hygiene.test.ts
+  ⎿  Updated extensions/loops/goal-activation.ts (+20 -2)
+      591  // fingerprint — first occurrence lands, identical repeats are
+            silent, and
+      592  // any value change (or generation bump) re-arms.
+      593  let lastPayloadEvictionFingerprint = "";
+      594 +// Field 2026-11-18: the same rule for error-turn hygiene. The
+          + `context` hook                                               
+      595 +// runs once per provider request, so a host retrying against 
+          +a dead provider                                               
+      596 +// re-projected the identical failed turn every ~10-30s: 1,114
+          + of 2,231 events                                              
+      597 +// in one active ledger were byte-identical `context_hygiene_d
+          +ropped` lines.                                                
+      598 +// First occurrence lands; repeats are counted and ride the ne
+          +xt change.                                                    
+      599 +let lastContextHygieneFingerprint = "";                       
+      600 +let suppressedContextHygieneRepeats = 0;                      
+      601  /** A manual resume starts a fresh relentless cycle: a user pa
+           use between
+      602  an episode-1 wedge and the next one must not make that wedge p
+           ark one
+      603  cycle early. */
+     ...
+      4137      if (projection.evicted.length === 0 && hygiene.dropped.le
+            ngth === 0 && checkpointProjection.removedPayloads === 0) ret
+            urn {};
+      4138      try {
+      4139        if (hygiene.dropped.length > 0) {
+      4133 -        appendLedger(ctx.cwd, "context_hygiene_dropped", {   
+      4140 +        const hygieneValue = {                               
+      4141            dropped: hygiene.dropped.length,
+      4142            droppedDispatchPayloads: hygiene.dropped.filter(tur
+            n => turn.triggerMessageIndex !== undefined).length,
+      4143            kept: hygiene.kept,
+      4144            lastError: hygiene.dropped[hygiene.dropped.length -
+             1]?.errorMessage?.slice(0, 160),
+      4145            generation: sessionGeneration,
+      4139 -        });                                                  
+      4146 +        };                                                   
+      4147 +        const hygieneFingerprint = JSON.stringify(hygieneValu
+           +e);                                                          
+      4148 +        if (hygieneFingerprint !== lastContextHygieneFingerpr
+           +int) {                                                       
+      4149 +          lastContextHygieneFingerprint = hygieneFingerprint;
+      4150 +          appendLedger(ctx.cwd, "context_hygiene_dropped", { 
+      4151 +            ...hygieneValue,                                 
+      4152 +            ...(suppressedContextHygieneRepeats > 0 ? { suppr
+           +essedRepeats: suppressedContextHygieneRepeats } : {}),       
+      4153 +          });                                                
+      4154 +          suppressedContextHygieneRepeats = 0;               
+      4155 +        } else {                                             
+      4156 +          suppressedContextHygieneRepeats++;                 
+      4157 +        }                                                    
+      4158        }
+      4159        if (projection.evicted.length > 0) {
+      4160          const evictionFingerprint = `${sessionGeneration}:${p
+            rojection.evicted.length}:${projection.totalImageBytes - proj
+            ection.remainingImageBytes}:${projection.remainingImageBytes}
+            :${projection.remainingImageCount}`;
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+● The fingerprint is module-level, so I'll include cwd in it. That keeps two
+  projects (or two test temp dirs) in one process from silencing each other.
+  Then a pin for the de-duplication:
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿   12 pass
+      0 fail
+  ⎿  Updated extensions/loops/goal-activation.ts (+1 -1)
+      4144            lastError: hygiene.dropped[hygiene.dropped.length -
+             1]?.errorMessage?.slice(0, 160),
+      4145            generation: sessionGeneration,
+      4146          };
+      4147 -        const hygieneFingerprint = JSON.stringify(hygieneValu
+           -e);                                                          
+      4147 +        const hygieneFingerprint = `${ctx.cwd}\u0000${JSON.st
+           +ringify(hygieneValue)}`;                                     
+      4148          if (hygieneFingerprint !== lastContextHygieneFingerpr
+            int) {
+      4149            lastContextHygieneFingerprint = hygieneFingerprint;
+      4150            appendLedger(ctx.cwd, "context_hygiene_dropped", {
+  ⎿  Updated tests/context-hygiene.test.ts (+14 -0)
+      150    assert.equal(events[0]!.value!.dropped, 11);
+      151    assert.match(String(events[0]!.value!.lastError), /503/);
+      152  
+      153 +  // A host retrying against a dead provider re-sends the iden
+          +tical history                                                 
+      154 +  // every few seconds. The projection still runs each time, b
+          +ut identical                                                  
+      155 +  // repeats are silent; the next CHANGE lands once and report
+          +s them.                                                       
+      156 +  for (let i = 0; i < 5; i++) {                               
+      157 +    const again = await handler({ type: "context", messages: b
+          +loated }, ctx) as { messages?: unknown[] };                   
+      158 +    assert.equal(again!.messages!.length, 4, "every repeat is 
+          +still projected");                                            
+      159 +  }                                                           
+      160 +  assert.equal(ledger(cwd).filter((e) => e.type === "context_h
+          +ygiene_dropped").length, 1, "identical repeats add no ledger l
+          +ine");                                                        
+      161 +  const grown = [...bloated.slice(0, -1), failedTurn("503 stat
+          +us code (no body) #12"), userTurn("retry")];                  
+      162 +  await handler({ type: "context", messages: grown }, ctx);   
+      163 +  const afterChange = ledger(cwd).filter((e) => e.type === "co
+          +ntext_hygiene_dropped");                                      
+      164 +  assert.equal(afterChange.length, 2, "a changed projection la
+          +nds");                                                        
+      165 +  assert.equal(afterChange[1]!.value!.suppressedRepeats, 5, "t
+          +he suppressed repeats ride the next change");                 
+      166 +                                                              
+      167    // Clean history: no drops, no ledger noise.
+      168    const before = ledger(cwd).length;
+      169    const clean = await handler({ type: "context", messages: [us
+           erTurn("hi"), okTurn("hello")] }, ctx) as { messages?: unknown
+           [] };
+
+● Hygiene de-duplication is pinned (12/12 pass). The next loop signal in the
+  ledger is send_rearm_storm: 25 re-sends in 5 minutes while a turn was already
+  open. Looking at the rearm logic:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● That storm is the designed backoff: a long subagent turn kept the session busy
+  and the rearm reported it, so no change is needed. Next I'm checking the
+  continuation cadence across all ledger segments. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 990 of 2,091 continuation sends were full, with a median of 27.8k characters,
+  versus 46 characters for a marker send. Next I'm checking how GLLA chooses
+  between them and the recent ratio. · summary
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The delta-only rule should have cut most sends to a 46-char marker, but
+  October and November are still about half full. The ledger doesn't log why a
+  send went full, so I'm reconstructing it from the goal snapshot before each
+  one. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 160 of 258 recent full sends happened while pending auditor TODOs were set,
+  which forces a full ~28 KB prompt on every continuation; the audit report
+  already guards against this with a delivered fingerprint, so I'm checking how
+  that fingerprint is maintained, including resets on compaction. · summary
+
+  Searched for 2 patterns, ran 2 shell commands (ctrl+o to expand)
+
+● Compaction can also wipe out the record that rework content was already
+  delivered, so I'll forget delivered rework content on session_compact too,
+  which means one full send per compaction during rework instead of every turn. 
+  · summary
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿    pi.on("session_compact", async (_event: any, ctx: ExtensionContext)
+     => {
+         signalSupervisionEvent({ plane: "auditor", kind: "recover", source
+     … +24 lines (ctrl+o to expand)
+  ⎿  Updated extensions/goal-continuation.ts (+31 -1)
+      326  export function resetContinuationInitialSend(): void {
+      327    continuationInitialFullSentFor = null;
+      328    deliveredAuditFingerprints.clear();
+      329 +  deliveredPendingTasks.clear();                              
+      330  }
+      331 +                                                              
+      332 +/** Field 2026-11-18: per-goal hash of the auditor TODO list a
+          +lready delivered                                              
+      333 + * in a full brief. `pendingTasks` forced a full ~28 KB send o
+          +n EVERY rework                                                
+      334 + * turn: in the local record 160 of 258 recent full sends carr
+          +ied an unchanged                                              
+      335 + * TODO list the model had already been given. A new or edited
+          + list still goes                                              
+      336 + * full; an unchanged one rides the marker like any other stea
+          +dy-state turn. */                                             
+      337 +const deliveredPendingTasks = new Map<string, string>();      
+      338 +function pendingTasksFingerprint(tasks: readonly string[] | un
+          +defined): string | undefined {                                
+      339 +  if (!tasks || tasks.length === 0) return undefined;         
+      340 +  return createHash("sha256").update(JSON.stringify(tasks), "u
+          +tf8").digest("hex").slice(0, 16);                             
+      341 +}                                                             
+      342 +                                                              
+      343 +/** A compaction may summarize away the full brief that carrie
+          +d the audit                                                   
+      344 + * report and the TODO list, so the next send must teach them 
+          +again. Cheaper                                                
+      345 + * than the alternative: one full send per compaction during r
+          +ework instead of                                              
+      346 + * one per turn. */                                           
+      347 +export function forgetDeliveredReworkContext(): void {        
+      348 +  deliveredAuditFingerprints.clear();                         
+      349 +  deliveredPendingTasks.clear();                              
+      350 +}                                                             
+      351 +export function __testOnlyRecordDeliveredPendingTasks(goalId: 
+          +string, tasks: readonly string[] | undefined): void {         
+      352 +  const fp = pendingTasksFingerprint(tasks);                  
+      353 +  if (fp) deliveredPendingTasks.set(goalId, fp); else delivere
+          +dPendingTasks.delete(goalId);                                 
+      354 +}                                                             
+      355  export function __testOnlyRecordDeliveredAudit(goalId: string,
+            fp: AuditEvidenceFingerprint | undefined): void {
+      356    if (fp) deliveredAuditFingerprints.set(goalId, fp); else del
+           iveredAuditFingerprints.delete(goalId);
+      357  }
+     ...
+      1604  export function needsFullContinuation(goal: Goal): boolean {
+      1605    if (goal.repairTarget) return true;
+      1606    if (goal.autoResumedAt) return true;
+      1582 -  if (!auditorSurfaceSuppressed(goal.id) && goal.pendingTasks
+           - && goal.pendingTasks.length > 0) return true;               
+      1607 +  if (!auditorSurfaceSuppressed(goal.id) && goal.pendingTasks
+           + && goal.pendingTasks.length > 0                             
+      1608 +    && pendingTasksFingerprint(goal.pendingTasks) !== deliver
+           +edPendingTasks.get(goal.id)) return true;                    
+      1609    const lastAudit = goal.auditHistory?.[goal.auditHistory.len
+            gth - 1];
+      1610    if (lastAudit && lastAudit.report && !auditorSurfaceSuppres
+            sed(goal.id)) {
+     … 11 more lines (ctrl+o to expand)
+
+● Bash(sed -n 150,197p extensions/loops/goal-activation.ts | grep -n
+      "resetContinuationInitialSend"; python3 - <<'EOF'
+      import pathlib…)
+  ⎿  43:  resetContinuationInitialSend,
+  ⎿  Updated extensions/loops/goal-activation.ts (+4 -0)
+      190    setContinuationRearmSince,
+      191    resetContinuationDispatchState,
+      192    resetContinuationInitialSend,
+      193 +  forgetDeliveredReworkContext,                               
+      194    noteUserMessageForDispatch,
+      195    sendTerminalCompletionNotice,
+      196    type ContinuationFlags,
+     ...
+      1684      if (!isSupervising()) return;
+      1685      clearBoundaryCompactionAttempt(ctx);
+      1686      appendLedger(ctx.cwd, "session_compact", {});
+      1687 +    // The compacted history may no longer hold the audit rep
+           +ort or the TODO                                              
+      1688 +    // list, so the next send re-teaches them in a full brief
+           +.                                                            
+      1689 +    forgetDeliveredReworkContext();                          
+      1690      // v0.28.24: a compaction is LEGITIMATE busy time — reset
+             the send-rearm
+      1691      // storm streaks (π-web nearly escalated a "send-retry st
+            orm" pause during
+      1692      // a 3.5-minute compact) and open the post-compaction sta
+            ll grace.
+
+● Typecheck is clean. Now the pin: an unchanged TODO list rides the marker, a
+  changed list goes full, and compaction re-teaches it.
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿   13 pass
+      0 fail
+  ⎿  Updated tests/delta-only-continuation.test.ts (+44 -0)
+       7    buildContinuationContent,
+       8    buildMarkerContent,
+       9    continuationPrompt,
+      10 +  forgetDeliveredReworkContext,                                
+      11    needsFullContinuation,
+      12 +  __testOnlyRecordDeliveredPendingTasks,                       
+      13    resetContinuationInitialSend,
+      14    sendContinuation,
+      15  } from "../extensions/goal-continuation.js";
+     ...
+      163    assertFullBrief(pi.sent[2]?.message.content ?? "", cleanGoal
+           ({ id }));
+      164  });
+      165  
+      166 +test("an auditor TODO list already delivered rides the marker;
+          + a changed list goes full", () => {                           
+      167 +  const goal = cleanGoal({ id: "20261118000000-todos01", pendi
+          +ngTasks: ["fix the race", "pin it"] });                       
+      168 +  assert.equal(needsFullContinuation(goal), true, "an undelive
+          +red TODO list teaches in a full brief");                      
+      169 +  __testOnlyRecordDeliveredPendingTasks(goal.id, goal.pendingT
+          +asks);                                                        
+      170 +  assert.equal(needsFullContinuation(goal), false, "the same l
+          +ist on the next turn is steady state");                       
+      171 +  assert.equal(needsFullContinuation({ ...goal, pendingTasks: 
+          +["fix the race", "pin it", "and the docs"] }), true, "a change
+          +d list is a delta");                                          
+      172 +  assert.equal(needsFullContinuation({ ...goal, id: "202611180
+          +00000-todos02" }), true, "delivery is per goal");             
+      173 +  forgetDeliveredReworkContext();                             
+      174 +  assert.equal(needsFullContinuation(goal), true, "after compa
+          +ction the list teaches again");                               
+      175 +});                                                           
+      176 +                                                              
+      177 +test("field 2026-11-18: rework turns send the TODO brief once,
+          + then markers", async () => {                                 
+      178 +  const cwd = tmpCwd();                                       
+      179 +  const id = `20261118000001-todos${Date.now() % 100000}`;    
+      180 +  const goal = cleanGoal({ id, pendingTasks: ["fix the race in
+          + the settle path"] });                                        
+      181 +  setGlobalAutoResume(true);                                  
+      182 +  seedState(cwd, { goal, list: [] });                         
+      183 +  const pi = new MockPi();                                    
+      184 +  activate(pi.api);                                           
+      185 +  __testOnlyResetOwnerSession();                              
+      186 +  const ctx = makeMockCtx(cwd, { sessionManager: { name: `todo
+          +s-${id}` } });                                                
+      187 +  await pi.fire("session_start", { reason: "startup" }, ctx); 
+      188 +  await tick(80);                                             
+      189 +  await sendContinuation(id);                                 
+      190 +  await tick(80);                                             
+      191 +  const first = pi.sent[0]?.message.content ?? "";            
+      192 +  assert.match(first, /AUDITOR TODO LIST/, "the first send car
+          +ries the TODO list");                                         
+      193 +  await pi.fire("before_agent_start", { prompt: first }, ctx);
+     … 17 more lines (ctrl+o to expand)
+  ⎿  (timeout 10m)
+
+● Both pins pass. Next, the tests that depend on the TODO list being re-sent:
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● A size pin on the continuation payload moved by 382 bytes, and I didn't touch
+  the prompt text. I'll check whether it already failed at the commit before my
+  changes:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The failing test was already failing before my changes, so it's stale from
+  earlier today; I'm checking how scripts/measure-context-growth.mjs regenerated
+  these pins. · summary
+
+  Ran 5 shell commands (ctrl+o to expand)
+
+● The expanded HUMAN_HANDOFF_GUIDANCE added after v0.40.1 is the cause, and
+  since it's a deliberate content change, I'm re-pinning to the measured value. 
+  · summary
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  4
+      15 pass
+      0 fail
+  ⎿  Updated tests/context-checkpoint.test.ts (+6 -3)
+      199    // completion-communication guidance and the operator-specif
+           ic daemon
+      200    // detail — −3,808 serialized bytes on the one retained payl
+           oad
+      201    // (32697 → 28889). Cardinality and the flat-growth invarian
+           t unchanged.
+      202 +  // Unreleased (2026-11-18): HUMAN_HANDOFF_GUIDANCE asks for 
+          +a whole-objective                                             
+      203 +  // summary with a worked example — +382 serialized bytes on 
+          +the one retained                                              
+      204 +  // payload (28889 → 29271). Measured with scripts/measure-co
+          +ntext-growth.mjs.                                             
+      205    assert.deepEqual(bounded, [
+      203 -    { count: 5, messageCount: 4, serializedBytes: 28889, gllaM
+          -essageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },    
+      204 -    { count: 12, messageCount: 4, serializedBytes: 28889, glla
+          -MessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },  
+      205 -    { count: 25, messageCount: 4, serializedBytes: 28889, glla
+          -MessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },  
+      206 +    { count: 5, messageCount: 4, serializedBytes: 29271, gllaM
+          +essageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },    
+      207 +    { count: 12, messageCount: 4, serializedBytes: 29271, glla
+          +MessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },  
+      208 +    { count: 25, messageCount: 4, serializedBytes: 29271, glla
+          +MessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },  
+      209    ]);
+      210    // Serialized bytes consistent across counts (bounded by che
+           ckpoint + 1 payload)
+      211    const b0 = bounded[0]!;
+
+● The pin is fixed (15/15). Now the CHANGELOG entry and regenerated summary
+  captures, then the full release gate.
+
+● Update(CHANGELOG.md)
+  ⎿  Added 15 lines
+       2  
+       3  ## Unreleased
+       4  
+       5 +### The completion card reminds you what was asked, and rework 
+         +turns stop resending the whole brief (2026-11-18)              
+       6 +                                                               
+       7 +Measured against the local record (the active ledger plus all r
+         +etained segments: 2,091 continuation sends, 2,231 active-ledger
+         + events).                                                      
+       8 +                                                               
+       9 +- **The card restates the goal.** A long autonomous goal ends h
+         +ours after it was set, and the card never said what had been as
+         +ked. The chat card now carries `Goal: <first sentence of the ob
+         +jective>` directly above the meta line, in one block (Markdown 
+         +hard break). The archive is unchanged: it already opens with th
+         +e full `## Objective`.                                         
+      10 +- **One meta line.** When no file list follows, the diff stat j
+         +oins the meta line (`3h 00m elapsed · 1 audit · 14 files change
+         +d, +620 −88`) instead of sitting in its own block.             
+      11 +- **Sentence case.** Agent text written in lower case (`all six
+         + complaints are addressed`, `an in-dialog toggle is not possibl
+         +e`) read as fragments. The headline, finding leads, follow-ups 
+         +and next steps now start with a capital. Only a plain lower-cas
+         +e leading word is touched; paths, commands and identifiers (`no
+         +te.md`, `npm run …`, `handleClick`, `iOS`) keep their spelling.
+      12 +- **No `· ·`.** A `path:line` pointer moved out of `… existed ·
+         + path:line` left a bare separator that the join then doubled.  
+      13 +- **The second "Summary" heading reads as "What changed".** The
+         + prose lede above it already is the summary. This is display-on
+         +ly: durable content keeps `Summary`, so the collapsed projectio
+         +n and replayed receipts are unchanged.                         
+      14 +- **A non-complete render never wears `Done`.** `buildTerminalA
+         +pprovalRender` passed no headline kind, so a stopped goal rende
+         +red through it read `## Done — Work stopped`. Every production 
+         +caller passes `complete` today; the headline now follows the st
+         +atus anyway.                                                   
+      15 +- **Rework turns ride the marker.** `pendingTasks` (the auditor
+         + TODO list) forced a full ~28 KB continuation on *every* turn w
+         +hile rework was open: 160 of the 258 most recent full sends car
+         +ried a TODO list the model had already been given. Delivery is 
+         +now fingerprinted per goal, as the audit report already was. A 
+         +new or edited list still goes full, and an unchanged one sends 
+         +the 46-char marker. `session_compact` forgets both delivered fi
+         +ngerprints, because a compaction may summarize the brief away. 
+         +The next send re-teaches it: one full brief per compaction inst
+         +ead of one per turn.                                           
+      16 +- **`context_hygiene_dropped` is de-duplicated.** The `context`
+         + hook runs once per provider request. While a host retried agai
+         +nst a dead provider (402 plan exhausted, 429 token plan), GLLA 
+         +ledgered the identical projection every 10–30 s: 1,114 of 2,231
+         + active-ledger events. Identical repeats are now silent and cou
+         +nted (`suppressedRepeats` on the next change), matching `payloa
+         +d_guard_eviction`. The projection itself still runs on every re
+         +quest.                                                         
+      17 +- `tests/context-checkpoint.test.ts` re-pinned: the expanded `H
+         +UMAN_HANDOFF_GUIDANCE` (already in Unreleased) adds 382 seriali
+         +zed bytes to the retained payload.                             
+      18 +- Coverage: `tests/summary-human-reminder.test.ts`, `tests/delt
+         +a-only-continuation.test.ts`, `tests/context-hygiene.test.ts`. 
+         +Summary pins were migrated to the sentence-cased wording.      
+      19 +                                                               
+      20  ### A decision pause can answer itself after a delay, so an odd
+           question never parks the work forever (2026-11-18)
+      21  
+      22  - **New setting `decisionAutoSelectMinutes` (off by default).**
+           Turn it on in `/glla` → **Keep-going** → *Stuck-decision auto-
+          select* (2 / 10 / 30 minutes). After that long with nobody answ
+          ering, the RECOMMENDED decision option is adopted and the work 
+          continues. When it is unset, a decision pause waits for you for
+          ever — exactly as before.
+
+● Bash(export PATH=/home/dracon/.bun-1.3.14/bun-linux-x64:$PATH; bun
+      scripts/summary-readability-capture.ts && git status --short | cat && cat
+      audit/summary-captures/f…)
+  ⎿   M CHANGELOG.md
+      M audit/summary-captures/dark-120.ansi
+      M audit/summary-captures/dark-120.json
+     … +21 lines (ctrl+o to expand)
+  ⎿  Updated audit/summary-captures/dark-40.ansi (+1 -1)
+      2   Done — Completion reports now read as  
+      3   one account of the work                
+      4                                          
+      5 - Summary                                                        
+      5 + What changed                                                   
+      6                                          
+      7   Report shape                           
+      8   - The card is one document: headline,  
+  ⎿  Updated audit/summary-captures/dark-40.json (+1 -6)
+       5    "source": "registered goal-event production report renderer; 
+          installed Pi dark/light theme",
+       6    "durableContentUnchanged": true,
+       7    "maxVisibleWidth": 40,
+       8 -  "narrowTableFallback": "bullets",                            
+       9 -  "capture": "real xterm on private Xvfb",                     
+      10 -  "pixels": [                                                  
+      11 -    380,                                                       
+      12 -    761                                                        
+      13 -  ]                                                            
+       8 +  "narrowTableFallback": "bullets"                             
+       9  }
+  ⎿  Updated audit/summary-captures/dark-120.ansi (+1 -1)
+      1                                                   
+                                                                         
+                
+      2   Done — Completion reports now 
+         read as one account of the work
+                                      
+      3                                                   
+                                                                         
+                
+      4 - Summary                                                        
+        -                                                                
+        -                                                                
+      4 + What changed                                                   
+        +                                                                
+        +                                                                
+      5                                                   
+                                                                         
+                
+      6   Report shape              
+                                                                         
+                                      
+      7   - The ca
+         rd is one document: headline, lede, changes, verification, follo
+         w-ups, next steps, receipt
+         5m — sections, not an  
+  ⎿  Updated audit/summary-captures/dark-120.json (+1 -6)
+       5    "source": "registered goal-event production report renderer; 
+          installed Pi dark/light theme",
+       6    "durableContentUnchanged": true,
+       7    "maxVisibleWidth": 120,
+       8 -  "narrowTableFallback": "table",                              
+       9 -  "capture": "real xterm on private Xvfb",                     
+      10 -  "pixels": [                                                  
+      11 -    1100,                                                      
+      12 -    666                                                        
+      13 -  ]                                                            
+       8 +  "narrowTableFallback": "table"                               
+       9  }
+  ⎿  Updated audit/summary-captures/light-40.ansi (+1 -1)
+      2   Done — Completion reports now read as  
+      3   one account of the work                
+      4                                          
+      5 - Summary                                                        
+      5 + What changed                                                   
+      6                                          
+      7   Report shape                           
+      8   - The card is one document: headline,  
+  ⎿  … 3 more files changed
+
+● The capture fixture has no objective or duration, so it can't show the new
+  block. Adding them so the evidence covers the change:
+
+● Bash(python3 - <<'EOF'
+      import pathlib…)
+  ⎿  ## Done — Completion reports now read as one account of the work
+
+     *Goal: Rewrite the end-of-task summary so a person can read it at a gl
+     … +18 lines (ctrl+o to expand)
+  ⎿  Updated scripts/summary-readability-capture.ts (+4 -0)
+      19  
+      20  const content = composeRichTerminalLines(buildRichTerminalParts
+          ({
+      21    outcome: 'Completion reports now read as one account of the w
+          ork', countsLine: '', chat: true,
+      22 +  // Field 2026-11-18: the ask and one meta line (diff stat fol
+         +ded in) sit                                                    
+      23 +  // under the headline, so the capture proves the reminder blo
+         +ck renders.                                                    
+      24 +  objective: 'Rewrite the end-of-task summary so a person can r
+         +ead it at a glance. Keep the archive verbatim.',               
+      25 +  durationLine: '*12 turns · 41m elapsed · 1 audit*', changeLin
+         +e: '6 files changed, +212 −74',                                
+      26    groups: [
+      27      { title: 'Report shape', findings: ['The card is one docume
+          nt: headline, lede, changes, verification, follow-ups, next ste
+          ps, receipt — sections, not an audit log for extensions/complet
+          ion-summary.ts:1200'] },
+      28      { title: 'Verification', findings: ['The gate inventory is 
+          always visible, derived from the notes rather than claimed — im
+          possible gate rows stay REPORTED, never PASS'] },
+  ⎿  Updated audit/summary-captures/dark-40.ansi (+5 -0)
+       2   Done — Completion reports now read as  
+       3   one account of the work                
+       4                                          
+       5 + Goal: Rewrite the end-of-task summary                         
+       6 + so a person can read it at a glance                           
+       7 + 12 turns · 41m elapsed · 1 audit · 6                          
+       8 + files changed, +212 −74                                       
+       9 +                                                               
+      10   What changed                           
+      11                                          
+      12   Report shape                           
+  ⎿  Updated audit/summary-captures/dark-40.json (+1 -1)
+      1  {
+      2    "width": 40,
+      3 -  "rows": 37,                                                   
+      3 +  "rows": 42,                                                   
+      4    "appearance": "dark",
+      5    "source": "registered goal-event production report renderer; i
+         nstalled Pi dark/light theme",
+      6    "durableContentUnchanged": true,
+  ⎿  Updated audit/summary-captures/dark-120.ansi (+3 -0)
+      1                                                   
+                                                                         
+                
+      2   Done — Completion reports now 
+         read as one account of the work
+                                      
+      3                                                   
+                                                                         
+                
+      4 + Goal: Rewrite the end-of-task                                  
+        +summary so a person can read it at a glance                     
+        +m                                                               
+      5 + 12 turns · 4                                                   
+        +1m elapsed · 1 audit · 6 files changed, +212 −74                
+        +                                                                
+      6 +                                                                
+        +                                                                
+        +                                                                
+      7   What changed              
+                                                                         
+                                      
+      8                                                   
+                                                                         
+                
+      9   Report shape              
+                                                                         
+                                      
+  ⎿  Updated audit/summary-captures/dark-120.json (+1 -1)
+      1  {
+      2    "width": 120,
+      3 -  "rows": 32,                                                   
+      3 +  "rows": 35,                                                   
+      4    "appearance": "dark",
+      5    "source": "registered goal-event production report renderer; i
+         nstalled Pi dark/light theme",
+      6    "durableContentUnchanged": true,
+  ⎿  … 5 more files changed
+
+● The narrow 40-column capture wraps cleanly. Now the full release gate, run in
+  the background (it takes about 15–30 minutes here):
+  Ran 1 shell command (ctrl+o to expand)
+
+● While the gate runs: the CHANGELOG entry names no private projects, and every
+  new line is generic. Waiting for the gate result.
+
+● The background task will notify me when the gate exits. I'll also watch the
+  log for early failure lines, so a broken run doesn't sit silent for 20
+  minutes.
+
+● Monitor(release:check failures or exit)
+  ⎿  Monitor started · task bx7063acz · timeout 1800s
+
+● The full release gate is running. It's the last check before I report back.
+
+✻ Baked for 15m 28s · done 17:11
+
+※ recap: Goal: make the end-of-task summary easier to read and cut waste in the goal loop. Both are done and their tests pass, and the full release check is running now; I'll report its result when it finishes. (disable recaps in /config)
+
+● Monitor event: "release:check failures or exit"
+  (fail) restart: a finished settlement is approved once — one render, and the 
+  render follows the archive [908.24ms]
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● It's another casing pin, not a regression. I'll fix it and sweep every test
+  for the same lowercase-headline pattern, so the gate doesn't trip on them one
+  at a time:
+
+● Bash(sed -i '204s/Done — shipped the thing/Done — Shipped the thing/'
+      tests/audit-settlement-restart.test.ts; grep -rnE "Done (—|\\\\u2014)
+      [a-z]" tests | grep -v "D…)
+  ⎿  tests/summary-agent-text.test.ts:26:    headline: "Done — test",
+     tests/summary-renderer.test.ts:36:  for (const [heading, tone] of [["D
+     one — fixed", "success"], ["Aborted — user stopped", "warning"], ["Fai
+     … +11 lines (ctrl+o to expand)
+  ⎿  Updated tests/audit-settlement-restart.test.ts (+1 -1)
+      201      assert.equal(stored.length, 1, "the terminal summary is qu
+           eued exactly once");
+      202      assert.equal(stored[0]!.goalId, goalId);
+      203      const text = stored[0]!.chatLines.join("\n");
+      204 -    assert.match(text, /## Done — shipped the thing\./, "the q
+          -ueued render is the user-facing recap card");                 
+      204 +    assert.match(text, /## Done — Shipped the thing\./, "the q
+          +ueued render is the user-facing recap card");                 
+      205      assert.match(text, /completion audit approved after sessio
+           n recovery/, "the card says the audit approved");
+      206      assert.ok(!text.includes("auditor: settling"), "the card n
+           ever reports an unresolved audit as finished");
+      207  
+
+● The remaining matches are renderer inputs or single-character titles that
+  sentence-casing leaves alone, so they're fine. I'll let the gate finish and
+  then rerun any failed files.
+
+✻ Brewed for 15s · done 17:27
+
+● Monitor event: "release:check failures or exit"
+  (fail) v0.38.52: old claims without tests render byte-identical to v0.38.50 
+  [2.08ms]
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Same kind of pin. Fixing it and sweeping for lowercase bold-bullet assertions:
+
+● Bash(sed -i '112s/"- \*\*pins the path\*\*"/"- **Pins the path**"/'
+      tests/second-gemini-gap.test.ts; grep -rnE
+      "(includes|equal|match)\(.*[\"'/\`]- (\\\\\*\\\\\*|\*\…)
+  ⎿  Updated tests/second-gemini-gap.test.ts (+1 -1)
+      109    const legacy: FindingGroup[] = [{ title: "R", findings: ["Re
+           route: router.ts:12 pins the path"] }];
+      110    const p = parts({ groups: legacy, gates: [] });
+      111    // v0.38.102: gist on the bullet, evidence indented beneath.
+      112 -  assert.ok(p.findingLines.includes("- **pins the path**"), "l
+          -egacy finding normalized to an outcome headline");            
+      112 +  assert.ok(p.findingLines.includes("- **Pins the path**"), "l
+          +egacy finding normalized to an outcome headline");            
+      113    assert.ok(p.findingLines.includes("  - router.ts:12"), "evid
+           ence rides indented beneath it");
+      114    assert.ok(!p.findingLines.some((l) => l.includes("Evidence:"
+           )), "no invented sub-line");
+      115  });
+
+  Searched for 2 patterns (ctrl+o to expand)
+
+● No other assertions pin lowercase bold leads. Waiting for the gate to finish.
+
+✻ Churned for 22s · done 17:27
+
+● Background command "Run full release gate" was stopped because the system is
+running low on memory
+
+● The full gate was stopped by Claude Code because the system was low on memory.
+  I won't restart it on my own. I'll check what it had reported before the stop
+  and verify the two fixed files in a small foreground run.
+
+● Monitor(no-op close)
+  ⎿  Monitor started · task bry8xusdz · timeout 1s
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Monitor "no-op close" ended without producing output (exit 0)
+
+● Stop Task
+  ⎿  touch /tmp/glla-sum/release.log; tail -n +1 -f
+     /tmp/glla-sum/release.log | grep -E --line-buffered "^\(fail\)|EXIT
+     [0-9]+|error TS|npm ERR|ELIFECYCLE| [1-9][0-9… · stopped
+
+● Both parts are done, but I couldn't finish the full npm run release:check.
+  Claude Code stopped it after 17 minutes because the machine was low on memory,
+  so it hasn't passed end to end on the final code. Before the stop it reported
+  two failures. Both were old lowercase wording in tests (shipped the thing,
+  pins the path); I fixed them, and those two files now pass. tsc is clean, and
+  the roughly 290 tests in the summary and loop files I touched all pass when
+  run directly. I didn't restart the gate. When memory allows, rerun it with ! 
+  npm run release:check (using Bun 1.3.14).
+
+  Part 1: the end-of-task summary
+
+  This is what you'd see now (normal terminal width):
+
+   Done — All six note.md complaints are addressed, and one of them turned out 
+  not to be a bug
+
+   The recovery card that kept telling you to "send 'continue'" … is gone, …
+
+   Goal: Fix the six open GLLA operator-surface complaints recorded in note.md
+   3h 00m elapsed · 1 audit · 14 files changed, +620 −88
+
+   What changed
+   Recovery card
+   - The stale recovery card is gone — it rendered for a marker whose goal no 
+  longer existed · extensions/goal-recovery.ts:120
+   …
+
+  - It reminds you what was asked. A Goal: line now shows the first sentence of
+    the objective. Goals end hours after you set them, and the card never said
+    what they were for.
+  - Stats on one line: time, audits and files changed sit together instead of in
+    separate blocks.
+  - Capital letters at the start. The agent often writes in lowercase ("all
+    six…", "an in-dialog…"), which read like fragments. File paths, commands and
+    code names keep their exact spelling.
+  - A stray · · is gone. It appeared when a file reference was pulled out of a
+    sentence.
+  - The second "Summary" heading now reads "What changed". The paragraph above
+    it is already the summary. This only changes what's shown; the saved card is
+    unchanged, so older cards still display correctly.
+  - A goal that didn't finish no longer shows a "Done" headline. No current code
+    path triggers this, but nothing prevented it.
+
+  Part 2: how the loop works
+
+  Based on your local GLLA records (about 2,100 continuation messages):
+
+  - Rework turns were resending the whole brief every time. After an auditor
+    rejects a claim, it leaves a to-do list. While that list existed, every turn
+    re-sent the full ~28 KB instructions (about 7k tokens) instead of the
+    46-character check-in. That was 160 of the last 258 full sends, and each one
+    stays in the conversation. Now the list is sent once, and again only when
+    it changes or after the conversation is compacted.
+  - The event log was half noise. 1,114 of 2,231 entries in the current log were
+    one identical line. It was written every 10–30 seconds while something kept
+    retrying against a dead provider (out of credits or rate-limited). Repeats
+    are now counted instead of written.
+  - Not GLLA's to fix: those retries came from outside GLLA (Pi itself or
+    another extension). GLLA's own log shows it was correctly waiting out its
+    30-minute backoff, so I left that alone.
+  - Checked and left as is: the "re-send storm" warnings were a long subagent
+    turn keeping the session busy. The existing backoff handled it as designed.
+
+  Other changes
+
+  - I updated one stale size check in tests/context-checkpoint.test.ts. It broke
+    after today's earlier change that lengthened the completion-report
+    instructions sent to the agent, and it was already failing before my
+    changes.
+  - About 30 test expectations changed to the capitalized wording, and new tests
+    are in tests/summary-human-reminder.test.ts.
+  - There's a CHANGELOG entry under Unreleased, and the text captures in
+    audit/summary-captures/ are regenerated. The PNG screenshots there are still
+    the old images, because I didn't have a way to regenerate them.
+
+  The sync daemon has committed and pushed everything. I didn't bump the
+  version, tag or publish.
+
+◯ Goal not yet met… continuing (ctrl+o to expand)
+
+● The stop hook wants end-to-end validation. Claude Code reaped the gate for low
+  memory, so before rerunning anything I'll check the current memory situation.
+  Ran 1 shell command (ctrl+o to expand)
+
+● Only 1.7 GiB of memory is free, with two stray vite build processes and 30 GiB
+  of swap in use, so rerunning the gate now would likely be stopped again. I'll
+  wait until 8 GiB is available, for up to 40 minutes, and rerun it then. 
+  · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I'm waiting for memory to free up. Once 8 GiB is available I'll rerun npm run 
+  release:check on the final code. If it's still low after 40 minutes, I'll stop
+  and leave the gate for you to run.
+
+✻ Churned for 1m 43s · done 17:29
+
+※ recap: The summary and loop improvements are done and their own tests pass, but the full release check hasn't passed yet. When at least 8 GiB of memory is free, I'll rerun `npm run release:check`; if it isn't free within 40 minutes, I'll leave that run to you. (disable recaps in /config)
+
+● Goal check-in: background work still running
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Still waiting. Memory has been at about 2 GiB for the past 30 minutes because
+  another project's vite build processes keep running, so the gate hasn't
+  started. The memory check gives up in about 10 minutes. If memory hasn't
+  recovered by then, I'll stop and hand the gate to you.
+
+✻ Worked for 30s · done 18:00
+
+※ recap: The completion-summary improvements and two loop fixes (no more full-brief resends on rework turns, much less ledger noise) are done, but the full release gate couldn't run because memory is low. Next, rerun it with `! npm run release:check` once memory frees up. (disable recaps in /config)
+
+● Background command "Wait for 8 GiB free memory before rerunning gate"
+completed (exit code 0)
+
+  Read 1 file (ctrl+o to expand)
+
+● The full release gate still hasn't run end to end on the final code. Memory
+  never got back to a safe level: it sat at 2–5 GiB for the whole 40-minute
+  wait, and is about 4 GiB now. Claude Code already stopped one run for low
+  memory, so I'm not starting it again on my own.
+
+  What has passed on the final code:
+  - Typecheck: tsc --noEmit is clean.
+  - Files I touched or that cover the changed code: all roughly 290 tests pass
+    when run directly. That includes the summary card, the renderer, the
+    continuation brief, the event-log de-duplication and the payload-size check.
+  - The partial gate run: it got through about 17 minutes and reported only two
+    failures. Both were lowercase wording in tests (shipped the thing, pins the 
+    path); I fixed them, and those two files now pass.
+
+  Still unconfirmed: the rest of the suite, plus the packaging and release-smoke
+  steps at the end of release:check.
+
+  Once the other project's vite build processes have finished, run ! npm run 
+  release:check (with Bun 1.3.14 first on your PATH). Or tell me to start it and
+  I'll watch it through.
+
+◯ Goal not yet met… continuing (ctrl+o to expand)
+
+● The hook still needs the full verification. A background run gets stopped when
+  memory is low and the session is idle, but foreground runs don't. So I'll run
+  the suite in foreground chunks of 10 minutes or less, then each remaining
+  release:check step on its own. That covers the same ground. First, what
+  release:check actually runs:
+
+  Listed 1 directory (ctrl+o to expand)
+
+● The test:all run covers tests, typecheck, and two extra checks across 501 test
+  files. I'm splitting them into 6 chunks and starting with chunk 1. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Chunk 1 passed: 903 tests, 0 failures, in 400 s. That's too close to the
+  10-minute limit, so I'll halve the remaining chunks.
+
+  Searched for 1 pattern, ran 2 shell commands (ctrl+o to expand)
+
+● The same pre-existing cause applies: the longer completion-report instructions
+  add about 380 bytes per continuation message. I'm checking a second test
+  file's size pins before updating them. · summary
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I'll capture the values the current code actually produces, using a throwaway
+  copy of the test that prints them, rather than typing numbers by hand:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● The first failing assertion hides the rest. I'll make the throwaway copy
+  report every difference field by field instead of stopping:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Every payload differs by the same +378 chars (+382 serialized bytes), scaled
+  by the number of continuations, so the shape and linear-growth invariants hold
+  and only the per-payload constant moved. I'm applying the measured values
+  next. · summary
+
+● Bash(python3 - <<'EOF'
+      import pathlib,re…)
+  ⎿  [(6343, 2), (6356, 2), (25372, 3), (25424, 2), (25470, 1), (25801, 2),
+      (25984, 2), (31715, 1), (31728, 1), (76116, 2), (76129, 2), (103204,
+     1), (126860, 1), (126912, 1), (129005, 1), (129188, 1), (158575, 1), (
+     … +5 lines (ctrl+o to expand)
+  ⎿  Updated tests/context-growth-measurement.test.ts (+23 -19)
+      166    // v0.39.71 (2026-11-13): the template drops stale completio
+           n guidance and
+      167    // operator-specific daemon detail — 25_372 chars / 25_470 U
+           TF-8 bytes
+      168    // per payload. Regenerated with scripts/measure-context-gro
+           wth.mjs.
+      169 -  assert.equal(payload.length, 25_372);                       
+      170 -  assert.equal(new TextEncoder().encode(payload).byteLength, 2
+          -5_470);                                                       
+      169 +  // Unreleased (2026-11-18): HUMAN_HANDOFF_GUIDANCE asks for 
+          +a whole-objective                                             
+      170 +  // summary with a worked example — +378 chars / +378 UTF-8 b
+          +ytes / +382                                                   
+      171 +  // serialized bytes per payload (25_372 → 25_750 chars). Eve
+          +ry row below                                                  
+      172 +  // moved by exactly that constant × continuations; shape is 
+          +unchanged.                                                    
+      173 +  assert.equal(payload.length, 25_750);                       
+      174 +  assert.equal(new TextEncoder().encode(payload).byteLength, 2
+          +5_848);                                                       
+      175    assert.deepEqual(one, {
+      176      messageCount: 3,
+      173 -    serializedBytes: 25_984,                                  
+      174 -    textChars: 25_424,                                        
+      175 -    estimatedTokens: 6_356,                                   
+      177 +    serializedBytes: 26_366,                                  
+      178 +    textChars: 25_802,                                        
+      179 +    estimatedTokens: 6_451,                                   
+      180      gllaMessageCount: 1,
+      177 -    gllaSerializedBytes: 25_801,                              
+      178 -    gllaTextChars: 25_372,                                    
+      179 -    gllaEstimatedTokens: 6_343,                               
+      181 +    gllaSerializedBytes: 26_183,                              
+      182 +    gllaTextChars: 25_750,                                    
+      183 +    gllaEstimatedTokens: 6_438,                               
+      184      uniqueGllaPayloadCount: 1,
+      185      repeatedGllaPayloadCount: 0,
+      186      repeatedGllaSerializedBytes: 0,
+     ...
+      216    assert.equal(twelve.failedErrorOnlyCount, 0);
+      217    assert.deepEqual(twelve, {
+      218      messageCount: 14,
+      215 -    serializedBytes: 309_795,                                 
+      216 -    textChars: 304_516,                                       
+      217 -    estimatedTokens: 76_129,                                  
+      219 +    serializedBytes: 314_379,                                 
+      220 +    textChars: 309_052,                                       
+      221 +    estimatedTokens: 77_263,                                  
+      222      gllaMessageCount: 12,
+      219 -    gllaSerializedBytes: 309_612,                             
+     … 26 more lines (ctrl+o to expand)
+  ⎿  (timeout 5m 20s)
+
+● Fixed (4/4). Continuing with the remaining chunks:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● One chunk hit my 190 s per-chunk cutoff rather than failing. Rerunning it
+  alone with more time:
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● All 6 chunks now pass. I'll rerun the chunk that had the two growth-pin
+  failures so it passes as a whole, then run the remaining release:check steps
+  one by one:
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The runtime inventory is stale because I added new exports (sentenceCase,
+  objectiveReminder, forgetDeliveredReworkContext, and so on). Regenerating it
+  and checking what changed:
+● Bash(node scripts/generate-inventory.mjs > /dev/null && git diff --stat
+      docs/RUNTIME-INVENTORY.md | cat; git diff docs/RUNTIME-INVENTORY.md | grep
+      "^[+-]" | grep -v…)
+  ⎿   docs/RUNTIME-INVENTORY.md | 8 ++++----
+      1 file changed, 4 insertions(+), 4 deletions(-)
+     -- Extension/script lines: 81127
+     … +11 lines (ctrl+o to expand)
+  ⎿  Updated docs/RUNTIME-INVENTORY.md (+4 -4)
+       3  Generated by `node scripts/generate-inventory.mjs`. Run with `-
+          -check` to detect drift. Counts describe files and literal regi
+          strations, not executed coverage.
+       4  
+       5  - Extension/script files: 155
+       6 -- Extension/script lines: 81127                                
+       7 -- Top-level test files: 500                                    
+       6 +- Extension/script lines: 81237                                
+       7 +- Top-level test files: 501                                    
+       8  - Ambient bridge names: 176 (audit baseline: 176)
+       9  - Commands: `/glla`, `/goal`, `/list`, `/loop`, `/review`
+      10  - Tools: `audit_project_increment`, `block_project_requirement`
+          , `claim_project_task`, `complete_goal`, `complete_task`, `list
+          _activate`, `list_add`, `list_status`, `pause_goal`, `plan_proj
+          ect_increment`, `propose_goal_draft`, `propose_loop_draft`, `pr
+          opose_loop_refine`, `propose_project_refinement`, `propose_proj
+          ect_requirements`, `propose_task_list`, `propose_tweak`, `recor
+          d_goal_judgment`, `resume_goal`, `unblock_project_requirement`,
+           `update_task_batch`, `update_task_status`, `wait_for_backgroun
+          d`
+     ...
+      15  |---|---:|
+      16  | [extensions/goal-loop-core.ts](../extensions/goal-loop-core.t
+          s) | 6045 |
+      17  | [extensions/loops/goal-tools.ts](../extensions/loops/goal-too
+          ls.ts) | 4871 |
+      18 -| [extensions/loops/goal-activation.ts](../extensions/loops/goa
+         -l-activation.ts) | 4248 |                                      
+      18 +| [extensions/loops/goal-activation.ts](../extensions/loops/goa
+         +l-activation.ts) | 4270 |                                      
+      19  | [extensions/goal-commands.ts](../extensions/goal-commands.ts)
+           | 4096 |
+      20  | [extensions/goal-loop-display.ts](../extensions/goal-loop-dis
+          play.ts) | 3770 |
+      21  | [extensions/goal-loop-auditor-process.ts](../extensions/goal-
+          loop-auditor-process.ts) | 3232 |
+      22  | [extensions/loops/goal-auditor-hooks.ts](../extensions/loops/
+          goal-auditor-hooks.ts) | 3136 |
+      23  | [extensions/loops/goal-settings-ui.ts](../extensions/loops/go
+          al-settings-ui.ts) | 2353 |
+      24  | [extensions/goal-recovery.ts](../extensions/goal-recovery.ts)
+           | 2327 |
+      25 -| [extensions/goal-heartbeat.ts](../extensions/goal-heartbeat.t
+         -s) | 2232 |                                                    
+      25 +| [extensions/goal-continuation.ts](../extensions/goal-continua
+         +tion.ts) | 2237 |                                              
+      26  
+      27  Settings are defined in [SETTINGS.md](SETTINGS.md); supported h
+          ost versions and process limits are defined in [COMPATIBILITY.m
+          d](COMPATIBILITY.md).
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Everything npm run release:check checks now passes on the final code. Memory
+  never recovered enough for one uninterrupted run, so I ran the same steps in
+  pieces in the foreground:
+
+  ┌────────────────────────────────────────────┬────────────────────────────┐
+  │                    Step                    │           Result           │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ Full test suite, all 500 files in 11 parts │ 4,795 passed, 0 failed     │
+  │  (including slow files)                    │                            │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ Typecheck (tsc --noEmit)                   │ exit 0                     │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ Jiti check (repro-jiti-state-split)        │ exit 0                     │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ Offline auditor-extension check            │ exit 0                     │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ check:inventory                            │ exit 0, after regenerating │
+  │                                            │  the inventory             │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ check:names (no private project names in   │ clean, 890 new lines       │
+  │ new text)                                  │ checked                    │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ npm pack --dry-run                         │ exit 0, 218 files, 1.9 MB  │
+  ├────────────────────────────────────────────┼────────────────────────────┤
+  │ Pack smoke test                            │ exit 0, the packed tarball │
+  │                                            │  installs and loads        │
+  └────────────────────────────────────────────┴────────────────────────────┘
+
+  The full suite turned up three more problems, all from small test expectations
+  rather than product bugs:
+
+  - Two tests still expected lowercase wording (shipped the thing, pins the 
+    path). They're updated to the new capitalized headlines.
+  - Size checks in tests/context-growth-measurement.test.ts were already failing
+    before my changes. Today's earlier, longer completion-report instructions
+    to the agent made every continuation message exactly 378 characters longer.
+    I updated the numbers from a real measurement, and the growth pattern the
+    test protects is unchanged.
+  - docs/RUNTIME-INVENTORY.md was out of date because I added new functions. I
+    regenerated it; only line and file counts changed.
+
+  All changes are as described earlier: the Goal: reminder and tidier card, a
+  one-time to-do list during rework, and de-duplicated retry log lines. The sync
+  daemon has committed and pushed everything. I didn't bump the version, tag or
+  publish.
+
+✔ Goal achieved (2h · 3 turns · 67.8k tokens) (ctrl+o to expand)
+
+✻ Cogitated for 51m 47s · done 19:01
+
+※ recap: I improved the end-of-task summary card and made the goal loop cheaper during rework, and everything release:check covers now passes. Next, you decide whether to bump the version and publish.
