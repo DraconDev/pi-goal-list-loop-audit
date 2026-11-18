@@ -987,9 +987,9 @@ async function actOnDecisionOption(
   }
   // Executable options — "Label (/goal cancel)" — RUN the command.
   // Placeholder commands (…/<arg>) fall through to the message path.
-  const cmdMatch = label.match(/\((goal|list|loop) ([a-z]+)\)\s*$/);
+  const cmdMatch = label.match(/\((\/goal|\/list|\/loop) ([a-z]+)\)\s*$/);
   if (cmdMatch && !label.includes("…") && !label.includes("<")) {
-    const group = cmdMatch[1];
+    const group = (cmdMatch[1] ?? "").replace(/^\//, "");
     const verb = cmdMatch[2];
     // v0.39.55: the interactive tweak editor is executable from the picker —
     // bare tweak pre-fills the current text and its own Confirm gate applies.
