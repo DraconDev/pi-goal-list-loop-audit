@@ -1036,6 +1036,9 @@ async function actOnDecisionOption(
  * operator's behalf.
  *
  * Returns "adopted" | "refused" | "stale" (the decision changed under us).
+ * A refused delivery ("the answer could not be carried") is also "refused":
+ * the pause stays parked and the failure is ledgered rather than retried
+ * forever against a host that cannot send.
  */
 export async function adoptRecommendedDecision(
   g: Goal,
@@ -1074,8 +1077,20 @@ export async function adoptRecommendedDecision(
     chosen: entry.chosen,
     ...(waitedMs !== undefined && Number.isFinite(waitedMs) ? { waitedMs } : {}),
   });
+  const delivered = await actOnDecisionOption(g, candidate.option, ctx);
+  if (!delivered) {
+    // The answer could not be carried (a stale handle, a refused steer). The
+    // pause is still parked and the assumption is logged, so say so and stop
+    // the automatic promotion instead of quietly pretending the clock worked.
+    appendLedger(ctx.cwd, "decision_auto_select_delivery_failed", {
+      goalId: g.id,
+      minutes,
+      optionIndex: candidate.index,
+      chosen: entry.chosen,
+    });
+    return "refused";
+  }
   ctx.ui.notify(`Decision auto-selected after ${minutes ?? "?"}m without an answer — option ${candidate.index}: ${entry.chosen}. It is expected in the completion recap as an assumption; ${activeGoalSurfaceCommand("cancel")} still stops the work.`, "info");
-  await actOnDecisionOption(g, candidate.option, ctx);
   return "adopted";
 }
 
