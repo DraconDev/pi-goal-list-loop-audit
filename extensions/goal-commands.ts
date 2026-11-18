@@ -1012,45 +1012,7 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
       return true;
     }
     const label = g.pauseOptions![idx] ?? pick.replace(/ {2}\(recommended\)$/, "");
-    // v0.29.3: the wipe escape — "… (/glla wipe)" options run the wipe
-    // (which Confirms on its own — destructive actions keep their gate).
-    if (/\(\/glla wipe\)\s*$/.test(label)) {
-      await cmdGllaWipe(ctx);
-      return true;
-    }
-    // Executable options — "Label (/goal cancel)" — RUN the command.
-    // Placeholder commands (…/<arg>) fall through to the message path.
-    const cmdMatch = label.match(/\(\/(goal|list|loop) ([a-z]+)\)\s*$/);
-    if (cmdMatch && !label.includes("…") && !label.includes("<")) {
-      const [, group, verb] = cmdMatch;
-      // v0.39.55: the interactive tweak editor is executable from the picker —
-      // bare tweak pre-fills the current text and its own Confirm gate applies.
-      // This is the recovery path for truncated proposals: the picker offers
-      // it instead of a broken copy-paste command.
-      if ((group === "goal" || group === "list") && verb === "tweak") { await cmdTweak("", ctx, group === "list" ? "list" : "goal"); return true; }
-      if (group === "goal" && verb === "resume") await cmdResume(ctx);
-      else if (group === "goal" && verb === "cancel") await cmdCancel(ctx);
-      else if (group === "goal" && verb === "accept") await cmdAcceptWithFollowups(ctx);
-      else if (group === "goal" && verb === "pause") await cmdPause(ctx);
-      else if (group === "list" && ["resume", "cancel", "pause", "next", "clear"].includes(verb!)) await cmdList(verb!, ctx);
-      else if (group === "loop" && verb === "stop") await cmdLoop("stop", ctx);
-      else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
-      else if (group === "loop" && ["cancel", "pause", "finish"].includes(verb!)) await cmdLoop(verb!, ctx);
-      else {
-        if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
-          ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
-          return true;
-        }
-        await cmdResume(ctx);
-      }
-      return true;
-    }
-    // Content choice — deliver to the agent, then resume.
-    if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
-      ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
-      return true;
-    }
-    await cmdResume(ctx);
+    await actOnDecisionOption(g, label, ctx);
     return true;
   } finally {
     decisionPromptOpen = false;
