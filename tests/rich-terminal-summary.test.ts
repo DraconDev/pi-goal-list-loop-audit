@@ -69,7 +69,7 @@ function section(name: string): string {
 
 test("card opens with the outcome, then a report body with findings and verification", () => {
   const { chatLines } = render();
-  assert.equal(chatLines[0], "## Done — shipped the rich terminal voice");
+  assert.equal(chatLines[0], "## Done — Shipped the rich terminal voice");
   assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
   const findingsIdx = chatLines.indexOf(section(CARD_SECTION.summary));
   assert.ok(findingsIdx > 0, "the change body has its own section");
@@ -169,7 +169,7 @@ test("Next steps carries the concrete action; stale self-reference still drops",
   const { chatLines, transcriptLines } = render();
   const nextIdx = chatLines.indexOf(section(CARD_SECTION.nextSteps));
   assert.ok(nextIdx > 0, "Next steps section present");
-  assert.ok(chatLines.some((l) => /^- replay on next contact$/.test(l)), "concrete Next survives without repeating its section label");
+  assert.ok(chatLines.some((l) => /^- Replay on next contact$/.test(l)), "concrete Next survives without repeating its section label");
   const stale = render({
     goal: seedGoal({
       id: "20260911-rich-stale",
@@ -234,7 +234,7 @@ test("no audit history means no invented review row, and the receipt names the r
 
 test("archive carries the same report as chat, and aborted records never wear a Done headline", () => {
   const done = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
-  assert.equal(done[0], "## Done — shipped the rich terminal voice", "the archive opens with the same result headline");
+  assert.equal(done[0], "## Done — Shipped the rich terminal voice", "the archive opens with the same result headline");
   assert.ok(done.includes(`### ${CARD_SECTION.summary}`), "archive carries the change body");
   assert.ok(done.includes("### Verification"), "archive carries the table");
   assert.ok(done.at(-1)?.startsWith("completion audit approved"), `archive closes with the receipt: ${done.at(-1)}`);
@@ -249,7 +249,7 @@ const GROUPS: FindingGroup[] = [
 
 test("duration line closes the meta footnote; unknown facts stay absent", () => {
   const { chatLines } = render({ findingGroups: GROUPS });
-  assert.match(chatLines[0] ?? "", /^## Done — shipped the rich terminal voice$/);
+  assert.match(chatLines[0] ?? "", /^## Done — Shipped the rich terminal voice$/);
   assert.equal(chatLines[1], "", "blank line after headline");
   // Report shape (field 2026-11-11): the meta line is a dim italic footnote
   // rather than a bare `—` line that reads as a broken bullet.
@@ -266,7 +266,7 @@ test("each work area renders as its own `What changed · <area>` subsection", ()
   assert.equal(chatLines[bodyIdx + 1], `**${CARD_SECTION.whatChanged} · Sound manager**`, "the area names its own subsection");
   // Report shape: ONE bullet per finding — the outcome leads, its evidence
   // follows on the same line, so the reader gets gist and proof together.
-  assert.equal(chatLines[bodyIdx + 2], "- **mutes WebAudio** — soundManager.ts:333", "finding prose is a single bullet");
+  assert.equal(chatLines[bodyIdx + 2], "- **Mutes WebAudio** — soundManager.ts:333", "finding prose is a single bullet");
   assert.equal(chatLines[bodyIdx + 4], `**${CARD_SECTION.whatChanged} · Simulation**`, "second area follows");
   assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the archive threshold");
   assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and meta");
@@ -313,9 +313,9 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
     findings: [`Lead ${g}a: ${"x".repeat(500)}`, `Lead ${g}b: short`, `Lead ${g}c: short`, `Lead ${g}d: short`, `Lead ${g}e: short`],
   }));
   const crowded = render({ findingGroups: sanitizeFindingGroups(many) });
-  const bullets = crowded.chatLines.filter((l) => l.startsWith("- ") && l !== '- replay on next contact');
+  const bullets = crowded.chatLines.filter((l) => l.startsWith("- ") && l !== '- Replay on next contact');
   assert.equal(bullets.length, 15, `all 15 in-boundary findings render, got ${bullets.length}`);
-  assert.ok(crowded.chatLines.includes('- replay on next contact'), 'the next action remains outside the finding count');
+  assert.ok(crowded.chatLines.includes('- Replay on next contact'), 'the next action remains outside the finding count');
   const long = bullets.find((l) => l.includes('x'.repeat(400)));
   assert.ok(long, "first finding present");
   // The renderer itself never clips values — the 10k-char finding bound
@@ -529,7 +529,7 @@ test("v0.38.102 a single (1) marker is prose, not a list, and is left intact", (
     "Unresolved: the only named owner is TODO(owner) and the count is off by (1) unit.",
   ]);
   const idx = chatLines.indexOf(section(CARD_SECTION.followUp));
-  assert.equal(chatLines[idx + 1], "- the only named owner is TODO(owner) and the count is off by (1) unit.");
+  assert.equal(chatLines[idx + 1], "- The only named owner is TODO(owner) and the count is off by (1) unit.");
   assert.ok(
     !chatLines.slice(idx + 1).some((l) => l.startsWith("  - ")),
     "a lone (1) must not produce a sub-bullet",
@@ -543,7 +543,7 @@ test("v0.38.102 Next steps gets the same treatment as the follow-ups", () => {
   ]);
   const idx = chatLines.indexOf(section(CARD_SECTION.nextSteps));
   assert.ok(idx > 0, "Next steps section present");
-  assert.equal(chatLines[idx + 1], "- finish the handoff, and note:");
+  assert.equal(chatLines[idx + 1], "- Finish the handoff, and note:");
   assert.equal(chatLines[idx + 2], "  - claim the owner name.");
   assert.equal(chatLines[idx + 3], "  - record it in the runbook.");
 });

@@ -73,7 +73,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
     approval: "— auditor auditor-model approved on the provider retry.",
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   });
-  assert.equal(render.chatLines[0], `## Done — ${render.outcome}`, "outcome opens the card");
+  assert.equal(render.chatLines[0], `## Done — ${sentenceCase(render.outcome)}`, "outcome opens the card, sentence-cased");
   // Report shape (field 2026-11-11): what changed, what was checked, what is
   // still open, what comes next — then ONE receipt line.
   assert.ok(render.chatLines.includes(`## ${CARD_SECTION.summary}`), "the change body present");
@@ -184,8 +184,8 @@ test("v0.38.37 posted summary carries verifiable-result bullets plus the deliber
   assert.ok(remainingIdx > 0, "the follow-up section carries the non-do");
   const recordIdx = withLeftOut.chatLines.findIndex((l) => l.includes("record: "));
   assert.equal(recordIdx, withLeftOut.chatLines.length - 1, "the record pointer closes the report");
-  assert.ok(withLeftOut.chatLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "agent-claimed non-do closes the sections");
-  assert.ok(withLeftOut.transcriptLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "transcript surface carries the non-do too");
+  assert.ok(withLeftOut.chatLines.some((l) => l === "- **Left out** — The walkthrough artifact surface"), "agent-claimed non-do closes the sections");
+  assert.ok(withLeftOut.transcriptLines.some((l) => l === "- **Left out** — The walkthrough artifact surface"), "transcript surface carries the non-do too");
   const without = buildTerminalApprovalRender(base);
   assert.ok(!without.chatLines.some((l) => /Left out:/.test(l)), "absent non-do stays absent, never invented");
   assert.ok(!without.transcriptLines.some((l) => /Left out:/.test(l)), "transcript never invents a non-do");

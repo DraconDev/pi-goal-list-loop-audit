@@ -59,7 +59,7 @@ test("chat report carries the changes, then verification, then the follow-ups, i
   assert.ok(verification > summary, "verification follows the changes");
   assert.ok(followUp > verification, "follow-ups close the report after verification");
   const text = lines.join("\n");
-  assert.ok(text.includes("overlapping saves no longer discard confirmed revisions"), text);
+  assert.ok(text.includes("Overlapping saves no longer discard confirmed revisions"), text);
   assert.ok(text.includes("Chrome and Firefox archives now contain matching version manifests"), text);
   assert.ok(text.includes("src/save.ts:42"), "the evidence pointer rides the finding");
   assert.ok(text.includes("The signed-in browser flow was not checked."), "the limitation is reported");

@@ -72,7 +72,7 @@ test("outcome strips stranded leading punctuation like the reason husk", () => {
   });
   const text = composeRichTerminalLines({ ...parts, chat: true }).join("\n");
   assert.ok(!/\*\*,/.test(text), `no comma husk bullet:\n${text}`);
-  assert.ok(text.includes("doubled punctuation outcome"), "outcome words survive the strip");
+  assert.ok(text.includes("Doubled punctuation outcome"), "outcome words survive the strip");
 });
 
 test('chat removes redundant section labels without erasing archive evidence or deliberate scope cuts', () => {

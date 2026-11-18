@@ -94,7 +94,7 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   await pi.runTool("complete_goal", { completionSummary: summary, verificationSummary: "pinned", leftOut: "the walkthrough artifact surface" }, ctx);
   await waitFor(() => entries.length === 1);
   assert.equal(entries.length, 1);
-  assert.match(entries[0].content, /^- \*\*Left out\*\* — the walkthrough artifact surface/m);
+  assert.match(entries[0].content, /^- \*\*Left out\*\* — The walkthrough artifact surface/m);
   const lines = entries[0].content.split("\n");
   // Report shape (field 2026-11-11): `##` report sections, bold area/left-out
   // labels, plain bullets, and ONE receipt line — one voice, no legacy trailer.
@@ -124,7 +124,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
   // Report shape (field 2026-11-11): each area names its own subsection and
   // the finding rides ONE bullet with its repo-relative evidence beside it.
   assert.ok(entries[0].content.includes("**What changed · Router**"), "grouped area subsection reaches the chat");
-  assert.match(entries[0].content, /^- \*\*pins the path\*\* — router\.ts:12$/m, "gist and evidence share one bullet");
+  assert.match(entries[0].content, /^- \*\*Pins the path\*\* — router\.ts:12$/m, "gist and evidence share one bullet");
 });
 
 test("disapproval remains unfinished, no final success is posted", async () => {

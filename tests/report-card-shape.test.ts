@@ -92,8 +92,11 @@ test("the chat card is ONE report: headline, lede, Summary, Verification, Follow
     "And a locked account is told how to unlock without leaking whether it exists.",
     "the sentence remainder rides the lede, capitalized, word-for-word",
   );
-  // One meta footnote, then the sections.
-  assert.match(lines[4] ?? "", /^\*9 turns · .+ elapsed · 1 audit\*$/, `meta footnote: ${lines[4]}`);
+  // The ask, then one meta footnote in the same block (Markdown hard break),
+  // then the sections. A long goal ends hours after it was set; the card
+  // restates what was asked next to what happened.
+  assert.match(lines[4] ?? "", /^\*Goal: .+\*  $/, `goal reminder: ${lines[4]}`);
+  assert.match(lines[5] ?? "", /^\*9 turns · .+ elapsed · 1 audit\*$/, `meta footnote: ${lines[5]}`);
   // Every work area is its own subsection under the body.
   assert.ok(lines.includes(`**${CARD_SECTION.whatChanged} · Login responses**`), "first area names its subsection");
   assert.ok(lines.includes(`**${CARD_SECTION.whatChanged} · Locked accounts**`), "second area names its subsection");
@@ -286,5 +289,5 @@ test("the stored chat lines and the source message stay free of ANSI and control
   const joined = hostile.chatLines.join("\n");
   assert.ok(!joined.includes("\u001b"), "no terminal escape survives the trust boundary");
   assert.ok(!joined.includes("\u202E"), "no bidi override survives");
-  assert.ok(joined.includes("the walkthrough surface"), "the human words remain");
+  assert.ok(joined.includes("The walkthrough surface"), "the human words remain");
 });

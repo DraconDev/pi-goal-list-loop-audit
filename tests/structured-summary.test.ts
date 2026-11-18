@@ -86,7 +86,7 @@ test("headline echo uses the Outcome lead paragraph, never flattened headers", (
   const headline = chatLines[0] ?? "";
   assert.ok(headline.startsWith("## Done — "), "headline leads with the outcome");
   assert.doesNotMatch(headline, /## Part|### /, `no flattened markdown in the headline, got: ${headline}`);
-  assert.match(headline, /shipped the keyword review/, "the lead outcome text survives");
+  assert.match(headline, /Shipped the keyword review/, "the lead outcome text survives");
 });
 
 test("detector: two ##/### headers earn the structured path, one does not", () => {
@@ -119,7 +119,7 @@ test("extractor: last line-anchored restatement wins", () => {
 
 test("card: structured Outcome renders the full body inside the report Summary, headline stays short", () => {
   const { chatLines } = render(STRUCTURED);
-  assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome opens");
+  assert.equal(chatLines[0], "## Done — Shipped the keyword review", "outcome opens");
   // Report shape (field 2026-11-11): the structured body is the Summary's own
   // document; verification and next steps are their own report sections.
   const summaryIdx = chatLines.indexOf(`## ${CARD_SECTION.summary}`);
@@ -142,7 +142,7 @@ test("card: unstructured summaries keep today's shape — no structured body", (
   // Summary still carries the report's change bullets.
   assert.ok(chatLines.includes(`## ${CARD_SECTION.summary}`), "the report Summary is always present");
   assert.ok(!chatLines.some((line) => line.includes("Part 1: current keywords")), "no structured body without structure");
-  assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome-first headline");
+  assert.equal(chatLines[0], "## Done — Shipped the keyword review", "outcome-first headline");
 });
 
 test("card: one-action Next steps survives the structured body", () => {
@@ -151,7 +151,7 @@ test("card: one-action Next steps survives the structured body", () => {
   assert.ok(nextIdx > 0, "Next steps section present");
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `exactly one Next action, got: ${JSON.stringify(nextBlock)}`);
-  assert.match(nextBlock[0] ?? "", /implement slice 1/, "the concrete action survives");
+  assert.match(nextBlock[0] ?? "", /Implement slice 1/, "the concrete action survives");
 });
 
 test("card: machine paths stay archive-only inside structured lines", () => {
@@ -181,7 +181,7 @@ test("doctrine: horizon lives in Summary, Next steps names only the immediate mo
   const nextIdx = chatLines.indexOf(`## ${CARD_SECTION.nextSteps}`);
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `one immediate move, got: ${JSON.stringify(nextBlock)}`);
-  assert.match(nextBlock[0] ?? "", /implement slice 1/, "the immediate move leads");
+  assert.match(nextBlock[0] ?? "", /Implement slice 1/, "the immediate move leads");
 });
 
 test("archive human layer carries the same Summary section and one receipt line", () => {
