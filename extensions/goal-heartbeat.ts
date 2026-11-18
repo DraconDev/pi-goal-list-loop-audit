@@ -290,6 +290,10 @@ let lastOverdueWaitKey = "";
 // paused-is-safe invariant is untouched because nothing was resumed.
 let lastDecisionAutoSelectKey = "";
 let decisionAutoSelectInFlight = false;
+/** The `decision_auto_select_due` ledger fence, separate from the adoption
+ * latch: a FAILED adoption is retried (no latch), but the "your clock expired"
+ * row must not be re-written on every retry tick. Re-armed by a new episode. */
+let lastDecisionAutoSelectDueKey = "";
 
 /** The cwd the last healthy heartbeat observed — settings live there. */
 function heartbeatCwd(): string | undefined {
@@ -325,11 +329,14 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
   const goal = state.goal;
   if (!goal || goal.status !== "paused" || goal.pauseKind !== "decision") return;
   const key = `${goal.id}:${goal.pauseDecidedAt ?? goal.updatedAt}`;
-  appendLedger(ctx.cwd, "decision_auto_select_due", {
+  if (lastDecisionAutoSelectDueKey !== key) {
+    lastDecisionAutoSelectDueKey = key;
+    appendLedger(ctx.cwd, "decision_auto_select_due", {
     goalId: goal.id,
     minutes,
-    ...(goal.pauseDecidedAt ? { waitedMs: Date.now() - Date.parse(goal.pauseDecidedAt) } : {}),
-  });
+      ...(goal.pauseDecidedAt ? { waitedMs: Date.now() - Date.parse(goal.pauseDecidedAt) } : {}),
+    });
+  }
   decisionAutoSelectInFlight = true;
   void adoptRecommendedDecision(ctx, minutes)
     .then((outcome) => {
@@ -343,6 +350,7 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
 
 export function __testOnlyResetDecisionAutoSelect(): void {
   lastDecisionAutoSelectKey = "";
+  lastDecisionAutoSelectDueKey = "";
   decisionAutoSelectInFlight = false;
 }
 
