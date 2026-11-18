@@ -54,6 +54,9 @@ import {
   DEFAULT_ZOMBIE_RETRY_MAX_ATTEMPTS,
   MAX_ZOMBIE_RETRY_ATTEMPTS,
 } from "./goal-loop-backoff.js";
+// Upper bound for decisionAutoSelectMinutes — the modules stay acyclic
+// (decision-auto-select imports only the Goal type).
+import { DECISION_AUTO_SELECT_MAX_MINUTES } from "./decision-auto-select.js";
 
 /** v0.38.104: the one thinking ladder. normalizeLoadedSettings prunes every
  * level-bearing setting against this list — the per-agent override map and the
@@ -252,6 +255,17 @@ export interface Settings {
    * unclassified human decisions require classification, and authorized
    * mechanical/reversible work continues without a decision. */
   decisionPauseBudget?: number;
+  /** The stuck-question clock: minutes a decision pause may sit before its
+   * RECOMMENDED continue-work answer is adopted automatically. Unset (the
+   * default) = never — the pause waits for you indefinitely. Only a
+   * continue-work recommendation (`/goal resume`, `/list resume`, `/list next`,
+   * `/loop resume`, or content the picker steers to the agent) may be adopted;
+   * cancel/accept/tweak/pause/stop/clear/wipe/contract-amendment options never
+   * are, because those end or rewrite the work rather than unstick it. Both the
+   * `/goal decide` picker countdown and the heartbeat backstop honour it. Global
+   * only: one answer for how long YOU stay away is machine policy, not a project
+   * artifact. */
+  decisionAutoSelectMinutes?: number;
   /** v0.28.14: what happens to stale carryover (paused goal, waiting list,
    * held loop from before this session) when NEW work activates.
    * pause (default) = leave it + ONE summary; clear = drop it all honestly;
@@ -387,6 +401,11 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "mainModelPrimaryProbeMinutes",
   "hourlyRetryProbe",
   "autoResume",
+  // v0.39.x: how long the OPERATOR stays away before a decision takes its own
+  // recommended answer is machine policy about a person, not a property of one
+  // repository — a project copy could silently adopt a recommendation in one
+  // tree and wait forever in the next.
+  "decisionAutoSelectMinutes",
   "drafterModel",
   "drafterThinkingLevel",
   "drafterModelFallbacks",
@@ -822,6 +841,15 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   }
   if (typeof settings.decisionPopup !== "boolean") delete settings.decisionPopup;
   if (settings.decisionPauseBudget !== undefined && (!Number.isInteger(settings.decisionPauseBudget) || settings.decisionPauseBudget < 0)) delete settings.decisionPauseBudget;
+  // 0 is meaningful for the budget (relentless from the first) but NOT for the
+  // auto-select clock: 0 minutes would adopt a recommendation before anyone
+  // could read it, so a sub-1 or out-of-range value clears to "off".
+  if (settings.decisionAutoSelectMinutes !== undefined
+    && (!Number.isInteger(settings.decisionAutoSelectMinutes)
+      || settings.decisionAutoSelectMinutes < 1
+      || settings.decisionAutoSelectMinutes > DECISION_AUTO_SELECT_MAX_MINUTES)) {
+    delete settings.decisionAutoSelectMinutes;
+  }
   if (typeof settings.aggressiveMode !== "boolean") delete settings.aggressiveMode;
   if (typeof settings.autoResume !== "boolean") delete settings.autoResume;
   if (typeof settings.autoAcceptDrafts !== "boolean") delete settings.autoAcceptDrafts;
@@ -1122,6 +1150,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "autoResume",
   "decisionPopup",
   "decisionPauseBudget",
+  "decisionAutoSelectMinutes",
   "carryover",
   "autoAcceptDrafts",
   "versionDisplay",
