@@ -454,7 +454,13 @@ test("a delivery failure stays parked and is ledgered instead of retried forever
   try {
     setSettings({ decisionAutoSelectMinutes: 10 });
     __testOnlyResetOwnerSession();
-    seedState(cwd, { goal: seedParkedDecision(25), list: [], loop: null });
+    // A prose recommendation: the picker delivers it to the agent and then
+    // resumes, which is exactly the path a dead send surface breaks.
+    seedState(cwd, {
+      goal: seedParkedDecision(25, { pauseOptions: ["Surgical Done when: clause", "Cancel the goal (/goal cancel)"], pauseRecommended: 1 }),
+      list: [],
+      loop: null,
+    });
     const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
     await pi.fire("session_start", { reason: "reload" }, ctx);
     await tick();
