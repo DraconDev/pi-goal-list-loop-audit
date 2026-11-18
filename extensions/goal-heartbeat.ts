@@ -332,8 +332,8 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
   if (lastDecisionAutoSelectDueKey !== key) {
     lastDecisionAutoSelectDueKey = key;
     appendLedger(ctx.cwd, "decision_auto_select_due", {
-    goalId: goal.id,
-    minutes,
+      goalId: goal.id,
+      minutes,
       ...(goal.pauseDecidedAt ? { waitedMs: Date.now() - Date.parse(goal.pauseDecidedAt) } : {}),
     });
   }
