@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.41.0 — a completion card that restates the goal, and decision pauses that can answer themselves (2026-11-18)
+
 ### The completion card reminds you what was asked, and rework turns stop resending the whole brief (2026-11-18)
 
 Measured against the local record (the active ledger plus all retained segments: 2,091 continuation sends, 2,231 active-ledger events).
