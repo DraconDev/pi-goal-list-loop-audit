@@ -34,7 +34,7 @@ import {
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
-import { decisionAutoSelectDue, resolveDecisionAutoSelectMinutes } from "./decision-auto-select.js";
+import { decisionAutoSelectDue as decisionAutoSelectDueNow, resolveDecisionAutoSelectMinutes } from "./decision-auto-select.js";
 import { isCompactionInFlightSince, classifyMainModelFailure, isEagerRetryFailure, type MainModelFailureKind } from "./main-model-recovery.js";
 import {
   HEARTBEAT_STALL_MS,
@@ -281,39 +281,44 @@ let lastOverdueWaitKey = "";
 // popup setting turned off, an Escape, a restart mid-question).
 //
 // The eligibility rule is NOT here: adoptRecommendedDecision (goal-commands,
-// injected) refuses anything that is not a continue-work answer. This module
-// only decides when the clock is due.
+// injected through HeartbeatDeps) refuses anything that is not a continue-work
+// answer. This module only decides WHEN the clock is due.
 //
-// One adoption attempt per (goalId:pauseDecidedAt) pair. A failed attempt is
-// left UNLATCHED (the pause is still the same question, so the next tick
-// retries — the paused-is-safe invariant, and the reset-free retry shape the
-// overdue-wait backstop learned the hard way).
+// One adoption per (goalId:pauseDecidedAt) pair. A REFUSED answer is latched
+// (nothing to do until the operator acts); a failed adoption is left
+// UNLATCHED so the next tick retries — same question, same clock, and the
+// paused-is-safe invariant is untouched because nothing was resumed.
 let lastDecisionAutoSelectKey = "";
 let decisionAutoSelectInFlight = false;
 
-function decisionAutoSelectDue(): number | undefined {
+/** The cwd the last healthy heartbeat observed — settings live there. */
+function heartbeatCwd(): string | undefined {
+  try {
+    return flags.lastCtx?.cwd || undefined;
+  } catch {
+    return undefined; // a disposed host throws on ANY property access
+  }
+}
+
+/** Minutes when the delay is armed AND has actually elapsed, else undefined. */
+function decisionAutoSelectWaitMinutes(): number | undefined {
   const goal = state.goal;
   if (!goal || goal.status !== "paused" || goal.pauseKind !== "decision") return undefined;
-  const minutes = resolveDecisionAutoSelectMinutes(loadSettings(currentCwdForAutoSelect()).decisionAutoSelectMinutes);
+  const cwd = heartbeatCwd();
+  if (!cwd) return undefined;
+  const minutes = resolveDecisionAutoSelectMinutes(loadSettings(cwd).decisionAutoSelectMinutes);
   if (minutes === undefined) return undefined;
   if (supervisorPaused(state)) return undefined;
-  if (!decisionAutoSelectDue(goal, minutes, Date.now())) return undefined;
+  if (!decisionAutoSelectDueNow(goal, minutes, Date.now())) return undefined;
   const key = `${goal.id}:${goal.pauseDecidedAt ?? goal.updatedAt}`;
   if (key === lastDecisionAutoSelectKey) return undefined;
   return minutes;
 }
 
-/** Settings are read from the live session's cwd; the heartbeat has no
- * context until the probe below succeeds, so remember the last healthy cwd. */
-let autoSelectCwd = "";
-function currentCwdForAutoSelect(): string {
-  return autoSelectCwd;
-}
-
 function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): void {
   // A stale/handed-off handle cannot carry the resume the adoption performs:
   // the pause would be consumed with nothing scheduled (exactly the
-  // paused-is-safe violation the overdue backstop documents).
+  // paused-is-safe violation the overdue-wait backstop documents above).
   if (flags.sessionHandoffPending || flags.staleTerminalDone || flags.extensionApiStale) return;
   if (mainModelRecoveryActive()) return;
   if (decisionAutoSelectInFlight) return;
@@ -323,15 +328,14 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
   appendLedger(ctx.cwd, "decision_auto_select_due", {
     goalId: goal.id,
     minutes,
-    waitedMs: goal.pauseDecidedAt ? Date.now() - Date.parse(goal.pauseDecidedAt) : undefined,
+    ...(goal.pauseDecidedAt ? { waitedMs: Date.now() - Date.parse(goal.pauseDecidedAt) } : {}),
   });
   decisionAutoSelectInFlight = true;
   void adoptRecommendedDecision(ctx, minutes)
     .then((outcome) => {
-      // "stale" means the decision changed under us — nothing was adopted and
-      // the pause now belongs to a different question; latch so this episode
-      // is not retried.
-      if (outcome !== "refused") lastDecisionAutoSelectKey = key;
+      // "refused"/"stale": the question keeps its own clock state and the
+      // operator still owns it — latch, or the tick would re-announce it.
+      if (outcome !== "adopted") lastDecisionAutoSelectKey = key;
     })
     .catch(() => { /* retry on the next tick — the pause is unchanged */ })
     .finally(() => { decisionAutoSelectInFlight = false; });
@@ -340,7 +344,6 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
 export function __testOnlyResetDecisionAutoSelect(): void {
   lastDecisionAutoSelectKey = "";
   decisionAutoSelectInFlight = false;
-  autoSelectCwd = "";
 }
 
 function overdueWaitDue(): boolean {
@@ -1461,7 +1464,7 @@ function heartbeatTick(): void {
     && state.goal.pendingCompletion?.phase === "recovery-pending";
   // v0.35.28 (issue #16): a lapsed wait-pause is host-bound work too — the
   // heartbeat owns its durable due-time backstop (see overdueWaitBackstop).
-  if (overdueWaitDue()) {
+  if (overdueWaitDue() || decisionAutoSelectWaitMinutes() !== undefined) {
     // fall through: the backstop below needs a heartbeat opportunity
   } else if (state.goal?.status !== "active"
     && state.goal?.status !== "auditing"
@@ -1644,6 +1647,12 @@ function heartbeatTick(): void {
     return;
   }
   overdueWaitBackstop(ctx);
+  // The stuck-question clock (opt-in `decisionAutoSelectMinutes`). Same tick,
+  // same "is there a live host to carry the resume" gate the overdue backstop
+  // documents; the eligibility rule inside the injected adoption refuses
+  // anything that is not a continue-work answer.
+  const autoSelectMinutes = decisionAutoSelectWaitMinutes();
+  if (autoSelectMinutes !== undefined) decisionAutoSelectBackstop(ctx, autoSelectMinutes);
   let idle = false;
   let pending = false;
   try {
