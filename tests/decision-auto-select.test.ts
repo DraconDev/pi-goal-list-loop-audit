@@ -253,7 +253,6 @@ test("the /goal decide picker carries the host countdown when the clock is armed
   const cwd = tmpCwd();
   try {
     setSettings({ decisionAutoSelectMinutes: 30 });
-    const decidedAt = new Date(Date.now() - 10 * 60_000).toISOString();
     __testOnlyResetOwnerSession();
     seedState(cwd, {
       goal: seedGoal({
@@ -262,8 +261,6 @@ test("the /goal decide picker carries the host countdown when the clock is armed
         pauseReason: "which architecture",
         pauseOptions: ["Continue (/goal resume)", "Cancel the goal (/goal cancel)"],
         pauseRecommended: 1,
-        pauseDecidedAt: decidedAt,
-        updatedAt: decidedAt,
       }),
       list: [],
       loop: null,
@@ -271,13 +268,31 @@ test("the /goal decide picker carries the host countdown when the clock is armed
     const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
     await pi.fire("session_start", { reason: "reload" }, ctx);
     await tick();
-    const ui = (ctx as unknown as { ui: { lastSelectOpts?: { timeout?: number }; selectImpl?: unknown } }).ui;
+    const ui = (ctx as unknown as { ui: { selectImpl?: unknown } }).ui;
     let seen: { timeout?: number } | undefined;
     (ui as { selectImpl?: (t: string, o: string[], opts?: { timeout?: number }) => Promise<string | undefined> }).selectImpl = (t, o, opts) => {
       seen = opts;
       return Promise.resolve(o[1]); // pick "Cancel" as the operator would
     };
-    await pi.command("goal", "decide", ctx);
+    const decidedAt = new Date(Date.now() - 10 * 60_000).toISOString();
+    // Rewrite the newest state snapshot so the loaded goal carries the stamp
+    // the clock measures from.
+    const ledgerFile = path.join(cwd, ".pi-glla", "active.jsonl");
+    const lines = fs.readFileSync(ledgerFile, "utf8").trim().split("\n");
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const entry = JSON.parse(lines[i]!) as { type?: string; value?: { goal?: Record<string, unknown> } };
+      if (entry.type !== "state" || !entry.value?.goal) continue;
+      entry.value.goal.pauseDecidedAt = decidedAt;
+      entry.value.goal.updatedAt = decidedAt;
+      lines[i] = JSON.stringify(entry);
+      break;
+    }
+    fs.writeFileSync(ledgerFile, lines.join("\n") + "\n");
+    const reloaded = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, reloaded);
+    await tick();
+    (reloaded as unknown as { ui: { selectImpl?: unknown } }).ui.selectImpl = (ui as { selectImpl?: unknown }).selectImpl;
+    await pi.command("goal", "decide", reloaded);
     await tick();
     assert.ok(seen?.timeout, "the picker received a countdown");
     assert.ok((seen!.timeout as number) <= 20 * 60_000 && (seen!.timeout as number) > 19 * 60_000,

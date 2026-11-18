@@ -166,8 +166,14 @@ export function decisionAutoSelectCandidate(goal: AutoSelectGoal | null | undefi
   return { index, option, verdict };
 }
 
-/** Remaining milliseconds until the durable adoption, or undefined when the
- * clock is off. Zero/negative means "due now". */
+/** Remaining milliseconds until the clock is due, or undefined when the clock
+ * is off / the pause has no recommendation to consider. Zero/negative means
+ * "due now".
+ *
+ * ARMED for ANY recommended decision option, including one that may not be
+ * adopted: the clock's job is also to TELL the operator that their own
+ * deadline passed on a question only they can answer (one
+ * `decision_auto_select_refused` line). Only the ADOPTION is restricted. */
 export function decisionAutoSelectRemainingMs(
   goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
   minutes: unknown,
@@ -175,8 +181,7 @@ export function decisionAutoSelectRemainingMs(
 ): number | undefined {
   const resolved = resolveDecisionAutoSelectMinutes(minutes);
   if (resolved === undefined) return undefined;
-  const candidate = decisionAutoSelectCandidate(goal);
-  if (!candidate || !candidate.verdict.adoptable) return undefined;
+  if (!decisionAutoSelectCandidate(goal)) return undefined;
   const since = decisionPauseSince(goal);
   if (since === undefined) return undefined;
   return since + resolved * 60_000 - now;
@@ -193,12 +198,16 @@ export function decisionAutoSelectDue(
 }
 
 /** The picker countdown: the durable clock, floored so a just-due pick can
- * still be read and cancelled. Undefined keeps the picker timeless. */
+ * still be read and cancelled. Undefined keeps the picker timeless — which
+ * is deliberate for a recommendation the clock may NOT adopt (the dialog
+ * must not dismiss itself on a question only the operator can answer). */
 export function decisionAutoSelectCountdownMs(
   goal: AutoSelectGoal & Pick<Goal, "pauseDecidedAt" | "updatedAt" | "createdAt"> | null | undefined,
   minutes: unknown,
   now: number,
 ): number | undefined {
+  const candidate = decisionAutoSelectCandidate(goal);
+  if (!candidate || !candidate.verdict.adoptable) return undefined;
   const remaining = decisionAutoSelectRemainingMs(goal, minutes, now);
   if (remaining === undefined) return undefined;
   return Math.max(DECISION_AUTO_SELECT_MIN_COUNTDOWN_MS, remaining);
