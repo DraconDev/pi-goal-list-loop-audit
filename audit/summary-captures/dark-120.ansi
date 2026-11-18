@@ -1,7 +1,10 @@
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;104;183;141mDone — Completion reports now read as one account of the work[39m                                                          [49m
 [48;2;58;48;85m                                                                                                                        [49m
-[48;2;58;48;85m [38;2;222;224;225mSummary[39m                                                                                                                [49m
+[48;2;58;48;85m [38;2;222;224;225mGoal: Rewrite the end-of-task summary so a person can read it at a glance[39m[38;2;222;224;225m                                              [49m
+[48;2;58;48;85m [38;2;222;224;225m[38;2;222;224;225m12 turns · 41m elapsed · 1 audit · 6 files changed, +212 −74[39m                                                           [49m
+[48;2;58;48;85m                                                                                                                        [49m
+[48;2;58;48;85m [38;2;167;152;215mWhat changed[39m                                                                                                           [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;222;224;225mReport shape[39m                                                                                                           [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt[39m[38;2;222;224;225m[38;2;222;224;225m — sections, not an  [49m

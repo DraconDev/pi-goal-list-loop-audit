@@ -19,6 +19,10 @@ import { MockPi } from '../tests/harness/mock-pi.js';
 
 const content = composeRichTerminalLines(buildRichTerminalParts({
   outcome: 'Completion reports now read as one account of the work', countsLine: '', chat: true,
+  // Field 2026-11-18: the ask and one meta line (diff stat folded in) sit
+  // under the headline, so the capture proves the reminder block renders.
+  objective: 'Rewrite the end-of-task summary so a person can read it at a glance. Keep the archive verbatim.',
+  durationLine: '*12 turns · 41m elapsed · 1 audit*', changeLine: '6 files changed, +212 −74',
   groups: [
     { title: 'Report shape', findings: ['The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt — sections, not an audit log for extensions/completion-summary.ts:1200'] },
     { title: 'Verification', findings: ['The gate inventory is always visible, derived from the notes rather than claimed — impossible gate rows stay REPORTED, never PASS'] },

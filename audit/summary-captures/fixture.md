@@ -1,5 +1,8 @@
 ## Done — Completion reports now read as one account of the work
 
+*Goal: Rewrite the end-of-task summary so a person can read it at a glance*  
+*12 turns · 41m elapsed · 1 audit · 6 files changed, +212 −74*
+
 ## Summary
 **What changed · Report shape**
 - **The card is one document: headline, lede, changes, verification, follow-ups, next steps, receipt** — sections, not an audit log · extensions/completion-summary.ts:1200
