@@ -16,6 +16,7 @@ import type { Goal } from "../extensions/goal-loop-core.js";
 import { ledgerPath } from "../extensions/goal-loop-core.js";
 import {
   CARD_SECTION,
+  sentenceCase,
   buildApprovalChatLines,
   buildAuditCountsLine,
   buildRichArchiveSection,
