@@ -340,8 +340,9 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
   decisionAutoSelectInFlight = true;
   void adoptRecommendedDecision(ctx, minutes)
     .then((outcome) => {
-      // "refused"/"stale": the question keeps its own clock state and the
-      // operator still owns it — latch, or the tick would re-announce it.
+      // "refused"/"stale" are answers, not transient failures: the question
+      // keeps its own clock state and the operator still owns it — latch, or
+      // the tick would re-announce the same refusal forever.
       if (outcome !== "adopted") lastDecisionAutoSelectKey = key;
     })
     .catch(() => { /* retry on the next tick — the pause is unchanged */ })

@@ -449,6 +449,30 @@ test("the card states the clock plainly, as the decision block's closer", () => 
   assert.match(unarmed.at(-1)!, /^└─ /, "the options still close the block");
 });
 
+test("a delivery failure stays parked and is ledgered instead of retried forever", async () => {
+  const cwd = tmpCwd();
+  try {
+    setSettings({ decisionAutoSelectMinutes: 10 });
+    __testOnlyResetOwnerSession();
+    seedState(cwd, { goal: seedParkedDecision(25), list: [], loop: null });
+    const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, ctx);
+    await tick();
+    // A stale send surface: safeSteerUser refuses and cannot resume.
+    pi.sendMessageError = new Error("This extension's context is stale after session replacement or reload");
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    const g = readState(cwd).goal as GoalView;
+    assert.equal(g.status, "paused", "the work is still parked — nothing was pretended");
+    assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_adopted").length, 0);
+    assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_delivery_failed").length, 1,
+      "the failed delivery is named, not hidden");
+  } finally {
+    pi.sendMessageError = null;
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test("the pause write stamps pauseDecidedAt so the clock has an episode start", async () => {
   const cwd = tmpCwd();
   try {
