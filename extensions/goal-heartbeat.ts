@@ -1464,7 +1464,11 @@ function heartbeatTick(): void {
     && state.goal.pendingCompletion?.phase === "recovery-pending";
   // v0.35.28 (issue #16): a lapsed wait-pause is host-bound work too — the
   // heartbeat owns its durable due-time backstop (see overdueWaitBackstop).
-  if (overdueWaitDue() || decisionAutoSelectWaitMinutes() !== undefined) {
+  // Evaluated ONCE per tick: the gate needs it to decide whether this tick has
+  // any host-bound work at all, and the backstop below reuses the same reading
+  // (a second loadSettings on every tick would be waste, not correctness).
+  const autoSelectMinutes = decisionAutoSelectWaitMinutes();
+  if (overdueWaitDue() || autoSelectMinutes !== undefined) {
     // fall through: the backstop below needs a heartbeat opportunity
   } else if (state.goal?.status !== "active"
     && state.goal?.status !== "auditing"
@@ -1647,11 +1651,11 @@ function heartbeatTick(): void {
     return;
   }
   overdueWaitBackstop(ctx);
-  // The stuck-question clock (opt-in `decisionAutoSelectMinutes`). Same tick,
-  // same "is there a live host to carry the resume" gate the overdue backstop
-  // documents; the eligibility rule inside the injected adoption refuses
-  // anything that is not a continue-work answer.
-  const autoSelectMinutes = decisionAutoSelectWaitMinutes();
+  // The stuck-question clock (opt-in `decisionAutoSelectMinutes`), read by the
+  // gate at the top of this tick. Same "is there a live host to carry the
+  // resume" boundary the overdue backstop documents; the eligibility rule
+  // inside the injected adoption refuses anything that is not a
+  // continue-work answer.
   if (autoSelectMinutes !== undefined) decisionAutoSelectBackstop(ctx, autoSelectMinutes);
   let idle = false;
   let pending = false;
