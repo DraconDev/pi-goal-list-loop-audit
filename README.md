@@ -272,6 +272,8 @@ with:
 - **Auditor model and thinking level:** choose a verifier that can handle the contract.
 - **Fallback models:** choose providers you can actually authenticate and afford.
 - **Auto-resume:** decide whether loaded work may restart automatically.
+- **Stuck-decision auto-select:** decide how long a decision may sit before its
+  recommended continue-work answer is adopted for you (off by default).
 - **State root:** choose where durable work belongs.
 - **Retry and audit limits:** keep failure recovery bounded.
 - **Notifications:** decide how you want to hear about decisions and results.
@@ -285,7 +287,7 @@ different default. Sections:
 
 | Section | Example rows |
 |---|---|
-| Keep-going | auto-resume, decision popup, carryover policy, decision-pause budget, auto-accept drafts, aggressive mode, vision assist |
+| Keep-going | auto-resume, decision popup, stuck-decision auto-select, carryover policy, decision-pause budget, auto-accept drafts, aggressive mode, vision assist |
 | Main agent | main-agent model, fallback models, fallback thinking levels, retry minutes, same-model retry budget, primary-probe minutes |
 | Drafter | drafting model used to interview an objective before it activates |
 | Compactor | compaction token target, compactor agent and its fallback models |
