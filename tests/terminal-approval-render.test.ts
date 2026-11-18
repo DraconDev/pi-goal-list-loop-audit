@@ -101,7 +101,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
   assert.ok(render.recap.length > 0, "external single line still produced");
-  assert.ok((render.chatLines[0] ?? "").startsWith(`## Done — ${render.outcome}`), "outcome matches the chat headline");
+  assert.ok((render.chatLines[0] ?? "").startsWith(`## Done — ${sentenceCase(render.outcome)}`), "outcome matches the chat headline");
 });
 
 test("the receipt states verdict-count news once, model-free", () => {

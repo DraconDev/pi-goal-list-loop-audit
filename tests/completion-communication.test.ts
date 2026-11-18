@@ -98,7 +98,7 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   const lines = entries[0].content.split("\n");
   // Report shape (field 2026-11-11): `##` report sections, bold area/left-out
   // labels, plain bullets, and ONE receipt line — one voice, no legacy trailer.
-  assert.ok(lines.every((l: string) => l.startsWith("## ") || l === "" || /^\*[^*].*\*$/.test(l) || l.startsWith("**") || l.startsWith("- ") || l.startsWith("  ") || l.startsWith("| ") || l.startsWith("→ ") || l.startsWith("Auditor session kept") || l.startsWith("completion audit approved")), `posted summary is one report voice:\n${entries[0].content}`);
+  assert.ok(lines.every((l: string) => l.startsWith("## ") || l === "" || /^\*[^*].*\*(?:  )?$/.test(l) || l.startsWith("**") || l.startsWith("- ") || l.startsWith("  ") || l.startsWith("| ") || l.startsWith("→ ") || l.startsWith("Auditor session kept") || l.startsWith("completion audit approved")), `posted summary is one report voice:\n${entries[0].content}`);
   const findings = lines.filter((l: string) => l.startsWith("- "));
   assert.ok(findings.length >= 1 && findings.length <= 8, `posted summary carries change bullets plus the trailer, got ${findings.length}`);
   assert.ok(lines[lines.length - 1]!.startsWith("completion audit approved") && lines[lines.length - 1]!.includes("record: "), "the receipt, record pointer last");

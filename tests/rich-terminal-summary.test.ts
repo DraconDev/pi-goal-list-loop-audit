@@ -219,7 +219,7 @@ test("detailed receipt keeps the supplied change and next action, not evidence a
   const findings = r.chatLines.slice(summaryStart, summaryEnd).filter((l) => l.startsWith("- "));
   assert.equal(findings.length, 1, "Changed is the finding; Evidence is saved separately");
   assert.ok(r.chatLines.join("\n").includes("extensions/part-9.ts"));
-  assert.ok(r.chatLines.join("\n").includes("ship it"));
+  assert.ok(r.chatLines.join("\n").includes("Ship it"));
 });
 
 test("no audit history means no invented review row, and the receipt names the real shape", () => {
@@ -253,7 +253,9 @@ test("duration line closes the meta footnote; unknown facts stay absent", () => 
   assert.equal(chatLines[1], "", "blank line after headline");
   // Report shape (field 2026-11-11): the meta line is a dim italic footnote
   // rather than a bare `—` line that reads as a broken bullet.
-  assert.match(chatLines[2] ?? "", /^\*9 turns · .+ elapsed · 1 audit\*$/, `meta line, got: ${chatLines[2]}`);
+  // The ask rides directly above the meta line (one block, hard break).
+  assert.match(chatLines[2] ?? "", /^\*Goal: restyle the terminal summary\*  $/, `goal reminder, got: ${chatLines[2]}`);
+  assert.match(chatLines[3] ?? "", /^\*9 turns · .+ elapsed · 1 audit\*$/, `meta line, got: ${chatLines[3]}`);
   assert.equal(buildDurationLine({} as Goal), null, "nothing known means no meta line");
   const bare = buildDurationLine({ telemetry: { turns: 2, fileWrites: 0, bashCalls: 0 } } as Goal);
   assert.equal(bare, "*2 turns*", "only known facts render");
