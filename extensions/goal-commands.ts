@@ -965,6 +965,121 @@ function pendingDecision(): Goal | null {
   return g && g.status === "paused" && g.pauseKind === "decision" && g.pauseOptions && g.pauseOptions.length > 0 ? g : null;
 }
 
+/** Act on ONE decision option — shared by the picker and the auto-select
+ * clock so the two surfaces can never disagree about what a pick means.
+ *
+ * Executable options (`Label (/goal resume)`) RUN the command; a placeholder
+ * (`…<arg>`) or prose option is steered to the agent and the work resumes.
+ * Returns false when the decision could not be delivered (work stays paused).
+ * Reserved options (cancel/accept/tweak/pause/stop) are NOT refused here —
+ * the picker may dispatch them as the operator's own hand; the auto-select
+ * clock refuses them BEFORE it reaches this function
+ * (decision-auto-select.ts owns that classification). */
+async function actOnDecisionOption(
+  g: Goal,
+  label: string,
+  ctx: ExtensionContext,
+): Promise<boolean> {
+  // v0.29.3: the wipe escape — "… (/glla wipe)" options run the wipe
+  // (which Confirms on its own — destructive actions keep their gate).
+  if (/\(\/glla wipe\)\s*$/.test(label)) {
+    await cmdGllaWipe(ctx);
+    return true;
+  }
+  // Executable options — "Label (/goal cancel)" — RUN the command.
+  // Placeholder commands (…/<arg>) fall through to the message path.
+  const cmdMatch = label.match(/\((\/(?:goal|list|loop) ([a-z]+))\)\s*$/);
+  if (cmdMatch && !label.includes("…") && !label.includes("<")) {
+    const group = cmdMatch[1];
+    const verb = cmdMatch[2];
+    // v0.39.55: the interactive tweak editor is executable from the picker —
+    // bare tweak pre-fills the current text and its own Confirm gate applies.
+    // This is the recovery path for truncated proposals: the picker offers
+    // it instead of a broken copy-paste command.
+    if ((group === "goal" || group === "list") && verb === "tweak") { await cmdTweak("", ctx, group === "list" ? "list" : "goal"); return true; }
+    if (group === "goal" && verb === "resume") await cmdResume(ctx);
+    else if (group === "goal" && verb === "cancel") await cmdCancel(ctx);
+    else if (group === "goal" && verb === "accept") await cmdAcceptWithFollowups(ctx);
+    else if (group === "goal" && verb === "pause") await cmdPause(ctx);
+    else if (group === "list" && ["resume", "cancel", "pause", "next", "clear"].includes(verb!)) await cmdList(verb!, ctx);
+    else if (group === "loop" && verb === "stop") await cmdLoop("stop", ctx);
+    else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
+    else if (group === "loop" && ["cancel", "pause", "finish"].includes(verb!)) await cmdLoop(verb!, ctx);
+    else {
+      if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+        ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
+        return false;
+      }
+      await cmdResume(ctx);
+    }
+    return true;
+  }
+  // Content choice — deliver to the agent, then resume.
+  if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+    ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
+    return false;
+  }
+  await cmdResume(ctx);
+  return true;
+}
+
+/**
+ * Adopt the RECOMMENDED option because the operator's configured delay
+ * (`decisionAutoSelectMinutes`) elapsed with nobody there. This is the ONE
+ * adoption path — the picker's countdown expiry and the heartbeat backstop
+ * both call it, so the ledger, the assumption log, and the eligibility rule
+ * cannot drift between them.
+ *
+ * SAFETY: nothing is adopted unless the option classifies as continue-work.
+ * A reserved answer (cancel/accept/tweak/pause/stop/clear/wipe), a `/glla`
+ * settings task, or a contract amendment keeps the pause parked and says so
+ * ONCE per episode — an absent agent must not end or rewrite the work on the
+ * operator's behalf.
+ *
+ * Returns "adopted" | "refused" | "stale" (the decision changed under us).
+ */
+async function adoptRecommendedDecision(
+  g: Goal,
+  ctx: ExtensionContext,
+  minutes?: number,
+): Promise<"adopted" | "refused" | "stale"> {
+  if (pendingDecision() !== g) return "stale";
+  const candidate = decisionAutoSelectCandidate(g);
+  if (!candidate) return "refused";
+  if (!candidate.verdict.adoptable) {
+    // Announce it ONCE per episode instead of on every heartbeat tick.
+    const tail = readLedgerTail(ctx.cwd, 200);
+    const alreadySaid = tail.some((record) => record.type === "decision_auto_select_refused"
+      && (record.value as { goalId?: string } | undefined)?.goalId === g.id);
+    if (!alreadySaid) {
+      appendLedger(ctx.cwd, "decision_auto_select_refused", { goalId: g.id, option: candidate.option.slice(0, 200), reason: candidate.verdict.reason });
+      ctx.ui.notify(`Decision auto-select declined — ${candidate.verdict.reason}. The question stays parked for you: ${activeGoalSurfaceCommand("decide")}.`, "info");
+    }
+    return "refused";
+  }
+  // The assumption log entry is what the agent must carry into its recap; it
+  // has the same shape the mid-run decision default uses.
+  const entry = {
+    at: new Date().toISOString(),
+    reason: (g.pauseReason ?? "decision pause").slice(0, 300),
+    chosen: decisionOptionText(candidate.option).slice(0, 300),
+    options: (g.pauseOptions ?? []).map((option) => decisionOptionText(option).slice(0, 200)).slice(0, 10),
+  };
+  if (!updateGoal({ autoDefaultLog: [...(g.autoDefaultLog ?? []), entry].slice(-20) }, ctx)) return "refused";
+  const waitedMs = g.pauseDecidedAt ? Date.now() - Date.parse(g.pauseDecidedAt) : undefined;
+  appendLedger(ctx.cwd, "decision_auto_select_adopted", {
+    goalId: g.id,
+    minutes,
+    shape: candidate.verdict.shape,
+    optionIndex: candidate.index,
+    chosen: entry.chosen,
+    ...(waitedMs !== undefined && Number.isFinite(waitedMs) ? { waitedMs } : {}),
+  });
+  ctx.ui.notify(`Decision auto-selected after ${minutes ?? "?"}m without an answer — option ${candidate.index}: ${entry.chosen}. It is expected in the completion recap as an assumption; ${activeGoalSurfaceCommand("cancel")} still stops the work.`, "info");
+  await actOnDecisionOption(g, candidate.option, ctx);
+  return "adopted";
+}
+
 /** Open the decision picker for the current decision pause. Returns true
  * when a picker was shown (false → caller notifies "no pending decision"). */
 async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
