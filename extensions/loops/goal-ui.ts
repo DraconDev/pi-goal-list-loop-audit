@@ -285,6 +285,7 @@ import {
   type HeartbeatFlags,
 } from "../goal-heartbeat.js"; // decomposition step 4 (v0.34.112)
 import { getSubagentAgentsSnapshot } from "../goal-heartbeat.js";
+import { decisionAutoSelectCardLine } from "../decision-auto-select.js";
 import { assembleAgentsExtras, type AgentsPanelRow } from "../goal-agents-panel.js";
 import {
   clearMainModelRecoveryTimer,
@@ -920,6 +921,9 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
       turnPending: pendingContinuationDispatchRef() !== null,
       auditorSilent: settings.auditorSilent !== false,
       auditorProgressSignals: settings.auditorProgressSignals !== false,
+      // The stuck-question clock's card truth — one line, only when armed and
+      // only when the recommended answer may actually be adopted.
+      decisionAutoSelectLine: decisionAutoSelectCardLine(state.goal, settings.decisionAutoSelectMinutes, now),
       compactAuditCard: true,
       maxWidgetLines: widgetHeightBudget(process.stdout.rows || 24),
       uiStatusContext: currentUiStatusContext(ctx, now),

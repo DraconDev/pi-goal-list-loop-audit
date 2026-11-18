@@ -261,6 +261,12 @@ export interface WidgetExtras {
   auditorProgressSignals?: boolean;
   /** Compact live audit HUD; detailed history remains in /goal status. */
   compactAuditCard?: boolean;
+  /** v0.39.x (the stuck-question clock): when `decisionAutoSelectMinutes` is
+   * armed and the recommended option may be adopted, the ONE line that says
+   * so ("auto-answers with option N in Xm unless you decide first"). Resolved
+   * at render contact by the caller — this module keeps zero runtime imports,
+   * so the classification lives in decision-auto-select.ts. */
+  decisionAutoSelectLine?: string;
   /** Physical widget height budget; bounded independently from terminal width. */
   maxWidgetLines?: number;
   /** Effective global main-model backup order for truthful recovery HUDs. */
@@ -3491,6 +3497,14 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         lines.push(`│  ${paint(theme, rec ? "accent" : "dim", text)}`);
       });
       if (decisionOptions.length > 6) lines.push(`│  ${paint(theme, "dim", `… and ${decisionOptions.length - 6} more`)}`);
+      // v0.39.x: the stuck-question clock — say plainly that this question
+      // will answer itself, so nobody is surprised by an adoption. Absent
+      // when the clock is off or the recommendation may not be adopted.
+      if (extras?.decisionAutoSelectLine) {
+        wrap(extras.decisionAutoSelectLine, budget, 2).forEach((w) => {
+          lines.push(`│  ${paint(theme, "dim", w)}`);
+        });
+      }
       // Close the options block; the history helper reopens it when deferred
       // rows follow.
       const lastOpt = lines[lines.length - 1];
