@@ -38,7 +38,8 @@ import {
   __testOnlyResetOverdueWaitBackstop,
   __testOnlyResetZombieRunWatchdog,
 } from "../extensions/goal-heartbeat.js";
-import { readState } from "../extensions/goal-loop-core.js";
+import { readState, type Goal, type State } from "../extensions/goal-loop-core.js";
+import { buildWidgetLines, type DisplayTheme } from "../extensions/goal-loop-display.js";
 import {
   DECISION_AUTO_SELECT_DEFAULT_MINUTES,
   classifyAutoSelectOption,
@@ -414,6 +415,38 @@ test("the manual supervisor pause freezes the clock", async () => {
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("the card states the clock plainly, as the decision block's closer", () => {
+  const goal = {
+    id: "g",
+    objective: "objective",
+    status: "paused",
+    policy: "goal",
+    autoContinue: true,
+    usage: { tokensUsed: 1_000, tokensLimit: 0 },
+    createdAt: "2026-11-18T11:00:00Z",
+    updatedAt: "2026-11-18T11:59:00Z",
+    pauseKind: "decision",
+    pauseReason: "pick one",
+    pauseSuggestedAction: "Pick one.",
+    pauseOptions: ["Continue (/goal resume)", "Cancel the goal (/goal cancel)"],
+    pauseRecommended: 1,
+    pauseDecidedAt: "2026-11-18T11:50:00Z",
+  } as unknown as Goal;
+  const state = { goal, list: [] } as State;
+  const theme = { fg: (_c: string, s: string) => s, bg: (_c: string, s: string) => s, bold: (s: string) => s } as unknown as DisplayTheme;
+  const NOW = Date.parse("2026-11-18T12:00:00Z");
+  const line = decisionAutoSelectCardLine(goal, 10, NOW);
+  assert.ok(line, "the clock is armed and adoptable");
+  const armed = buildWidgetLines(state, null, NOW, theme, 100, { decisionAutoSelectLine: line })!;
+  assert.match(armed.at(-1)!, /^└─ /, "the promise closes the decision block");
+  assert.match(armed.at(-1)!, /auto-answers with option 1/, "it names WHICH recommended option answers");
+  // Without the line (clock off, or a recommendation that may not be adopted)
+  // the card promises nothing.
+  const unarmed = buildWidgetLines(state, null, NOW, theme, 100, {})!;
+  assert.doesNotMatch(unarmed.join("\n"), /auto-answers/, "no clock, no promise");
+  assert.match(unarmed.at(-1)!, /^└─ /, "the options still close the block");
 });
 
 test("the pause write stamps pauseDecidedAt so the clock has an episode start", async () => {
