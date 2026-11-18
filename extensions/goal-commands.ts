@@ -987,7 +987,7 @@ async function actOnDecisionOption(
   }
   // Executable options — "Label (/goal cancel)" — RUN the command.
   // Placeholder commands (…/<arg>) fall through to the message path.
-  const cmdMatch = label.match(/\((\/(?:goal|list|loop) ([a-z]+))\)\s*$/);
+  const cmdMatch = label.match(/\((goal|list|loop) ([a-z]+)\)\s*$/);
   if (cmdMatch && !label.includes("…") && !label.includes("<")) {
     const group = cmdMatch[1];
     const verb = cmdMatch[2];
