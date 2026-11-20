@@ -1108,8 +1108,7 @@ function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
   const mdCheck = goalMarkdownLandedCheck(ctx.cwd, nextGoal);
   const mdLanded = mdCheck === null;
   if (!stateLanded) noteGoalUpdateFailure("journal", journalFailure);
-  else if (markdownWriteFailure.what) noteGoalUpdateFailure("markdown-write", markdownWriteFailure);
-  else if (mdCheck) noteGoalUpdateFailure(mdCheck.stage, mdCheck);
+  else if (mdCheck) noteGoalUpdateFailure(markdownWriteFailure.what ? "markdown-write" : mdCheck.stage, markdownWriteFailure.what ? markdownWriteFailure : mdCheck);
   if (stateLanded && mdLanded) {
     clearGoalStateTransaction(ctx.cwd);
     // v0.39.x audit: durability is the return contract — a ledger failure
