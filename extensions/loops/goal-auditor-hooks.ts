@@ -131,6 +131,10 @@ extractPendingTasks,
   runPersistStep,
   isPersistenceDegraded,
   lastPersistenceFailure,
+  noteGoalUpdateFailure,
+  clearGoalUpdateFailure,
+  lastGoalUpdateFailure,
+  describeGoalUpdateFailure,
   modelSwitch,
   isForbiddenModel,
   filterEvictedAuditorRefs,
@@ -1422,9 +1426,17 @@ function persistDetachedAuditorCursor(
   info: AuditorFallbackAttemptInfo | AuditorFallbackExhaustionInfo,
   patch: Partial<PendingCompletion>,
 ): boolean {
+  clearGoalUpdateFailure();
   const current = detachedAuditContext(generation, goalId, attemptId);
   const claim = state.goal?.pendingCompletion;
-  if (!current || !claim || claim.attemptId !== attemptId) return false;
+  if (!current) {
+    noteGoalUpdateFailure("audit-context-lost");
+    return false;
+  }
+  if (!claim || claim.attemptId !== attemptId) {
+    noteGoalUpdateFailure("claim-mismatch", { error: claim ? `stored attempt ${claim.attemptId ?? "none"}` : "no stored claim" });
+    return false;
+  }
   return updateGoal({
     pendingCompletion: {
       ...claim,
@@ -2472,6 +2484,8 @@ function applyCompletedCompletionAudit(args: {
     // Without a durable cursor the parent cannot bound a restart, so park
     // the claim with no timer. This stays ahead of the generic branches so
     // a restart cannot walk an uncursorred chain again.
+    // Issue #63: capture WHY before the park's own updateGoal resets it.
+    const persistenceFailure = lastGoalUpdateFailure() ?? undefined;
     const failureCopy = providerErrorPresentation(result.error, "completion");
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const pending: PendingCompletion = {
@@ -2502,7 +2516,7 @@ function applyCompletedCompletionAudit(args: {
       pauseKind: "error",
       pauseResumeAt: undefined,
       pauseReason: cursorPersistenceFailed
-        ? "completion auditor recovery cursor could not be persisted — automatic recovery stopped"
+        ? `completion auditor recovery cursor could not be persisted (${describeGoalUpdateFailure(persistenceFailure)}) — automatic recovery stopped`
         : "completion auditor candidate fallback chain exhausted — no verifier verdict was produced",
       pauseSuggestedAction: `The stored completion claim is safe but automatic recovery is stopped. Inspect the auditor/provider setup, then ${activeGoalSurfaceCommand("resume")} to start a new bounded attempt.`,
     }, liveCtx);
@@ -2513,11 +2527,12 @@ function applyCompletedCompletionAudit(args: {
       diagnostic: failureCopy.diagnostic,
       display: failureCopy.display,
       recoveryEpisodeKey,
+      ...(cursorPersistenceFailed && persistenceFailure ? { persistenceFailure } : {}),
     });
     if (notifyParked) {
       liveCtx.ui.notify(
         cursorPersistenceFailed
-          ? `Auditor recovery stopped because its durable cursor could not be saved. The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
+          ? `Auditor recovery stopped because its durable cursor could not be saved (${describeGoalUpdateFailure(persistenceFailure)}). The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
           : `Auditor fallback candidates are exhausted. The completion claim remains stored with no verifier verdict; inspect the provider setup, then ${activeGoalSurfaceCommand("resume")}.`,
         "warning",
       );
