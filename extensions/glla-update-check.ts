@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { stateRootWriteIdentity, withStateRootSnapshot } from "./glla-state-root.js";
 import { publishOwnerRecord } from "./owner-file-protocol.js";
 import {
+  __resetUpdateCheckRenderCache,
   compareVersions,
   GLLA_PACKAGE_NAME,
   isVersionLike,
@@ -14,6 +15,7 @@ import {
 } from "./glla-version.js";
 
 export { compareVersions, readUpdateCheck, updateCheckPath };
+export { readUpdateCheckForRender } from "./glla-version.js";
 export type { UpdateCheckCache };
 
 /**
@@ -112,6 +114,9 @@ export function createUpdateChecker({ timeoutMs = UPDATE_CHECK_TIMEOUT_MS, retry
               fs.mkdirSync(path.dirname(admitted.file), { recursive: true });
               publishOwnerRecord(admitted.file, { latest, checkedAt: Date.now() });
               wrote = true;
+              // A fresh registry answer must reach the next repaint, not
+              // wait out the render cache window.
+              __resetUpdateCheckRenderCache();
             });
           } catch { /* Keep the old cache on write failure. */ }
           finish(wrote);

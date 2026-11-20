@@ -273,7 +273,7 @@ import {
 import { consumeRecoveryResume,
   mainModelRecoveryHasLiveOwner,
 } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
-import { buildVersionTail, readUpdateCheck } from "../glla-update-check.js"; // v0.38.44 version tail
+import { buildVersionTail, readUpdateCheckForRender } from "../glla-update-check.js"; // v0.38.44 version tail
 import { readGllaVersionInfo } from "../glla-version.js"; // v0.38.44 version tail
 import {
   createGoalHeartbeat,
@@ -944,12 +944,10 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
       // `versionTail` below is the STRIP's segment; `cardVersionTail` is the
       // card's folded fact. Both renderers read `versionTail`, so hiding it
       // there would hide it everywhere — the two must be chosen, not blanked.
-      versionTail: settings.versionDisplay === "card" || settings.versionDisplay === undefined
-        ? ""
-        : buildVersionTail(runningGllaVersion(), readUpdateCheck(ctx.cwd)?.latest ?? null),
-      cardVersionTail: settings.versionDisplay === undefined || settings.versionDisplay === "card"
-        ? buildVersionTail(runningGllaVersion(), readUpdateCheck(ctx.cwd)?.latest ?? null)
-        : "",
+      // Issue #63: the sidecar is read at most once per refresh, through the
+      // render cache, and never when the indicator is off.
+      versionTail: settings.versionDisplay === "status" ? versionTail() : "",
+      cardVersionTail: settings.versionDisplay === undefined || settings.versionDisplay === "card" ? versionTail() : "",
     };
     const statusText = buildStatusText(state, latestAuditProgress, now, theme, extras, width);
     const widgetLines = buildWidgetLines(state, latestAuditProgress, now, theme, width, extras);
