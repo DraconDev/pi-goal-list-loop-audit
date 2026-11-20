@@ -609,7 +609,7 @@ export function respecNeedsDraftPhase(loop: LoopState): boolean {
  * This is a structural gate, not proof that the draft is comprehensive. */
 export function respecSpecComplete(specFile: string): boolean {
   try {
-    const text = readFileSync(specFile, "utf8");
+    const text = readFileSync(specFile).toString("utf8");
     const rules = text.match(/^## Rules[^\S\r\n]*\r?\n([\s\S]*?)(?=^#{1,2}\s|$(?![\s\S]))/m)?.[1];
     return /^#\s+\S/m.test(text) && !!rules?.trim()
       && [...text.matchAll(/^##\s+(.+)$/gm)].some(m => m[1]!.trim() !== "Rules");
@@ -700,7 +700,7 @@ export function countOpenAuditFindings(cwd: string): number {
   try {
     const p = auditFindingsPath(cwd);
     if (!existsSync(p)) return 0;
-    return readFileSync(p, "utf-8").split("\n").filter((l) => /^\s*-\s*\[[ \t]+\]/.test(l)).length;
+    return readFileSync(p).toString("utf8").split("\n").filter((l) => /^\s*-\s*\[[ \t]+\]/.test(l)).length;
   } catch {
     return 0;
   }
@@ -712,7 +712,7 @@ export function topOpenAuditFinding(cwd: string): string | null {
   try {
     const p = auditFindingsPath(cwd);
     if (!existsSync(p)) return null;
-    const line = readFileSync(p, "utf-8").split("\n").find((l) => /^\s*-\s*\[[ \t]+\]/.test(l));
+    const line = readFileSync(p).toString("utf8").split("\n").find((l) => /^\s*-\s*\[[ \t]+\]/.test(l));
     // v0.38.30 audit: strip with the same [ \t]+ class as the matcher
     // (an aligned `- [  ]` box used to leak markup into the reprieve note).
     // v0.38.33: strip the optional indent the matcher accepts, same shape.
@@ -725,7 +725,7 @@ export function topOpenAuditFinding(cwd: string): string | null {
 /** v0.33.2: spec drift detection — short sha256 of the spec file. */
 export function specFileHash(p: string): string | null {
   try {
-    return createHash("sha256").update(readFileSync(p, "utf-8")).digest("hex").slice(0, 16);
+    return createHash("sha256").update(readFileSync(p).toString("utf8")).digest("hex").slice(0, 16);
   } catch {
     return null;
   }
@@ -735,7 +735,7 @@ export function specFileHash(p: string): string | null {
 export function countCheckedSpecItems(p: string): number | null {
   try {
     // L7: match the sibling open-item matchers — indented boxes count too.
-    return readFileSync(p, "utf-8").split("\n").filter((l) => /^\s*-\s*\[x\]/i.test(l)).length;
+    return readFileSync(p).toString("utf8").split("\n").filter((l) => /^\s*-\s*\[x\]/i.test(l)).length;
   } catch {
     return null;
   }

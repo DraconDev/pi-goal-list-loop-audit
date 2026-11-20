@@ -146,7 +146,7 @@ function installedAgentDefinition(name: string): string {
   if (!file) {
     throw new Error(`installed pi-subagents agent definition is unavailable for "${name}"`);
   }
-  return fs.readFileSync(file, "utf-8");
+  return fs.readFileSync(file).toString("utf8");
 }
 
 /** The note the managed Designer file carries. The file is a launch
@@ -255,7 +255,7 @@ export function syncSubagentModelOverrides(opts: {
   const managedNow = new Set<string>();
   let prevWritten: string[] = [];
   try {
-    const prev = JSON.parse(fs.readFileSync(subagentSyncStatePath(opts.agentDir), "utf-8"));
+    const prev = JSON.parse(fs.readFileSync(subagentSyncStatePath(opts.agentDir)).toString("utf8"));
     if (Array.isArray(prev?.written)) prevWritten = prev.written.map(String);
   } catch {
     /* first sync or unreadable state */
@@ -281,7 +281,7 @@ export function syncSubagentModelOverrides(opts: {
     const thinkingPin = thinking[name];
     const file = path.join(opts.agentDir, "agents", `${name}.md`);
     const exists = fs.existsSync(file);
-    const current = exists ? fs.readFileSync(file, "utf-8") : undefined;
+    const current = exists ? fs.readFileSync(file).toString("utf8") : undefined;
     const def = EMBEDDED_DEFAULTS[name];
 
     if ((overrideModel !== undefined || thinkingPin !== undefined) && !def) {
@@ -371,7 +371,7 @@ export function designerFileState(agentDir: string): "managed" | "user-owned" | 
   const file = path.join(agentDir, "agents", "Designer.md");
   if (!fs.existsSync(file)) return "absent";
   try {
-    return hasManagedMarker(fs.readFileSync(file, "utf-8")) ? "managed" : "user-owned";
+    return hasManagedMarker(fs.readFileSync(file).toString("utf8")) ? "managed" : "user-owned";
   } catch {
     return "user-owned";
   }
@@ -380,7 +380,7 @@ export function designerFileState(agentDir: string): "managed" | "user-owned" | 
 /** Remove only GLLA's generated Designer projection, never a user-owned file. */
 export function removeManagedDesigner(agentDir: string): void {
   const file = path.join(agentDir, "agents", "Designer.md");
-  if (fs.existsSync(file) && hasManagedMarker(fs.readFileSync(file, "utf8"))) fs.unlinkSync(file);
+  if (fs.existsSync(file) && hasManagedMarker(fs.readFileSync(file).toString("utf8"))) fs.unlinkSync(file);
 }
 
 /** Register only an explicitly selected live Designer checkpoint. No other
@@ -388,7 +388,7 @@ export function removeManagedDesigner(agentDir: string): void {
 export function ensureRequestedDesigner(opts: { agentDir: string; model?: string; thinking?: string }): boolean {
   try {
     const file = path.join(opts.agentDir, "agents", "Designer.md");
-    const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined;
+    const current = fs.existsSync(file) ? fs.readFileSync(file).toString("utf8") : undefined;
     if (current !== undefined && !hasManagedMarker(current)) return true;
     const desired = buildAgentOverrideMd("Designer", opts.model, opts.thinking, designerProjectionNote(opts.model, opts.thinking));
     if (current !== desired) {

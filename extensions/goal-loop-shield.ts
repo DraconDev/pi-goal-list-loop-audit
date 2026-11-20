@@ -716,7 +716,7 @@ function childIsRunning(child: ChildProcess): boolean {
 function linuxProcessGroupId(pid: number): number | undefined {
   if (process.platform !== "linux") return undefined;
   try {
-    const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+    const stat = fs.readFileSync(`/proc/${pid}/stat`).toString("utf8");
     const end = stat.lastIndexOf(")");
     if (end < 0) return undefined;
     const fields = stat.slice(end + 2).trim().split(/\s+/);
@@ -1109,7 +1109,7 @@ export async function runMechanicalPreAuditChecks(
     if (cached) return cached;
     let scripts: Record<string, string> = {};
     try {
-      const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+      const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json")).toString("utf8"));
       if (pkg && typeof pkg.scripts === "object" && pkg.scripts) scripts = pkg.scripts;
     } catch { /* no package.json — nothing to resolve */ }
     scriptsByDir.set(dir, scripts);

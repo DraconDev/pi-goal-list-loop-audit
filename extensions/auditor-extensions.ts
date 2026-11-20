@@ -297,7 +297,7 @@ export function normalizeAuditorAllowedExtensions(value: unknown): string[] {
 
 function readJsonArray(file: string): string[] {
   try {
-    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    const parsed = JSON.parse(fs.readFileSync(file).toString("utf8"));
     if (typeof parsed !== "object" || parsed === null) return [];
     const out: string[] = [];
     for (const key of ["packages", "extensions"]) {

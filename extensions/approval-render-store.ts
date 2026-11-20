@@ -55,7 +55,7 @@ function isValidRender(entry: unknown): entry is PendingApprovalRender {
 function readRenders(cwd: string): PendingApprovalRender[] | null {
   let raw: string;
   try {
-    raw = fs.readFileSync(approvalRenderStorePath(cwd), "utf-8");
+    raw = fs.readFileSync(approvalRenderStorePath(cwd)).toString("utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
     const code = (error as NodeJS.ErrnoException).code ?? "unknown";

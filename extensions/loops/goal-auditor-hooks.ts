@@ -3027,7 +3027,7 @@ function fireReviewer(
     if (opts.mode) config.mode = opts.mode;
     let archiveText: string | undefined;
     try {
-      archiveText = fs.readFileSync(archivedGoalPath(ctx.cwd, source.goalId), "utf-8");
+      archiveText = fs.readFileSync(archivedGoalPath(ctx.cwd, source.goalId)).toString("utf8");
     } catch {
       /* archive md may not exist for manual review of a live goal */
     }

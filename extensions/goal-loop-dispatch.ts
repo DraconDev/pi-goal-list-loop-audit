@@ -123,7 +123,7 @@ export function persistDispatchRecord(cwd: string, record: ContinuationDispatch)
 export function readDispatchRecord(cwd: string): ContinuationDispatch | null {
   const raw = runPersistStep("readContinuationDispatch", () => {
     const file = dispatchRecordPath(cwd);
-    return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+    return fs.existsSync(file) ? fs.readFileSync(file).toString("utf8") : "";
   });
   if (!raw) return null;
   try {

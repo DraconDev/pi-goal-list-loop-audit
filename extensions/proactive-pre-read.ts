@@ -48,7 +48,7 @@ function tryRead(cwd: string, candidate: string): { kind: "text"; snippet: strin
     return { kind: "image", note: `Image reference: ${candidate} — visual inspection requires native image support or a confirmed external provider` };
   }
   try {
-    const raw = fs.readFileSync(resolved, "utf-8");
+    const raw = fs.readFileSync(resolved).toString("utf8");
     const snippet = truncate(raw, PROACTIVE_MAX_CHARS_PER_FILE);
     return { kind: "text", snippet, size: raw.length };
   } catch {

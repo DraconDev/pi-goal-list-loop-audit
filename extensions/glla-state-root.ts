@@ -79,7 +79,7 @@ function readRootSelection(): RootSelection {
   const file = configuredGlobalSettingsPath();
   let root: GllaStateRoot;
   try {
-    const raw: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
+    const raw: unknown = JSON.parse(fs.readFileSync(file).toString("utf8"));
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) throw new Error("invalid settings object");
     const value = (raw as Record<string, unknown>).stateRoot;
     if (value !== undefined && value !== "sessionDir" && value !== "workingDir") throw new Error("invalid state root selector");

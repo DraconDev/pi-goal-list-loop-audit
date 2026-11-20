@@ -51,7 +51,7 @@ export interface UpdateCheckCache {
  * clock does not become a per-contact spawn storm (v0.38.45 audit). */
 export function readUpdateCheckRaw(cwd: string): UpdateCheckCache | null {
   try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(updateCheckPath(cwd), "utf8"));
+    const parsed: unknown = JSON.parse(fs.readFileSync(updateCheckPath(cwd)).toString("utf8"));
     if (typeof parsed !== "object" || parsed === null) return null;
     const record = parsed as Record<string, unknown>;
     if (typeof record.latest !== "string" || !record.latest.trim()) return null;
@@ -89,7 +89,7 @@ export interface GllaVersionInfo {
  */
 export function readGllaVersionInfo(): GllaVersionInfo {
   try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, "utf8"));
+    const parsed: unknown = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH).toString("utf8"));
     if (typeof parsed === "object" && parsed !== null) {
       const record = parsed as Record<string, unknown>;
       const name = typeof record.name === "string" && record.name.trim()
@@ -159,7 +159,7 @@ export interface StaleBuildStatus {
 
 function readVersionAt(manifestPath: string): string | undefined {
   try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath).toString("utf8"));
     if (typeof parsed === "object" && parsed !== null) {
       const version = (parsed as Record<string, unknown>).version;
       if (typeof version === "string" && /^\d+\.\d+\.\d+/.test(version.trim())) return version.trim();
@@ -194,7 +194,7 @@ export function compareGllaVersions(a: string, b: string): number {
 function readGllaManifestVersion(dir: string): string | undefined {
   const manifestPath = path.join(dir, "package.json");
   try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    const parsed: unknown = JSON.parse(fs.readFileSync(manifestPath).toString("utf8"));
     if (typeof parsed !== "object" || parsed === null) return undefined;
     const manifest = parsed as Record<string, unknown>;
     if (manifest.name !== GLLA_PACKAGE_NAME) return undefined;

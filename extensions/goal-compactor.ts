@@ -270,7 +270,7 @@ export function maybeCompactTranscriptAtBoundary(
         if (settled) return;
         settled = true;
         try {
-          const marker = JSON.parse(fs.readFileSync(markerPath, "utf8"));
+          const marker = JSON.parse(fs.readFileSync(markerPath).toString("utf8"));
           if (marker.at === markerAt) writeBoundaryCompactionMarker(markerPath, { at: markerAt, tokens: Math.round(tokens!), completedAt: Date.now() });
         } catch { /* Durable session_compact state remains the fallback. */ }
         if (boundaryAttempts.get(boundaryOwner(ctx)) === attempt) clearBoundaryCompactionAttempt(ctx);
@@ -370,7 +370,7 @@ export function buildBriefPacket(input: {
 /** Read the persisted brief excerpt for resync/banner. Undefined when absent. */
 export function readHandoffBriefExcerpt(cwd: string, maxChars = 600): string | undefined {
   try {
-    const text = fs.readFileSync(compactorBriefPath(cwd), "utf-8").trim();
+    const text = fs.readFileSync(compactorBriefPath(cwd)).toString("utf8").trim();
     if (!text) return undefined;
     return slice(text, maxChars);
   } catch {
@@ -427,7 +427,7 @@ function defaultSpawnWorker(script: string, jobDir: string, request: Record<stri
     child.on("close", () => {
       clearTimeout(timer);
       try {
-        const result = JSON.parse(fs.readFileSync(path.join(jobDir, "result.json"), "utf-8"));
+        const result = JSON.parse(fs.readFileSync(path.join(jobDir, "result.json")).toString("utf8"));
         if (result && result.ok === true && typeof result.brief === "string" && result.brief.trim()) {
           done({ ok: true, brief: result.brief });
         } else {
@@ -587,7 +587,7 @@ function buildPacketFromDisk(cwd: string): string {
   } catch { /* state best effort */ }
   let ledgerTail: string[] | undefined;
   try {
-    const raw = fs.readFileSync(ledgerPath(cwd), "utf-8").split("\n").filter(Boolean);
+    const raw = fs.readFileSync(ledgerPath(cwd)).toString("utf8").split("\n").filter(Boolean);
     ledgerTail = raw.slice(-40).map((line) => {
       try {
         const evt = JSON.parse(line);

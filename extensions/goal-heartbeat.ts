@@ -713,7 +713,7 @@ function readCurrentSubagentRecord(id: string, observed: CurrentSubagentObservat
   let raw: Record<string, unknown> | undefined;
   if (observed.asyncDir && path.isAbsolute(observed.asyncDir)) {
     try {
-      const parsed = JSON.parse(fs.readFileSync(path.join(observed.asyncDir, "status.json"), "utf-8"));
+      const parsed = JSON.parse(fs.readFileSync(path.join(observed.asyncDir, "status.json")).toString("utf8"));
       if (parsed && typeof parsed === "object") raw = parsed as Record<string, unknown>;
     } catch {
       // The provider may publish the lifecycle event before status.json is

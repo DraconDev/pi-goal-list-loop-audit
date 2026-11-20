@@ -67,7 +67,7 @@ const defaultDeps = (): Required<OwnerProcDeps> => ({
  * treat null as "unknown", never as evidence. */
 export function readCmdline(pid: number): string | null {
   try {
-    return fs.readFileSync(path.join("/proc", String(pid), "cmdline"), "utf8");
+    return fs.readFileSync(path.join("/proc", String(pid), "cmdline")).toString("utf8");
   } catch {
     return null;
   }
@@ -77,7 +77,7 @@ export function readCmdline(pid: number): string | null {
  * Null when unknowable — the pid-reuse guard then abstains (no signal). */
 export function procStartMs(pid: number): number | null {
   try {
-    const stat = fs.readFileSync(path.join("/proc", String(pid), "stat"), "utf8");
+    const stat = fs.readFileSync(path.join("/proc", String(pid), "stat")).toString("utf8");
     const rparen = stat.lastIndexOf(")");
     if (rparen < 0) return null;
     const fields = stat.slice(rparen + 2).split(" ");
@@ -85,7 +85,7 @@ export function procStartMs(pid: number): number | null {
     // 22 (starttime) sits at index 19 — pinned by tests/state-root-owner.
     const startTicks = Number(fields[19]);
     if (!Number.isFinite(startTicks)) return null;
-    const btimeLine = fs.readFileSync("/proc/stat", "utf8").split("\n").find((l) => l.startsWith("btime "));
+    const btimeLine = fs.readFileSync("/proc/stat").toString("utf8").split("\n").find((l) => l.startsWith("btime "));
     const btime = btimeLine ? Number(btimeLine.split(/\s+/)[1]) * 1000 : NaN;
     if (!Number.isFinite(btime)) return null;
     // Audit 2026-09-06: a hardcoded 100, never $CLK_TCK. A wrong divisor

@@ -43,7 +43,7 @@ export function claimPressureAttempt(ctx: PressureContext, options: Omit<Attempt
   if (options.budget) {
     try {
       if (fs.existsSync(options.budget.file)) {
-        const saved = JSON.parse(fs.readFileSync(options.budget.file, 'utf8'));
+        const saved = JSON.parse(fs.readFileSync(options.budget.file).toString("utf8"));
         if (saved.key === options.budget.key) return false;
       }
       fs.mkdirSync(path.dirname(options.budget.file), { recursive: true });
@@ -82,12 +82,12 @@ export function claimPressureAttempt(ctx: PressureContext, options: Omit<Attempt
   return true;
 }
 export function pressureBudgetClaimed(file: string, key: string): boolean {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')).key === key; }
+  try { return JSON.parse(fs.readFileSync(file).toString("utf8")).key === key; }
   catch { return false; }
 }
 export function resetPressureBudget(file: string, key: string): void {
   try {
-    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const saved = JSON.parse(fs.readFileSync(file).toString("utf8"));
     if (saved.key === key) fs.rmSync(file, { force: true });
   } catch { /* Conservative on unreadable storage. */ }
 }
@@ -110,7 +110,7 @@ export function clearPressureAttempt(ctx: PressureContext, resetBudget = false):
   if (attempt?.admissionTimer) clearInterval(attempt.admissionTimer);
   if (resetBudget && attempt?.budget) {
     try {
-      const saved = JSON.parse(fs.readFileSync(attempt.budget.file, 'utf8'));
+      const saved = JSON.parse(fs.readFileSync(attempt.budget.file).toString("utf8"));
       if (saved.key === attempt.budget.key) fs.rmSync(attempt.budget.file, { force: true });
     } catch { /* A missing or unreadable budget stays conservative. */ }
   }

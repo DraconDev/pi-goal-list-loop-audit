@@ -83,7 +83,7 @@ export function loadPromptSegments(name: string): PromptSegment[] {
   const file = promptFilePath(name);
   let source: string;
   try {
-    source = fs.readFileSync(file, "utf-8");
+    source = fs.readFileSync(file).toString("utf8");
   } catch (err) {
     throw new Error(
       `[glla] prompt file missing: prompts/${name} (${file}): ${(err as Error)?.message ?? err}. ` +
@@ -127,7 +127,7 @@ export function stripPromptAuthorComment(source: string, name = "prompt"): strin
 export function loadPromptWhole(name: string): string {
   const file = promptFilePath(name);
   try {
-    return fs.readFileSync(file, "utf-8");
+    return fs.readFileSync(file).toString("utf8");
   } catch (err) {
     throw new Error(
       `[glla] prompt file missing: prompts/${name} (${file}): ${(err as Error)?.message ?? err}. ` +

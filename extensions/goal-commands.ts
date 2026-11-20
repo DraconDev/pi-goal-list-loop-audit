@@ -1198,7 +1198,7 @@ async function cmdGoals(ctx: ExtensionContext): Promise<void> {
     let stop = "";
     let obj = "";
     try {
-      const content = fs.readFileSync(path.join(dir, f), "utf-8");
+      const content = fs.readFileSync(path.join(dir, f)).toString("utf8");
       status = content.match(/\*\*Status\*\*:\s*(\w+)/)?.[1] ?? "?";
       stop = content.match(/\*\*Stop reason\*\*:\s*(.+)/)?.[1]?.trim() ?? "";
       obj = content.match(/## Objective\s+>\s*(.+)/)?.[1]?.trim() ?? "";
@@ -1544,7 +1544,7 @@ function recentlyCompletedObjectives(cwd: string): Set<string> {
         let objective = typeof e.value?.objective === "string" ? e.value.objective : "";
         if (!objective && e.value?.goalId) {
           try {
-            const md = fs.readFileSync(archivedGoalPath(cwd, e.value.goalId), "utf-8");
+            const md = fs.readFileSync(archivedGoalPath(cwd, e.value.goalId)).toString("utf8");
             objective = md.split("## Objective")[1]?.split("\n").find((l: string) => l.startsWith("> "))?.slice(2) ?? "";
           } catch { /* archived file gone — skip */ }
         }
@@ -1757,7 +1757,7 @@ async function bulkAddItems(ctx: ExtensionContext, parsed: string[], sourceName:
 async function bulkAddFromFile(ctx: ExtensionContext, abs: string): Promise<void> {
   let content: string;
   try {
-    content = fs.readFileSync(abs, "utf-8");
+    content = fs.readFileSync(abs).toString("utf8");
   } catch {
     ctx.ui.notify(`Cannot read: ${abs}`, "warning");
     return;
@@ -2383,7 +2383,7 @@ async function cmdReview(args: string, ctx: ExtensionContext): Promise<void> {
     }
     const match = matches[0]!;
     goalId = match.replace(/\.md$/, "");
-    const md = fs.readFileSync(path.join(archiveDir(ctx.cwd), match), "utf-8");
+    const md = fs.readFileSync(path.join(archiveDir(ctx.cwd), match)).toString("utf8");
     const objMatch = md.match(/## Objective\n\n> ([\s\S]*?)(?:\n\n|$)/);
     if (objMatch) objective = objMatch[1]!.replace(/\n/g, " ").slice(0, 300);
   } catch {

@@ -4360,7 +4360,7 @@ function registerAgentTools(pi: any): void {
       let proposedSpec: string | undefined;
       if (specChange && loop.specFile) {
         try {
-          originalSpec = fs.readFileSync(loop.specFile, "utf8");
+          originalSpec = fs.readFileSync(loop.specFile).toString("utf8");
           proposedSpec = p.specText?.trim() ? p.specText.trim() + "\n" : originalSpec;
           if (p.specAppend?.trim()) proposedSpec += (proposedSpec.endsWith("\n") ? "" : "\n") + p.specAppend.trim() + "\n";
         } catch {
@@ -4405,7 +4405,7 @@ function registerAgentTools(pi: any): void {
       let nextSpecChecked = loop.specFile ? countCheckedSpecItems(loop.specFile) ?? undefined : undefined;
       if (specChange && loop.specFile) {
         try {
-          if (fs.readFileSync(loop.specFile, "utf8") !== originalSpec) throw new Error("The spec changed during confirmation; no refinement was applied.");
+          if (fs.readFileSync(loop.specFile).toString("utf8") !== originalSpec) throw new Error("The spec changed during confirmation; no refinement was applied.");
           const spec = proposedSpec!;
           const temp = `${loop.specFile}.${process.pid}.${Date.now()}.tmp`;
           try {

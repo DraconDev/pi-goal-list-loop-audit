@@ -77,7 +77,7 @@ export function consumeRecoveryResume(cwd: string): boolean {
   try {
     const p = path.join(piGlaDir(cwd), RECOVERY_RESUME_MARKER);
     if (!fs.existsSync(p)) return false;
-    const raw = fs.readFileSync(p, "utf-8");
+    const raw = fs.readFileSync(p).toString("utf8");
     fs.unlinkSync(p);
     const at = Date.parse((JSON.parse(raw) as { at?: string }).at ?? "");
     return isFreshPastTimestamp(at, RECOVERY_RESUME_FRESH_MS);

@@ -551,7 +551,7 @@ export function projectSettingsPath(cwd: string): string {
 export function readSettingsFile(file: string): Partial<Settings> {
   try {
     if (!fs.existsSync(file)) return {};
-    const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+    const parsed = JSON.parse(fs.readFileSync(file).toString("utf8"));
     return typeof parsed === "object" && parsed !== null ? parsed as Partial<Settings> : {};
   } catch {
     return {};

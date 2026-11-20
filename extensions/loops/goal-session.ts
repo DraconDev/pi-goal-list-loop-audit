@@ -547,7 +547,7 @@ function writeOwnerFile(cwd: string): void {
 
 function readOwnerFile(cwd: string): SessionOwnerRecord | null {
   try {
-    const record = JSON.parse(fs.readFileSync(ownerFilePath(cwd), "utf8")) as SessionOwnerRecord;
+    const record = JSON.parse(fs.readFileSync(ownerFilePath(cwd)).toString("utf8")) as SessionOwnerRecord;
     if (!record || !Number.isInteger(record.pid) || (record.pid ?? 0) <= 0) return null;
     return record;
   } catch {
@@ -807,7 +807,7 @@ function consumeSessionHandoff(
   try {
     const p = sessionHandoffPath(cwd);
     if (!fs.existsSync(p)) return false;
-    const raw = fs.readFileSync(p, "utf-8");
+    const raw = fs.readFileSync(p).toString("utf8");
     // Consume before validation: a stale, foreign, malformed, or mismatched
     // handoff must never be retried by a later session as if it were fresh.
     fs.unlinkSync(p);
@@ -870,7 +870,7 @@ function queuePendingListOperation(ctx: ExtensionContext, args: string): boolean
   const handoffGeneration = sessionHandoffPending ? Math.max(0, sessionGeneration - 1) : sessionGeneration;
   let operations: string[] = [];
   try {
-    const prior = JSON.parse(fs.readFileSync(p, "utf-8")) as Partial<PendingListOperationRecord>;
+    const prior = JSON.parse(fs.readFileSync(p).toString("utf8")) as Partial<PendingListOperationRecord>;
     const priorAt = Date.parse(prior.at ?? "");
     const sameOwner = prior.version === PENDING_LIST_OPERATION_VERSION
       && prior.pid === process.pid
@@ -921,7 +921,7 @@ function consumePendingListOperations(
   const p = pendingListOperationPath(cwd);
   try {
     if (!fs.existsSync(p)) return [];
-    const raw = fs.readFileSync(p, "utf-8");
+    const raw = fs.readFileSync(p).toString("utf8");
     fs.unlinkSync(p);
     const data = JSON.parse(raw) as Partial<PendingListOperationRecord>;
     const at = Date.parse(data.at ?? "");
@@ -1054,7 +1054,7 @@ function markSessionOwnerShutdown(cwd: string, reason: string): void {
   const shutdownAt = new Date().toISOString();
   try {
     const p = path.join(piGlaDir(cwd), SESSION_OWNER_FILE);
-    const owner = JSON.parse(fs.readFileSync(p, "utf-8")) as SessionOwnerRecord;
+    const owner = JSON.parse(fs.readFileSync(p).toString("utf8")) as SessionOwnerRecord;
     if (owner.pid === process.pid) {
       fs.writeFileSync(p, JSON.stringify({ ...owner, shutdownReason: reason, shutdownAt }));
     }
@@ -1088,7 +1088,7 @@ function claimSessionOwnerAndDetectRebind(
     const p = path.join(piGlaDir(cwd), SESSION_OWNER_FILE);
     let previous: SessionOwnerRecord = {};
     try {
-      previous = JSON.parse(fs.readFileSync(p, "utf-8")) as SessionOwnerRecord;
+      previous = JSON.parse(fs.readFileSync(p).toString("utf8")) as SessionOwnerRecord;
     } catch { /* absent or corrupt — first boot */ }
     const previousGeneration = typeof previous.generation === "number" && Number.isFinite(previous.generation)
       ? previous.generation
@@ -1136,7 +1136,7 @@ function refreshSessionOwnerGeneration(cwd: string, ownerSessionId: string): voi
     const p = path.join(piGlaDir(cwd), SESSION_OWNER_FILE);
     let previous: SessionOwnerRecord = {};
     try {
-      previous = JSON.parse(fs.readFileSync(p, "utf-8")) as SessionOwnerRecord;
+      previous = JSON.parse(fs.readFileSync(p).toString("utf8")) as SessionOwnerRecord;
     } catch { /* absent — the next claim owns first boot */ }
     if (typeof previous.generation === "number" && previous.generation >= sessionGeneration) return;
     fs.writeFileSync(p, JSON.stringify({

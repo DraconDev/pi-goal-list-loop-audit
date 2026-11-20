@@ -2623,7 +2623,7 @@ function validArchiveIntentPhase(value: unknown): value is ArchiveIntentPhase {
 export function readArchiveIntent(cwd: string): ArchiveIntent | null {
   if (stateRootPending()) return null;
   try {
-    const raw = JSON.parse(fs.readFileSync(archiveIntentPath(cwd), "utf8")) as Record<string, unknown>;
+    const raw = JSON.parse(fs.readFileSync(archiveIntentPath(cwd)).toString("utf8")) as Record<string, unknown>;
     const terminalGoal = raw.terminalGoal;
     if (
       raw.schema !== 1
@@ -2915,7 +2915,7 @@ export function readQueueFromDisk(cwd: string, excludeIds: ReadonlySet<string> =
   for (const name of names) {
     if (!name.endsWith(".queue.json")) continue;
     let raw: string;
-    try { raw = fs.readFileSync(path.join(dir, name), "utf-8"); } catch { continue; }
+    try { raw = fs.readFileSync(path.join(dir, name)).toString("utf8"); } catch { continue; }
     let e: any;
     try { e = JSON.parse(raw); } catch { continue; }
     if (!e || e.schema !== 1 || e.type !== "queue-item") continue;
@@ -3218,7 +3218,7 @@ function rotationProcessAlive(pid: number): boolean {
  * replaced by the normal session-start owner claim. */
 function ledgerRotationOwned(cwd: string): boolean {
   try {
-    const owner = JSON.parse(fs.readFileSync(path.join(piGlaDir(cwd), "owner.json"), "utf8")) as { pid?: unknown; shutdownAt?: unknown };
+    const owner = JSON.parse(fs.readFileSync(path.join(piGlaDir(cwd), "owner.json")).toString("utf8")) as { pid?: unknown; shutdownAt?: unknown };
     const pid = typeof owner.pid === "number" ? owner.pid : Number(owner.pid);
     if (Number.isInteger(pid) && pid > 1 && pid !== process.pid && owner.shutdownAt === undefined && rotationProcessAlive(pid)) return false;
   } catch {
@@ -3243,7 +3243,7 @@ function acquireLedgerRotationLock(cwd: string): number | undefined {
       let reclaim = false;
       try {
         const stat = fs.statSync(lock);
-        const record = JSON.parse(fs.readFileSync(lock, "utf8")) as { pid?: unknown };
+        const record = JSON.parse(fs.readFileSync(lock).toString("utf8")) as { pid?: unknown };
         const pid = typeof record.pid === "number" ? record.pid : Number(record.pid);
         reclaim = Date.now() - stat.mtimeMs >= LEDGER_ROTATION_STALE_LOCK_MS
           && Number.isInteger(pid)
@@ -4080,7 +4080,7 @@ export function writeGoalStateTransaction(cwd: string, snapshot: State): boolean
 export function readGoalStateTransaction(cwd: string): GoalStateTransaction | null {
   if (stateRootPending()) return null;
   try {
-    const raw = JSON.parse(fs.readFileSync(goalStateTransactionPath(cwd), "utf-8")) as Record<string, unknown>;
+    const raw = JSON.parse(fs.readFileSync(goalStateTransactionPath(cwd)).toString("utf8")) as Record<string, unknown>;
     if (raw.schema !== 1 || typeof raw.at !== "string" || Number.isNaN(Date.parse(raw.at))) return null;
     if (raw.baseStateLineHash !== undefined && typeof raw.baseStateLineHash !== "string") return null;
     if (!raw.state || typeof raw.state !== "object" || Array.isArray(raw.state)) return null;
@@ -4107,7 +4107,7 @@ export function readGoalMd(cwd: string, id: string): string | null {
   if (!isSafePersistedId(id)) return null;
   const file = goalMdPath(cwd, id);
   if (!fs.existsSync(file)) return null;
-  return fs.readFileSync(file, "utf-8");
+  return fs.readFileSync(file).toString("utf8");
 }
 
 /** v0.34.68 (bug 1.7 — "list/goal drafting disallows until we restart",
@@ -5434,7 +5434,7 @@ function listDepthIndexPath(cwd: string): string {
 
 function readListDepthIndex(cwd: string): ListDepthIndexFile {
   try {
-    const raw = JSON.parse(fs.readFileSync(listDepthIndexPath(cwd), "utf8")) as Partial<ListDepthIndexFile>;
+    const raw = JSON.parse(fs.readFileSync(listDepthIndexPath(cwd)).toString("utf8")) as Partial<ListDepthIndexFile>;
     return {
       schema: 1,
       consumed: raw?.consumed && typeof raw.consumed === "object" ? raw.consumed : {},

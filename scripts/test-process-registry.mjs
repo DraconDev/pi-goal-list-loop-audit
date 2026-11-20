@@ -5,7 +5,7 @@ import { ChildProcess } from "node:child_process";
 
 function identity(pid, strict = false) {
   try {
-    const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+    const stat = fs.readFileSync(`/proc/${pid}/stat`).toString("utf8");
     const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
     const result = { pid, group: Number(fields[2]), session: Number(fields[3]), birth: fields[19], zombie: fields[0] === "Z" };
     if (!Number.isInteger(result.group) || result.group <= 0 || !Number.isInteger(result.session) || result.session <= 0 || !/^\d+$/.test(result.birth ?? "")) throw new Error("invalid process identity");
@@ -25,7 +25,7 @@ function descendants(pid, seen = new Set()) {
   if (seen.has(pid)) return [];
   seen.add(pid);
   let children = [];
-  try { children = fs.readFileSync(`/proc/${pid}/task/${pid}/children`, "utf8").trim().split(/\s+/).filter(Boolean).map(Number); } catch {}
+  try { children = fs.readFileSync(`/proc/${pid}/task/${pid}/children`).toString("utf8").trim().split(/\s+/).filter(Boolean).map(Number); } catch {}
   return [identity(pid), ...children.flatMap(child => descendants(child, seen))].filter(Boolean);
 }
 
@@ -41,7 +41,7 @@ function registry(env) {
   const dir = env.GLLA_TEST_PROCESS_REGISTRY;
   const token = env.GLLA_TEST_PROCESS_TOKEN;
   if (!dir || !token) throw new Error("incomplete test process registry configuration");
-  const owner = JSON.parse(fs.readFileSync(path.join(dir, "owner.json"), "utf8"));
+  const owner = JSON.parse(fs.readFileSync(path.join(dir, "owner.json")).toString("utf8"));
   if (owner.token !== token) throw new Error("test process registry token mismatch");
   return { dir, token };
 }
@@ -187,14 +187,14 @@ export async function reapOwnedTestProcesses(env, { graceMs = 1000 } = {}) {
   const readRecords = (dir, target) => {
     try {
       for (const name of fs.readdirSync(dir).filter(name => name.startsWith("process-") && name.endsWith(".json"))) {
-        try { target.set(name, JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"))); }
+        try { target.set(name, JSON.parse(fs.readFileSync(path.join(dir, name)).toString("utf8"))); }
         catch { unverified++; }
       }
     } catch { unverified++; }
   };
   readRecords(owner.dir, records);
   try {
-    const independentOwner = JSON.parse(fs.readFileSync(path.join(obligationsDir(owner.dir), "owner.json"), "utf8"));
+    const independentOwner = JSON.parse(fs.readFileSync(path.join(obligationsDir(owner.dir), "owner.json")).toString("utf8"));
     if (independentOwner.token !== owner.token) throw new Error("obligation owner mismatch");
     readRecords(obligationsDir(owner.dir), expectations);
   } catch { unverified++; }

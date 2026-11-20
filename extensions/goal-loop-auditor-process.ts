@@ -1125,7 +1125,7 @@ type WorkerProcessIdentity = "match" | "mismatch" | "unavailable";
 function workerProcessIdentity(cwd: string, pid: number, dir: string, platform: NodeJS.Platform = process.platform): WorkerProcessIdentity {
   try {
     const workerDir = path.resolve(dir);
-    const lock = JSON.parse(readFileSync(path.join(workerDir, "lock"), "utf8")) as Record<string, unknown>;
+    const lock = JSON.parse(readFileSync(path.join(workerDir, "lock")).toString("utf8")) as Record<string, unknown>;
     const workerPath = typeof lock.workerPath === "string" && lock.workerPath.trim()
       ? path.resolve(lock.workerPath)
       : "goal-auditor-worker";
@@ -1171,7 +1171,7 @@ function workerProcessIdentity(cwd: string, pid: number, dir: string, platform: 
         ? "match"
         : "mismatch";
     }
-    command = readFileSync(`/proc/${pid}/cmdline`, "utf8").replaceAll("\0", " ");
+    command = readFileSync(`/proc/${pid}/cmdline`).toString("utf8").replaceAll("\0", " ");
     const cwdPath = readlinkSync(`/proc/${pid}/cwd`);
     const expectedCwd = realpathSync(cwd);
     return (command.includes(workerPath) || command.includes(path.basename(workerPath)))
@@ -1238,7 +1238,7 @@ function durableWorkerPids(cwd: string, logicalAttemptId: string): Array<{ pid: 
   const out: Array<{ pid: number; attemptId: string; dir: string }> = [];
   for (const attemptId of names) {
     try {
-      const lock = JSON.parse(readFileSync(path.join(root, attemptId, "lock"), "utf8")) as Record<string, unknown>;
+      const lock = JSON.parse(readFileSync(path.join(root, attemptId, "lock")).toString("utf8")) as Record<string, unknown>;
       const pid = typeof lock.pid === "number" ? lock.pid : Number(lock.pid);
       // Older locks contain the parent pid. Only the worker-owned marker is
       // safe to reap across a host restart; never guess at a reused parent.
@@ -1397,7 +1397,7 @@ export function inspectAuditJobHealth(
     let provenFinished = false;
     let reason: string | undefined = "missing or unreadable worker lock";
     try {
-      const lock = JSON.parse(readFileSync(path.join(dir, "lock"), "utf8")) as Record<string, unknown>;
+      const lock = JSON.parse(readFileSync(path.join(dir, "lock")).toString("utf8")) as Record<string, unknown>;
       pid = typeof lock.pid === "number" ? lock.pid : Number(lock.pid);
       if (lock.role === "worker" && Number.isInteger(pid) && pid > 1) {
         if (workerProcessMatches(cwd, pid, dir)) {
@@ -2443,7 +2443,7 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
       .filter(entry => entry.isDirectory() && (entry.name === logicalId || entry.name.startsWith(`${logicalId}-`)))
       .map(entry => {
         const dir = path.join(root, entry.name);
-        const request = JSON.parse(readFileSync(path.join(dir, "request.json"), "utf8")) as AuditorRequest;
+        const request = JSON.parse(readFileSync(path.join(dir, "request.json")).toString("utf8")) as AuditorRequest;
         const startedAt = Date.parse(request.createdAt);
         if (!Number.isFinite(startedAt)) throw new Error("invalid saved audit timestamp");
         return { dir, request, startedAt, name: entry.name };
@@ -2463,7 +2463,7 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
     if (request.recoveryIdentity !== undefined
       ? request.recoveryIdentity !== completionAuditRecoveryIdentity(goal)
       : !legacyRequestMatchesClaim(request, goal)) return reject("request-identity");
-    const result = JSON.parse(readFileSync(path.join(dir, "result.json"), "utf8")) as AuditorResultFile;
+    const result = JSON.parse(readFileSync(path.join(dir, "result.json")).toString("utf8")) as AuditorResultFile;
     if (result.protocolVersion !== PROTOCOL_VERSION) return reject("result-protocol");
     if (result.attemptId !== name) return reject("result-attempt");
     if (result.requestHash !== hash) return reject("result-hash");
@@ -2471,7 +2471,7 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
     if (typeof result.output !== "string" || !Array.isArray(result.toolCalls)
       || typeof result.ok !== "boolean") return reject("result-shape");
     let progress: AuditorProgressFile | undefined;
-    try { progress = JSON.parse(readFileSync(path.join(dir, "progress.json"), "utf8")); } catch { /* result-only legacy job */ }
+    try { progress = JSON.parse(readFileSync(path.join(dir, "progress.json")).toString("utf8")); } catch { /* result-only legacy job */ }
     if (progress && (progress.protocolVersion !== PROTOCOL_VERSION || progress.attemptId !== name || progress.requestHash !== hash)) return reject("progress-mismatch");
     // Request hashes only bind identity; they are not authentication.
     // A fresh process has lost the launching parent's nonpersisted key:

@@ -931,7 +931,7 @@ function notifyPersistenceState(ctx: ExtensionContext): void {
 
 function goalMarkdownLanded(cwd: string, goal: Goal): boolean {
   try {
-    return !stateRootPending() && fs.readFileSync(goalMdPath(cwd, goal.id), "utf-8") === renderGoalMarkdown(goal);
+    return !stateRootPending() && fs.readFileSync(goalMdPath(cwd, goal.id)).toString("utf8") === renderGoalMarkdown(goal);
   } catch {
     return false;
   }
@@ -1157,7 +1157,7 @@ function autoArbitrateStackedState(ctx: ExtensionContext): void {
 async function fanOutListAuditFindings(cwd: string, generation: number): Promise<void> {
   let md = "";
   try {
-    md = fs.readFileSync(path.join(piGlaDir(cwd), "audit-loop", "findings.md"), "utf-8");
+    md = fs.readFileSync(path.join(piGlaDir(cwd), "audit-loop", "findings.md")).toString("utf8");
   } catch {
     /* no findings file — the audit was clean or never wrote */
   }
@@ -1383,7 +1383,7 @@ export function archiveCurrentGoal(
   let archiveIsOurs = false;
   if (fs.existsSync(target)) {
     try {
-      const existing = fs.readFileSync(target, "utf-8");
+      const existing = fs.readFileSync(target).toString("utf8");
       const namesThisGoal = existing.includes(`**File**: \`${goal.id}.md\``);
       const terminalRecord = /^\*\*Status\*\*: (complete|aborted)\s*$/m.test(existing);
       archiveIsOurs = namesThisGoal && terminalRecord;

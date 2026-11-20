@@ -1976,7 +1976,7 @@ export function readPitfallsBrief(cwd: string): string | undefined {
   try {
     // The registry is GLLA state, so sessionDir mode must read the selected
     // root rather than injecting a stale cwd/.pi-glla file into the prompt.
-    body = fs.readFileSync(path.join(piGlaDir(cwd), "pitfalls.md"), "utf8");
+    body = fs.readFileSync(path.join(piGlaDir(cwd), "pitfalls.md")).toString("utf8");
   } catch {
     return undefined;
   }

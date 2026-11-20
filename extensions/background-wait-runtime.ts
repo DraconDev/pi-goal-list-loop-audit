@@ -149,7 +149,7 @@ function artifactOutcome(wait: BackgroundWait, dependency: BackgroundWait["depen
     try {
       const file = path.join(dependency.asyncDir, "status.json");
       if (fs.statSync(file).size > 1024 * 1024) return "missing";
-      const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
+      const raw = JSON.parse(fs.readFileSync(file).toString("utf8")) as Record<string, unknown>;
       if (raw.runId !== dependency.runId) return "missing";
       if (typeof raw.lastActivityAt === 'number' && Number.isFinite(raw.lastActivityAt)
         && raw.lastActivityAt >= 0 && raw.lastActivityAt <= now) {

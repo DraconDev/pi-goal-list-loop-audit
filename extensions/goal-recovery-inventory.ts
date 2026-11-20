@@ -148,7 +148,7 @@ function readRecordsFrom(dir: string, kind: "active" | "archive"): Map<string, {
     // reported as unreadable rather than silently dropped.
     let md: string;
     try {
-      md = fs.readFileSync(path.join(dir, name), "utf-8");
+      md = fs.readFileSync(path.join(dir, name)).toString("utf8");
     } catch {
       continue;
     }

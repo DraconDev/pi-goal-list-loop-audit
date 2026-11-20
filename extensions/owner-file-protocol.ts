@@ -31,7 +31,7 @@ export function readOwnerProtocolRecord(file: string, options: {
   sleep?: (ms: number) => void;
 } = {}): unknown {
   return JSON.parse(retryWindowsMutation(
-    () => (options.read ?? (target => fs.readFileSync(target, "utf8")))(file),
+    () => (options.read ?? (target => fs.readFileSync(target).toString("utf8")))(file),
     options.platform, options.sleep,
   ));
 }
@@ -39,7 +39,7 @@ export function readOwnerProtocolRecord(file: string, options: {
 function birth(pid: number): string | null {
   if (process.platform !== "linux") return null;
   try {
-    const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+    const stat = fs.readFileSync(`/proc/${pid}/stat`).toString("utf8");
     return stat.slice(stat.lastIndexOf(")") + 2).split(" ")[19] ?? null;
   } catch { return null; }
 }
@@ -51,7 +51,7 @@ function active(p: Participant): boolean {
   // Elsewhere, an ambiguous live PID conservatively blocks the mutation.
   if (process.platform === "linux") {
     try {
-      const stat = fs.readFileSync(`/proc/${p.pid}/stat`, "utf8");
+      const stat = fs.readFileSync(`/proc/${p.pid}/stat`).toString("utf8");
       if (stat.slice(stat.lastIndexOf(")") + 2).split(" ")[0] === "Z") return false;
     } catch { /* inaccessible process identity remains ambiguous/live */ }
   }
