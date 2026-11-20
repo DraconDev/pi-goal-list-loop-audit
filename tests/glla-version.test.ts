@@ -80,3 +80,39 @@ test("compareVersions is strictly numeric: prereleases never equal releases", ()
 test("updateCheckPath defaults to the cwd state dir", () => {
   assert.equal(updateCheckPath("/tmp/some-cwd"), path.join("/tmp/some-cwd", ".pi-glla", "update-check.json"));
 });
+
+// Issue #63: the UI ticker repaints every few seconds; the version tail must
+// not re-read the sidecar from disk on every repaint.
+test("render-cadence sidecar reads are cached and re-validated for skew", async (t) => {
+  const { readUpdateCheckForRender, __resetUpdateCheckRenderCache, UPDATE_CHECK_RENDER_TTL_MS } = await import("../extensions/glla-version.js");
+  const cwd = scratchDir(t, "glla-render-cache-");
+  const file = updateCheckPath(cwd);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const now = 1_800_000_000_000;
+  fs.writeFileSync(file, JSON.stringify({ latest: "9.9.9", checkedAt: now - 1_000 }));
+  __resetUpdateCheckRenderCache();
+  t.after(() => __resetUpdateCheckRenderCache());
+
+  assert.equal(readUpdateCheckForRender(cwd, now)?.latest, "9.9.9");
+  fs.writeFileSync(file, JSON.stringify({ latest: "10.0.0", checkedAt: now }));
+  assert.equal(readUpdateCheckForRender(cwd, now + 5_000)?.latest, "9.9.9", "within the window the disk is not re-read");
+  assert.equal(readUpdateCheckForRender(cwd, now + UPDATE_CHECK_RENDER_TTL_MS)?.latest, "10.0.0", "the window expiry re-reads");
+
+  fs.writeFileSync(file, JSON.stringify({ latest: "11.0.0", checkedAt: now }));
+  __resetUpdateCheckRenderCache();
+  assert.equal(readUpdateCheckForRender(cwd, now + UPDATE_CHECK_RENDER_TTL_MS + 1)?.latest, "11.0.0", "a writer reset is seen at once");
+
+  fs.writeFileSync(file, JSON.stringify({ latest: "12.0.0", checkedAt: now + 10 * 60_000 }));
+  __resetUpdateCheckRenderCache();
+  assert.equal(readUpdateCheckForRender(cwd, now), null, "a future-dated entry reads as unknown");
+
+  fs.rmSync(file);
+  __resetUpdateCheckRenderCache();
+  assert.equal(readUpdateCheckForRender(cwd, now), null, "a missing sidecar is unknown, never a throw");
+});
+
+test("the UI reads the sidecar through the render cache and never when the indicator is off", () => {
+  const ui = fs.readFileSync("extensions/loops/goal-ui.ts", "utf8");
+  assert.doesNotMatch(ui, /readUpdateCheck\(/, "the ticker must not hit the uncached reader");
+  assert.match(ui, /versionTail: settings\.versionDisplay === "status" \? versionTail\(\) : ""/);
+});
