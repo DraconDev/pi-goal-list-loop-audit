@@ -128,6 +128,10 @@ import {
   stateRootPending,
   isPersistenceDegraded,
   lastPersistenceFailure,
+  noteGoalUpdateFailure,
+  clearGoalUpdateFailure,
+  persistErrorCode,
+  type GoalUpdateFailureStage,
   modelSwitch,
   isForbiddenModel,
 isGoalRevisionCurrent,
@@ -930,11 +934,22 @@ function notifyPersistenceState(ctx: ExtensionContext): void {
 }
 
 function goalMarkdownLanded(cwd: string, goal: Goal): boolean {
+  return goalMarkdownLandedCheck(cwd, goal) === null;
+}
+
+/** Readback with a reason (issue #63): null when the markdown on disk is
+ * exactly the rendered goal, otherwise which part of the check failed. */
+function goalMarkdownLandedCheck(cwd: string, goal: Goal): { stage: GoalUpdateFailureStage; error?: string; code?: string } | null {
+  if (stateRootPending()) return { stage: "state-root-pending" };
+  let onDisk: string;
   try {
-    return !stateRootPending() && fs.readFileSync(goalMdPath(cwd, goal.id)).toString("utf8") === renderGoalMarkdown(goal);
-  } catch {
-    return false;
+    onDisk = fs.readFileSync(goalMdPath(cwd, goal.id)).toString("utf8");
+  } catch (err) {
+    return { stage: "markdown-read", error: err instanceof Error ? err.message : String(err), code: persistErrorCode(err) };
   }
+  const expected = renderGoalMarkdown(goal);
+  if (onDisk === expected) return null;
+  return { stage: "markdown-readback-mismatch", error: `read ${Buffer.byteLength(onDisk)} bytes, expected ${Buffer.byteLength(expected)}` };
 }
 
 function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
@@ -1042,7 +1057,11 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
 }
 
 function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
-  if (!state.goal) return false;
+  clearGoalUpdateFailure();
+  if (!state.goal) {
+    noteGoalUpdateFailure("no-goal");
+    return false;
+  }
   const statusChanged = patch.status !== undefined && patch.status !== state.goal.status;
   const next: Goal = { ...state.goal, ...patch, updatedAt: nowIso() };
   // Attribution belongs to this episode, not a previous stop. Runtime
@@ -1063,16 +1082,34 @@ function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
   // v0.35.72: the transaction snapshot closes the crash window between the
   // markdown projection and the append-only state ledger. A later restart
   // adopts it only when it is newer than the last committed state line.
+  // Issue #63: each stage that can refuse records WHY, so a fail-closed
+  // caller (the auditor cursor) can report the stage and errno instead of a
+  // bare "could not be saved". A wrapped step that threw is identified by
+  // the persistence-failure record changing across the call.
+  const thrownSince = (before: ReturnType<typeof lastPersistenceFailure>) => {
+    const after = lastPersistenceFailure();
+    return after && after !== before ? { what: after.what, error: after.error, code: after.code } : {};
+  };
+  const beforeTransaction = lastPersistenceFailure();
   const transactionLanded = writeGoalStateTransaction(ctx.cwd, { ...state, goal: nextGoal });
   if (!transactionLanded) {
+    noteGoalUpdateFailure(stateRootPending() ? "state-root-pending" : "transaction", thrownSince(beforeTransaction));
     ctx.ui.notify("Goal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.", "warning");
     return false;
   }
+  const beforeMarkdown = lastPersistenceFailure();
   writeGoalMd(ctx.cwd, nextGoal);
+  const markdownWriteFailure = thrownSince(beforeMarkdown);
   state.goal = nextGoal;
   if (statusChanged) clearToolActivityState();
+  const beforeJournal = lastPersistenceFailure();
   const stateLanded = persistState(ctx);
-  const mdLanded = goalMarkdownLanded(ctx.cwd, nextGoal);
+  const journalFailure = thrownSince(beforeJournal);
+  const mdCheck = goalMarkdownLandedCheck(ctx.cwd, nextGoal);
+  const mdLanded = mdCheck === null;
+  if (!stateLanded) noteGoalUpdateFailure("journal", journalFailure);
+  else if (markdownWriteFailure.what) noteGoalUpdateFailure("markdown-write", markdownWriteFailure);
+  else if (mdCheck) noteGoalUpdateFailure(mdCheck.stage, mdCheck);
   if (stateLanded && mdLanded) {
     clearGoalStateTransaction(ctx.cwd);
     // v0.39.x audit: durability is the return contract — a ledger failure
