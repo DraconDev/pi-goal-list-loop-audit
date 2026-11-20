@@ -2982,7 +2982,71 @@ export function ensureDirs(cwd: string): void {
 export interface PersistenceFailure {
   what: string;
   error: string;
+  /** errno-style code (`ENOSPC`, `EIO`, …) when the thrown error carried one.
+   * Issue #63: the message alone did not say whether storage was full, gone,
+   * or flaky. */
+  code?: string;
   at: string;
+}
+
+/** Which stage of a goal update refused to land (issue #63). `updateGoal`
+ * returns a bare boolean to its gates; this record carries the reason so a
+ * fail-closed park can say what actually failed instead of "could not be
+ * saved". */
+export type GoalUpdateFailureStage =
+  | "no-goal"
+  | "state-root-pending"
+  | "transaction"
+  | "journal"
+  | "markdown-write"
+  | "markdown-read"
+  | "markdown-readback-mismatch"
+  | "audit-context-lost"
+  | "claim-mismatch";
+
+export interface GoalUpdateFailure {
+  stage: GoalUpdateFailureStage;
+  /** The wrapped persistence step that threw, when one did. */
+  what?: string;
+  error?: string;
+  code?: string;
+  at: string;
+}
+
+let lastGoalUpdate: GoalUpdateFailure | null = null;
+
+export function persistErrorCode(err: unknown): string | undefined {
+  const code = (err as { code?: unknown } | null)?.code;
+  return typeof code === "string" && /^[A-Z][A-Z0-9_]{1,31}$/.test(code) ? code : undefined;
+}
+
+export function noteGoalUpdateFailure(
+  stage: GoalUpdateFailureStage,
+  detail: { what?: string; error?: string; code?: string } = {},
+): GoalUpdateFailure {
+  lastGoalUpdate = {
+    stage,
+    ...(detail.what ? { what: detail.what } : {}),
+    ...(detail.error ? { error: detail.error.slice(0, 200) } : {}),
+    ...(detail.code ? { code: detail.code } : {}),
+    at: new Date().toISOString(),
+  };
+  return lastGoalUpdate;
+}
+
+export function clearGoalUpdateFailure(): void {
+  lastGoalUpdate = null;
+}
+
+export function lastGoalUpdateFailure(): GoalUpdateFailure | null {
+  return lastGoalUpdate;
+}
+
+/** Compact one-line form for pause reasons and notifies. */
+export function describeGoalUpdateFailure(failure: GoalUpdateFailure | null | undefined): string {
+  if (!failure) return "unknown stage";
+  const cause = failure.code ?? failure.error;
+  return cause ? `${failure.stage}: ${cause.slice(0, 80)}` : failure.stage;
 }
 
 let persistenceDegraded = false;
@@ -3022,7 +3086,8 @@ export function runPersistStep<T>(what: string, fn: () => T): T | undefined {
     return out;
   } catch (err) {
     persistenceDegraded = true;
-    lastFailure = { what, error: err instanceof Error ? err.message : String(err), at: new Date().toISOString() };
+    const code = persistErrorCode(err);
+    lastFailure = { what, error: err instanceof Error ? err.message : String(err), ...(code ? { code } : {}), at: new Date().toISOString() };
     return undefined;
   }
 }
