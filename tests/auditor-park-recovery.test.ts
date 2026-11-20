@@ -97,6 +97,8 @@ test("the pause-reason vocabulary accepts the audit lane's parks and rejects its
     "completion auditor automatic recovery disabled — no verdict was produced",
     "completion auditor aggressive recovery horizon reached — no verdict was produced",
     "completion auditor recovery cursor could not be persisted — automatic recovery stopped",
+    // Issue #63: the stage-bearing form is the same deliberate stop.
+    "completion auditor recovery cursor could not be persisted (journal: EIO) — automatic recovery stopped",
     "completion auditor candidate fallback chain exhausted — no verifier verdict was produced",
     "main model recovery — retrying after provider compaction failure",
     "paused by user",
