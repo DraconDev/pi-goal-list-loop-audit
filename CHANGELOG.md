@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.41.1 — a failing disk can no longer abort pi, and a refused audit cursor says why (2026-11-20)
+
 ### A failing disk can no longer abort pi, and a refused audit cursor says why (issue #63) (2026-11-20)
 
 A field report (GLLA 0.40.1, a VirtioFS-mounted project on a 99%-full disk) hit two auditor-cursor persistence parks and then a hard crash of the whole pi process: `node::fs::ReadFileUtf8 … Assertion failed: (0) == (uv_fs_close(...))` from the UI ticker's update-check read.
