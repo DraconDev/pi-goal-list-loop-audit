@@ -873,6 +873,9 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
     const width = process.stdout.columns || 80;
     const activity = displayActivityFor(ctx);
     const settings = loadSettings(ctx.cwd);
+    let versionTailMemo: string | undefined;
+    const versionTail = (): string =>
+      (versionTailMemo ??= buildVersionTail(runningGllaVersion(), readUpdateCheckForRender(ctx.cwd, now)?.latest ?? null));
     const sessionRef = modelRef(ctx.model);
     const recovery = state.mainModelRecovery;
     const durableDeferRecommendation = state.goal?.durableDeferRecommendation;
