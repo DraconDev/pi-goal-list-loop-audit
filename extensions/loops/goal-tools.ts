@@ -2162,6 +2162,9 @@ function registerAgentTools(pi: any): void {
           : durableCompletionClaim.exhaustedChain;
         const exhaustedNotice = exhaustedChain ? `Exhausted auditor chain: ${exhaustedChain}. ` : "";
         const cursorPersistenceFailed = isAuditorCursorPersistenceFailure(result.error);
+        // Issue #63: the refusal reason, snapshotted when the cursor write
+        // was refused (read-once, so take it only for a persistence park).
+        const persistenceFailure = cursorPersistenceFailed ? takeAuditorCursorRefusal() ?? undefined : undefined;
         if (result.fallbackExhausted && !cursorPersistenceFailed) {
           // Unified envelope: a burned candidate chain is not a verdict and
           // not a hard park — it is provider requests failing, the same as
@@ -2228,7 +2231,7 @@ function registerAgentTools(pi: any): void {
             pauseKind: "error",
             pauseResumeAt: undefined,
             pauseReason: cursorPersistenceFailed
-              ? "completion auditor recovery cursor could not be persisted — automatic recovery stopped"
+              ? `completion auditor recovery cursor could not be persisted (${describeGoalUpdateFailure(persistenceFailure)}) — automatic recovery stopped`
               : "completion auditor candidate fallback chain exhausted — no verifier verdict was produced",
             pauseSuggestedAction: `The stored completion claim is safe but automatic recovery is stopped. Inspect the auditor/provider setup, then ${activeGoalSurfaceCommand("resume")} to start a new bounded attempt.`,
           }, ctx);
@@ -2239,11 +2242,12 @@ function registerAgentTools(pi: any): void {
             diagnostic: failureCopy.diagnostic,
             display: failureCopy.display,
             recoveryEpisodeKey,
+            ...(cursorPersistenceFailed && persistenceFailure ? { persistenceFailure } : {}),
           });
           if (notifyParked) {
             ctx.ui.notify(
               cursorPersistenceFailed
-                ? `Auditor recovery stopped because its durable cursor could not be saved. The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
+                ? `Auditor recovery stopped because its durable cursor could not be saved (${describeGoalUpdateFailure(persistenceFailure)}). The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
                 : `Auditor fallback candidates are exhausted. The completion claim remains stored with no verifier verdict; inspect the provider setup, then ${activeGoalSurfaceCommand("resume")}.`,
               "warning",
             );
@@ -2252,7 +2256,7 @@ function registerAgentTools(pi: any): void {
             content: [{
               type: "text",
               text: cursorPersistenceFailed
-                ? `Auditor recovery stopped because its durable cursor could not be saved. The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
+                ? `Auditor recovery stopped because its durable cursor could not be saved (${describeGoalUpdateFailure(persistenceFailure)}). The completion claim remains stored; ${activeGoalSurfaceCommand("resume")} retries it explicitly.`
                 : `Auditor fallback candidates are exhausted. The completion claim remains stored with no verifier verdict; inspect the provider setup, then ${activeGoalSurfaceCommand("resume")}.`,
             }],
             details: {},

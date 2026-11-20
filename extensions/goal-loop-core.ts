@@ -3002,7 +3002,8 @@ export type GoalUpdateFailureStage =
   | "markdown-read"
   | "markdown-readback-mismatch"
   | "audit-context-lost"
-  | "claim-mismatch";
+  | "claim-mismatch"
+  | "refused-before-write";
 
 export interface GoalUpdateFailure {
   stage: GoalUpdateFailureStage;
@@ -3040,6 +3041,23 @@ export function clearGoalUpdateFailure(): void {
 
 export function lastGoalUpdateFailure(): GoalUpdateFailure | null {
   return lastGoalUpdate;
+}
+
+/** The reason the most recent auditor cursor write was refused, snapshotted
+ * at refusal time: later goal writes on the way to the park would otherwise
+ * reset `lastGoalUpdateFailure` before the park can ledger it. */
+let lastCursorRefusal: GoalUpdateFailure | null = null;
+
+export function recordAuditorCursorRefusal(): GoalUpdateFailure {
+  lastCursorRefusal = lastGoalUpdate ?? noteGoalUpdateFailure("refused-before-write");
+  return lastCursorRefusal;
+}
+
+/** Read-once: a refusal explains exactly one park. */
+export function takeAuditorCursorRefusal(): GoalUpdateFailure | null {
+  const out = lastCursorRefusal;
+  lastCursorRefusal = null;
+  return out;
 }
 
 /** Compact one-line form for pause reasons and notifies. */

@@ -133,7 +133,8 @@ extractPendingTasks,
   lastPersistenceFailure,
   noteGoalUpdateFailure,
   clearGoalUpdateFailure,
-  lastGoalUpdateFailure,
+  recordAuditorCursorRefusal,
+  takeAuditorCursorRefusal,
   describeGoalUpdateFailure,
   modelSwitch,
   isForbiddenModel,
@@ -1455,6 +1456,13 @@ function persistDetachedAuditorCursor(
  * candidate. The worker remains detached for every rung; this is a model
  * fallback, never an in-process/session fallback.
  */
+function cursorCallback(run: () => boolean | void): boolean | void {
+  clearGoalUpdateFailure();
+  const accepted = run();
+  if (accepted === false) recordAuditorCursorRefusal();
+  return accepted;
+}
+
 export async function runDetachedCompletionWithFallback(
   candidates: AuditorModelCandidate[],
   run: (candidate: AuditorModelCandidate) => Promise<DetachedAuditResult>,
@@ -1491,9 +1499,12 @@ export async function runDetachedCompletionWithFallback(
     retryCandidateRef: opts.retryCandidateRef,
     retryAttemptStarted: opts.retryAttemptStarted,
     retryFailureClass: opts.retryFailureClass,
-    onAttempt: (candidate, info) => opts.onAttempt?.(candidate, info),
-    onRetry: (candidate, error, delayMs, info) => opts.onRetry?.(candidate, error, info),
-    onCandidateExhausted: (candidate, error, info) => opts.onCandidateExhausted?.(candidate, error, info),
+    // Issue #63: every cursor callback starts from a clean failure record and
+    // a refusal snapshots its reason, so the park that follows can ledger the
+    // failing stage even after intervening goal writes.
+    onAttempt: (candidate, info) => cursorCallback(() => opts.onAttempt?.(candidate, info)),
+    onRetry: (candidate, error, delayMs, info) => cursorCallback(() => opts.onRetry?.(candidate, error, info)),
+    onCandidateExhausted: (candidate, error, info) => cursorCallback(() => opts.onCandidateExhausted?.(candidate, error, info)),
     onFallback: (from, to, error) => opts.onFallback?.(from, to, error),
   });
 }
@@ -2485,7 +2496,7 @@ function applyCompletedCompletionAudit(args: {
     // the claim with no timer. This stays ahead of the generic branches so
     // a restart cannot walk an uncursorred chain again.
     // Issue #63: capture WHY before the park's own updateGoal resets it.
-    const persistenceFailure = lastGoalUpdateFailure() ?? undefined;
+    const persistenceFailure = takeAuditorCursorRefusal() ?? undefined;
     const failureCopy = providerErrorPresentation(result.error, "completion");
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const pending: PendingCompletion = {
