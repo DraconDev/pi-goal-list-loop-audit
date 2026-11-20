@@ -71,6 +71,31 @@ export function readUpdateCheck(cwd: string): UpdateCheckCache | null {
   return raw;
 }
 
+/** Render-cadence cache window for the update sidecar. The registry check
+ * itself runs at most hourly, so a 60 s view is never meaningfully stale. */
+export const UPDATE_CHECK_RENDER_TTL_MS = 60_000;
+let renderCache: { file: string; at: number; value: UpdateCheckCache | null } | null = null;
+
+/** Strict sidecar read for the periodic UI ticker (issue #63). The ticker
+ * repaints every few seconds; re-reading the sidecar from disk each time made
+ * the version tail the hottest synchronous read in the host process, and on a
+ * flaky network/VM mount every extra read is another chance to fail. The
+ * cached value is re-validated for clock skew on every call. */
+export function readUpdateCheckForRender(cwd: string, now = Date.now()): UpdateCheckCache | null {
+  const file = updateCheckPath(cwd);
+  if (!renderCache || renderCache.file !== file || now - renderCache.at >= UPDATE_CHECK_RENDER_TTL_MS || now < renderCache.at) {
+    renderCache = { file, at: now, value: readUpdateCheckRaw(cwd) };
+  }
+  const value = renderCache.value;
+  if (!value || value.checkedAt > now + 60_000) return null;
+  return value;
+}
+
+/** Test seam: drop the render cache. */
+export function __resetUpdateCheckRenderCache(): void {
+  renderCache = null;
+}
+
 /** npm-version-shaped tokens only — the refresh caches stdout, so
  * registry noise must never poison the sidecar (v0.38.45 audit). */
 export function isVersionLike(token: string): boolean {
