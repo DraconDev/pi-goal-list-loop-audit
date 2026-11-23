@@ -47,6 +47,7 @@ test("the rendered completion card retains the ask, four flat findings, and the 
       "- Confirmed writes stay on disk.",
       "- Recovery skips stale retries.",
       "- Restored edits keep their order.",
+      "## Metrics details",
       "- Duplicate writes get counted.",
       "Changed: none",
       "Evidence: supporting record",
