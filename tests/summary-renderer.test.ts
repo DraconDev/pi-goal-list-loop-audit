@@ -42,7 +42,13 @@ test("the rendered completion card retains the ask, four flat findings, and the 
     extras: ["inspection-session: session-link"],
     completionSummary: [
       "Outcome: Pending edits survive a restart.",
-      "Changed: Edits stay queued. Confirmed writes stay on disk. Recovery skips stale retries. Restored edits keep their order. Duplicate writes get counted.",
+      "## Persistence details",
+      "- Edits stay queued.",
+      "- Confirmed writes stay on disk.",
+      "- Recovery skips stale retries.",
+      "- Restored edits keep their order.",
+      "- Duplicate writes get counted.",
+      "Changed: none",
       "Evidence: supporting record",
       "Tests: none",
       "Unresolved: none",
@@ -61,6 +67,8 @@ test("the rendered completion card retains the ask, four flat findings, and the 
   assert.match(collapsed, /Recovery skips stale retries/);
   assert.match(collapsed, /Restored edits keep their order/);
   assert.doesNotMatch(collapsed, /Duplicate writes get counted/);
+  assert.match(collapsed, /without a recorded completion review/);
+  assert.match(collapsed, /inspection-session: session-link/);
   assert.match(collapsed, /record: saved\.md/);
   assert.match(render(true), /Duplicate writes get counted/);
 });
