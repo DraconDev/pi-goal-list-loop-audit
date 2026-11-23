@@ -38,7 +38,7 @@ import {
   __testOnlyResetOverdueWaitBackstop,
   __testOnlyResetZombieRunWatchdog,
 } from "../extensions/goal-heartbeat.js";
-import { readState, type Goal, type State } from "../extensions/goal-loop-core.js";
+import { goalStateTransactionPath, readState, recheckPersistenceAfterRepair, type Goal, type State } from "../extensions/goal-loop-core.js";
 import { buildWidgetLines, type DisplayTheme } from "../extensions/goal-loop-display.js";
 import {
   DECISION_AUTO_SELECT_DEFAULT_MINUTES,
@@ -351,7 +351,12 @@ test("the heartbeat adopts the recommended continue-work option when nobody answ
     assert.match(String(adopted[0]!.value?.chosen), /continue/i);
     // The recap's assumption source survives the resume (autoDefaultLog is
     // goal state, not pause state).
+    await pi.fire("session_shutdown", { reason: "reload" }, ctx);
+    __testOnlyResetOwnerSession();
+    const reloaded = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, reloaded);
     const after = readState(cwd).goal as GoalView;
+    assert.equal(after.status, "active");
     assert.ok(after.autoDefaultLog && after.autoDefaultLog.length === 1, "the adoption is on the assumption log");
     assert.match(after.autoDefaultLog![0]!.chosen, /continue/i);
     assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_due").length, 1, "one clock fire");
@@ -470,11 +475,40 @@ test("a delivery failure stays parked and is ledgered instead of retried forever
     await tick(50);
     const g = readState(cwd).goal as GoalView;
     assert.equal(g.status, "paused", "the work is still parked — nothing was pretended");
+    assert.equal(g.autoDefaultLog?.length ?? 0, 0);
+    assert.equal(g.pauseOptions?.[0], "Surgical Done when: clause");
     assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_adopted").length, 0);
     assert.equal(ledger(cwd).filter((e) => e.type === "decision_auto_select_delivery_failed").length, 1,
       "the failed delivery is named, not hidden");
   } finally {
     pi.sendMessageError = null;
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("a refused resume transaction leaves the executable choice pending without an assumption", async () => {
+  const cwd = tmpCwd();
+  const txn = goalStateTransactionPath(cwd);
+  try {
+    setSettings({ decisionAutoSelectMinutes: 10 });
+    __testOnlyResetOwnerSession();
+    const pauseOptions = ["Continue (/goal resume)", "Cancel (/goal cancel)"];
+    seedState(cwd, { goal: seedParkedDecision(25, { pauseOptions }), list: [], loop: null });
+    const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, ctx);
+    await tick();
+    fs.mkdirSync(txn);
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    const goal = readState(cwd).goal as GoalView;
+    assert.equal(goal.status, "paused");
+    assert.deepEqual(goal.pauseOptions, pauseOptions);
+    assert.equal(goal.autoDefaultLog?.length ?? 0, 0);
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_delivery_failed").length, 1);
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 0);
+  } finally {
+    if (fs.existsSync(txn)) fs.rmdirSync(txn);
+    recheckPersistenceAfterRepair(cwd, "test");
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });

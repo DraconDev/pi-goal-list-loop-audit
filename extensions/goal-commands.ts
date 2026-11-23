@@ -36,7 +36,7 @@ import {
   visibleListPosition, visibleListPositions,
   writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
   releaseLoadHoldDurably, stateRootPending, readGoalStateTransaction, isPersistenceDegraded, isForbiddenModel, recheckPersistenceAfterRepair,
-  isStaleApiError,
+  isStaleApiError, supervisorPaused,
 } from "./goal-loop-core.js";
 // v0.38.99: the status surfaces name the durable audit lifecycle from the one
 // projection the widget uses.
@@ -638,7 +638,7 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
 type AutomaticDecisionEntry = NonNullable<Goal["autoDefaultLog"]>[number];
 
 async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: AutomaticDecisionEntry; steer?: string }): Promise<void> {
-  if (decision && (pendingDecision() !== decision.goal || mainModelRecoveryActive())) return;
+  if (decision && pendingDecision() !== decision.goal) return;
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
@@ -1075,6 +1075,8 @@ export async function adoptRecommendedDecision(
   minutes?: number,
 ): Promise<"adopted" | "refused" | "stale"> {
   if (pendingDecision() !== g || automaticDecisionsInFlight.has(g)) return "stale";
+  if (supervisorPaused(state) || mainModelRecoveryActive() || state.mainModelRecovery?.manualResumeRequired) return "stale";
+  if (warnIfStaleAtEntry(ctx, "decision auto-select")) return "stale";
   const candidate = decisionAutoSelectCandidate(g);
   if (!candidate) return "refused";
   if (!candidate.verdict.adoptable) {
