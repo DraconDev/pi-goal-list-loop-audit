@@ -36,14 +36,14 @@ export function compactHumanSummary(content: string): { content: string; omitted
   let omitted = false;
   let fence: { char: string; size: number; hidden: boolean } | undefined;
   const result: string[] = [];
-  const lines = content.split("\n");
   // Current receipts place the verdict, optional annotations and record
   // pointer in a separate final block. Legacy receipts use bullet trailers.
-  const last = lines.findLastIndex(line => Boolean(line.trim()));
-  const footer = /(?:^| · )record: \S/i.test(lines[last] ?? "")
-    ? lines.slice(0, last).findLastIndex(line => !line.trim()) + 1
-    : lines.length;
-  for (const [index, line] of lines.entries()) {
+  const trimmed = content.trimEnd();
+  const lastLine = trimmed.slice(trimmed.lastIndexOf("\n") + 1);
+  const footerStart = /(?:^| · )record: \S/i.test(lastLine) ? trimmed.lastIndexOf("\n\n") : -1;
+  const body = footerStart >= 0 ? content.slice(0, footerStart) : content;
+  const footer = footerStart >= 0 ? content.slice(footerStart) : "";
+  for (const line of body.split("\n")) {
     const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
     if (fence) {
       if (!fence.hidden) result.push(line);
@@ -60,7 +60,7 @@ export function compactHumanSummary(content: string): { content: string; omitted
     // Canonical receipt trailers are outside the agent's body sections.
     // A Summary-only receipt must never lose its no-review qualification,
     // challenge disclosure or saved-record link to the paragraph budget.
-    if (index === footer || /^•\s/.test(line)) section = "";
+    if (/^•\s/.test(line)) section = "";
     const heading = line.trim().replace(/^#{2,4}\s+/, "").replace(/^\*\*(.*?)\*\*$/, "$1");
     const sectionName = cardSectionName(heading);
     if (sectionName) {
@@ -94,6 +94,6 @@ export function compactHumanSummary(content: string): { content: string; omitted
     // limitation.
     result.push(line);
   }
-  if (omitted) result.push("", "More details are available in the expanded message and saved record.");
-  return { content: result.join("\n"), omitted };
+  const expansion = omitted ? "\n\nMore details are available in the expanded message and saved record." : "";
+  return { content: result.join("\n") + footer + expansion, omitted };
 }
