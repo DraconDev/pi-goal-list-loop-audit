@@ -324,7 +324,7 @@ function decisionAutoSelectBackstop(ctx: ExtensionContext, minutes: number): voi
   // the pause would be consumed with nothing scheduled (exactly the
   // paused-is-safe violation the overdue-wait backstop documents above).
   if (flags.sessionHandoffPending || flags.staleTerminalDone || flags.extensionApiStale) return;
-  if (mainModelRecoveryActive()) return;
+  if (mainModelRecoveryActive() || state.mainModelRecovery?.manualResumeRequired) return;
   if (decisionAutoSelectInFlight) return;
   const goal = state.goal;
   if (!goal || goal.status !== "paused" || goal.pauseKind !== "decision") return;
