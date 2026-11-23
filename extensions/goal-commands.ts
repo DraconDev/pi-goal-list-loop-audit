@@ -197,7 +197,7 @@ export interface CommandDeps {
   freshCtxForGeneration: (generation: number) => ExtensionContext | null;
   goStaleTerminal: (ctx: ExtensionContext, where: string) => void;
   groupOpenChildren: (groupId: string) => number;
-  activateNextListItem: (ctx: ExtensionContext, n?: number, opts?: { explicit?: boolean; displayLabel?: string }) => boolean;
+  activateNextListItem: (ctx: ExtensionContext, n?: number, opts?: { explicit?: boolean; displayLabel?: string; decisionEntry?: AutomaticDecisionEntry }) => boolean;
   clearMainModelRecoveryTimer: () => void;
   mainModelRecoveryTimerActive: () => boolean;
   continuationDispatchPending: () => boolean;
@@ -1008,8 +1008,9 @@ async function actOnDecisionOption(
   if (automaticEntry) {
     const command = cmdMatch && !label.includes("…") && !label.includes("<") ? cmdMatch[0].trim() : "";
     if (command === "(/list next)") {
-      await cmdList("next", ctx);
-      return state.goal?.policy === "list" && state.goal.id !== g.id && state.goal.status === "active";
+      const activated = activateNextListItem(ctx, 1, { explicit: true, decisionEntry: automaticEntry });
+      if (activated) releaseAuditorSurfaceForGoal(state.goal?.id, ctx.sessionManager);
+      return activated || (state.goal?.id !== g.id && state.goal?.autoDefaultLog?.at(-1) === automaticEntry);
     }
     if (command === "(/loop resume)") {
       if (!isHeldLoopResumable(state.loop)) return false;

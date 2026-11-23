@@ -864,7 +864,7 @@ function queueRepairAheadOfListItem(ctx: ExtensionContext, item: ListItem, asses
   return true;
 }
 
-function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: boolean; displayLabel?: string; repairRetried?: boolean }): boolean {
+function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: boolean; displayLabel?: string; repairRetried?: boolean; decisionEntry?: NonNullable<Goal["autoDefaultLog"]>[number] }): boolean {
   // An explicit list activation is user consent even when pi initially
   // reported a blank startup context; automatic restore never reaches here.
   releaseInitialSessionLoadBarrier();
@@ -898,7 +898,9 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
   // Durable sidecars are actionable queue state. Recover them before
   // carryover policy or explicit activation can inspect the head.
   hydrateListQueueFromDisk(ctx);
-  if (!resolveCarryover(ctx, "list")) return false;
+  // An automatic choice only authorizes the selected item. Let setGoal
+  // commit its successor before retiring the paused source goal.
+  if (!opts?.decisionEntry && !resolveCarryover(ctx, "list")) return false;
   const queue = listQueue();  // v0.34.81 (LIGHT parent/child): a group (queue item with one or more
   // open children) is not a work item. The auto-advance SILENTLY SKIPS the
   // head group and lands on its first open child — children are queued
@@ -971,7 +973,7 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
       // display label stays with the original pick.
       if (!opts?.repairRetried) {
         appendLedger(ctx.cwd, "faulty_objective_repair_auto_activate", { targetId: candidate.id, reasons: assessment.reasons });
-        if (activateNextListItem(ctx, 1, { explicit: opts?.explicit, repairRetried: true })) return true;
+        if (activateNextListItem(ctx, 1, { explicit: opts?.explicit, repairRetried: true, decisionEntry: opts?.decisionEntry })) return true;
       }
       ctx.ui.notify("The queued item looks like reviewer/verification text, so it was not activated; a safe repair item is next in the list.", "warning");
       return false;
@@ -996,6 +998,7 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
   }
   replaceState({ ...state, list: rest });
   const goal = createGoal(next.objective, ctx, "list");
+  if (opts?.decisionEntry) goal.autoDefaultLog = [opts.decisionEntry];
   if (next.agentRole) goal.agentRole = next.agentRole;
   if (next.verificationContract) {
     goal.verificationContract = next.verificationContract;
