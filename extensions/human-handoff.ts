@@ -36,7 +36,14 @@ export function compactHumanSummary(content: string): { content: string; omitted
   let omitted = false;
   let fence: { char: string; size: number; hidden: boolean } | undefined;
   const result: string[] = [];
-  for (const line of content.split("\n")) {
+  const lines = content.split("\n");
+  // Current receipts place the verdict, optional annotations and record
+  // pointer in a separate final block. Legacy receipts use bullet trailers.
+  const last = lines.findLastIndex(line => Boolean(line.trim()));
+  const footer = /(?:^| · )record: \S/i.test(lines[last] ?? "")
+    ? lines.slice(0, last).findLastIndex(line => !line.trim()) + 1
+    : lines.length;
+  for (const [index, line] of lines.entries()) {
     const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
     if (fence) {
       if (!fence.hidden) result.push(line);
@@ -53,35 +60,28 @@ export function compactHumanSummary(content: string): { content: string; omitted
     // Canonical receipt trailers are outside the agent's body sections.
     // A Summary-only receipt must never lose its no-review qualification,
     // challenge disclosure or saved-record link to the paragraph budget.
-    if (/^•\s/.test(line)) section = "";
+    if (index === footer || /^•\s/.test(line)) section = "";
     const heading = line.trim().replace(/^#{2,4}\s+/, "").replace(/^\*\*(.*?)\*\*$/, "$1");
     const sectionName = cardSectionName(heading);
     if (sectionName) {
       section = sectionName;
       // Each work area gets its own allowance. A global counter let a busy
       // first area erase every result from the rest of the objective.
-      if (section === CARD_SECTION.whatChanged) findings = 0;
+      if (section === CARD_SECTION.summary || section === CARD_SECTION.whatChanged) findings = 0;
       result.push(line);
       continue;
     }
-    const isChangeArea = /^#{2,4}\s+What changed\s*\u00b7/i.test(line) || /^\*\*What changed\s*\u00b7/i.test(line);
-    if (section === CARD_SECTION.summary && line.trim()) {
+    const primaryFinding = /^(?:- |\d+\. )/.test(line);
+    if (section === CARD_SECTION.summary && line.trim() && !primaryFinding) {
       if (/^#{2,4}\s|^\*\*.*\*\*$/.test(line) || ++summaryLines > 2) { omitted = true; continue; }
       // Keep the opening explanation intact; wrapping belongs to the TUI.
       result.push(line);
       continue;
     }
-    if (section === CARD_SECTION.whatChanged || section === LEGACY_CARD_SECTIONS[0]) {
-      // One line per area label, then its findings; nested proof and area
-      // headings are supporting details. Primary findings keep their
-      // original words and order.
-      if (isChangeArea) {
-        if (++findings > 4) { omitted = true; continue; }
-        result.push(humanTextPreview(line));
-        continue;
-      }
+    if (section === CARD_SECTION.summary || section === CARD_SECTION.whatChanged || section === LEGACY_CARD_SECTIONS[0]) {
+      // Flat findings and each named area get the same preview budget.
       if (/^\s{2,}\S|^\*\*\d+\./.test(line)) { omitted = true; continue; }
-      if (/^(?:- |\d+\. )/.test(line)) {
+      if (primaryFinding) {
         if (++findings > 4) { omitted = true; continue; }
         const preview = humanTextPreview(line);
         if (preview !== line.trim()) omitted = true;
