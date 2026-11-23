@@ -18,6 +18,13 @@ At 40 columns, the rendered card shows the result “Pending edits survive a res
 
 The audit reproduced the failed send with one extra assertion in a temporary copy of the decision fixture to inspect the persisted `autoDefaultLog`. [Decision fixture](../tests/decision-auto-select.test.ts) · [Write and delivery order](../extensions/goal-commands.ts)
 
+## Task list
+
+- [ ] **Record automatic decisions only after adoption.** Align the persisted assumption log with the outcome of the shared picker and heartbeat path. Cover both prose recommendations and executable resume options. A failed delivery or refused resume must leave the original decision pending, preserve its options, and record the failure with zero new assumptions or adoption events. A successful adoption must record exactly one assumption and one adoption event. [Decision command](../extensions/goal-commands.ts)
+  - [ ] Extend the regression fixture to assert the durable assumption log after a stale send and after a refused resume. Retain the successful-adoption coverage and check the journal after reload. [Decision tests](../tests/decision-auto-select.test.ts)
+- [x] **Keep secondary requirements and literal filenames in the objective excerpt.** The narrow card shows both lines of the short fixture, including `save_queue.ts`. A long excerpt ends in an ellipsis. [Objective excerpt tests](../tests/summary-human-reminder.test.ts) · [Renderer test](../tests/summary-renderer.test.ts)
+- [x] **Keep primary changes and the receipt visible in the collapsed report.** The 40-column fixture shows four primary findings, the review qualification, and the saved-record reference. Expansion reveals the fifth finding. [Renderer test](../tests/summary-renderer.test.ts)
+
 ## Loop checks
 
 - The completion paths build the receipt before settlement. The archival path writes the intent and archive before releasing the live goal, and persisted approval messages can be replayed after an interrupted delivery. [Settlement](../extensions/loops/goal-orchestrator.ts) · [Delivery tests](../tests/terminal-summary-delivery.test.ts)
