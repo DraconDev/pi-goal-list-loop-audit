@@ -39,10 +39,14 @@ export function compactHumanSummary(content: string): { content: string; omitted
   // Current receipts place the verdict, optional annotations and record
   // pointer in a separate final block. Legacy receipts use bullet trailers.
   const trimmed = content.trimEnd();
-  const lastLine = trimmed.slice(trimmed.lastIndexOf("\n") + 1);
-  const footerStart = /(?:^| · )record: \S/i.test(lastLine) ? trimmed.lastIndexOf("\n\n") : -1;
-  const body = footerStart >= 0 ? content.slice(0, footerStart) : content;
-  const footer = footerStart >= 0 ? content.slice(footerStart) : "";
+  const lastLineStart = trimmed.lastIndexOf("\n") + 1;
+  const lastLine = trimmed.slice(lastLineStart);
+  const hasReceipt = /(?:^| · )record: \S/i.test(lastLine);
+  const priorLineStart = trimmed.lastIndexOf("\n", lastLineStart - 2) + 1;
+  const hasInspection = trimmed.slice(priorLineStart, lastLineStart).startsWith("inspection-session:");
+  const footerStart = hasReceipt ? (hasInspection ? priorLineStart : lastLineStart) : content.length;
+  const body = content.slice(0, footerStart);
+  const footer = content.slice(footerStart);
   for (const line of body.split("\n")) {
     const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
     if (fence) {
