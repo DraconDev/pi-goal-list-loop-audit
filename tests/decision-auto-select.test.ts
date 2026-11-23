@@ -52,7 +52,7 @@ import {
   resolveDecisionAutoSelectMinutes,
   type AutoSelectGoalRecord,
 } from "../extensions/decision-auto-select.js";
-import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick, type MockCtx } from "./harness/mock-pi.js";
+import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, seedLoop, tick, type MockCtx } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 const pi = new MockPi();
@@ -556,6 +556,52 @@ test("a due picker adopts a delivered prose choice exactly once", async () => {
     assert.deepEqual(goal.autoDefaultLog?.map(entry => entry.chosen), [chosen]);
     assert.equal(pi.userMessages.slice(before).filter(entry => entry.message.includes(chosen)).length, 1);
     assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 1);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("automatic list advance commits the assumption with the newly active item", async () => {
+  const cwd = tmpCwd();
+  try {
+    setSettings({ decisionAutoSelectMinutes: 10 });
+    __testOnlyResetOwnerSession();
+    const chosen = "Continue with the next queued item (/list next)";
+    const listItem = { id: String(seedGoal().id), objective: "Add regression coverage for save recovery", addedAt: new Date().toISOString() };
+    seedState(cwd, { goal: seedParkedDecision(25, { pauseOptions: [chosen] }), list: [listItem] });
+    const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, ctx);
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    const goal = readState(cwd).goal;
+    assert.equal(goal?.status, "active");
+    assert.equal(goal.objective, listItem.objective);
+    assert.deepEqual(goal.autoDefaultLog?.map(entry => entry.chosen), [chosen]);
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 1);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("an automatic choice that wakes a held loop records the activation once", async () => {
+  const cwd = tmpCwd();
+  try {
+    setSettings({ decisionAutoSelectMinutes: 10 });
+    __testOnlyResetOwnerSession();
+    const chosen = "Resume the held loop (/loop resume)";
+    seedState(cwd, { goal: seedParkedDecision(25, { pauseOptions: [chosen] }),
+      loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)" }) });
+    const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, ctx);
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    const saved = readState(cwd);
+    assert.equal(saved.loop?.active, true);
+    assert.equal(saved.goal?.status, "paused");
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 1);
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_delivery_failed").length, 0);
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
