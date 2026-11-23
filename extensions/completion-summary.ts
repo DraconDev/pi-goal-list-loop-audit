@@ -424,9 +424,7 @@ export interface RichTerminalParts {
   changeLine?: string;
   /** v0.39.71 (F): largest changed files (`path +A −R`) under the change line. */
   changeFiles?: string[];
-  /** Chat only: a one-line reminder of what was asked (`Goal: …`). A long
-   * autonomous goal ends hours after it was set, so the card restates the ask
-   * next to the result. The archive already carries the full `## Objective`. */
+  /** Chat only: a bounded excerpt of the objective. */
   goalLine?: string;
 }
 
@@ -441,16 +439,13 @@ export function sentenceCase(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** The objective as a one-line reminder: its first line, first sentence when
- * that sentence is a usable title, clipped to one terminal row. Markdown
- * emphasis characters are dropped so the excerpt cannot break the italics it
- * rides in. */
-export function objectiveReminder(objective: string | undefined, limit = 110): string | undefined {
-  const first = sanitizeDisplayText(objective ?? "").split(/\n/).map((l) => l.trim()).find(Boolean)
-    ?.replace(/^>\s*/, "").replace(/[*_`]/g, "").trim();
-  if (!first) return undefined;
-  const sentence = /^(.{24,}?[.!?])(?=\s|$)/u.exec(first)?.[1] ?? first;
-  return clipSummaryValue(sentence.replace(/[.]$/, ""), limit);
+/** Keep short objectives intact and mark the point where a long one is cut. */
+export function objectiveReminder(objective: string | undefined, limit = 200): string | undefined {
+  const excerpt = (objective ?? "").split(/\r?\n/)
+    .map(line => sanitizeDisplayText(line).trim().replace(/^(?:>\s*)*(?:#{1,6}\s+)?/, ""))
+    .filter(Boolean)
+    .join(" ");
+  return excerpt ? clipSummaryValue(excerpt, limit) : undefined;
 }
 
 /** v0.39.70: a gate row, optionally backed by a GLLA-run receipt. */
@@ -1140,6 +1135,7 @@ export function buildRichTerminalParts(args: {
     }
   }
   const outcome = sanitizeDisplayText(args.outcome);
+  const goalReminder = args.chat ? objectiveReminder(args.objective) : undefined;
   const kind = args.kind ?? "Done";
   // Field 2026-11-11: ONE headline for both surfaces — the short result line.
   // The archive used to wear a verdict banner (`## Done — completion audit
@@ -1402,7 +1398,7 @@ export function buildRichTerminalParts(args: {
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
     ledeLines: reportLede(outcome),
     ...(args.changeLine ? { changeLine: sanitizeDisplayText(args.changeLine) } : {}),
-    ...(args.chat && objectiveReminder(args.objective) ? { goalLine: `Goal: ${objectiveReminder(args.objective)}` } : {}),
+    ...(goalReminder ? { goalLine: `Goal: ${goalReminder}` } : {}),
     // v0.39.71 (F): only 5 of 40 recent claims grouped their changes by area,
     // so most cards said WHAT changed only in prose. Without groups, name the
     // largest files (Codex/OpenCode shape); with groups, the areas do it.
@@ -1455,7 +1451,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // A Markdown hard break (two trailing spaces) keeps the ask and the meta in
   // one block: two rows, no gap, no paragraph merge.
   if (parts.goalLine) {
-    const goalRow = `*${sanitizeDisplayText(parts.goalLine).replace(/[*]/g, "")}*`;
+    const goalRow = `*${sanitizeDisplayText(parts.goalLine).replace(/[\\`*_\[\]<>~&]/g, "\\$&")}*`;
     lines.push(...(meta ? [`${goalRow}  `] : [goalRow, ""]));
   }
   if (meta) lines.push(sanitizeDisplayText(meta), "");
