@@ -295,7 +295,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
     if (route.name === "timeline") return cmdTimeline(route.rest, ctx);
     if (route.name === "recover") return cmdRecover(route.rest, ctx);
     if (route.name === "pause") return cmdPause(ctx);
-    if (route.name === "resume") return cmdResume(ctx);
+    if (route.name === "resume") { await cmdResume(ctx); return; }
     if (route.name === "cancel") return cmdCancel(ctx);
     // v0.28.23: re-open the decision picker for a decision pause (the
     // popup auto-opens when the pause lands; this is the on-demand path).
@@ -637,7 +637,7 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
 
 type AutomaticDecisionEntry = NonNullable<Goal["autoDefaultLog"]>[number];
 
-async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: AutomaticDecisionEntry; steer?: string }): Promise<void> {
+async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: AutomaticDecisionEntry; steer?: string }): Promise<true | void> {
   if (decision && pendingDecision() !== decision.goal) return;
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
@@ -821,7 +821,12 @@ async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: 
   if (decision && pendingDecision() !== decision.goal) return;
   // Save the assumption in the same recovery transaction as the resumed goal.
   const assumptions = decision ? { autoDefaultLog: [...(decision.goal.autoDefaultLog ?? []), decision.entry].slice(-20) } : {};
-  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseContractAmendment: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}), ...assumptions }, ctx)) return;
+  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseContractAmendment: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}), ...assumptions }, ctx)) {
+    // A committed recovery snapshot owns the choice even when its journal
+    // or Markdown projection needs repair before dispatch can continue.
+    if (decision && state.goal?.autoDefaultLog?.at(-1) === decision.entry) return true;
+    return;
+  }
   if (staleEntry) return;
   releaseAuditorSurfaceForGoal(state.goal?.id, ctx.sessionManager);
   // A manual resume starts a fresh relentless cycle: a user pause between
@@ -841,7 +846,7 @@ async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: 
       ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
       void retryStoredCompletionAudit("manual");
     }
-    return;
+    return true;
   }
   // v0.22.5: say what was resumed — with a non-empty list this also resumes
   // the queue (the active goal IS the list's head item).
@@ -855,6 +860,7 @@ async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: 
     "info",
   );
   scheduleContinuation(ctx, true);
+  return true;
 }
 
 /** Release a goal parked while a main-model recovery probe runs. Only a
@@ -1012,10 +1018,7 @@ async function actOnDecisionOption(
     }
     if (command === "(/list resume)" && g.policy !== "list") return false;
     const resumesGoal = command === "(/goal resume)" || command === "(/list resume)";
-    await cmdResume(ctx, { goal: g, entry: automaticEntry, ...(resumesGoal ? {} : { steer }) });
-    // The recovery transaction can land even when a later projection fails.
-    // In that case the persisted choice still belongs to the resumed goal.
-    return state.goal?.id === g.id && state.goal.autoDefaultLog?.at(-1) === automaticEntry;
+    return (await cmdResume(ctx, { goal: g, entry: automaticEntry, ...(resumesGoal ? {} : { steer }) })) === true;
   }
   if (cmdMatch && !label.includes("…") && !label.includes("<")) {
     const group = (cmdMatch[1] ?? "").replace(/^\//, "");
