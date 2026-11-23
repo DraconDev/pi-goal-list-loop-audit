@@ -28,16 +28,16 @@ test("sentenceCase capitalizes a plain lower-case lead word and nothing else", (
   ]) assert.equal(sentenceCase(kept), kept, kept);
 });
 
-test("objectiveReminder is one row: first line, first sentence, no Markdown emphasis", () => {
+test("objectiveReminder includes subsequent requirements and preserves identifiers", () => {
   assert.equal(
-    objectiveReminder("> Rewrite the **completion** summary as a report. Then update the `docs`.\n\nMore detail here."),
-    "Rewrite the completion summary as a report",
+    objectiveReminder("> ## Fix duplicate saves. Also preserve pending edits.\n\nVerify save_queue.ts on restart."),
+    "Fix duplicate saves. Also preserve pending edits. Verify save_queue.ts on restart.",
   );
   assert.equal(objectiveReminder("fix it"), "fix it", "a short ask stays whole");
   assert.equal(objectiveReminder("   \n  "), undefined);
   assert.equal(objectiveReminder(undefined), undefined);
   const long = objectiveReminder("x".repeat(400));
-  assert.ok(long && [...long].length <= 110, `clipped to one row: ${long?.length}`);
+  assert.ok(long && [...long].length <= 200 && long.endsWith("…"), `bounded excerpt: ${long?.length}`);
 });
 
 test("the chat card restates the ask above the meta line, and the diff stat joins the meta", () => {
@@ -53,7 +53,7 @@ test("the chat card restates the ask above the meta line, and the diff stat join
   assert.equal(lines[0], "## Done — The recovery card no longer lingers", "headline is sentence-cased");
   const goalIdx = lines.findIndex((l) => l.startsWith("*Goal: "));
   assert.ok(goalIdx > 0, lines.join("\n"));
-  assert.equal(lines[goalIdx], "*Goal: Fix the six open operator-surface complaints*  ", "hard break keeps ask + meta in one block");
+  assert.equal(lines[goalIdx], "*Goal: Fix the six open operator-surface complaints. Each one with a test.*  ", "hard break keeps ask + meta in one block");
   assert.equal(lines[goalIdx + 1], "*3h 00m elapsed · 1 audit · 14 files changed, +620 −88*");
   assert.ok(!lines.includes("14 files changed, +620 −88"), "the stat is not repeated as its own block");
 });

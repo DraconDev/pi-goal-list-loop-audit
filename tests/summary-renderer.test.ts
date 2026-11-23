@@ -32,6 +32,39 @@ test("structured Summary-only receipts preserve review qualifications and record
   assert.equal(message.content, before);
 });
 
+test("the rendered completion card retains the ask, four flat findings, and the receipt", () => {
+  const goal = seedGoal({ objective: "Fix duplicate saves.\nVerify save_queue.ts on restart." }) as unknown as Goal;
+  const receipt = buildTerminalApprovalRender({
+    goal,
+    status: "complete",
+    approval: "— completed without a recorded completion review.",
+    record: "— record: saved.md",
+    extras: ["inspection-session: session-link"],
+    completionSummary: [
+      "Outcome: Pending edits survive a restart.",
+      "Changed: Edits stay queued. Confirmed writes stay on disk. Recovery skips stale retries. Restored edits keep their order. Duplicate writes get counted.",
+      "Evidence: supporting record",
+      "Tests: none",
+      "Unresolved: none",
+      "Next: none",
+    ].join("\n"),
+  });
+  const content = receipt.chatLines.join("\n");
+  const theme = loadThemeFromPath(path.resolve(import.meta.dirname, "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/dark.json"), "truecolor");
+  const pi = new MockPi(); registerSummaryRenderer(pi.api);
+  const factory = pi.messageRenderers.get("goal-event")!;
+  const render = (expanded: boolean) => stripTerminalSequences((factory({
+    content, details: { terminalApprovalGoalId: goal.id },
+  } as never, { outputPad: 1, expanded }, theme) as Component).render(40).join("\n")).replace(/\s+/g, " ");
+  const collapsed = render(false);
+  assert.match(collapsed, /Fix duplicate saves\. Verify save_queue\.ts on restart\./);
+  assert.match(collapsed, /Recovery skips stale retries/);
+  assert.match(collapsed, /Restored edits keep their order/);
+  assert.doesNotMatch(collapsed, /Duplicate writes get counted/);
+  assert.match(collapsed, /record: saved\.md/);
+  assert.match(render(true), /Duplicate writes get counted/);
+});
+
 test("semantic colors distinguish outcomes, actions, unresolved work and neutral evidence", () => {
   for (const [heading, tone] of [["Done — fixed", "success"], ["Aborted — user stopped", "warning"], ["Failed — check", "error"], ["Remaining", "warning"], ["Next", "accent"], ["Verification", "accent"], ["Final Repository State", "dim"], ["Done — without a recorded review", "warning"]]) assert.equal(summaryHeadingTone(heading!), tone);
   for (const [text, tone] of [["190 passed, 0 failures", "success"], ["10 passed, 2 failed", "error"], ["0 passed, 0 failed; not run", "warning"], ["3 passed, 1 reported", "warning"], ["Verification reported", "dim"], ["Clean exit 0", "text"]]) assert.equal(summaryVerificationTone(text!), tone);
