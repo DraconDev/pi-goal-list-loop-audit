@@ -26,4 +26,4 @@ The audit reproduced the failed send with one extra assertion in a temporary cop
 
 ## Verification
 
-Bun 1.3.14 passed 251 tests across 23 suites covering the report, message replay, gate receipts, persistence diagnostics, decision handling, and continuation. The generated inventory check and whitespace check passed. The full release run was stopped after 342 seconds under host contention.
+Bun 1.3.14 passed 251 tests across 23 suites covering the report, message replay, gate receipts, persistence diagnostics, decision handling, and continuation. Typecheck, generated inventory, private-name and whitespace checks, and the npm pack dry run passed. The full release run was stopped after 342 seconds under host contention.
