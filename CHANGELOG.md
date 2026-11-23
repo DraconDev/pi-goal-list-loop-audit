@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Completion cards keep short objectives intact across sentences and lines, preserve literal identifiers, and mark longer excerpts with an ellipsis. Collapsed reports show up to four primary findings in flat summaries and keep the saved-record reference visible.
+- Automatic decisions save an assumption with the goal or list item that actually starts. Failed delivery and refused resumes keep the question pending. An automatic `/list next` on an empty queue preserves the paused goal.
 
 ## 0.41.1 — a failing disk can no longer abort pi, and a refused audit cursor says why (2026-11-20)
 
