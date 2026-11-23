@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Completion cards keep short objectives intact across sentences and lines, preserve literal identifiers, and mark longer excerpts with an ellipsis. Collapsed reports show up to four primary findings in flat summaries and keep the saved-record reference visible.
+
 ## 0.41.1 — a failing disk can no longer abort pi, and a refused audit cursor says why (2026-11-20)
 
 ### A failing disk can no longer abort pi, and a refused audit cursor says why (issue #63) (2026-11-20)
