@@ -5,7 +5,7 @@
  * arrive via createGoalCommands.
  */
 
-import { clearStaleMainModelRecovery } from "./goal-recovery.js";
+import { clearStaleMainModelRecovery, mainModelRecoveryActive } from "./goal-recovery.js";
 import {
   TWEAK_CONFIRM_ACTION,
   TweakConfirmComponent,
@@ -635,7 +635,10 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify(`Goal "${shortObj(state.goal.objective)}" paused. ${resumeCommand} to continue.`, "info");
 }
 
-async function cmdResume(ctx: ExtensionContext): Promise<void> {
+type AutomaticDecisionEntry = NonNullable<Goal["autoDefaultLog"]>[number];
+
+async function cmdResume(ctx: ExtensionContext, decision?: { goal: Goal; entry: AutomaticDecisionEntry; steer?: string }): Promise<void> {
+  if (decision && (pendingDecision() !== decision.goal || mainModelRecoveryActive())) return;
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
@@ -798,6 +801,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // auto-resumes ACTIVE goals), mark the interrupt, tell the truth, and
   // skip the send that can never land.
   const staleEntry = warnIfStaleAtEntry(ctx, resumeCommand);
+  if (decision && staleEntry) return;
   // v0.12.0: refresh the token cap from CURRENT settings on resume — goals
   // snapshot the cap at creation, so a goal paused under an old default
   // (e.g. 10M) would re-pause instantly even after the default changed.
@@ -813,7 +817,11 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // manual resume exactly as by an automatic one. (staleEntry still re-marks
   // below — a resume inside a stale session is a NEW interrupt.)
   const storedCompletion = state.goal.pendingCompletion;
-  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseContractAmendment: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx)) return;
+  if (decision?.steer && !safeSteerUser(ctx, decision.steer)) return;
+  if (decision && pendingDecision() !== decision.goal) return;
+  // Save the assumption in the same recovery transaction as the resumed goal.
+  const assumptions = decision ? { autoDefaultLog: [...(decision.goal.autoDefaultLog ?? []), decision.entry].slice(-20) } : {};
+  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseContractAmendment: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}), ...assumptions }, ctx)) return;
   if (staleEntry) return;
   releaseAuditorSurfaceForGoal(state.goal?.id, ctx.sessionManager);
   // A manual resume starts a fresh relentless cycle: a user pause between
@@ -957,6 +965,7 @@ async function cmdAcceptWithFollowups(ctx: ExtensionContext): Promise<void> {
 // fallback; /goal decide re-opens the picker at any time.
 
 let decisionPromptOpen = false;
+const automaticDecisionsInFlight = new WeakSet<Goal>();
 
 /** True when the goal is paused on a user decision with options. */
 function pendingDecision(): Goal | null {
@@ -978,7 +987,9 @@ async function actOnDecisionOption(
   g: Goal,
   label: string,
   ctx: ExtensionContext,
+  automaticEntry?: AutomaticDecisionEntry,
 ): Promise<boolean> {
+  const steer = `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`;
   // v0.29.3: the wipe escape — "… (/glla wipe)" options run the wipe
   // (which Confirms on its own — destructive actions keep their gate).
   if (/\(\/glla wipe\)\s*$/.test(label)) {
@@ -988,6 +999,24 @@ async function actOnDecisionOption(
   // Executable options — "Label (/goal cancel)" — RUN the command.
   // Placeholder commands (…/<arg>) fall through to the message path.
   const cmdMatch = label.match(/\((\/goal|\/list|\/loop) ([a-z]+)\)\s*$/);
+  if (automaticEntry) {
+    const command = cmdMatch && !label.includes("…") && !label.includes("<") ? cmdMatch[0].trim() : "";
+    if (command === "(/list next)") {
+      await cmdList("next", ctx);
+      return state.goal?.policy === "list" && state.goal.id !== g.id && state.goal.status === "active";
+    }
+    if (command === "(/loop resume)") {
+      if (!isHeldLoopResumable(state.loop)) return false;
+      await cmdLoop("resume", ctx);
+      return isLoopActive();
+    }
+    if (command === "(/list resume)" && g.policy !== "list") return false;
+    const resumesGoal = command === "(/goal resume)" || command === "(/list resume)";
+    await cmdResume(ctx, { goal: g, entry: automaticEntry, ...(resumesGoal ? {} : { steer }) });
+    // The recovery transaction can land even when a later projection fails.
+    // In that case the persisted choice still belongs to the resumed goal.
+    return state.goal?.id === g.id && state.goal.autoDefaultLog?.at(-1) === automaticEntry;
+  }
   if (cmdMatch && !label.includes("…") && !label.includes("<")) {
     const group = (cmdMatch[1] ?? "").replace(/^\//, "");
     const verb = cmdMatch[2];
@@ -1005,7 +1034,7 @@ async function actOnDecisionOption(
     else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
     else if (group === "loop" && ["cancel", "pause", "finish"].includes(verb!)) await cmdLoop(verb!, ctx);
     else {
-      if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+      if (!safeSteerUser(ctx, steer)) {
         ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
         return false;
       }
@@ -1014,7 +1043,7 @@ async function actOnDecisionOption(
     return true;
   }
   // Content choice — deliver to the agent, then resume.
-  if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+  if (!safeSteerUser(ctx, steer)) {
     ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
     return false;
   }
@@ -1045,7 +1074,7 @@ export async function adoptRecommendedDecision(
   ctx: ExtensionContext,
   minutes?: number,
 ): Promise<"adopted" | "refused" | "stale"> {
-  if (pendingDecision() !== g) return "stale";
+  if (pendingDecision() !== g || automaticDecisionsInFlight.has(g)) return "stale";
   const candidate = decisionAutoSelectCandidate(g);
   if (!candidate) return "refused";
   if (!candidate.verdict.adoptable) {
@@ -1067,7 +1096,6 @@ export async function adoptRecommendedDecision(
     chosen: decisionOptionText(candidate.option).slice(0, 300),
     options: (g.pauseOptions ?? []).map((option) => decisionOptionText(option).slice(0, 200)).slice(0, 10),
   };
-  if (!updateGoal({ autoDefaultLog: [...(g.autoDefaultLog ?? []), entry].slice(-20) }, ctx)) return "refused";
   const waitedMs = g.pauseDecidedAt ? Date.now() - Date.parse(g.pauseDecidedAt) : undefined;
   const details = {
     goalId: g.id,
@@ -1077,18 +1105,24 @@ export async function adoptRecommendedDecision(
     chosen: entry.chosen,
     ...(waitedMs !== undefined && Number.isFinite(waitedMs) ? { waitedMs } : {}),
   };
-  const delivered = await actOnDecisionOption(g, candidate.option, ctx);
+  automaticDecisionsInFlight.add(g);
+  let delivered: boolean;
+  try {
+    delivered = await actOnDecisionOption(g, candidate.option, ctx, entry);
+  } finally {
+    automaticDecisionsInFlight.delete(g);
+  }
   // The adoption row claims the WORK MOVED, so it is written only after the
   // answer actually landed. A refused delivery (a stale handle, an
   // undeliverable steer) keeps the pause parked and records the failure instead
   // — reporting "adopted" over a still-parked goal is the exact dishonesty the
   // paused-is-safe invariant exists to prevent.
   if (!delivered) {
-    appendLedger(ctx.cwd, "decision_auto_select_delivery_failed", { ...details, reason: "the answer could not be delivered" });
+    appendLedger(ctx.cwd, "decision_auto_select_delivery_failed", { ...details, reason: "the answer could not be delivered or the requested work could not resume" });
     return "refused";
   }
   appendLedger(ctx.cwd, "decision_auto_select_adopted", details);
-  ctx.ui.notify(`Decision auto-selected after ${minutes ?? "?"}m without an answer — option ${candidate.index}: ${entry.chosen}. It is expected in the completion recap as an assumption; ${activeGoalSurfaceCommand("cancel")} still stops the work.`, "info");
+  ctx.ui.notify(`Decision auto-selected after ${minutes ?? "?"}m without an answer — option ${candidate.index}: ${entry.chosen}.`, "info");
   return "adopted";
 }
 
