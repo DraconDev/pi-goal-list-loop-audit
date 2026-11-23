@@ -513,6 +513,54 @@ test("a refused resume transaction leaves the executable choice pending without 
   }
 });
 
+for (const command of ["/list resume", "/list next", "/loop resume"]) {
+  test(`an unavailable ${command} leaves the decision pending`, async () => {
+    const cwd = tmpCwd();
+    try {
+      setSettings({ decisionAutoSelectMinutes: 10 });
+      __testOnlyResetOwnerSession();
+      const pauseOptions = [`Continue (${command})`];
+      seedState(cwd, { goal: seedParkedDecision(25, { pauseOptions }), list: [], loop: null });
+      const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+      await pi.fire("session_start", { reason: "reload" }, ctx);
+      await tick();
+      __testOnlyHeartbeatTickRaw();
+      await tick(50);
+      const goal = readState(cwd).goal as GoalView;
+      assert.equal(goal.status, "paused");
+      assert.deepEqual(goal.pauseOptions, pauseOptions);
+      assert.equal(goal.autoDefaultLog?.length ?? 0, 0);
+      assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_delivery_failed").length, 1);
+      assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 0);
+    } finally {
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+}
+
+test("a due picker adopts a delivered prose choice exactly once", async () => {
+  const cwd = tmpCwd();
+  try {
+    setSettings({ decisionAutoSelectMinutes: 10 });
+    __testOnlyResetOwnerSession();
+    const chosen = "Keep the current verification scope";
+    const before = pi.userMessages.length;
+    seedState(cwd, { goal: seedParkedDecision(25, { pauseOptions: [chosen] }), list: [], loop: null });
+    const ctx = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+    await pi.fire("session_start", { reason: "reload" }, ctx);
+    await pi.command("goal", "decide", ctx);
+    __testOnlyHeartbeatTickRaw();
+    await tick(50);
+    const goal = readState(cwd).goal as GoalView;
+    assert.equal(goal.status, "active");
+    assert.deepEqual(goal.autoDefaultLog?.map(entry => entry.chosen), [chosen]);
+    assert.equal(pi.userMessages.slice(before).filter(entry => entry.message.includes(chosen)).length, 1);
+    assert.equal(ledger(cwd).filter(e => e.type === "decision_auto_select_adopted").length, 1);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test("the pause write stamps pauseDecidedAt so the clock has an episode start", async () => {
   const cwd = tmpCwd();
   try {
