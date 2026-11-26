@@ -1089,7 +1089,7 @@ export async function runMechanicalPreAuditChecks(
         const p = m[1]!.trim().split(/\s+/)[0]!;
         if (path.isAbsolute(p)) return false;
         const underCwd = fs.existsSync(path.resolve(cwd, p));
-        const underRoot = fs.existsSync(path.resolve(repoRoot, p));
+        const underRoot = fs.existsSync(path.resolve(repoRoot!, p));
         return !underCwd && underRoot;
       });
       if (needsFallback) effectiveCwd = repoRoot;
