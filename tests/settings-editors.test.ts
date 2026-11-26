@@ -539,7 +539,7 @@ for (const scenario of [
   { name: "a stale project model", project: { auditorModel: "audit/project" } },
   { name: "a stale project thinking pin", project: { auditorThinkingLevel: "medium" } },
   { name: "no stale project keys", project: {} },
-]) test(`auditor session selection is global and ignores ${scenario.name}, preserving backups`, async () => {
+]) test(`auditor session selection is global and ignores ${scenario.name}, clearing stale backups`, async () => {
   try {
     const cwd = tmpCwd();
     const otherProject = tmpCwd();
@@ -573,7 +573,7 @@ for (const scenario of [
     const saved = JSON.parse(fs.readFileSync(GLOBAL_FILE, "utf8"));
     assert.equal(saved.auditorModel, null, "the session choice is global");
     assert.equal("auditorThinkingLevel" in saved && saved.auditorThinkingLevel !== undefined ? saved.auditorThinkingLevel : undefined, undefined);
-    assert.deepEqual(saved.auditorModelFallbacks, backups, "the explicit backup list survives the primary change");
+    assert.equal(saved.auditorModelFallbacks, undefined, "session-only selection clears the explicit backup list");
     const persisted = JSON.parse(fs.readFileSync(projectSettingsPath(cwd), "utf8"));
     const { auditorThinkingLevel: _dial, ...expectedProject } = project as Record<string, unknown>;
     assert.deepEqual(persisted, { subagentFallbacks: { scout: ["audit/project"] }, progressEvery: 7 } as Record<string, unknown>, `only stale global-only auditor keys are evicted (${scenario.name})`);
@@ -586,12 +586,12 @@ for (const scenario of [
     const entries: Array<{ type: string; value?: { key?: string } }> = fs.existsSync(journal)
       ? fs.readFileSync(journal, "utf8").split("\n").filter(Boolean).map(line => JSON.parse(line)) : [];
     assert.ok(!entries.some(entry => entry.type === "settings_invalid_ignored" && entry.value?.key === "auditorThinkingLevel"), "an intentionally shadowed valid dial is not junk");
-    assert.deepEqual(settings.auditorModelFallbacks, backups);
+    assert.deepEqual(settings.auditorModelFallbacks, []);
     const resolved = resolveAuditorModel(hostCtx, settings.auditorModel, settings.auditorModelFallbacks);
     assert.equal(resolved.model, session);
     assert.equal(resolved.via, "session");
     assert.equal(resolveCandidateThinkingLevel(resolved, { auditorThinkingLevel: settings.auditorThinkingLevel, sessionThinkingLevel: ctx.thinkingLevel }), "max");
-    assert.deepEqual(resolved.fallbackModels?.map(candidate => candidate.ref), backups);
+    assert.deepEqual(resolved.fallbackModels?.map(candidate => candidate.ref), []);
     const row = buildSettingsRows(settings, settingsProvenance(cwd), {
       sessionModel: "live/current", sessionThinkingLevel: ctx.thinkingLevel,
     }).find(row => row.id === "auditorModel");
@@ -599,7 +599,7 @@ for (const scenario of [
     assert.ok(row.valueText.includes("live/current"), "menu names the live session model, not the backup chain");
     assert.ok(row.valueText.includes("max"), "menu shows the effective session dial");
     assert.equal(loadSettings(otherProject).auditorModel, null, "the switch is global — another project sees the same choice");
-    assert.deepEqual(loadSettings(otherProject).auditorModelFallbacks, global.auditorModelFallbacks);
+    assert.deepEqual(loadSettings(otherProject).auditorModelFallbacks, []);
 
     // It is a live choice, not a pin to whatever ref/dial was current on save.
     const replacement = { ...session, id: "replacement" };
@@ -614,7 +614,7 @@ for (const scenario of [
     await handleSettingChoice("auditorModel", hostCtx);
     assert.equal(loadSettings(cwd).auditorModel, "audit/project");
     assert.equal(loadSettings(cwd).auditorThinkingLevel, "high");
-    assert.deepEqual(loadSettings(cwd).auditorModelFallbacks, backups);
+    assert.deepEqual(loadSettings(cwd).auditorModelFallbacks, []);
   } finally { restoreGlobal(); }
 });
 
