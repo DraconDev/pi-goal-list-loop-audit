@@ -1066,10 +1066,14 @@ export async function runMechanicalPreAuditChecks(
   // strategy/docs deliverables) without requiring a `cd` in the contract.
   // Only activates as a fallback; explicit `cd` targets still win.
   let effectiveCwd = cwd;
+  // The enclosing repository of the caller's cwd — the anchor for a contract's
+  // `cd <relative dir>`, which is authored against the PROJECT, not against
+  // whichever subdirectory the session happens to sit in (see the step resolver
+  // below).
+  let repoRoot: string | null = null;
   try {
     // walk up to find repo root (.git)
     let dir = cwd;
-    let repoRoot: string | null = null;
     for (let depth = 0; depth < 8; depth++) {
       if (fs.existsSync(path.join(dir, ".git"))) { repoRoot = dir; break; }
       const parent = path.dirname(dir);
@@ -1125,18 +1129,39 @@ export async function runMechanicalPreAuditChecks(
     // running somewhere else is exactly the defect this replaced.
     let runCwd = cwd;
     if (step.cwd) {
-      runCwd = path.isAbsolute(step.cwd) ? step.cwd : path.resolve(cwd, step.cwd);
-      let isDir = false;
-      try { isDir = fs.statSync(runCwd).isDirectory(); } catch { isDir = false; }
-      if (!isDir) {
+      // v0.39.x (field, 2026-11-26): a contract's `cd <relative dir>` is authored
+      // against the PROJECT ROOT, not against the directory this session happens
+      // to sit in. A goal worked from `web/jobs` whose contract says
+      // `cd web/jobs && bun run check` resolved to `web/jobs/web/jobs` and
+      // fast-failed the pre-audit gate with exit 126 — a directory the contract
+      // never named, which is the same class of defect as the 2026-11-10 dropped
+      // `cd` (the gate must run what the contract says, not something else).
+      // Relative candidates are therefore tried in order and the first one that
+      // exists wins: the caller's cwd (today's behaviour, so a cwd-relative
+      // contract keeps working), then the enclosing repo root (the project-relative
+      // reading). Absolute targets are honoured as written. Nothing is guessed:
+      // when NO candidate exists the contract error below still fails loudly and
+      // now names every path that was tried.
+      const candidates: string[] = [];
+      if (path.isAbsolute(step.cwd)) {
+        candidates.push(path.normalize(step.cwd));
+      } else {
+        candidates.push(path.resolve(cwd, step.cwd));
+        if (repoRoot && repoRoot !== cwd) candidates.push(path.resolve(repoRoot, step.cwd));
+      }
+      const existing = candidates.find((candidate) => {
+        try { return fs.statSync(candidate).isDirectory(); } catch { return false; }
+      });
+      if (!existing) {
         return {
           passed: false,
           outcome: "fail",
           failedCommand: rawCommand,
-          output: `Mechanical contract command \`${rawCommand}\` names a working directory that does not exist: ${runCwd}`,
+          output: `Mechanical contract command \`${rawCommand}\` names a working directory that does not exist: ${candidates.join(" or ")}`,
           exitCode: 126,
         };
       }
+      runCwd = existing;
     }
     // A redirected step says WHERE it ran in its evidence, so a cross-repo gate
     // is never mistaken for a run in the session's own checkout.
