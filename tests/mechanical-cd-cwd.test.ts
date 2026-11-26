@@ -140,3 +140,55 @@ test("redirected evidence states where the command ran", async () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("a project-relative cd resolves against the repository root, not the session subdirectory", async () => {
+  // Field, 2026-11-26: a goal worked from `web/jobs` carried the contract item
+  // "`cd web/jobs && bun run check` exits 0". The session cwd WAS web/jobs, so
+  // the relative target resolved to web/jobs/web/jobs — a directory the contract
+  // never named — and the deterministic pre-audit gate fast-failed a finished
+  // goal with exit code 126. The contract reads "web/jobs" from the PROJECT root,
+  // which is the same reading the 2026-11-10 fix established for cross-repo
+  // contracts: execute what the contract says.
+  const root = tempDir("projectrel");
+  const sub = makeProbeProject(root, "web/jobs");
+  try {
+    const res = await runMechanicalPreAuditChecks(sub, [{ command: "bun run probe", cwd: "web/jobs" }], 60_000);
+    assert.equal(res.passed, true, res.output ?? "");
+    assert.equal(fs.existsSync(path.join(sub, "probe.txt")), true, "the project-relative target must be the one that ran");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a cwd-relative cd still wins when both readings exist, so nothing is silently redirected", async () => {
+  // Both `sub/sub` and `sub` exist here. The cwd-relative reading is tried first,
+  // so a contract that really means "the subdirectory I am already in" keeps its
+  // meaning; the repo-root reading only applies when the first candidate is absent.
+  const root = tempDir("bothtargets");
+  const sub = makeProbeProject(root, "sub");
+  const inner = makeProbeProject(sub, "sub");
+  try {
+    const res = await runMechanicalPreAuditChecks(sub, [{ command: "bun run probe", cwd: "sub" }], 60_000);
+    assert.equal(res.passed, true, res.output ?? "");
+    assert.equal(fs.existsSync(path.join(inner, "probe.txt")), true, "the nearer existing directory wins");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("the missing-directory error names every path that was tried", async () => {
+  const root = tempDir("candidates");
+  const sub = makeProbeProject(root, "deeper");
+  try {
+    const res = await runMechanicalPreAuditChecks(sub, [{ command: "bun run probe", cwd: "no-such-dir" }], 60_000);
+    assert.equal(res.passed, false);
+    assert.equal(res.exitCode, 126);
+    assert.match(res.output ?? "", /does not exist:/);
+    // Both readings appear, so a contract that is genuinely wrong says so
+    // instead of blaming one arbitrary base.
+    assert.match(res.output ?? "", new RegExp(path.join(sub, "no-such-dir").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(res.output ?? "", / or /);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
