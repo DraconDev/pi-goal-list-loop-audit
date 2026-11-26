@@ -1810,8 +1810,15 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         // project-vs-global split it never reported. An explicit session choice
         // is now the global "inherit the live session pair" state — the same
         // masking semantics, applied where every project can see it.
-        saveSettings("global", ctx, { auditorModel: null, auditorThinkingLevel: undefined });
-        ctx.ui.notify("Auditor agent: live session model and thinking inherited together for EVERY project; an explicit fallback list is preserved.", "info");
+        // Session inheritance is an explicit session-only choice. Keeping an
+        // old fallback chain here made the UI appear to select the session
+        // while detached audits still tried unrelated persisted models.
+        saveSettings("global", ctx, {
+          auditorModel: null,
+          auditorThinkingLevel: undefined,
+          auditorModelFallbacks: undefined,
+        });
+        ctx.ui.notify("Auditor agent: live session model and thinking inherited together for EVERY project; auditor fallback models cleared.", "info");
         return;
       }
       // Model + dial are one editor transaction: the primary and its thinking

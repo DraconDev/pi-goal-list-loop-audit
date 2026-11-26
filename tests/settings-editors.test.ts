@@ -658,7 +658,12 @@ test("choosing session inherits both role settings without a separate thinking p
   process.env.PI_CODING_AGENT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "glla-session-pair-editor-"));
   try {
     for (const role of ["designer", "drafter", "auditor"]) {
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ [`${role}Model`]: "test/selected", [`${role}ThinkingLevel`]: "low", ...(role === "designer" ? { designerEnabled: true } : {}) }));
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({
+        [`${role}Model`]: "test/selected",
+        [`${role}ThinkingLevel`]: "low",
+        ...(role === "auditor" ? { auditorModelFallbacks: ["junk/one", "junk/two"] } : {}),
+        ...(role === "designer" ? { designerEnabled: true } : {}),
+      }));
       const ctx = makeMockCtx(tmpCwd()) as any;
       ctx.model = { provider: "test", id: "session", reasoning: true, thinkingLevelMap: { max: "max" } };
       ctx.thinkingLevel = "max";
@@ -678,6 +683,7 @@ test("choosing session inherits both role settings without a separate thinking p
         assert.equal(effective.auditorThinkingLevel, undefined);
         assert.equal(readGlobal().auditorModel, null, "the session choice is global, so every project sees it");
         assert.equal(readGlobal().auditorThinkingLevel, undefined);
+        assert.equal(readGlobal().auditorModelFallbacks, undefined, "session-only auditor selection clears stale fallback pins");
       } else {
         assert.equal(readGlobal()[`${role}Model`], undefined, role);
         assert.equal(readGlobal()[`${role}ThinkingLevel`], undefined, role);
