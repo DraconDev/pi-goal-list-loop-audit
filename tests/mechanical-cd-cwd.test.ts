@@ -32,6 +32,12 @@ function tempDir(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), `glla-cd-${prefix}-${process.pid}-`));
 }
 
+/** Mark a directory as the project root: the resolver's anchor is `.git`. */
+function asRepoRoot(dir: string): string {
+  fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
+  return dir;
+}
+
 /** A throwaway project whose `probe` script records the directory it ran in. */
 function makeProbeProject(root: string, name = "sub"): string {
   const dir = path.join(root, name);
@@ -149,7 +155,7 @@ test("a project-relative cd resolves against the repository root, not the sessio
   // goal with exit code 126. The contract reads "web/jobs" from the PROJECT root,
   // which is the same reading the 2026-11-10 fix established for cross-repo
   // contracts: execute what the contract says.
-  const root = tempDir("projectrel");
+  const root = asRepoRoot(tempDir("projectrel"));
   const sub = makeProbeProject(root, "web/jobs");
   try {
     const res = await runMechanicalPreAuditChecks(sub, [{ command: "bun run probe", cwd: "web/jobs" }], 60_000);
@@ -164,7 +170,7 @@ test("a cwd-relative cd still wins when both readings exist, so nothing is silen
   // Both `sub/sub` and `sub` exist here. The cwd-relative reading is tried first,
   // so a contract that really means "the subdirectory I am already in" keeps its
   // meaning; the repo-root reading only applies when the first candidate is absent.
-  const root = tempDir("bothtargets");
+  const root = asRepoRoot(tempDir("bothtargets"));
   const sub = makeProbeProject(root, "sub");
   const inner = makeProbeProject(sub, "sub");
   try {
@@ -177,7 +183,7 @@ test("a cwd-relative cd still wins when both readings exist, so nothing is silen
 });
 
 test("the missing-directory error names every path that was tried", async () => {
-  const root = tempDir("candidates");
+  const root = asRepoRoot(tempDir("candidates"));
   const sub = makeProbeProject(root, "deeper");
   try {
     const res = await runMechanicalPreAuditChecks(sub, [{ command: "bun run probe", cwd: "no-such-dir" }], 60_000);
